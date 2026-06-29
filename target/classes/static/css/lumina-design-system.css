@@ -1554,3 +1554,200 @@ hr.divider-line {
 }
 
 .section-head .section-link:hover { text-decoration: underline; }
+
+/* ===================================================================
+   FND-05 UI STATE COMPONENTS
+   =================================================================== */
+
+/* --- Loading Components --- */
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-radius: 50%;
+  border-top-color: var(--lumina-blue);
+  animation: spin 1s ease-in-out infinite;
+}
+
+.spinner-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--lumina-gray-100) 25%, var(--lumina-gray-200) 50%, var(--lumina-gray-100) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+
+.page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+  color: var(--lumina-gray-500);
+}
+
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.5rem;
+  margin-left: -0.5rem;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+.btn-secondary.btn-loading::after,
+.btn-outline.btn-loading::after {
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top-color: var(--lumina-blue);
+}
+
+/* --- Empty State Components --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  border: 1px dashed var(--lumina-gray-300);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  color: var(--lumina-gray-400);
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--lumina-gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-desc {
+  color: var(--lumina-gray-500);
+  font-size: 0.875rem;
+  max-width: 300px;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Error State Components --- */
+.alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.alert-error {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.alert-error .alert-icon {
+  color: #EF4444;
+}
+
+.alert-success {
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #166534;
+}
+
+.alert-success .alert-icon {
+  color: #22C55E;
+}
+
+.alert-warning {
+  background: #FFFBEB;
+  border: 1px solid #FDE047;
+  color: #854D0E;
+}
+
+.alert-warning .alert-icon {
+  color: #EAB308;
+}
+
+.inline-error {
+  display: block;
+  color: #EF4444;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  font-weight: 500;
+}
+
+.error-card {
+  background: white;
+  border: 1px solid #FCA5A5;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+}
+
+.error-card-title {
+  color: #991B1B;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.retry-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
