@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Teacher - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+        <main class="main-content">
+            <h1>Teacher Dashboard</h1>
+            <div class="stats-grid"><div class="stat-card"><h3>My Courses</h3><div class="value">3</div></div><div class="stat-card"><h3>Total Students</h3><div class="value">45</div></div><div class="stat-card"><h3>Total Revenue</h3><div class="value">$500</div></div><div class="stat-card"><h3>Average Rating</h3><div class="value">4.8</div></div></div><table class="table"><thead><tr><th>Recent Activity</th></tr></thead><tbody><tr><td>Student joined course</td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/teacher/teacher.js}"></script>
+</body>
+</html>

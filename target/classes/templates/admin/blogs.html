@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogs Management - Admin - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('admin')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+        <main class="main-content">
+            <h1>Blogs Management</h1>
+            <table class="table"><thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Learning Java</td><td>Student A</td><td>Active</td><td>2026-06-10</td><td><button class="btn btn-info">View</button></td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>

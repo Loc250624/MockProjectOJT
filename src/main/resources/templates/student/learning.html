@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('student')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+        <main class="main-content">
+            <h1>Learning</h1>
+
+            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem;">
+                <!-- Course Sidebar -->
+                <div class="detail-card" style="padding: 1rem;">
+                    <h3 style="color: #3498db; margin-top: 0;">Course Lessons</h3>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 1. Introduction to Java
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 2. Variables &amp; Data Types
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 3. Control Flow
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; background: rgba(52,152,219,0.1); border-left: 3px solid #3498db; border-bottom: 1px solid #f0f0f0;">
+                            <strong>4. OOP Fundamentals</strong> <span class="badge badge-info" style="font-size: 0.7rem;">Current</span>
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999; border-bottom: 1px solid #f0f0f0;">
+                            5. Collections Framework
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999; border-bottom: 1px solid #f0f0f0;">
+                            6. Exception Handling
+                        </li>
+                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999;">
+                            7. File I/O
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Main Content Area -->
+                <div>
+                    <div class="video-placeholder">
+                        ▶ Video Player - Lesson 4: OOP Fundamentals
+                    </div>
+
+                    <div class="detail-card">
+                        <h2 style="margin-top: 0;">Lesson 4: OOP Fundamentals</h2>
+                        <p>In this lesson, you will learn about the four pillars of Object-Oriented Programming: Encapsulation, Abstraction, Inheritance, and Polymorphism. We will explore each concept with practical examples and hands-on coding exercises.</p>
+                        <p>Topics covered:</p>
+                        <ul>
+                            <li>Classes and Objects</li>
+                            <li>Constructors and Methods</li>
+                            <li>Access Modifiers</li>
+                            <li>Inheritance and Interfaces</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; justify-content: space-between; margin-top: 1rem;">
+                        <button class="btn btn-success">Mark Complete</button>
+                        <button class="btn btn-primary">Next Lesson →</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

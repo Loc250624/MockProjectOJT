@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Detail - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('student')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+        <main class="main-content">
+            <h1>Course Detail</h1>
+
+            <div class="detail-card">
+                <h2 style="color: #3498db; margin-top: 0;">Java Programming Masterclass</h2>
+                <p><strong>Instructor:</strong> Tran Van B</p>
+                <p><strong>Rating:</strong> ⭐⭐⭐⭐⭐ (4.8/5 - 245 reviews)</p>
+                <p><strong>Category:</strong> Programming</p>
+                <p><strong>Duration:</strong> 40 hours</p>
+                <p><strong>Price:</strong> <span style="font-size: 1.5rem; font-weight: bold; color: #e74c3c;">799,000 VND</span></p>
+
+                <h3 style="margin-top: 1.5rem;">Description</h3>
+                <p>Master Java programming from fundamentals to advanced concepts. This comprehensive course covers OOP principles, data structures, algorithms, Spring Framework, and real-world project development. Perfect for beginners and intermediate developers looking to strengthen their Java skills.</p>
+
+                <h3 style="margin-top: 1.5rem;">Course Roadmap</h3>
+                <ol style="line-height: 2;">
+                    <li>Introduction to Java &amp; Setup Environment</li>
+                    <li>Variables, Data Types &amp; Operators</li>
+                    <li>Control Flow &amp; Loops</li>
+                    <li>Object-Oriented Programming</li>
+                    <li>Collections Framework</li>
+                    <li>Exception Handling</li>
+                    <li>File I/O &amp; Streams</li>
+                    <li>Multithreading &amp; Concurrency</li>
+                    <li>JDBC &amp; Database Connectivity</li>
+                    <li>Spring Boot Introduction</li>
+                    <li>Final Project</li>
+                </ol>
+
+                <div style="margin-top: 2rem;">
+                    <a href="#" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.8rem 2rem;">Enroll Now</a>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Reviews</h2>
+                <div class="comment-item">
+                    <p><strong>Nguyen Thi H</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-20</span></p>
+                    <p>⭐⭐⭐⭐⭐ Excellent course! The instructor explains everything clearly. Highly recommended for beginners.</p>
+                </div>
+                <div class="comment-item">
+                    <p><strong>Le Van I</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-15</span></p>
+                    <p>⭐⭐⭐⭐ Very comprehensive content. Would love more practice exercises in the OOP section.</p>
+                </div>
+                <div class="comment-item">
+                    <p><strong>Pham Thi K</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-10</span></p>
+                    <p>⭐⭐⭐⭐⭐ Best Java course I have taken. The final project really helped solidify my understanding.</p>
+                </div>
+                <div class="comment-item">
+                    <p><strong>Tran Van L</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-05</span></p>
+                    <p>⭐⭐⭐⭐ Good course overall. Some lessons could use better examples but the content is solid.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('student')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+        <main class="main-content">
+            <h1>Quiz</h1>
+
+            <div class="detail-card" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: #3498db;">Module 4: OOP Concepts Quiz</h2>
+                    <p style="margin: 0.3rem 0 0; color: #888;">Duration: 30 minutes &bull; 3 Questions &bull; Passing Score: 70%</p>
+                </div>
+                <div class="timer">⏱ 29:45</div>
+            </div>
+
+            <form>
+                <div class="quiz-question">
+                    <h3>Question 1: Which of the following is NOT a pillar of OOP?</h3>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q1" value="a"> A. Encapsulation</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q1" value="b"> B. Compilation</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q1" value="c"> C. Inheritance</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q1" value="d"> D. Polymorphism</label>
+                    </div>
+                </div>
+
+                <div class="quiz-question">
+                    <h3>Question 2: What keyword is used to inherit a class in Java?</h3>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q2" value="a"> A. implements</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q2" value="b"> B. extends</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q2" value="c"> C. inherits</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q2" value="d"> D. derives</label>
+                    </div>
+                </div>
+
+                <div class="quiz-question">
+                    <h3>Question 3: Which access modifier allows access only within the same class?</h3>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q3" value="a"> A. public</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q3" value="b"> B. protected</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q3" value="c"> C. private</label>
+                    </div>
+                    <div class="quiz-option">
+                        <label><input type="radio" name="q3" value="d"> D. default</label>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.8rem 3rem; font-size: 1.1rem;">Submit Quiz</button>
+                </div>
+            </form>
+
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

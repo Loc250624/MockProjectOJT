@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Login - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
+</head>
+<body>
+
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="main-content-full">
+    <div class="auth-form">
+        <h1>OAuth Login</h1>
+        <p>Choose a provider to sign in:</p>
+        <div class="oauth-buttons">
+            <a th:href="@{/oauth2/authorization/google}">
+                <button type="button" class="btn-google">Sign in with Google</button>
+            </a>
+            <a th:href="@{/oauth2/authorization/github}">
+                <button type="button" class="btn-github">Sign in with GitHub</button>
+            </a>
+        </div>
+        <div class="auth-links">
+            <p>Or <a th:href="@{/auth/login}">login with email</a></p>
+            <p>Don't have an account? <a th:href="@{/auth/register}">Register</a></p>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/auth/auth.js}"></script>
+</body>
+</html>

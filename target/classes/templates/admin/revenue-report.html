@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue Report - Admin - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('admin')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+        <main class="main-content">
+            <h1>Revenue Report</h1>
+            <div class="stats-grid"><div class="stat-card"><h3>Total Revenue</h3><div class="value">$1200</div></div><div class="stat-card"><h3>This Month</h3><div class="value">$400</div></div><div class="stat-card"><h3>This Year</h3><div class="value">$1200</div></div></div><div class="chart-placeholder">Revenue Over Time</div>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>

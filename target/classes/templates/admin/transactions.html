@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - Admin - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('admin')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+        <main class="main-content">
+            <h1>Transactions</h1>
+            <table class="table"><thead><tr><th>ID</th><th>User</th><th>Course</th><th>Amount</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody><tr><td>1</td><td>Student A</td><td>Java Course</td><td>$50</td><td>Payment</td><td>Success</td><td>2026-06-25</td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading - Teacher - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+        <main class="main-content">
+            <h1>Grading</h1>
+            <div class="detail-card"><h4>Student: Student A | Assignment: Assign 1</h4><pre style="background:#eee;padding:10px;margin:10px 0;">public class Main { ... }</pre><form><div class="form-group"><label>Score</label><input type="number"></div><div class="form-group"><label>Feedback</label><textarea></textarea></div><button class="btn btn-primary">Submit Grade</button></form></div>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/teacher/teacher.js}"></script>
+</body>
+</html>

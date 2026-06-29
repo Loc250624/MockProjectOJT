@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+</head>
+<body>
+
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="main-content-full">
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <h1>Welcome to OJTSU26 E-Learning</h1>
+        <p>Unlock your potential with our curated online courses. Learn anytime, anywhere.</p>
+    </section>
+
+    <!-- Featured Courses -->
+    <section>
+        <h2 class="section-title">Featured Courses</h2>
+        <div class="course-grid">
+            <div class="course-card">
+                <h3>Java Spring Boot</h3>
+                <p>Master backend development with Spring Boot 3.x and build enterprise-level applications.</p>
+                <span class="price">$49.99</span>
+                <br>
+                <a th:href="@{/public/course-detail}"><button class="btn-enroll">View Details</button></a>
+            </div>
+            <div class="course-card">
+                <h3>React & Next.js</h3>
+                <p>Build modern, responsive frontends with React and server-side rendering using Next.js.</p>
+                <span class="price">$39.99</span>
+                <br>
+                <a th:href="@{/public/course-detail}"><button class="btn-enroll">View Details</button></a>
+            </div>
+            <div class="course-card">
+                <h3>Data Science with Python</h3>
+                <p>Explore data analysis, visualization, and machine learning with Python.</p>
+                <span class="price">$59.99</span>
+                <br>
+                <a th:href="@{/public/course-detail}"><button class="btn-enroll">View Details</button></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section style="margin-top: 2rem;">
+        <h2 class="section-title">Why Choose Us?</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>&#128218; Expert Instructors</h3>
+                <p>Learn from industry professionals with real-world experience.</p>
+            </div>
+            <div class="feature-card">
+                <h3>&#128187; Hands-on Projects</h3>
+                <p>Apply what you learn through practical, portfolio-worthy projects.</p>
+            </div>
+            <div class="feature-card">
+                <h3>&#127942; Certificates</h3>
+                <p>Earn certificates upon completion to boost your career.</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/public/public.js}"></script>
+</body>
+</html>

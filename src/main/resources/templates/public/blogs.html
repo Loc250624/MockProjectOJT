@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blogs - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+</head>
+<body>
+
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="main-content-full">
+
+    <h1 class="section-title">Blog Articles</h1>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" placeholder="Search blog posts...">
+        <button type="button">Search</button>
+    </div>
+
+    <!-- Blog List -->
+    <div class="blog-list">
+        <div class="blog-card">
+            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Getting Started with Spring Boot 3</a></h3>
+            <p class="blog-meta">By John Doe | June 15, 2026</p>
+            <p>Learn how to set up your first Spring Boot 3.x project from scratch and explore the new features in this latest release.</p>
+        </div>
+        <div class="blog-card">
+            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Top 10 Tips for Effective Online Learning</a></h3>
+            <p class="blog-meta">By Jane Smith | June 10, 2026</p>
+            <p>Maximize your online learning experience with these proven strategies used by top-performing students worldwide.</p>
+        </div>
+        <div class="blog-card">
+            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Understanding REST API Design Principles</a></h3>
+            <p class="blog-meta">By Mike Johnson | June 5, 2026</p>
+            <p>A deep dive into RESTful API design best practices, including naming conventions, versioning, and error handling.</p>
+        </div>
+        <div class="blog-card">
+            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">The Future of AI in Education</a></h3>
+            <p class="blog-meta">By Sarah Lee | May 28, 2026</p>
+            <p>Explore how artificial intelligence is transforming the education landscape and what it means for learners and educators.</p>
+        </div>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/public/public.js}"></script>
+</body>
+</html>

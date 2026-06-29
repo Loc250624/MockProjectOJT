@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+</head>
+<body>
+
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="main-content-full">
+
+    <h1 class="section-title">All Courses</h1>
+
+    <!-- Search & Filter -->
+    <div class="search-bar">
+        <input type="text" placeholder="Search courses...">
+        <select style="padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">All Categories</option>
+            <option value="programming">Programming</option>
+            <option value="design">Design</option>
+            <option value="data-science">Data Science</option>
+            <option value="business">Business</option>
+        </select>
+        <button type="button">Search</button>
+    </div>
+
+    <!-- Course Grid -->
+    <div class="course-grid">
+        <div class="course-card">
+            <h3>Java Spring Boot</h3>
+            <p>Master backend development with Spring Boot 3.x and build enterprise-level applications.</p>
+            <span class="price">$49.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+        <div class="course-card">
+            <h3>React & Next.js</h3>
+            <p>Build modern, responsive frontends with React and server-side rendering using Next.js.</p>
+            <span class="price">$39.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+        <div class="course-card">
+            <h3>Data Science with Python</h3>
+            <p>Explore data analysis, visualization, and machine learning with Python.</p>
+            <span class="price">$59.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+        <div class="course-card">
+            <h3>UI/UX Design Fundamentals</h3>
+            <p>Learn the principles of user interface and user experience design from scratch.</p>
+            <span class="price">$29.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+        <div class="course-card">
+            <h3>DevOps & CI/CD</h3>
+            <p>Automate your development pipeline with Docker, Kubernetes, and Jenkins.</p>
+            <span class="price">$54.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+        <div class="course-card">
+            <h3>Digital Marketing</h3>
+            <p>Master SEO, social media, and content marketing strategies for business growth.</p>
+            <span class="price">$34.99</span>
+            <br>
+            <a th:href="@{/public/course-detail}"><button class="btn-enroll">Enroll Now</button></a>
+        </div>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/public/public.js}"></script>
+</body>
+</html>

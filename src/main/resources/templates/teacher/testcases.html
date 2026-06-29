@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cases - Teacher - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+        <main class="main-content">
+            <h1>Test Cases</h1>
+            <button class="btn btn-primary">Add Test Case</button><table class="table"><thead><tr><th>ID</th><th>Assignment</th><th>Input</th><th>Expected Output</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Assign 1</td><td>2 3</td><td>5</td><td><button class="btn btn-info">Edit</button></td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/teacher/teacher.js}"></script>
+</body>
+</html>

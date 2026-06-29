@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Progress Report - Teacher - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+        <main class="main-content">
+            <h1>Student Progress Report</h1>
+            <div class="form-container"><div class="form-group"><label>Select Course</label><select><option>Java Basics</option></select></div></div><table class="table"><thead><tr><th>Student</th><th>Progress %</th><th>Quiz Score</th><th>Status</th></tr></thead><tbody><tr><td>Student A</td><td>75%</td><td>90</td><td>In Progress</td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/teacher/teacher.js}"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('student')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+        <main class="main-content">
+            <h1>Notifications</h1>
+            <button class="btn btn-primary mb-2">Mark All Read</button><ul style="list-style:none;padding:0;"><li style="background:#fff;padding:15px;margin-bottom:10px;border-left:3px solid #3498db;box-shadow:0 1px 3px rgba(0,0,0,0.1);">New assignment posted!</li></ul>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

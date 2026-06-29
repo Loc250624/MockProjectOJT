@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('student')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+        <main class="main-content">
+            <h1>My Profile</h1>
+
+            <div class="detail-card" style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="avatar-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: #3498db; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1rem;">
+                    ST
+                </div>
+                <h2 style="margin: 0;">Nguyen Van A</h2>
+                <p style="color: #888;">Student</p>
+            </div>
+
+            <div class="form-container">
+                <form>
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" value="Nguyen Van A" placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="nguyenvana@fpt.edu.vn" readonly style="background: #f0f0f0; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone" value="0912345678" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself">Computer Science student at FPT University. Passionate about web development and machine learning.</textarea>
+                    </div>
+
+                    <h3 style="margin-top: 2rem; color: #1a1a3e;">Change Password</h3>
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

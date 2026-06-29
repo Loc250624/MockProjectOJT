@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Detail - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+</head>
+<body>
+
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="main-content-full">
+
+    <div class="detail-section">
+        <h1>Getting Started with Spring Boot 3</h1>
+        <p class="blog-meta">By <strong>John Doe</strong> | June 15, 2026</p>
+
+        <div style="margin-top: 1.5rem; line-height: 1.8;">
+            <p>
+                Spring Boot 3.x introduces a host of new features and improvements that make building
+                enterprise-grade Java applications easier than ever. In this article, we'll walk through
+                the essentials of getting your first project up and running.
+            </p>
+            <p>
+                First, ensure you have Java 17 or later installed, as Spring Boot 3 requires a minimum
+                of Java 17. You can use Spring Initializr to bootstrap your project with the dependencies
+                you need, such as Spring Web, Spring Data JPA, and Spring Security.
+            </p>
+            <p>
+                One of the most significant changes in Spring Boot 3 is the migration to Jakarta EE 10
+                namespaces. This means all <code>javax.*</code> imports need to be replaced with
+                <code>jakarta.*</code>. While this is a breaking change, it aligns the framework with
+                the latest enterprise Java standards.
+            </p>
+            <p>
+                We also explore the new observability features built on Micrometer, which provide
+                out-of-the-box metrics, tracing, and logging capabilities. These features are essential
+                for monitoring production applications effectively.
+            </p>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="comment-section">
+        <h2 class="section-title">Comments</h2>
+
+        <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <p><strong>Alice</strong> <span class="blog-meta">- June 16, 2026</span></p>
+            <p>Great article! Very helpful for beginners like me.</p>
+        </div>
+        <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <p><strong>Bob</strong> <span class="blog-meta">- June 17, 2026</span></p>
+            <p>Thanks for explaining the Jakarta EE migration. That was the part I was most confused about.</p>
+        </div>
+
+        <h3 style="margin-top: 1.5rem;">Leave a Comment</h3>
+        <form th:action="@{/public/blog-detail/comment}" method="post">
+            <div class="form-group" style="margin-top: 0.5rem;">
+                <label for="commentName">Name</label>
+                <input type="text" id="commentName" name="name" placeholder="Your name" required
+                       style="width: 100%; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+            </div>
+            <div class="form-group">
+                <label for="commentBody">Comment</label>
+                <textarea id="commentBody" name="body" rows="4" placeholder="Write your comment..."
+                          style="width: 100%; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+            <button type="submit" class="btn-enroll">Post Comment</button>
+        </form>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/public/public.js}"></script>
+</body>
+</html>

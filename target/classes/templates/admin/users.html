@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management - Admin - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+    <header th:replace="~{fragments/layout :: header('admin')}"></header>
+    <div class="layout-container">
+        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+        <main class="main-content">
+            <h1>Users Management</h1>
+            <div class="search-bar"><input type="text" placeholder="Search users"><button>Search</button></div><a href="/admin/users/create" class="btn btn-primary">Add User</a><table class="table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Admin User</td><td>admin@ojt.com</td><td>Admin</td><td>Active</td><td><button class="btn btn-info">View</button></td></tr></tbody></table>
+        </main>
+    </div>
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    <script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>

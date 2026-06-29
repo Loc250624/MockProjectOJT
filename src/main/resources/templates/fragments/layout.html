@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Header Fragment -->
+<header th:fragment="header(role)" class="main-header">
+    <div class="header-container">
+        <a th:href="@{/}" class="logo">&#127891; OJTSU26 E-Learning</a>
+        <nav class="header-nav">
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/courses}">Courses</a>
+            <a th:href="@{/blogs}">Blogs</a>
+            <span th:if="${role == 'admin'}"><a th:href="@{/admin/dashboard}">Admin Panel</a></span>
+            <span th:if="${role == 'teacher'}"><a th:href="@{/teacher/dashboard}">Teacher Panel</a></span>
+            <span th:if="${role == 'student'}"><a th:href="@{/student/dashboard}">Student Panel</a></span>
+            <a th:href="@{/login}">Login</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Admin Sidebar -->
+<aside th:fragment="sidebar-admin" class="sidebar">
+    <nav class="sidebar-nav">
+        <h3>Admin Menu</h3>
+        <a th:href="@{/admin/dashboard}">&#128202; Dashboard</a>
+        <a th:href="@{/admin/users}">&#128101; Users</a>
+        <a th:href="@{/admin/courses}">&#128218; Courses</a>
+        <a th:href="@{/admin/categories}">&#128194; Categories</a>
+        <a th:href="@{/admin/blogs}">&#128221; Blogs</a>
+        <a th:href="@{/admin/comments}">&#128172; Comments</a>
+        <a th:href="@{/admin/payments}">&#128179; Payments</a>
+        <a th:href="@{/admin/transactions}">&#128203; Transactions</a>
+        <a th:href="@{/admin/refunds}">&#8617; Refunds</a>
+        <a th:href="@{/admin/analytics}">&#128200; Analytics</a>
+        <a th:href="@{/admin/statistics/students}">&#127891; Student Stats</a>
+        <a th:href="@{/admin/reports/revenue}">&#128176; Revenue Report</a>
+        <a th:href="@{/admin/settings}">&#9881; Settings</a>
+        <a th:href="@{/admin/system-settings}">&#128295; System Settings</a>
+    </nav>
+</aside>
+
+<!-- Teacher Sidebar -->
+<aside th:fragment="sidebar-teacher" class="sidebar">
+    <nav class="sidebar-nav">
+        <h3>Teacher Menu</h3>
+        <a th:href="@{/teacher/dashboard}">&#128202; Dashboard</a>
+        <a th:href="@{/teacher/courses}">&#128218; Courses</a>
+        <a th:href="@{/teacher/roadmap}">&#128506; Roadmap</a>
+        <a th:href="@{/teacher/lessons}">&#128214; Lessons</a>
+        <a th:href="@{/teacher/videos}">&#127909; Videos</a>
+        <a th:href="@{/teacher/students}">&#128101; Students</a>
+        <a th:href="@{/teacher/quizzes}">&#10067; Quizzes</a>
+        <a th:href="@{/teacher/testcases}">&#129514; Test Cases</a>
+        <a th:href="@{/teacher/assignments}">&#128221; Assignments</a>
+        <a th:href="@{/teacher/grading}">&#9989; Grading</a>
+        <a th:href="@{/teacher/blogs}">&#128240; Blogs</a>
+        <a th:href="@{/teacher/analytics}">&#128200; Analytics</a>
+        <a th:href="@{/teacher/reports/progress}">&#128202; Progress Report</a>
+    </nav>
+</aside>
+
+<!-- Student Sidebar -->
+<aside th:fragment="sidebar-student" class="sidebar">
+    <nav class="sidebar-nav">
+        <h3>Student Menu</h3>
+        <a th:href="@{/student/dashboard}">&#128202; Dashboard</a>
+        <a th:href="@{/student/profile}">&#128100; Profile</a>
+        <a th:href="@{/student/courses}">&#128218; Browse Courses</a>
+        <a th:href="@{/student/my-courses}">&#127891; My Courses</a>
+        <a th:href="@{/student/learning}">&#128214; Learning</a>
+        <a th:href="@{/student/results}">&#128202; Results</a>
+        <a th:href="@{/student/certificates}">&#127942; Certificates</a>
+        <a th:href="@{/student/notifications}">&#128276; Notifications</a>
+        <a th:href="@{/student/checkout}">&#128722; Checkout</a>
+        <a th:href="@{/student/payment-history}">&#128179; Payment History</a>
+        <a th:href="@{/student/blogs}">&#128240; Blogs</a>
+    </nav>
+</aside>
+
+<!-- Footer Fragment -->
+<footer th:fragment="footer" class="main-footer">
+    <p>&copy; 2026 OJTSU26 E-Learning Platform. All rights reserved.</p>
+</footer>
+
+</html>
