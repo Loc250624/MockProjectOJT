@@ -1,21 +1,170 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard - Teacher - OJTSU26 E-Learning</title>
+    <title>Teacher Dashboard — Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Teacher Dashboard</h1>
-            <div class="stats-grid"><div class="stat-card"><h3>My Courses</h3><div class="value">3</div></div><div class="stat-card"><h3>Total Students</h3><div class="value">45</div></div><div class="stat-card"><h3>Total Revenue</h3><div class="value">$500</div></div><div class="stat-card"><h3>Average Rating</h3><div class="value">4.8</div></div></div><table class="table"><thead><tr><th>Recent Activity</th></tr></thead><tbody><tr><td>Student joined course</td></tr></tbody></table>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Overview')}"></div>
+        
+        <main class="lumina-portal-main">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+                <div>
+                    <h1 class="page-title">Welcome back, <span th:text="${#authentication?.name ?: 'Dr. Jenkins'}">Dr. Jenkins</span></h1>
+                    <p class="page-subtitle">Here's what's happening in your academic environment today.</p>
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <a th:href="@{/teacher/analytics}" class="btn btn-secondary">View Full Report</a>
+                    <a th:href="@{/teacher/course-form}" class="btn btn-primary">+ New Course</a>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid-3">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Total Active Students</div>
+                    <div class="stat-value">1,482</div>
+                    <div class="stat-change stat-change-up">↑ 12% from last month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">📈</div>
+                    <div class="stat-label">Avg. Completion Rate</div>
+                    <div class="stat-value">78.4%</div>
+                    <div class="stat-change stat-change-up">↑ 2.1% from last month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">💰</div>
+                    <div class="stat-label">Total Revenue (MTD)</div>
+                    <div class="stat-value">$42.8k</div>
+                    <div class="stat-change stat-change-neutral">Expected $50k by month end</div>
+                </div>
+            </div>
+
+            <!-- Active Courses Table -->
+            <div class="card" style="margin-bottom:2rem;">
+                <div class="card-header" style="padding:1.5rem 1.5rem 0;">
+                    <h2 class="card-title">Your Active Courses</h2>
+                    <button class="btn btn-ghost btn-sm">View All</button>
+                </div>
+                <div style="padding:1.5rem;overflow-x:auto;">
+                    <table class="lumina-table">
+                        <thead>
+                            <tr>
+                                <th>Course Title</th>
+                                <th>Enrolled</th>
+                                <th style="width:200px;">Avg Completion</th>
+                                <th>Revenue (MTD)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><div style="font-weight:700;color:var(--lumina-gray-900);">Advanced Quantum Mechanics</div><div style="font-size:0.75rem;color:var(--lumina-gray-500);">PHY-501</div></td>
+                                <td>450</td>
+                                <td>
+                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:82%;"></div></div>
+                                    <div style="font-size:0.6875rem;color:var(--lumina-gray-500);text-align:right;margin-top:4px;">82%</div>
+                                </td>
+                                <td>$15,200</td>
+                                <td><span class="badge status-active badge-dot">Published</span></td>
+                                <td><a th:href="@{/teacher/lesson-editor}" style="color:var(--lumina-blue);font-weight:600;font-size:0.8125rem;">Edit</a></td>
+                            </tr>
+                            <tr>
+                                <td><div style="font-weight:700;color:var(--lumina-gray-900);">Logic Theory Fundamentals</div><div style="font-size:0.75rem;color:var(--lumina-gray-500);">PHI-204</div></td>
+                                <td>824</td>
+                                <td>
+                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:65%;"></div></div>
+                                    <div style="font-size:0.6875rem;color:var(--lumina-gray-500);text-align:right;margin-top:4px;">65%</div>
+                                </td>
+                                <td>$21,400</td>
+                                <td><span class="badge status-active badge-dot">Published</span></td>
+                                <td><a th:href="@{/teacher/lesson-editor}" style="color:var(--lumina-blue);font-weight:600;font-size:0.8125rem;">Edit</a></td>
+                            </tr>
+                            <tr>
+                                <td><div style="font-weight:700;color:var(--lumina-gray-900);">Neural Architectures II</div><div style="font-size:0.75rem;color:var(--lumina-gray-500);">CS-602</div></td>
+                                <td>208</td>
+                                <td>
+                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:12%;"></div></div>
+                                    <div style="font-size:0.6875rem;color:var(--lumina-gray-500);text-align:right;margin-top:4px;">12%</div>
+                                </td>
+                                <td>$6,200</td>
+                                <td><span class="badge status-pending badge-dot">Draft</span></td>
+                                <td><a th:href="@{/teacher/lesson-editor}" style="color:var(--lumina-blue);font-weight:600;font-size:0.8125rem;">Resume</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Two Col Grid: Recent Submissions & To-Do -->
+            <div class="grid-2-col">
+                <div class="card card-padded">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Submissions</h2>
+                        <a th:href="@{/teacher/grading}" style="font-size:0.8125rem;color:var(--lumina-blue);font-weight:600;">Grade All</a>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:1rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--lumina-gray-100);padding-bottom:0.75rem;">
+                            <div>
+                                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);">Quantum Algorithms Set 1</div>
+                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Alex Johnson • Submitted 2 hrs ago</div>
+                            </div>
+                            <span class="badge badge-warning">Needs Review</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--lumina-gray-100);padding-bottom:0.75rem;">
+                            <div>
+                                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);">Logic Proof Assignment</div>
+                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Sarah Connor • Submitted 5 hrs ago</div>
+                            </div>
+                            <span class="badge badge-warning">Needs Review</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card card-padded">
+                    <div class="card-header">
+                        <h2 class="card-title">Quick Actions</h2>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <button class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
+                            <span style="font-size:1.5rem;margin-bottom:4px;">📝</span>
+                            <span style="font-size:0.8125rem;">Create Quiz</span>
+                        </button>
+                        <button class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
+                            <span style="font-size:1.5rem;margin-bottom:4px;">📢</span>
+                            <span style="font-size:0.8125rem;">Announce</span>
+                        </button>
+                        <button class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
+                            <span style="font-size:1.5rem;margin-bottom:4px;">📹</span>
+                            <span style="font-size:0.8125rem;">Upload Video</span>
+                        </button>
+                        <button class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
+                            <span style="font-size:1.5rem;margin-bottom:4px;">⚙</span>
+                            <span style="font-size:0.8125rem;">Settings</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </main>
+        
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

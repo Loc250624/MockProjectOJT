@@ -1,21 +1,163 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Analytics - Teacher - OJTSU26 E-Learning</title>
+    <title>Teacher Analytics — Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Teacher Analytics</h1>
-            <div class="stats-grid"><div class="stat-card"><h3>Total Revenue</h3><div class="value">$500</div></div></div><div class="chart-placeholder">Revenue Trend</div>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Analytics')}"></div>
+        
+        <main class="lumina-portal-main">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+                <div>
+                    <h1 class="page-title">Analytics & Insights</h1>
+                    <p class="page-subtitle">Detailed performance metrics across all your published courses.</p>
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <select class="form-control" style="width:160px;height:40px;">
+                        <option>Last 30 Days</option>
+                        <option>Last 90 Days</option>
+                        <option>This Year</option>
+                        <option>All Time</option>
+                    </select>
+                    <button class="btn btn-secondary">Export CSV</button>
+                </div>
+            </div>
+
+            <div class="stats-grid-3">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Total Active Students</div>
+                    <div class="stat-value">1,482</div>
+                    <div class="stat-change stat-change-up">↑ 12% vs previous period</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">📈</div>
+                    <div class="stat-label">Avg. Completion Rate</div>
+                    <div class="stat-value">78.4%</div>
+                    <div class="stat-change stat-change-up">↑ 2.1% vs previous period</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">💰</div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">$42.8k</div>
+                    <div class="stat-change stat-change-up">↑ 8.4% vs previous period</div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="grid-2-col" style="margin-bottom:2rem;">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Enrollment Trends</div>
+                    </div>
+                    <div class="chart-area">
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:30%;"></div><div class="chart-bar-lbl">Mon</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:45%;"></div><div class="chart-bar-lbl">Tue</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:20%;"></div><div class="chart-bar-lbl">Wed</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:60%;"></div><div class="chart-bar-lbl">Thu</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:85%;"></div><div class="chart-bar-lbl">Fri</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:40%;"></div><div class="chart-bar-lbl">Sat</div></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:50%;"></div><div class="chart-bar-lbl">Sun</div></div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Course Popularity</div>
+                    </div>
+                    <div class="donut-chart-wrap" style="margin-top:1rem;">
+                        <div class="donut-hole">
+                            <div class="donut-val">3</div>
+                            <div class="donut-lbl">Active Courses</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:2rem;">
+                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:var(--lumina-blue);"></span> Adv. Quantum</div>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:#6366f1;"></span> Logic Theory</div>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:#0ea5e9;"></span> Neural Arch.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Performing Students Table -->
+            <div class="card">
+                <div class="card-header" style="padding:1.5rem 1.5rem 0;">
+                    <h2 class="card-title">Top Performing Students</h2>
+                </div>
+                <div style="padding:1.5rem;overflow-x:auto;">
+                    <table class="lumina-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Course</th>
+                                <th style="width:200px;">Engagement Level</th>
+                                <th>Avg Grade</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                                        <div style="width:32px;height:32px;border-radius:50%;background:var(--lumina-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">AJ</div>
+                                        <div>
+                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Alex Johnson</div>
+                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">alex.j@edu.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Advanced Quantum Mechanics</td>
+                                <td>
+                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:96%;background:var(--lumina-success);"></div></div>
+                                    <div style="font-size:0.6875rem;color:var(--lumina-success);text-align:right;margin-top:4px;">High (96%)</div>
+                                </td>
+                                <td><span style="font-weight:700;color:var(--lumina-gray-900);">94.5%</span></td>
+                                <td><span class="badge status-active badge-dot">Active</span></td>
+                                <td><button class="btn btn-outline btn-sm">Message</button></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                                        <div style="width:32px;height:32px;border-radius:50%;background:#8b5cf6;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">SC</div>
+                                        <div>
+                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Sarah Connor</div>
+                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">s.connor@edu.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Logic Theory Fundamentals</td>
+                                <td>
+                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:91%;background:var(--lumina-success);"></div></div>
+                                    <div style="font-size:0.6875rem;color:var(--lumina-success);text-align:right;margin-top:4px;">High (91%)</div>
+                                </td>
+                                <td><span style="font-weight:700;color:var(--lumina-gray-900);">92.0%</span></td>
+                                <td><span class="badge status-active badge-dot">Active</span></td>
+                                <td><button class="btn btn-outline btn-sm">Message</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </main>
+        
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

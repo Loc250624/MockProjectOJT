@@ -1,72 +1,262 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Detail - Student - OJTSU26 E-Learning</title>
+    <title>Course Detail — Student Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
+    <style>
+        /* Course detail layout */
+        .cd-hero { background: linear-gradient(135deg, #0d1b4b 0%, #1a3bb5 60%, #3a1578 100%); padding: 2.5rem; color: white; }
+        .cd-hero .breadcrumb a { color: rgba(255,255,255,0.6); }
+        .cd-hero .breadcrumb .cur { color: rgba(255,255,255,0.9); }
+        .cd-hero h1 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.875rem; margin: 1rem 0 0.5rem; }
+        .cd-hero .meta-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
+        .cd-hero .meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+        .cd-body { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; padding: 2rem; max-width: 100%; }
+        @media (max-width: 1024px) { .cd-body { grid-template-columns: 1fr; } }
+
+        /* Enrollment card */
+        .enroll-card { background: white; border-radius: 14px; border: 1px solid var(--lumina-gray-200); padding: 1.5rem; box-shadow: var(--shadow-md); position: sticky; top: 80px; }
+        .enroll-card .price-display { font-size: 2rem; font-weight: 800; color: var(--lumina-gray-900); }
+        .enroll-card .btn-enroll { width: 100%; padding: 0.875rem; background: var(--lumina-blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
+        .enroll-card .btn-enroll:hover { background: var(--lumina-blue-light); }
+        .enroll-card .btn-try { width: 100%; padding: 0.75rem; background: transparent; color: var(--lumina-blue); border: 1.5px solid var(--lumina-blue); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.2s; }
+        .enroll-card .btn-try:hover { background: var(--lumina-blue-pale); }
+        .enroll-card .includes-list { list-style: none; margin-top: 1rem; }
+        .enroll-card .includes-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--lumina-gray-600); padding: 0.35rem 0; }
+        .enroll-card .includes-list li .check { color: var(--lumina-success); }
+
+        /* Curriculum accordion */
+        .curriculum-module { border: 1px solid var(--lumina-gray-200); border-radius: 10px; margin-bottom: 0.625rem; overflow: hidden; }
+        .module-header { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; cursor: pointer; background: white; transition: background 0.2s; }
+        .module-header:hover { background: var(--lumina-gray-50); }
+        .module-badge { background: var(--lumina-blue-pale); color: var(--lumina-blue); font-size: 0.6875rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+        .module-title { flex: 1; font-weight: 700; color: var(--lumina-gray-800); font-size: 0.9375rem; }
+        .module-chevron { color: var(--lumina-gray-400); transition: transform 0.2s; }
+        .curriculum-module.open .module-chevron { transform: rotate(180deg); }
+        .module-lessons { padding: 0 1.25rem 0.875rem; display: none; }
+        .curriculum-module.open .module-lessons { display: block; }
+        .lesson-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0; border-top: 1px solid var(--lumina-gray-100); }
+        .lesson-item:first-child { border-top: none; }
+        .lesson-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; flex-shrink: 0; }
+        .lesson-video { background: var(--lumina-blue-pale); color: var(--lumina-blue); }
+        .lesson-read { background: #f0fdf4; color: var(--lumina-success); }
+        .lesson-quiz { background: #fef3c7; color: var(--lumina-warning); }
+        .lesson-name { font-size: 0.875rem; font-weight: 600; color: var(--lumina-gray-800); }
+        .lesson-meta { font-size: 0.75rem; color: var(--lumina-gray-400); margin-top: 1px; }
+
+        /* Review item */
+        .review-item { display: flex; gap: 0.875rem; padding: 1rem 0; border-bottom: 1px solid var(--lumina-gray-100); }
+        .review-item:last-child { border-bottom: none; }
+        .review-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--lumina-blue); color: white; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .review-author { font-size: 0.875rem; font-weight: 700; color: var(--lumina-gray-800); }
+        .review-date { font-size: 0.75rem; color: var(--lumina-gray-400); margin-left: 0.5rem; }
+        .review-stars { color: #f59e0b; font-size: 0.875rem; margin: 3px 0; }
+        .review-text { font-size: 0.875rem; color: var(--lumina-gray-600); line-height: 1.6; }
+    </style>
 </head>
-<body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>Course Detail</h1>
+<body class="lumina-page">
 
-            <div class="detail-card">
-                <h2 style="color: #3498db; margin-top: 0;">Java Programming Masterclass</h2>
-                <p><strong>Instructor:</strong> Tran Van B</p>
-                <p><strong>Rating:</strong> ⭐⭐⭐⭐⭐ (4.8/5 - 245 reviews)</p>
-                <p><strong>Category:</strong> Programming</p>
-                <p><strong>Duration:</strong> 40 hours</p>
-                <p><strong>Price:</strong> <span style="font-size: 1.5rem; font-weight: bold; color: #e74c3c;">799,000 VND</span></p>
+<!-- Header -->
+<header th:replace="~{fragments/layout :: header('courses')}"></header>
 
-                <h3 style="margin-top: 1.5rem;">Description</h3>
-                <p>Master Java programming from fundamentals to advanced concepts. This comprehensive course covers OOP principles, data structures, algorithms, Spring Framework, and real-world project development. Perfect for beginners and intermediate developers looking to strengthen their Java skills.</p>
-
-                <h3 style="margin-top: 1.5rem;">Course Roadmap</h3>
-                <ol style="line-height: 2;">
-                    <li>Introduction to Java &amp; Setup Environment</li>
-                    <li>Variables, Data Types &amp; Operators</li>
-                    <li>Control Flow &amp; Loops</li>
-                    <li>Object-Oriented Programming</li>
-                    <li>Collections Framework</li>
-                    <li>Exception Handling</li>
-                    <li>File I/O &amp; Streams</li>
-                    <li>Multithreading &amp; Concurrency</li>
-                    <li>JDBC &amp; Database Connectivity</li>
-                    <li>Spring Boot Introduction</li>
-                    <li>Final Project</li>
-                </ol>
-
-                <div style="margin-top: 2rem;">
-                    <a href="#" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.8rem 2rem;">Enroll Now</a>
-                </div>
-            </div>
-
-            <div class="detail-card">
-                <h2>Reviews</h2>
-                <div class="comment-item">
-                    <p><strong>Nguyen Thi H</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-20</span></p>
-                    <p>⭐⭐⭐⭐⭐ Excellent course! The instructor explains everything clearly. Highly recommended for beginners.</p>
-                </div>
-                <div class="comment-item">
-                    <p><strong>Le Van I</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-15</span></p>
-                    <p>⭐⭐⭐⭐ Very comprehensive content. Would love more practice exercises in the OOP section.</p>
-                </div>
-                <div class="comment-item">
-                    <p><strong>Pham Thi K</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-10</span></p>
-                    <p>⭐⭐⭐⭐⭐ Best Java course I have taken. The final project really helped solidify my understanding.</p>
-                </div>
-                <div class="comment-item">
-                    <p><strong>Tran Van L</strong> <span style="color: #888; font-size: 0.85rem;">- 2026-06-05</span></p>
-                    <p>⭐⭐⭐⭐ Good course overall. Some lessons could use better examples but the content is solid.</p>
-                </div>
-            </div>
-
-        </main>
+<!-- Course Hero -->
+<div class="cd-hero">
+    <div class="breadcrumb-trail" style="margin-bottom:0.5rem;">
+        <a th:href="@{/public/courses}" style="color:rgba(255,255,255,0.6);">Courses</a>
+        <span style="color:rgba(255,255,255,0.3);">›</span>
+        <span th:text="${course?.category ?: 'Computer Science'}" style="color:rgba(255,255,255,0.6);">Computer Science</span>
+        <span style="color:rgba(255,255,255,0.3);">›</span>
+        <span th:text="${course?.name ?: 'Course Detail'}" class="cur">Course Title</span>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+    <div style="max-width:720px;">
+        <div class="badge" style="background:rgba(255,255,255,0.15);color:#a5b4fc;margin-bottom:0.75rem;">Specialization Track</div>
+        <h1 th:text="${course?.name ?: 'Quantum Cryptography: Advanced Course'}">Quantum Cryptography: Advanced Course</h1>
+        <p style="color:rgba(255,255,255,0.7);font-size:0.9375rem;margin-bottom:0.875rem;line-height:1.6;" th:text="${course?.description ?: 'Master the cutting-edge science of quantum encryption and post-quantum cryptographic algorithms.'}">Master the cutting-edge science of quantum encryption and post-quantum cryptographic algorithms.</p>
+        <div class="meta-row">
+            <span class="meta-item">⭐ <strong style="color:white;">4.9</strong> (2.1k reviews)</span>
+            <span class="meta-item">👥 12,450 students</span>
+            <span class="meta-item">⏱ 42 hours</span>
+            <span class="meta-item">📅 Last updated Oct 2023</span>
+        </div>
+        <div class="meta-item" style="margin-top:0.5rem;">
+            👤 Instructor: <strong style="color:white;margin-left:4px;" th:text="${course?.instructor ?: 'Dr. Elena Vance'}">Dr. Elena Vance</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Course Body -->
+<div class="cd-body">
+
+    <!-- ===== Left: Course Content ===== -->
+    <div>
+
+        <!-- What you'll learn -->
+        <div class="card card-padded" style="margin-bottom:1.5rem;">
+            <h2 class="card-title" style="margin-bottom:1rem;">What You'll Learn</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> Quantum cryptography fundamentals</div>
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> Post-quantum algorithm design</div>
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> BB84 and E91 protocols</div>
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> Lattice-based cryptosystems</div>
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> Implementation with Python + Qiskit</div>
+                <div style="display:flex;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-700);"><span style="color:var(--lumina-success);">✓</span> NIST PQC standardization</div>
+            </div>
+        </div>
+
+        <!-- Curriculum -->
+        <div class="card card-padded" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Course Curriculum</h2>
+                    <p class="card-subtitle">8 modules • 42 hours • 64 lessons</p>
+                </div>
+            </div>
+
+            <div class="curriculum-module open">
+                <div class="module-header" onclick="this.closest('.curriculum-module').classList.toggle('open')">
+                    <span class="module-badge">MODULE 01</span>
+                    <span class="module-title">Foundations of Quantum Mechanics</span>
+                    <span class="module-chevron">▼</span>
+                </div>
+                <div class="module-lessons">
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-video">▶</div>
+                        <div><div class="lesson-name">1.1 Introduction to Quantum Systems</div><div class="lesson-meta">VIDEO LESSON • 15:20</div></div>
+                    </div>
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-read">📖</div>
+                        <div><div class="lesson-name">1.2 Wave-Particle Duality & Superposition</div><div class="lesson-meta">READING MATERIAL • 12 MIN READ</div></div>
+                    </div>
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-quiz">✏</div>
+                        <div><div class="lesson-name">1.3 Module Checkpoint Quiz</div><div class="lesson-meta">ASSESSMENT • 10 QUESTIONS</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="curriculum-module">
+                <div class="module-header" onclick="this.closest('.curriculum-module').classList.toggle('open')">
+                    <span class="module-badge">MODULE 02</span>
+                    <span class="module-title">Quantum Key Distribution Protocols</span>
+                    <span class="module-chevron">▼</span>
+                </div>
+                <div class="module-lessons">
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-video">▶</div>
+                        <div><div class="lesson-name">2.1 BB84 Protocol Deep Dive</div><div class="lesson-meta">VIDEO LESSON • 22:15</div></div>
+                    </div>
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-read">📖</div>
+                        <div><div class="lesson-name">2.2 E91 Protocol & Entanglement</div><div class="lesson-meta">READING MATERIAL • 20 MIN READ</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="curriculum-module">
+                <div class="module-header" onclick="this.closest('.curriculum-module').classList.toggle('open')">
+                    <span class="module-badge">MODULE 03</span>
+                    <span class="module-title">Post-Quantum Cryptography</span>
+                    <span class="module-chevron">▼</span>
+                </div>
+                <div class="module-lessons">
+                    <div class="lesson-item">
+                        <div class="lesson-icon lesson-video">▶</div>
+                        <div><div class="lesson-name">3.1 Lattice-Based Cryptosystems</div><div class="lesson-meta">VIDEO LESSON • 28:40</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="card card-padded">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Student Reviews</h2>
+                    <div class="star-rating" style="margin-top:4px;font-size:1rem;">
+                        <span class="star">★★★★★</span>
+                        <span class="rating-value">4.9</span>
+                        <span style="color:var(--lumina-gray-400);font-size:0.875rem;">(2,147 reviews)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="review-item" th:each="review : ${reviews}">
+                <div class="review-avatar" th:text="${review?.initials ?: 'N'}">N</div>
+                <div>
+                    <span class="review-author" th:text="${review?.name ?: 'Nguyen Thi H'}">Nguyen Thi H</span>
+                    <span class="review-date" th:text="${review?.date ?: '2026-06-20'}">2026-06-20</span>
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text" th:text="${review?.text ?: 'Excellent course! The instructor explains quantum concepts with remarkable clarity. Highly recommended for anyone entering the field.'}">Excellent course! The instructor explains quantum concepts with remarkable clarity.</p>
+                </div>
+            </div>
+
+            <!-- Static reviews if no dynamic data -->
+            <div class="review-item" th:if="${reviews == null or #lists.isEmpty(reviews)}">
+                <div class="review-avatar">N</div>
+                <div>
+                    <span class="review-author">Nguyen Thi H</span>
+                    <span class="review-date">2026-06-20</span>
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">Excellent course! The instructor explains everything clearly. Highly recommended for beginners.</p>
+                </div>
+            </div>
+            <div class="review-item" th:if="${reviews == null or #lists.isEmpty(reviews)}">
+                <div class="review-avatar" style="background:#7c3aed;">L</div>
+                <div>
+                    <span class="review-author">Le Van I</span>
+                    <span class="review-date">2026-06-15</span>
+                    <div class="review-stars">★★★★</div>
+                    <p class="review-text">Very comprehensive content. Would love more practice exercises in the advanced sections.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== Right: Enrollment Card ===== -->
+    <div>
+        <div class="enroll-card">
+            <div style="font-size:2rem;font-weight:800;color:var(--lumina-blue);" th:text="'$' + ${course?.price ?: '199.00'}">$199.00</div>
+            <p style="font-size:0.75rem;color:var(--lumina-danger);font-weight:600;margin-top:2px;">⏰ 2 days left at this price!</p>
+
+            <a th:href="@{/student/checkout}" class="btn-enroll" id="btn-enroll-now">Enroll Now →</a>
+            <button class="btn-try" id="btn-try-free">Try First Lesson Free</button>
+
+            <p style="font-size:0.75rem;color:var(--lumina-gray-400);text-align:center;margin-top:0.75rem;">30-Day Money-Back Guarantee</p>
+
+            <hr class="divider-line">
+
+            <h4 style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">This Course Includes</h4>
+            <ul class="includes-list">
+                <li><span class="check">✓</span> 42 hours on-demand video</li>
+                <li><span class="check">✓</span> 64 downloadable resources</li>
+                <li><span class="check">✓</span> Full lifetime access</li>
+                <li><span class="check">✓</span> Access on mobile &amp; desktop</li>
+                <li><span class="check">✓</span> Certificate of completion</li>
+                <li><span class="check">✓</span> AI-powered discussions</li>
+            </ul>
+
+            <hr class="divider-line">
+
+            <div style="display:flex;justify-content:center;gap:1.5rem;font-size:0.75rem;font-weight:600;">
+                <a href="#" style="color:var(--lumina-blue);">Share</a>
+                <a href="#" style="color:var(--lumina-blue);">Gift</a>
+                <a href="#" style="color:var(--lumina-blue);">Coupon</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

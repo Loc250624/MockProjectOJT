@@ -1,21 +1,158 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payments - Admin - OJTSU26 E-Learning</title>
+    <title>Financial Operations — Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('admin')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
-        <main class="main-content">
-            <h1>Payments</h1>
-            <table class="table"><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead><tbody><tr><td>1</td><td>Student A</td><td>$50</td><td>VNPAY</td><td>Success</td><td>2026-06-25</td></tr></tbody></table>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('Financial Operations')}"></div>
+        
+        <main class="lumina-portal-main">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+                <div>
+                    <div style="font-size:0.6875rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;">ADMIN CONSOLE</div>
+                    <h1 class="page-title">Financial Operations & Settlements</h1>
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <button class="btn btn-secondary btn-sm">PDF</button>
+                    <button class="btn btn-secondary btn-sm">CSV</button>
+                    <input type="date" class="form-control" style="height:32px;font-size:0.8125rem;width:auto;" value="2024-11-01">
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="filter-tabs" style="margin-bottom:2rem;">
+                <button class="filter-tab active">Platform Revenue</button>
+                <button class="filter-tab">Teacher Payouts</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid-3">
+                <div class="stat-card">
+                    <div class="stat-label">Total Teacher Earnings (YTD)</div>
+                    <div class="stat-value text-blue">$84,210.00</div>
+                    <div class="stat-change stat-change-up">↑ 12.4% vs last year</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Platform Commission</div>
+                    <div class="stat-value text-success">$58,340.50</div>
+                    <div class="stat-change stat-change-neutral">Avg 18.2% blended rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Next Settlement Date</div>
+                    <div class="stat-value">Nov 05, 2024</div>
+                    <div class="stat-change stat-change-up">Scheduled ($12,450.00)</div>
+                </div>
+            </div>
+
+            <div class="finance-layout">
+                
+                <!-- Left: Transactions Table -->
+                <div class="admin-table-container">
+                    <div class="card-header" style="padding:1.5rem 1.5rem 0;">
+                        <h2 class="card-title">Recent Transactions</h2>
+                        <div class="table-search" style="width:250px;">
+                            <input type="text" placeholder="Search Trans ID..." style="height:32px;padding:0.25rem 1rem 0.25rem 2rem;">
+                        </div>
+                    </div>
+                    <div style="padding:1.5rem;overflow-x:auto;">
+                        <table class="lumina-table">
+                            <thead>
+                                <tr>
+                                    <th>Trans ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8892-A</td>
+                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">Alex Johnson</div></td>
+                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$199.00</td>
+                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">Credit Card •••• 4242</span></td>
+                                    <td><span class="badge status-active badge-dot">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8893-B</td>
+                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">Maria Garcia</div></td>
+                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$89.00</td>
+                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">MoMo E-Wallet</span></td>
+                                    <td><span class="badge status-active badge-dot">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8894-C</td>
+                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">David Kim</div></td>
+                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$299.00</td>
+                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">VNPay</span></td>
+                                    <td><span class="badge status-pending badge-dot">Processing</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right: Settlement Status -->
+                <div>
+                    <h3 style="font-size:1.125rem;font-weight:800;color:var(--lumina-gray-900);margin-bottom:1rem;">Settlement Queue</h3>
+                    
+                    <div class="settlement-card">
+                        <div class="sc-header">
+                            <div>
+                                <div class="sc-teacher">Dr. Elena Vance</div>
+                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Bank Transfer (ACH)</div>
+                            </div>
+                            <span class="badge badge-warning">Pending</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                            <div class="sc-amount">$4,250.00</div>
+                            <button class="btn btn-outline btn-sm">Process</button>
+                        </div>
+                    </div>
+
+                    <div class="settlement-card">
+                        <div class="sc-header">
+                            <div>
+                                <div class="sc-teacher">Prof. Sarah Jenkins</div>
+                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);">PayPal</div>
+                            </div>
+                            <span class="badge badge-warning">Pending</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                            <div class="sc-amount">$3,100.50</div>
+                            <button class="btn btn-outline btn-sm">Process</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width:100%;">Process All Payouts</button>
+                </div>
+
+            </div>
+
+            <!-- Payout Trends -->
+            <div class="card card-padded" style="margin-top:2rem;">
+                <h2 class="card-title" style="margin-bottom:1rem;">Payout Trends</h2>
+                <div class="admin-chart-ph" style="height:200px;">[ Bar Chart: Monthly Payouts vs Commission ]</div>
+            </div>
+
         </main>
+        
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/admin/admin.js}"></script>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
 </body>
 </html>

@@ -3,38 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - OJTSU26 E-Learning</title>
+    <meta name="description" content="Sign in to LumiNa — your institutional academic portal for advanced learning.">
+    <title>Login — LumiNa E-Learning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
 </head>
 <body>
 
-<!-- Header -->
-<header th:replace="~{fragments/layout :: header('public')}"></header>
+<div class="auth-page">
 
-<main class="main-content-full">
-    <div class="auth-form">
-        <h1>Login</h1>
-        <form th:action="@{/auth/login}" method="post">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+    <!-- ===== LEFT: Hero Panel ===== -->
+    <div class="auth-hero">
+        <!-- Top brand mark -->
+        <div style="position:relative;z-index:1;">
+            <div class="auth-logo" style="color:white;">
+                <div class="logo-icon">🎓</div>
+                <span>LumiNa</span>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <!-- Center quote -->
+        <div class="auth-hero-content">
+            <div class="auth-hero-badge">
+                🔒 Institutional Access
             </div>
-            <button type="submit" class="btn-primary">Login</button>
-        </form>
-        <div class="auth-links">
-            <p>Don't have an account? <a th:href="@{/auth/register}">Register</a></p>
-            <p>Or login with <a th:href="@{/auth/oauth-login}">OAuth</a></p>
+            <p class="auth-hero-quote">
+                "The beautiful thing about learning is that no one can take it away from you."
+            </p>
+            <p class="auth-hero-attr">— B.B. King</p>
+        </div>
+
+        <!-- Bottom stat badges -->
+        <div class="auth-hero-stats" style="position:relative;z-index:1;">
+            <div class="auth-hero-stat">
+                <span class="stat-icon">🛡</span>
+                <div>
+                    <div class="stat-label">Secured by</div>
+                    <div class="stat-value">LumiNa S2</div>
+                </div>
+            </div>
+            <div class="auth-hero-stat">
+                <span class="stat-icon">🌐</span>
+                <div>
+                    <div class="stat-label">Connected</div>
+                    <div class="stat-value">12k+ Nodes</div>
+                </div>
+            </div>
         </div>
     </div>
-</main>
 
-<!-- Footer -->
-<footer th:replace="~{fragments/layout :: footer}"></footer>
+    <!-- ===== RIGHT: Form Panel ===== -->
+    <div class="auth-form-panel">
+
+        <!-- Brand + greeting -->
+        <div class="auth-form-header">
+            <div class="auth-logo">
+                <div class="logo-icon">🎓</div>
+                <span>LumiNa</span>
+            </div>
+            <p class="auth-greeting">Welcome Back</p>
+            <p class="auth-subtext">Please enter your academic credentials to proceed.</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <a th:href="@{/auth/login}" class="auth-tab active" id="tab-login">Login</a>
+            <a th:href="@{/auth/register}" class="auth-tab" id="tab-register">Create Account</a>
+        </div>
+
+        <!-- Error / Success Messages -->
+        <div th:if="${error}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
+            ⚠ <span th:text="${error}">Invalid credentials.</span>
+        </div>
+        <div th:if="${message}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
+            ✓ <span th:text="${message}">Success.</span>
+        </div>
+
+        <!-- Login Form -->
+        <div class="auth-form-body">
+            <form th:action="@{/auth/login}" method="post">
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Institutional Email</label>
+                    <div class="input-group">
+                        <span class="input-icon">@</span>
+                        <input type="email" id="email" name="email"
+                               class="form-control"
+                               placeholder="name@institution.edu"
+                               required autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row-split">
+                        <label class="form-label" for="password" style="margin-bottom:0;">Access Key</label>
+                        <a th:href="@{/auth/forgot-password}" class="forgot-link">Forgot Password?</a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" id="password" name="password"
+                               class="form-control"
+                               placeholder="••••••••"
+                               required autocomplete="current-password">
+                        <button type="button" class="input-action" id="toggle-pw" title="Show/hide password">👁</button>
+                    </div>
+                </div>
+
+                <div class="form-check" style="margin-bottom:1rem;">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember this device</label>
+                </div>
+
+                <button type="submit" class="auth-submit" id="btn-login">
+                    Access Portal →
+                </button>
+            </form>
+
+            <!-- OAuth Section -->
+            <div class="oauth-section">
+                <div class="divider">or continue with</div>
+                <div class="oauth-buttons">
+                    <a th:href="@{/auth/oauth-login?provider=google}" class="oauth-btn" id="btn-google">
+                        <span>G</span> Google
+                    </a>
+                    <a th:href="@{/auth/oauth-login?provider=linkedin}" class="oauth-btn" id="btn-linkedin">
+                        <span>in</span> LinkedIn
+                    </a>
+                </div>
+            </div>
+
+            <!-- Security Footer -->
+            <div class="auth-security">
+                <span class="auth-security-badge"><span class="dot">✓</span> AES-256 Encrypted</span>
+                <span style="color:var(--lumina-gray-300);">•</span>
+                <span class="auth-security-badge">🌐 Global Node 04</span>
+            </div>
+
+            <p style="font-size:0.6875rem;color:var(--lumina-gray-300);text-align:center;margin-top:0.75rem;">
+                LumiNa Portal v2.4.0-Stable | © 2024 LumiNa E-Learning Systems
+            </p>
+        </div>
+
+    </div>
+</div>
 
 <script th:src="@{/js/auth/auth.js}"></script>
+<script>
+    // Toggle password visibility
+    document.getElementById('toggle-pw')?.addEventListener('click', function() {
+        const pw = document.getElementById('password');
+        pw.type = pw.type === 'password' ? 'text' : 'password';
+    });
+</script>
 </body>
 </html>

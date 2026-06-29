@@ -1,21 +1,163 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grading - Teacher - OJTSU26 E-Learning</title>
+    <title>Assessment Center — Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
-<body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Grading</h1>
-            <div class="detail-card"><h4>Student: Student A | Assignment: Assign 1</h4><pre style="background:#eee;padding:10px;margin:10px 0;">public class Main { ... }</pre><form><div class="form-group"><label>Score</label><input type="number"></div><div class="form-group"><label>Feedback</label><textarea></textarea></div><button class="btn btn-primary">Submit Grade</button></form></div>
+<body style="overflow:hidden;">
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Assessment Center')}"></div>
+        
+        <main class="lumina-portal-main" style="flex:1;overflow:hidden;padding:1.5rem;">
+            
+            <div class="filter-tabs" style="margin-bottom:1rem;background:white;padding:0.5rem;border-radius:10px;border:1px solid var(--lumina-gray-200);display:inline-flex;">
+                <button class="filter-tab active" style="padding:0.5rem 1.5rem;border:none;">Queue (12)</button>
+                <button class="filter-tab" style="padding:0.5rem 1.5rem;border:none;">History</button>
+                <button class="filter-tab" style="padding:0.5rem 1.5rem;border:none;">Rubrics</button>
+            </div>
+
+            <div class="grading-layout">
+                
+                <!-- Col 1: Queue List -->
+                <div class="grading-col grading-queue">
+                    <div class="grading-col-header">
+                        <div class="grading-col-title">Submission Queue</div>
+                        <input type="text" class="form-control" placeholder="Search by student or assignment..." style="margin-top:0.75rem;padding:0.5rem;font-size:0.8125rem;">
+                    </div>
+                    <div class="grading-col-body">
+                        
+                        <div class="queue-item active">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                <div>
+                                    <div class="q-student">Alex Johnson</div>
+                                    <div class="q-assign">Quantum Algorithms Set 1</div>
+                                </div>
+                                <span class="badge badge-warning" style="font-size:0.6rem;">REVIEWING</span>
+                            </div>
+                            <div style="font-size:0.6875rem;color:var(--lumina-gray-400);margin-top:0.5rem;">Submitted: 2 hrs ago</div>
+                        </div>
+
+                        <div class="queue-item">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                <div>
+                                    <div class="q-student">Sarah Connor</div>
+                                    <div class="q-assign">Logic Proof Assignment</div>
+                                </div>
+                                <span class="badge badge-warning" style="font-size:0.6rem;">PENDING</span>
+                            </div>
+                            <div style="font-size:0.6875rem;color:var(--lumina-gray-400);margin-top:0.5rem;">Submitted: 5 hrs ago</div>
+                        </div>
+
+                        <div class="queue-item">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                <div>
+                                    <div class="q-student">David Miller</div>
+                                    <div class="q-assign">Shor's Algorithm Analysis</div>
+                                </div>
+                                <span class="badge badge-success" style="font-size:0.6rem;">GRADED</span>
+                            </div>
+                            <div style="font-size:0.6875rem;color:var(--lumina-gray-400);margin-top:0.5rem;">Graded: Yesterday</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Col 2: Submission Viewer -->
+                <div class="grading-col">
+                    <div class="grading-col-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <div class="grading-col-title">Submission Viewer</div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="btn btn-outline btn-sm">Download PDF</button>
+                            <button class="btn btn-outline btn-sm">Expand</button>
+                        </div>
+                    </div>
+                    <div class="grading-col-body">
+                        <div class="submission-content">
+                            <div class="submission-meta">
+                                <div>
+                                    <div class="sub-title">Quantum Algorithms Set 1</div>
+                                    <div style="font-size:0.875rem;color:var(--lumina-gray-600);">Course: Advanced Quantum Mechanics</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-weight:700;color:var(--lumina-gray-800);">Alex Johnson</div>
+                                    <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Submitted: Nov 14, 2024 at 10:45 AM</div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size:0.9375rem;line-height:1.8;color:var(--lumina-gray-800);">
+                                <h4>Question 1: Explain the primary difference between Shor's and Grover's algorithms.</h4>
+                                <p>Shor's algorithm provides an exponential speedup for integer factorization and discrete logarithms, transforming them from intractable classical problems into solvable quantum problems. In contrast, Grover's algorithm provides only a quadratic speedup for unstructured search problems...</p>
+                                
+                                <h4 style="margin-top:1.5rem;">Question 2: Circuit Implementation</h4>
+                                <div style="background:white;border:1px solid var(--lumina-gray-200);padding:1rem;border-radius:8px;font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-600);margin-top:0.5rem;">
+                                    qc = QuantumCircuit(2)<br>
+                                    qc.h(0)<br>
+                                    qc.cx(0, 1)<br>
+                                    qc.measure_all()
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Col 3: Grading Panel -->
+                <div class="grading-col grading-panel">
+                    <div class="grading-col-header">
+                        <div class="grading-col-title">Evaluation</div>
+                    </div>
+                    <div class="grading-col-body" style="display:flex;flex-direction:column;">
+                        
+                        <div class="grade-input-box">
+                            <input type="text" value="85" maxlength="3">
+                            <span style="color:var(--lumina-gray-400);">/ 100</span>
+                        </div>
+
+                        <div style="margin-bottom:1.5rem;">
+                            <h4 style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Rubric Checklist</h4>
+                            <div class="rubric-item">
+                                <label><input type="checkbox" checked> Mathematical Rigor</label>
+                                <span>20/20</span>
+                            </div>
+                            <div class="rubric-item">
+                                <label><input type="checkbox" checked> Conceptual Accuracy</label>
+                                <span>35/40</span>
+                            </div>
+                            <div class="rubric-item">
+                                <label><input type="checkbox"> Code Implementation</label>
+                                <span>15/20</span>
+                            </div>
+                            <div class="rubric-item">
+                                <label><input type="checkbox" checked> Writing Clarity</label>
+                                <span>15/20</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="flex:1;display:flex;flex-direction:column;">
+                            <label class="form-label">INSTRUCTOR FEEDBACK</label>
+                            <textarea class="form-control" style="flex:1;resize:none;" placeholder="Enter feedback for the student...">Excellent conceptual understanding of the algorithmic differences. However, the circuit implementation is missing the final phase kickback stage required for full points.</textarea>
+                        </div>
+
+                        <button class="btn btn-primary" style="width:100%;margin-top:1rem;">Post Grade</button>
+
+                    </div>
+                </div>
+
+            </div>
+
         </main>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>
