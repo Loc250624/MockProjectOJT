@@ -34,13 +34,13 @@ public class User {
     
     private String avatarUrl;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = RoleConverter.class)
     private Role role;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = AuthProviderConverter.class)
     private AuthProvider authProvider;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = UserStatusConverter.class)
     private UserStatus status;
 
     @CreationTimestamp

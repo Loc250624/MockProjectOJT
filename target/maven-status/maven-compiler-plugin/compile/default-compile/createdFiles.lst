@@ -1,5 +1,6 @@
 com\ojtsu26\elearning\service\impl\CourseEnrollmentServiceImpl.class
 com\ojtsu26\elearning\model\entity\Video.class
+com\ojtsu26\elearning\dto\response\AuthResponseDTO.class
 com\ojtsu26\elearning\service\impl\VideoServiceImpl.class
 com\ojtsu26\elearning\model\entity\Comment.class
 com\ojtsu26\elearning\model\entity\User.class
@@ -10,12 +11,14 @@ com\ojtsu26\elearning\model\enums\UserStatus.class
 com\ojtsu26\elearning\common\ApiResponse.class
 com\ojtsu26\elearning\repository\TestcaseRepository.class
 com\ojtsu26\elearning\mapper\UserMapper.class
+com\ojtsu26\elearning\security\CustomUserDetails.class
 com\ojtsu26\elearning\repository\LessonProgressRepository.class
 com\ojtsu26\elearning\model\entity\Certificate$CertificateBuilder.class
 com\ojtsu26\elearning\mapper\TransactionMapperImpl.class
 com\ojtsu26\elearning\service\UserService.class
 com\ojtsu26\elearning\mapper\TestcaseMapper.class
 com\ojtsu26\elearning\mapper\TestcaseMapperImpl.class
+com\ojtsu26\elearning\security\JwtAuthFilter.class
 com\ojtsu26\elearning\dto\response\CategoryResponseDTO.class
 com\ojtsu26\elearning\service\SubmissionService.class
 com\ojtsu26\elearning\model\entity\CodingAssignment.class
@@ -26,6 +29,8 @@ com\ojtsu26\elearning\service\CourseEnrollmentService.class
 com\ojtsu26\elearning\service\impl\UserServiceImpl.class
 com\ojtsu26\elearning\dto\request\SubmissionRequestDTO.class
 com\ojtsu26\elearning\mapper\RoadmapMapperImpl.class
+com\ojtsu26\elearning\service\AuthService.class
+com\ojtsu26\elearning\model\enums\AuthProviderConverter.class
 com\ojtsu26\elearning\dto\request\RoadmapRequestDTO.class
 com\ojtsu26\elearning\mapper\CodingAssignmentMapper.class
 com\ojtsu26\elearning\service\impl\QuestionServiceImpl.class
@@ -48,6 +53,7 @@ com\ojtsu26\elearning\model\entity\LessonProgress.class
 com\ojtsu26\elearning\repository\LessonRepository.class
 com\ojtsu26\elearning\mapper\QuizMapper.class
 com\ojtsu26\elearning\dto\response\QuizResponseDTO.class
+com\ojtsu26\elearning\security\OAuth2LoginSuccessHandler.class
 com\ojtsu26\elearning\dto\request\CodingAssignmentRequestDTO.class
 com\ojtsu26\elearning\controller\StudentActionController.class
 com\ojtsu26\elearning\model\entity\Blog$BlogBuilder.class
@@ -64,8 +70,13 @@ com\ojtsu26\elearning\dto\request\QuestionRequestDTO.class
 com\ojtsu26\elearning\mapper\TransactionMapper.class
 com\ojtsu26\elearning\service\impl\LessonServiceImpl.class
 com\ojtsu26\elearning\mapper\CertificateMapperImpl.class
+com\ojtsu26\elearning\security\CustomUserDetailsService.class
+com\ojtsu26\elearning\security\JwtUtils.class
+com\ojtsu26\elearning\security\JwtAuthEntryPoint.class
 com\ojtsu26\elearning\mapper\CategoryMapper.class
+com\ojtsu26\elearning\controller\api\AuthRestController.class
 com\ojtsu26\elearning\model\entity\CodingAssignment$CodingAssignmentBuilder.class
+com\ojtsu26\elearning\model\enums\RoleConverter.class
 com\ojtsu26\elearning\service\impl\CertificateServiceImpl.class
 com\ojtsu26\elearning\controller\StudentViewController.class
 com\ojtsu26\elearning\service\impl\CourseServiceImpl.class
@@ -76,6 +87,7 @@ com\ojtsu26\elearning\model\entity\Submission.class
 com\ojtsu26\elearning\model\entity\LessonProgress$LessonProgressBuilder.class
 com\ojtsu26\elearning\service\QuestionService.class
 com\ojtsu26\elearning\model\entity\CourseEnrollment$CourseEnrollmentBuilder.class
+com\ojtsu26\elearning\service\impl\AuthServiceImpl.class
 com\ojtsu26\elearning\dto\request\QuizRequestDTO.class
 com\ojtsu26\elearning\dto\response\CodingAssignmentResponseDTO.class
 com\ojtsu26\elearning\model\entity\Roadmap.class
@@ -97,6 +109,7 @@ com\ojtsu26\elearning\service\CategoryService.class
 com\ojtsu26\elearning\mapper\CategoryMapperImpl.class
 com\ojtsu26\elearning\repository\QuizRepository.class
 com\ojtsu26\elearning\repository\BlogRepository.class
+com\ojtsu26\elearning\dto\request\LoginRequestDTO.class
 com\ojtsu26\elearning\exception\GlobalExceptionHandler.class
 com\ojtsu26\elearning\mapper\QuestionMapper.class
 com\ojtsu26\elearning\model\enums\AuthProvider.class
@@ -104,6 +117,7 @@ com\ojtsu26\elearning\model\entity\Quiz$QuizBuilder.class
 com\ojtsu26\elearning\controller\PublicController.class
 com\ojtsu26\elearning\model\enums\LessonType.class
 com\ojtsu26\elearning\model\entity\Course$CourseBuilder.class
+com\ojtsu26\elearning\model\enums\UserStatusConverter.class
 com\ojtsu26\elearning\repository\UserRepository.class
 com\ojtsu26\elearning\repository\CourseRepository.class
 com\ojtsu26\elearning\model\entity\User$UserBuilder.class
@@ -139,6 +153,7 @@ com\ojtsu26\elearning\model\entity\Testcase.class
 com\ojtsu26\elearning\model\entity\Transaction$TransactionBuilder.class
 com\ojtsu26\elearning\mapper\CertificateMapper.class
 com\ojtsu26\elearning\model\enums\CourseStatus.class
+com\ojtsu26\elearning\dto\request\RegisterRequestDTO.class
 com\ojtsu26\elearning\service\impl\CategoryServiceImpl.class
 com\ojtsu26\elearning\model\entity\Course.class
 com\ojtsu26\elearning\controller\AdminViewController.class
@@ -149,6 +164,7 @@ com\ojtsu26\elearning\dto\response\CommentResponseDTO.class
 com\ojtsu26\elearning\dto\response\QuestionResponseDTO.class
 com\ojtsu26\elearning\mapper\LessonProgressMapper.class
 com\ojtsu26\elearning\service\impl\TestcaseServiceImpl.class
+com\ojtsu26\elearning\security\CustomAccessDeniedHandler.class
 com\ojtsu26\elearning\repository\VideoRepository.class
 com\ojtsu26\elearning\controller\AuthController.class
 com\ojtsu26\elearning\controller\TeacherViewController.class
@@ -162,6 +178,7 @@ com\ojtsu26\elearning\mapper\CommentMapper.class
 com\ojtsu26\elearning\mapper\CourseEnrollmentMapper.class
 com\ojtsu26\elearning\model\entity\Quiz.class
 com\ojtsu26\elearning\mapper\UserMapperImpl.class
+com\ojtsu26\elearning\config\SecurityConfig$1.class
 com\ojtsu26\elearning\model\entity\Lesson$LessonBuilder.class
 com\ojtsu26\elearning\model\enums\SubmissionStatus.class
 com\ojtsu26\elearning\service\TestcaseService.class
@@ -174,5 +191,6 @@ com\ojtsu26\elearning\model\entity\Certificate.class
 com\ojtsu26\elearning\controller\AdminActionController.class
 com\ojtsu26\elearning\controller\TeacherActionController.class
 com\ojtsu26\elearning\dto\request\UserRequestDTO.class
+com\ojtsu26\elearning\dto\response\AuthResponseDTO$AuthResponseDTOBuilder.class
 com\ojtsu26\elearning\dto\response\TransactionResponseDTO.class
 com\ojtsu26\elearning\dto\response\CertificateResponseDTO.class

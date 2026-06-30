@@ -39,13 +39,13 @@
                 ✓ <span th:text="${message}">Success.</span>
             </div>
 
-            <form th:action="@{/auth/register}" method="post" id="register-form">
+            <form id="registerForm">
 
                 <div class="form-group">
-                    <label class="form-label" for="name">Full Name</label>
+                    <label class="form-label" for="fullName">Full Name</label>
                     <div class="input-group">
                         <span class="input-icon">👤</span>
-                        <input type="text" id="name" name="name"
+                        <input type="text" id="fullName" name="fullName"
                                class="form-control"
                                placeholder="Johnathan Miller"
                                required autocomplete="name">
@@ -60,18 +60,6 @@
                                class="form-control"
                                placeholder="name@institution.edu"
                                required autocomplete="email">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="role">Role</label>
-                    <div class="input-group">
-                        <span class="input-icon">🏷</span>
-                        <select id="role" name="role" class="form-control" required style="padding-left:2.4rem;">
-                            <option value="">-- Select Role --</option>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher / Instructor</option>
-                        </select>
                     </div>
                 </div>
 

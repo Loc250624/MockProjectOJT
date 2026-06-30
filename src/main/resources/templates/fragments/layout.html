@@ -69,8 +69,8 @@
     <div class="sidebar-divider"></div>
 
     <div class="sidebar-support-links">
-        <a th:href="@{/auth/logout}" id="nav-admin-logout">
-            <span class="nav-icon">↩</span> System Exit
+        <a href="#" id="logoutBtn" style="color: #ef4444;">
+            <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
 </aside>
@@ -121,8 +121,8 @@
         <a th:href="@{/teacher/settings}" id="nav-teacher-settings">
             <span class="nav-icon">⚙</span> Settings
         </a>
-        <a th:href="@{/auth/logout}" id="nav-teacher-signout">
-            <span class="nav-icon">↩</span> Sign Out
+        <a href="#" id="logoutBtn" style="color: #ef4444;">
+            <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
 </aside>
@@ -177,8 +177,8 @@
         <a th:href="@{/student/notifications}" id="nav-student-support">
             <span class="nav-icon">⚙</span> Settings
         </a>
-        <a th:href="@{/auth/logout}" id="nav-student-help">
-            <span class="nav-icon">?</span> Help
+        <a href="#" id="logoutBtn" style="color: #ef4444;">
+            <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
 </aside>
@@ -297,6 +297,7 @@
         <a href="#">Institutional Access</a>
         <a href="#">Support</a>
     </div>
+    <script th:src="@{/js/auth/auth.js}"></script>
 </div>
 
 </html>

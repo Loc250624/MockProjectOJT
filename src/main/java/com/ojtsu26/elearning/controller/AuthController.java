@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @Controller
+@RequestMapping("/auth")
 public class AuthController {
 
     @GetMapping("/login")
@@ -16,22 +17,5 @@ public class AuthController {
     @GetMapping("/register")
     public String registerPage() {
         return "auth/register";
-    }
-
-    @GetMapping("/oauth-login")
-    public String oauthLoginPage() {
-        return "auth/oauth-login";
-    }
-
-    @PostMapping("/login")
-    @ResponseBody
-    public ResponseEntity<?> login() {
-        return ResponseEntity.ok(Map.of("message", "Login action placeholder - not yet implemented"));
-    }
-
-    @PostMapping("/register")
-    @ResponseBody
-    public ResponseEntity<?> register() {
-        return ResponseEntity.ok(Map.of("message", "Register action placeholder - not yet implemented"));
     }
 }

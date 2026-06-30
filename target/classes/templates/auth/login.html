@@ -84,7 +84,7 @@
 
         <!-- Login Form -->
         <div class="auth-form-body">
-            <form th:action="@{/auth/login}" method="post">
+            <form id="loginForm">
 
                 <div class="form-group">
                     <label class="form-label" for="email">Institutional Email</label>
@@ -126,11 +126,11 @@
             <div class="oauth-section">
                 <div class="divider">or continue with</div>
                 <div class="oauth-buttons">
-                    <a th:href="@{/auth/oauth-login?provider=google}" class="oauth-btn" id="btn-google">
+                    <a th:href="@{/oauth2/authorization/google}" class="oauth-btn" id="btn-google">
                         <span>G</span> Google
                     </a>
-                    <a th:href="@{/auth/oauth-login?provider=linkedin}" class="oauth-btn" id="btn-linkedin">
-                        <span>in</span> LinkedIn
+                    <a th:href="@{/oauth2/authorization/github}" class="oauth-btn" id="btn-github">
+                        <span>🐙</span> GitHub
                     </a>
                 </div>
             </div>
