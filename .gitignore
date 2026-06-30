@@ -1,0 +1,13 @@
+target/
+
+# Local IDE files
+.idea/
+.vscode/
+
+# Local secret configuration
+src/main/resources/application.secret.properties
+target/classes/application.secret.properties
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
