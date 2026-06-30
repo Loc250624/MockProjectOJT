@@ -1,21 +1,130 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Management - Teacher - OJTSU26 E-Learning</title>
+    <title>Video Management — Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Video Management</h1>
-            <button class="btn btn-primary">Upload Video</button><table class="table"><thead><tr><th>ID</th><th>Title</th><th>Lesson</th><th>Duration</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Intro.mp4</td><td>Intro</td><td>5:00</td><td><button class="btn btn-danger">Delete</button></td></tr></tbody></table>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Video Management')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+
+            <!-- Page header -->
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;">
+                <div>
+                    <h1 class="page-title">Video Management</h1>
+                    <p class="page-subtitle">Attach a video URL to each lesson in your courses.</p>
+                </div>
+            </div>
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#15803d;font-size:0.875rem;font-weight:500;" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
+            <div th:if="${infoMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;color:#1d4ed8;font-size:0.875rem;font-weight:500;" th:text="${infoMessage}"></div>
+
+            <!-- Step 1: Select Course -->
+            <div class="admin-table-container" style="padding:1.5rem;margin-bottom:1.5rem;">
+                <p style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.75rem;">Step 1 — Select a Course</p>
+                <form action="/teacher/videos" method="get" style="display:flex;gap:1rem;align-items:center;">
+                    <select name="courseId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:#fff;">
+                        <option value="">-- Select a Course --</option>
+                        <option th:each="crs : ${courses}" th:value="${crs.id}" th:text="${crs.title}" th:selected="${crs.id == selectedCourseId}"></option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Step 2: Select Lesson (shown once a course is selected) -->
+            <div th:if="${selectedCourseId != null}" class="admin-table-container" style="padding:1.5rem;margin-bottom:1.5rem;">
+                <p style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.75rem;">Step 2 — Select a Lesson</p>
+                <form action="/teacher/videos" method="get" style="display:flex;gap:1rem;align-items:center;">
+                    <input type="hidden" name="courseId" th:value="${selectedCourseId}" />
+                    <select name="lessonId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:#fff;">
+                        <option value="">-- Select a Lesson --</option>
+                        <option th:each="lsn : ${lessons}" th:value="${lsn.id}" th:text="${lsn.orderIndex + '. ' + lsn.title}" th:selected="${lsn.id == selectedLessonId}"></option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Step 3: Video Status for the selected lesson -->
+            <div th:if="${selectedLessonId != null}">
+
+                <!-- Has video -->
+                <div th:if="${hasVideo}" class="admin-table-container" style="padding:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                        <div>
+                            <p style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px;">Attached Video</p>
+                            <span style="font-size:0.875rem;color:var(--lumina-gray-600);" th:text="${selectedLesson != null ? 'Lesson: ' + selectedLesson.title : ''}"></span>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <a th:href="@{'/teacher/videos/edit/' + ${video.id} + '?lessonId=' + ${selectedLessonId} + '&courseId=' + ${selectedCourseId}}"
+                               class="btn btn-secondary btn-sm">Edit Video</a>
+                            <form th:action="@{'/teacher/videos/delete/' + ${video.id}}" method="post"
+                                  onsubmit="return confirm('Delete this video? This cannot be undone.');">
+                                <input type="hidden" name="lessonId" th:value="${selectedLessonId}" />
+                                <input type="hidden" name="courseId" th:value="${selectedCourseId}" />
+                                <button type="submit" class="btn btn-sm"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Video Card -->
+                    <div style="background:var(--lumina-gray-50);border:1px solid var(--lumina-gray-200);border-radius:12px;padding:1.5rem;display:flex;gap:1.5rem;align-items:flex-start;">
+                        <div style="width:52px;height:52px;border-radius:12px;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">▶</div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">Video URL</div>
+                            <a th:href="${video.videoUrl}" target="_blank" rel="noopener"
+                               style="font-size:0.875rem;color:var(--lumina-blue);word-break:break-all;" th:text="${video.videoUrl}"></a>
+                            <div style="margin-top:0.75rem;display:flex;gap:1.5rem;">
+                                <span style="font-size:0.8125rem;color:var(--lumina-gray-500);">
+                                    ⏱ Duration:
+                                    <strong th:text="${video.durationSeconds != null ? video.durationSeconds + ' seconds' : 'N/A'}"></strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No video yet -->
+                <div th:if="${!hasVideo}" class="admin-table-container" style="padding:3rem;text-align:center;">
+                    <div style="font-size:2.5rem;margin-bottom:1rem;">🎬</div>
+                    <div style="font-size:1rem;font-weight:700;color:var(--lumina-gray-800);margin-bottom:0.5rem;">No video attached yet</div>
+                    <p style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:1.5rem;">
+                        Lesson: <strong th:text="${selectedLesson != null ? selectedLesson.title : ''}"></strong>
+                    </p>
+                    <a th:href="@{'/teacher/videos/create?lessonId=' + ${selectedLessonId} + '&courseId=' + ${selectedCourseId}}"
+                       class="btn btn-primary">+ Add Video URL</a>
+                </div>
+
+            </div>
+
+            <!-- Course selected but no lesson selected yet -->
+            <div th:if="${selectedCourseId != null && selectedLessonId == null}" style="padding:4rem;text-align:center;color:var(--lumina-gray-400);">
+                Select a lesson above to manage its video.
+            </div>
+
+            <!-- No course selected yet -->
+            <div th:if="${selectedCourseId == null}" style="padding:4rem;text-align:center;color:var(--lumina-gray-400);">
+                Select a course and then a lesson above to manage its video.
+            </div>
+
         </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

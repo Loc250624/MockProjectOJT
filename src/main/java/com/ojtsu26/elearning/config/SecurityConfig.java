@@ -78,7 +78,7 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/auth/login", "/auth/register", "/oauth2/**", "/login/oauth2/**", "/").permitAll()
+                .requestMatchers("/api/auth/**", "/auth/login", "/auth/register", "/oauth2/**", "/login/oauth2/**", "/", "/courses/**", "/public/courses/**", "/blogs/**", "/public/blogs/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/student/**", "/api/student/**").hasRole("STUDENT")
                 .requestMatchers("/teacher/**", "/api/teacher/**").hasRole("TEACHER")

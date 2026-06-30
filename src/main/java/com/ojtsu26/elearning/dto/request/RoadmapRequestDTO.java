@@ -11,6 +11,5 @@ public class RoadmapRequestDTO {
     @jakarta.validation.constraints.NotBlank
     private String description;
 
-    @jakarta.validation.constraints.NotNull
     private Integer instructorId;
 }

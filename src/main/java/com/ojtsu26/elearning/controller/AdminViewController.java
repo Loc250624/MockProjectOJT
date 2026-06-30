@@ -1,12 +1,26 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
+import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
+import com.ojtsu26.elearning.model.enums.CourseStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin")
+@RequiredArgsConstructor
 public class AdminViewController {
+
+    private final CategoryService categoryService;
+    private final CourseService courseService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
@@ -23,23 +37,75 @@ public class AdminViewController {
     @GetMapping("/users/edit")
     public String userEdit() { return "admin/user-form"; }
 
+    /**
+     * Admin: All courses overview (all statuses).
+     */
     @GetMapping("/courses")
-    public String courses() { return "admin/courses"; }
+    public String courses(Model model) {
+        model.addAttribute("courses", courseService.findAll());
+        return "admin/courses";
+    }
 
     @GetMapping("/courses/detail")
     public String courseDetail() { return "admin/course-detail"; }
 
+    /**
+     * CRS-09: Course moderation queue.
+     * Defaults to PENDING_APPROVAL. Accepts ?status= to switch tabs.
+     */
     @GetMapping("/courses/approval")
-    public String courseApproval() { return "admin/course-approval"; }
+    public String courseApproval(@RequestParam(required = false, defaultValue = "PENDING_APPROVAL") String status,
+                                 Model model) {
+        CourseStatus selectedStatus;
+        try {
+            selectedStatus = CourseStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            selectedStatus = CourseStatus.PENDING_APPROVAL;
+        }
+
+        model.addAttribute("courses", courseService.findByStatus(selectedStatus));
+        model.addAttribute("selectedStatus", selectedStatus.name());
+
+        // Counts for tab badges
+        model.addAttribute("pendingCount",  courseService.findByStatus(CourseStatus.PENDING_APPROVAL).size());
+        model.addAttribute("approvedCount", courseService.findByStatus(CourseStatus.APPROVED).size());
+        model.addAttribute("hiddenCount",   courseService.findByStatus(CourseStatus.HIDDEN).size());
+        model.addAttribute("draftCount",    courseService.findByStatus(CourseStatus.DRAFT).size());
+
+        return "admin/course-approval";
+    }
 
     @GetMapping("/categories")
-    public String categories() { return "admin/categories"; }
+    public String categories(Model model) {
+        model.addAttribute("categories", categoryService.findAll());
+        return "admin/categories";
+    }
 
     @GetMapping("/categories/create")
-    public String categoryCreate() { return "admin/category-form"; }
+    public String categoryCreate(Model model) {
+        if (!model.containsAttribute("category")) {
+            model.addAttribute("category", new CategoryRequestDTO());
+        }
+        return "admin/category-form";
+    }
 
-    @GetMapping("/categories/edit")
-    public String categoryEdit() { return "admin/category-form"; }
+    @GetMapping("/categories/edit/{id}")
+    public String categoryEdit(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            if (!model.containsAttribute("category")) {
+                CategoryResponseDTO categoryDTO = categoryService.findById(id);
+                CategoryRequestDTO form = new CategoryRequestDTO();
+                form.setName(categoryDTO.getName());
+                form.setDescription(categoryDTO.getDescription());
+                model.addAttribute("category", form);
+            }
+            model.addAttribute("id", id);
+            return "admin/category-form";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Category not found: " + e.getMessage());
+            return "redirect:/admin/categories";
+        }
+    }
 
     @GetMapping("/blogs")
     public String blogs() { return "admin/blogs"; }

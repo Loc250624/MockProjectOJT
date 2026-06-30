@@ -10,8 +10,11 @@ import org.mapstruct.Mapping;
 public interface CourseMapper {
 
     @Mapping(source = "instructor.id", target = "instructorId")
+    @Mapping(source = "instructor.fullName", target = "instructorName")
     @Mapping(source = "category.id", target = "categoryId")
+    @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "roadmap.id", target = "roadmapId")
+    @Mapping(source = "roadmap.title", target = "roadmapTitle")
     CourseResponseDTO toDto(Course entity);
 
     @Mapping(source = "instructorId", target = "instructor.id")

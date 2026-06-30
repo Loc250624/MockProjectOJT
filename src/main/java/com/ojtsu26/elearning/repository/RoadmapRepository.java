@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RoadmapRepository extends JpaRepository<Roadmap, Integer> {
+    boolean existsByTitle(String title);
+    boolean existsByTitleAndIdNot(String title, Integer id);
 }

@@ -28,7 +28,7 @@ public class Lesson {
     
     private String content;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = LessonTypeConverter.class)
     private LessonType type;
 
     

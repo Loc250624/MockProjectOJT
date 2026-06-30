@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${editMode != null && editMode ? 'Edit Roadmap' : 'Create Roadmap'} + ' — Teacher Portal | LumiNa'">Roadmap Form — Teacher Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+</head>
+<body>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher(${editMode != null && editMode ? 'Edit Roadmap' : 'Create Roadmap'})}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+                <a th:href="@{/teacher/roadmap}" class="btn btn-secondary btn-sm" id="btn-back-roadmaps">← Back</a>
+                <div>
+                    <h1 class="page-title" th:text="${editMode != null && editMode ? 'Edit Roadmap' : 'Create New Roadmap'}">Roadmap Form</h1>
+                    <p class="page-subtitle">Fill in the details below to save this curriculum roadmap.</p>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
+
+            <!-- Form Card -->
+            <div style="max-width:640px;">
+                <div class="admin-table-container" style="padding:2rem;">
+                    <form th:action="@{${editMode != null && editMode ? '/teacher/roadmap/edit/' + roadmapId : '/teacher/roadmap/create'}}"
+                          th:object="${roadmap}" method="post" id="roadmap-form">
+
+                        <!-- Title Field -->
+                        <div style="margin-bottom:1.5rem;">
+                            <label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--lumina-gray-700);margin-bottom:0.5rem;" for="rdm-title">
+                                Roadmap Title <span style="color:var(--lumina-danger);">*</span>
+                            </label>
+                            <input type="text" id="rdm-title" th:field="*{title}"
+                                   placeholder="e.g. Full-Stack Web Development, Data Science Bootcamp..."
+                                   style="width:100%;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);transition:border-color 0.2s;outline:none;"
+                                   onfocus="this.style.borderColor='var(--lumina-blue)'"
+                                   onblur="this.style.borderColor='var(--lumina-gray-300)'">
+                            <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}"
+                                 style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
+                        </div>
+
+                        <!-- Description Field -->
+                        <div style="margin-bottom:2rem;">
+                            <label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--lumina-gray-700);margin-bottom:0.5rem;" for="rdm-description">
+                                Description <span style="color:var(--lumina-danger);">*</span>
+                            </label>
+                            <textarea id="rdm-description" th:field="*{description}" rows="4"
+                                      placeholder="Briefly describe what this roadmap covers and what students will learn..."
+                                      style="width:100%;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);resize:vertical;transition:border-color 0.2s;outline:none;font-family:inherit;"
+                                      onfocus="this.style.borderColor='var(--lumina-blue)'"
+                                      onblur="this.style.borderColor='var(--lumina-gray-300)'"></textarea>
+                            <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}"
+                                 style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
+                        </div>
+                        
+                        <!-- Hidden instructor ID -->
+                        <input type="hidden" th:field="*{instructorId}" />
+
+                        <!-- Actions -->
+                        <div style="display:flex;gap:0.75rem;padding-top:1.5rem;border-top:1px solid var(--lumina-gray-200);">
+                            <button type="submit" class="btn btn-primary" id="btn-save-roadmap">
+                                <span th:text="${editMode != null && editMode ? '💾 Save Changes' : '✅ Create Roadmap'}">Save</span>
+                            </button>
+                            <a th:href="@{/teacher/roadmap}" class="btn btn-secondary" id="btn-cancel-roadmap">Cancel</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
+</body>
+</html>

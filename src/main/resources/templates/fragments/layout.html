@@ -3,7 +3,9 @@
 
 <!-- =====================================================================
      LumiNa Layout Fragments
-     Provides: header(role), sidebar-admin, sidebar-teacher, sidebar-student, footer
+     Provides: header(role), sidebar-admin, sidebar-teacher, sidebar-student,
+               topbar-admin(pageTitle), topbar-teacher(pageTitle), topbar-student(pageTitle),
+               footer, portal-footer
      ===================================================================== -->
 
 <!-- ===== PUBLIC HEADER ===== -->
@@ -40,36 +42,60 @@
         <div class="brand-sub">Admin Governance</div>
     </div>
 
-    <div class="sidebar-section-label">Main Controls</div>
+    <div class="sidebar-section-label">Dashboard</div>
     <nav class="sidebar-nav">
         <a th:href="@{/admin/dashboard}" id="nav-admin-dashboard">
             <span class="nav-icon">📊</span> Dashboard
         </a>
+    </nav>
+
+    <div class="sidebar-section-label">User Management</div>
+    <nav class="sidebar-nav">
         <a th:href="@{/admin/users}" id="nav-admin-users">
-            <span class="nav-icon">👥</span> User Management
-        </a>
-        <a th:href="@{/admin/courses}" id="nav-admin-courses">
-            <span class="nav-icon">📚</span> Course Moderation
-        </a>
-        <a th:href="@{/admin/analytics}" id="nav-admin-reports">
-            <span class="nav-icon">📈</span> System Reports
+            <span class="nav-icon">👥</span> All Users
         </a>
     </nav>
 
-    <div class="sidebar-section-label">Security &amp; Core</div>
+    <div class="sidebar-section-label">Course Management</div>
     <nav class="sidebar-nav">
-        <a th:href="@{/admin/transactions}" id="nav-admin-audit">
-            <span class="nav-icon">🔍</span> Audit Logs
+        <a th:href="@{/admin/courses}" id="nav-admin-courses">
+            <span class="nav-icon">📚</span> All Courses
+        </a>
+        <a th:href="@{/admin/courses/approval}" id="nav-admin-approval">
+            <span class="nav-icon">✅</span> Course Approval
+        </a>
+        <a th:href="@{/admin/categories}" id="nav-admin-categories">
+            <span class="nav-icon">🏷️</span> Categories
+        </a>
+    </nav>
+
+    <div class="sidebar-section-label">Content &amp; Finance</div>
+    <nav class="sidebar-nav">
+        <a th:href="@{/admin/blogs}" id="nav-admin-blogs">
+            <span class="nav-icon">📝</span> Blog Moderation
+        </a>
+        <a th:href="@{/admin/payments}" id="nav-admin-payments">
+            <span class="nav-icon">💳</span> Payments
+        </a>
+        <a th:href="@{/admin/transactions}" id="nav-admin-transactions">
+            <span class="nav-icon">📋</span> Transactions
+        </a>
+    </nav>
+
+    <div class="sidebar-section-label">System</div>
+    <nav class="sidebar-nav">
+        <a th:href="@{/admin/analytics}" id="nav-admin-reports">
+            <span class="nav-icon">📈</span> Analytics
         </a>
         <a th:href="@{/admin/system-settings}" id="nav-admin-settings">
-            <span class="nav-icon">⚙</span> Portal Settings
+            <span class="nav-icon">⚙</span> Settings
         </a>
     </nav>
 
     <div class="sidebar-divider"></div>
 
     <div class="sidebar-support-links">
-        <a href="#" id="logoutBtn" style="color: #ef4444;">
+        <a th:href="@{/auth/logout}" id="logoutBtn" style="color: #ef4444;">
             <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
@@ -82,21 +108,36 @@
             <div class="logo-icon">🎓</div>
         </div>
         <div class="brand-name">LumiNa Portal</div>
-        <div class="brand-sub">Academic Environment</div>
+        <div class="brand-sub">Instructor Portal</div>
     </div>
 
+    <div class="sidebar-section-label">Overview</div>
     <nav class="sidebar-nav">
         <a th:href="@{/teacher/dashboard}" id="nav-teacher-overview">
-            <span class="nav-icon">📊</span> Overview
+            <span class="nav-icon">📊</span> Dashboard
         </a>
+    </nav>
+
+    <div class="sidebar-section-label">Course Builder</div>
+    <nav class="sidebar-nav">
         <a th:href="@{/teacher/courses}" id="nav-teacher-courses">
-            <span class="nav-icon">📚</span> Course Management
+            <span class="nav-icon">📚</span> My Courses
         </a>
-        <a th:href="@{/teacher/grading}" id="nav-teacher-grading">
-            <span class="nav-icon">⭐</span> Student Grading
+        <a th:href="@{/teacher/course-form}" id="nav-teacher-new-course">
+            <span class="nav-icon">➕</span> Create Course
         </a>
         <a th:href="@{/teacher/roadmap}" id="nav-teacher-roadmap">
-            <span class="nav-icon">🗺</span> Roadmaps
+            <span class="nav-icon">🗺️</span> Roadmaps
+        </a>
+    </nav>
+
+    <div class="sidebar-section-label">Students &amp; Content</div>
+    <nav class="sidebar-nav">
+        <a th:href="@{/teacher/grading}" id="nav-teacher-grading">
+            <span class="nav-icon">⭐</span> Grading
+        </a>
+        <a th:href="@{/teacher/assignments}" id="nav-teacher-assignments">
+            <span class="nav-icon">📋</span> Assignments
         </a>
         <a th:href="@{/teacher/blogs}" id="nav-teacher-blog">
             <span class="nav-icon">📝</span> Blog
@@ -104,24 +145,15 @@
         <a th:href="@{/teacher/analytics}" id="nav-teacher-analytics">
             <span class="nav-icon">📈</span> Analytics
         </a>
-        <a th:href="@{/teacher/assignments}" id="nav-teacher-assignments">
-            <span class="nav-icon">📋</span> Assignments
-        </a>
     </nav>
 
     <div class="sidebar-divider"></div>
-
-    <div class="sidebar-bottom">
-        <a th:href="@{/teacher/course-form}" class="sidebar-cta-btn" id="btn-create-course">
-            CREATE NEW COURSE
-        </a>
-    </div>
 
     <div class="sidebar-support-links">
         <a th:href="@{/teacher/settings}" id="nav-teacher-settings">
             <span class="nav-icon">⚙</span> Settings
         </a>
-        <a href="#" id="logoutBtn" style="color: #ef4444;">
+        <a th:href="@{/auth/logout}" id="logoutBtn" style="color: #ef4444;">
             <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
@@ -133,51 +165,47 @@
         <div class="sidebar-logo">
             <div class="logo-icon">🎓</div>
         </div>
-        <div class="brand-name" style="font-style:italic;">Student Portal</div>
+        <div class="brand-name">Student Portal</div>
         <div class="brand-sub">Academic Excellence</div>
     </div>
 
+    <div class="sidebar-section-label">Home</div>
     <nav class="sidebar-nav">
         <a th:href="@{/student/dashboard}" id="nav-student-dashboard">
             <span class="nav-icon">📊</span> Dashboard
         </a>
+    </nav>
+
+    <div class="sidebar-section-label">Learning</div>
+    <nav class="sidebar-nav">
         <a th:href="@{/student/my-courses}" id="nav-student-courses">
             <span class="nav-icon">🎓</span> My Courses
         </a>
         <a th:href="@{/student/courses}" id="nav-student-marketplace">
-            <span class="nav-icon">🛒</span> Marketplace
+            <span class="nav-icon">🛒</span> Browse Catalog
         </a>
-        <a th:href="@{/student/profile}" id="nav-student-wishlist" style="display:none;">
-            <span class="nav-icon">♡</span> Wishlist
-        </a>
-        <a th:href="@{/student/dashboard}" id="nav-student-assignments" style="display:none;">
-            <span class="nav-icon">📋</span> Assignments
+        <a th:href="@{/public/courses}" id="nav-student-public-catalog">
+            <span class="nav-icon">🌐</span> Public Catalog
         </a>
         <a th:href="@{/student/certificates}" id="nav-student-certificates">
             <span class="nav-icon">🏆</span> Certificates
         </a>
     </nav>
 
+    <div class="sidebar-section-label">Account</div>
+    <nav class="sidebar-nav">
+        <a th:href="@{/student/profile}" id="nav-student-profile">
+            <span class="nav-icon">👤</span> My Profile
+        </a>
+        <a th:href="@{/student/notifications}" id="nav-student-notifications">
+            <span class="nav-icon">🔔</span> Notifications
+        </a>
+    </nav>
+
     <div class="sidebar-divider"></div>
 
-    <div class="sidebar-bottom">
-        <a th:href="@{/student/checkout}" class="sidebar-cta-btn" id="btn-join-class">
-            Join Live Class
-        </a>
-    </div>
-
-    <div style="margin-top:0.5rem;padding:0 0.75rem;">
-        <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:0.75rem;margin-bottom:0.75rem;">
-            <div style="font-size:0.625rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Pro Member</div>
-            <a th:href="@{/student/profile}" class="sidebar-cta-btn" style="font-size:0.8rem;padding:0.4rem;" id="btn-upgrade">Upgrade to Pro</a>
-        </div>
-    </div>
-
     <div class="sidebar-support-links">
-        <a th:href="@{/student/notifications}" id="nav-student-support">
-            <span class="nav-icon">⚙</span> Settings
-        </a>
-        <a href="#" id="logoutBtn" style="color: #ef4444;">
+        <a th:href="@{/auth/logout}" id="logoutBtn" style="color: #ef4444;">
             <span class="nav-icon">🚪</span> Sign Out
         </a>
     </div>
@@ -208,7 +236,8 @@
                 <div class="user-name" th:text="${#authentication?.name ?: 'Admin'}">Admin</div>
                 <div class="user-role">Superuser</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">A</div>
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;"
+                 th:text="${#authentication?.name != null ? #authentication.name.substring(0,1).toUpperCase() : 'A'}">A</div>
         </div>
     </div>
 </div>
@@ -234,7 +263,7 @@
         <button class="icon-btn" id="btn-teacher-help">?</button>
         <div class="user-chip">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Instructor'}">Dr. Jenkins</div>
+                <div class="user-name" th:text="${#authentication?.name ?: 'Instructor'}">Instructor</div>
                 <div class="user-role">Senior Instructor</div>
             </div>
             <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">T</div>
@@ -263,7 +292,7 @@
         <button class="icon-btn" id="btn-student-help">?</button>
         <div class="user-chip">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Student'}">Alex Johnson</div>
+                <div class="user-name" th:text="${#authentication?.name ?: 'Student'}">Student</div>
                 <div class="user-role">Year 3 Student</div>
             </div>
             <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">S</div>

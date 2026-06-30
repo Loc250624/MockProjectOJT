@@ -34,8 +34,12 @@ public class Course {
     
     private java.math.BigDecimal price;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = CourseStatusConverter.class)
     private CourseStatus status;
+
+    /** Populated when Admin rejects the course. Cleared on next submission. */
+    @Column(columnDefinition = "TEXT")
+    private String rejectReason;
 
     @CreationTimestamp
     private java.time.LocalDateTime createdAt;

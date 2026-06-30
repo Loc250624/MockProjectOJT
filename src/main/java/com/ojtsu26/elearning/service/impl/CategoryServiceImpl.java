@@ -8,10 +8,12 @@ import com.ojtsu26.elearning.repository.CategoryRepository;
 import com.ojtsu26.elearning.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
@@ -34,6 +36,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponseDTO create(CategoryRequestDTO requestDTO) {
+        if (categoryRepository.existsByName(requestDTO.getName())) {
+            throw new IllegalArgumentException("Category name already exists");
+        }
         Category entity = categoryMapper.toEntity(requestDTO);
         Category saved = categoryRepository.save(entity);
         return categoryMapper.toDto(saved);
@@ -44,6 +49,9 @@ public class CategoryServiceImpl implements CategoryService {
         if (!categoryRepository.existsById(id)) {
             throw new RuntimeException("Category not found");
         }
+        if (categoryRepository.existsByNameAndIdNot(requestDTO.getName(), id)) {
+            throw new IllegalArgumentException("Category name already exists");
+        }
         Category entity = categoryMapper.toEntity(requestDTO);
         entity.setId(id);
         Category updated = categoryRepository.save(entity);
@@ -52,6 +60,11 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void delete(Integer id) {
-        categoryRepository.deleteById(id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        if (category.getCourses() != null && !category.getCourses().isEmpty()) {
+            throw new IllegalStateException("Cannot delete category as it is associated with existing courses");
+        }
+        categoryRepository.delete(category);
     }
 }

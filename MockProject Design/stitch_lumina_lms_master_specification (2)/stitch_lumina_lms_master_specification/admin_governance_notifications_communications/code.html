@@ -1,0 +1,395 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LumiNa | Admin Control Center</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;1,600&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001849",
+                        "surface-dim": "#cbdbf6",
+                        "primary-fixed": "#dae1ff",
+                        "inverse-surface": "#213146",
+                        "tertiary-container": "#026746",
+                        "surface": "#f8f9ff",
+                        "outline": "#737685",
+                        "primary-container": "#0050cb",
+                        "on-primary-container": "#c1cfff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "inverse-primary": "#b3c5ff",
+                        "on-surface-variant": "#434654",
+                        "secondary": "#565e74",
+                        "on-tertiary-container": "#8fe2b8",
+                        "surface-tint": "#1155d0",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-high": "#dde9ff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "tertiary-fixed-dim": "#85d7ae",
+                        "secondary-container": "#d7dff9",
+                        "inverse-on-surface": "#ebf1ff",
+                        "surface-container-highest": "#d3e3ff",
+                        "on-surface": "#0b1c30",
+                        "outline-variant": "#c3c6d6",
+                        "surface-container": "#e6eeff",
+                        "secondary-fixed": "#dae2fc",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "outline-muted": "#c2c6d8",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed": "#a0f4c9",
+                        "surface-bg": "#f8f9ff",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#3e465b",
+                        "tertiary-accent": "#10b981",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#004d33",
+                        "on-error": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "primary": "#003b9a",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary-container": "#5a6278",
+                        "surface-variant": "#d3e3ff",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "2xl": "48px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "3xl": "64px",
+                        "max-width": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "display": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(194, 198, 216, 0.3);
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c3c6d6; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<div class="flex min-h-screen overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="hidden md:flex flex-col h-screen fixed left-0 w-64 bg-surface-container-low border-r border-outline-variant z-50 p-md space-y-base transition-all duration-300">
+<div class="mb-xl flex flex-col gap-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary italic">LumiNa Portal</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Academic Environment</span>
+</div>
+<nav class="flex-1 space-y-sm">
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="{{DATA:SCREEN:SCREEN_49}}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="{{DATA:SCREEN:SCREEN_44}}"><span class="material-symbols-outlined">group</span><span class="font-label-md">Users</span></a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="{{DATA:SCREEN:SCREEN_33}}"><span class="material-symbols-outlined">payments</span><span class="font-label-md">Financials</span></a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md">Community</span>
+</a>
+<!-- SETTINGS IS ACTIVE -->
+<a class="flex items-center gap-md p-md bg-secondary-container text-on-secondary-container rounded-lg font-bold scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-md">Settings</span>
+</a>
+</nav>
+<div class="pt-xl mt-auto border-t border-outline-variant space-y-sm">
+<button class="w-full py-md px-lg bg-primary text-on-primary font-bold rounded-xl btn-shadow hover:opacity-90 transition-opacity flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">video_call</span>
+                    Join Live Class
+                </button>
+<div class="flex flex-col gap-xs mt-md">
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="font-label-md">Support</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:text-error transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md">Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 transition-all duration-300">
+<!-- Top Header -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md px-margin-desktop py-md border-b border-outline-variant flex items-center justify-between">
+<div>
+<h1 class="font-headline-md text-headline-md text-primary italic">Governance &amp; Communications</h1>
+<p class="font-body-md text-on-surface-variant">System-wide administration and email management.</p>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-3xl pr-xl py-sm bg-surface-container rounded-full border border-outline-muted focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-body-md w-64" placeholder="Search system logs..." type="text">
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold border border-outline-muted">
+<img class="w-full h-full rounded-full object-cover" data-alt="A professional headshot of a senior administrator with a serene, intelligent expression, set against a blurred academic background with soft, high-key lighting. The lighting is clean and modern, matching the professional LumiNa brand aesthetic with crisp blues and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1_QPpZH9_ZsbRtS0MHpCkH6kjOKqdAWLqFGoR3H7Qxrbf0Qosk3n441qrZxIfqSA5KfmRhCNvusF0fNlurLjNrAKCuDpx7i1bzm6WsaeHlBUUuSlYaXOSSAow7rFREZpg-V1pRfXtF-gHxKcDbLv9scayv2qO6_YTCYocKrhrZGlAPyVQbu3s8FnAo28LPEm6ZCMR2bPiF_UUksQTxzuNH7vWi11KAe0trl4j1ymyztrlD8-SADUv-hoJ29zRSLPm9a2-BDKZbqg">
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-margin-desktop grid grid-cols-12 gap-gutter max-w-max-width mx-auto">
+<!-- Section 1: System Alerts Feed (Bento Style) -->
+<section class="col-span-12 lg:col-span-5 space-y-lg">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md italic">System Alerts Feed</h2>
+<span class="font-code-sm text-code-sm px-md py-xs bg-tertiary-container text-on-tertiary-container rounded-full uppercase tracking-widest">Real-time</span>
+</div>
+<div class="space-y-md">
+<!-- Alert Item 1 -->
+<div class="glass-card p-xl rounded-xl flex gap-lg hover:border-primary/50 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary">verified</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-body-lg font-bold text-on-surface">Course Approval Pending</h3>
+<span class="font-code-sm text-on-surface-variant text-xs">2m ago</span>
+</div>
+<p class="text-on-surface-variant font-body-md mb-md">"Advanced Quantum Computing II" by Dr. Aris Thorne requires final curriculum verification.</p>
+<div class="flex gap-sm">
+<a href="{{DATA:SCREEN:SCREEN_35}}" class="px-md py-xs bg-primary text-on-primary text-label-md rounded-lg hover:opacity-90 transition-opacity inline-block">Review Now</a>
+<button class="px-md py-xs border border-outline-variant text-on-surface-variant text-label-md rounded-lg hover:bg-surface-variant transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Alert Item 2 -->
+<div class="glass-card p-xl rounded-xl flex gap-lg hover:border-error/50 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-error">payments</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-body-lg font-bold text-on-surface">Refund Request</h3>
+<span class="font-code-sm text-on-surface-variant text-xs">14m ago</span>
+</div>
+<p class="text-on-surface-variant font-body-md mb-md">Student #8829 requested a refund for "Global Economics 101". Reason: Technical difficulty.</p>
+<div class="flex gap-sm">
+<a href="{{DATA:SCREEN:SCREEN_33}}" class="px-md py-xs bg-error text-on-error text-label-md rounded-lg hover:opacity-90 transition-opacity inline-block">Audit</a>
+<button class="px-md py-xs border border-outline-variant text-on-surface-variant text-label-md rounded-lg hover:bg-surface-variant transition-colors">Details</button>
+</div>
+</div>
+</div>
+<!-- Alert Item 3 -->
+<div class="glass-card p-xl rounded-xl flex gap-lg hover:border-tertiary-accent/50 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-tertiary">report_problem</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-body-lg font-bold text-on-surface">System Incident</h3>
+<span class="font-code-sm text-on-surface-variant text-xs">1h ago</span>
+</div>
+<p class="text-on-surface-variant font-body-md mb-md">Minor latency spike detected in North European nodes. System auto-balanced successfully.</p>
+<div class="flex gap-sm">
+<a href="{{DATA:SCREEN:SCREEN_56}}" class="px-md py-xs bg-on-surface text-surface text-label-md rounded-lg hover:opacity-90 transition-opacity inline-block">View Logs</a>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-card p-xl rounded-xl relative overflow-hidden h-48 flex items-center justify-center">
+<div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale brightness-125" data-alt="An abstract, high-tech data visualization showing glowing blue nodes and thin white lines connecting on a dark, sophisticated midnight blue background. The mood is precise, institutional, and technical, representing high-fidelity system monitoring in a modern academic environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBN1u811irsTltlxUW54n8NfNZ_cJuAdGWKxKqZMfbLHh64fO57x90RGp2E-slKIAL0oEs8mI9sitB9aXg0oL8F2b9AyEUSoXtaxo4a9n8FQn2WU65Kh11pEDSvxsHbqe6QADLDAk0wXeZ5z-sfo-Q5L_WaFPE-ogo3ucAi6BKYhD14XI5bgv6X7Avc0Xeog7i6PFhT-C5zEXInQr2VL3FXaZRKrUipqFkXZKqCfcjQWSlphrgjtthc3f6s50HvVVtaUwd31X8HgGQ')"></div>
+<div class="relative text-center">
+<h4 class="font-headline-md italic text-primary">Infrastructure Health</h4>
+<p class="font-code-sm text-on-surface-variant">Uptime: 99.98% | Latency: 42ms</p>
+</div>
+</div>
+</section>
+<!-- Section 2: Email Template Previewer -->
+<section class="col-span-12 lg:col-span-7 space-y-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<h2 class="font-headline-md text-headline-md italic">Communication Previewer</h2>
+<div class="bg-surface-container border border-outline-variant rounded-lg p-xs flex gap-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-on-primary transition-all" id="btn-desktop" onclick="setPreviewSize('desktop')">
+<span class="material-symbols-outlined text-body-md">desktop_windows</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant transition-all" id="btn-mobile" onclick="setPreviewSize('mobile')">
+<span class="material-symbols-outlined text-body-md">smartphone</span>
+</button>
+</div>
+</div>
+<button class="flex items-center gap-sm font-label-md text-primary hover:underline">
+<span class="material-symbols-outlined">edit</span>
+                            Edit Template
+                        </button>
+</div>
+<div class="bg-surface-container-high border border-outline-variant rounded-2xl p-lg min-h-[600px] flex justify-center items-start overflow-hidden relative">
+<!-- Previewer Backdrop Patterns -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#003b9a 1px, transparent 1px); background-size: 24px 24px;"></div>
+<!-- Email Container -->
+<div class="w-full max-w-2xl bg-white shadow-2xl rounded-lg overflow-hidden transition-all duration-500 origin-top" id="email-preview">
+<!-- Email Header -->
+<div class="bg-primary p-xl flex items-center justify-between">
+<span class="font-headline-md text-white italic">LumiNa</span>
+<span class="text-primary-fixed-dim font-label-md tracking-widest uppercase">Student Portal</span>
+</div>
+<!-- Email Body -->
+<div class="p-3xl space-y-xl">
+<div class="space-y-md">
+<h1 class="text-3xl font-bold text-on-surface">Welcome to the Course!</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed">Hello Julian, we're thrilled to have you join our academic community. Your enrollment in <span class="font-bold text-primary italic">Advanced Quantum Mechanics</span> has been successfully processed.</p>
+</div>
+<!-- Order Summary Box -->
+<div class="bg-surface-container-low border border-outline-muted rounded-xl p-xl space-y-md">
+<h4 class="font-label-md text-on-surface-variant uppercase border-b border-outline-variant pb-xs">Order Summary</h4>
+<div class="flex justify-between">
+<span class="font-body-md">Course ID:</span>
+<span class="font-code-sm text-primary">#LUM-QM-2024</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-md">Total Paid:</span>
+<span class="font-bold">$499.00 USD</span>
+</div>
+</div>
+<div class="flex justify-center pt-md">
+<button class="bg-primary text-white font-bold py-md px-3xl rounded-full text-lg btn-shadow hover:scale-105 transition-transform">
+                                        Start Learning
+                                    </button>
+</div>
+<div class="border-t border-outline-variant pt-xl text-center space-y-md">
+<p class="text-on-surface-variant text-sm">If you have any questions, visit our <a class="text-primary underline" href="#">Knowledge Base</a> or contact student support.</p>
+<div class="flex justify-center gap-lg text-outline">
+<span class="material-symbols-outlined">public</span>
+<span class="material-symbols-outlined">mail</span>
+<span class="material-symbols-outlined">share</span>
+</div>
+</div>
+</div>
+<!-- Email Footer -->
+<div class="bg-surface-container-lowest p-xl text-center">
+<p class="text-on-surface-variant font-label-md text-xs">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+</div>
+</div>
+<div class="flex gap-gutter">
+<div class="glass-card flex-1 p-lg rounded-xl flex items-center justify-between">
+<div>
+<p class="font-label-md text-on-surface-variant">Open Rate</p>
+<p class="font-headline-md italic text-primary">82.4%</p>
+</div>
+<span class="material-symbols-outlined text-primary-container">trending_up</span>
+</div>
+<div class="glass-card flex-1 p-lg rounded-xl flex items-center justify-between">
+<div>
+<p class="font-label-md text-on-surface-variant">CTR</p>
+<p class="font-headline-md italic text-primary">15.9%</p>
+</div>
+<span class="material-symbols-outlined text-primary-container">ads_click</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Global Footer -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center border-t border-outline-variant bg-surface-container-lowest mt-3xl">
+<div class="mb-md md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface italic">LumiNa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex gap-xl">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-sm" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-sm" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-sm" href="#">Accessibility</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-body-sm" href="#">Contact</a>
+</div>
+</footer>
+</main>
+</div>
+<!-- Micro-Interactions Script -->
+<script>
+        function setPreviewSize(size) {
+            const preview = document.getElementById('email-preview');
+            const btnDesktop = document.getElementById('btn-desktop');
+            const btnMobile = document.getElementById('btn-mobile');
+
+            if (size === 'mobile') {
+                preview.style.maxWidth = '375px';
+                btnMobile.classList.add('bg-primary', 'text-on-primary');
+                btnMobile.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+                btnDesktop.classList.remove('bg-primary', 'text-on-primary');
+                btnDesktop.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+            } else {
+                preview.style.maxWidth = '672px';
+                btnDesktop.classList.add('bg-primary', 'text-on-primary');
+                btnDesktop.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+                btnMobile.classList.remove('bg-primary', 'text-on-primary');
+                btnMobile.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+            }
+        }
+
+        // Add small hover effects or init log
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("LumiNa Admin Control Center initialized.");
+        });
+    </script>
+
+
+</body></html>

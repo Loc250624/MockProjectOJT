@@ -25,7 +25,7 @@ public class Submission {
     
     private java.math.BigDecimal score;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = SubmissionStatusConverter.class)
     private SubmissionStatus status;
 
     

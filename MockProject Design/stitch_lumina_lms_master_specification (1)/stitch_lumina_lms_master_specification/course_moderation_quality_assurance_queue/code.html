@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa | Course Moderation &amp; Approval</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;0,800;1,600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#a0f4c9",
+                    "tertiary-accent": "#10b981",
+                    "on-secondary-container": "#5a6278",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "tertiary": "#004d33",
+                    "surface-dim": "#cbdbf6",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "secondary": "#565e74",
+                    "outline-muted": "#c2c6d8",
+                    "surface-container-highest": "#d3e3ff",
+                    "on-tertiary-container": "#8fe2b8",
+                    "background": "#f8f9ff",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-container": "#026746",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#1155d0",
+                    "primary": "#003b9a",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "on-background": "#0b1c30",
+                    "outline": "#737685",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#d7dff9",
+                    "on-secondary-fixed-variant": "#3e465b",
+                    "surface-container-high": "#dde9ff",
+                    "on-primary-container": "#c1cfff",
+                    "surface-variant": "#d3e3ff",
+                    "on-primary-fixed": "#001849",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dae2fc",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "inverse-surface": "#213145",
+                    "surface-container": "#e6eeff",
+                    "surface": "#f8f9ff",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "primary-container": "#0050cb",
+                    "on-tertiary-fixed": "#002113",
+                    "surface-bright": "#f8f9ff",
+                    "tertiary-fixed-dim": "#85d7ae",
+                    "inverse-primary": "#b3c5ff",
+                    "surface-bg": "#f8f9ff",
+                    "outline-variant": "#c3c6d6",
+                    "primary-fixed": "#dae1ff",
+                    "on-surface-variant": "#434654"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "margin-desktop": "40px",
+                    "3xl": "64px",
+                    "max-width": "1440px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "2xl": "48px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "display": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "code-sm": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(194, 198, 216, 0.3);
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        .status-line::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 24px;
+            bottom: -24px;
+            width: 2px;
+            background-color: #d7dff9;
+        }
+        .status-line:last-child::before {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface border-b border-outline-variant h-16">
+<div class="flex items-center gap-lg">
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Lumi<span class="italic font-extrabold text-primary-container">Na</span></h1>
+<nav class="hidden md:flex items-center gap-xl ml-lg">
+<a class="text-on-surface-variant font-body-md transition-colors hover:text-primary" href="#">Dashboard</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-body-md" href="#">Courses</a>
+<a class="text-on-surface-variant font-body-md transition-colors hover:text-primary" href="#">Resources</a>
+<a class="text-on-surface-variant font-body-md transition-colors hover:text-primary" href="#">Schedule</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden sm:flex bg-surface-container rounded-full px-md py-1 border border-outline-variant items-center gap-sm">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-48" placeholder="Search approvals..." type="text"/>
+</div>
+<button class="p-sm hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-sm hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed overflow-hidden border border-outline-variant ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Professional headshot of a senior academic administrator in a modern office, featuring soft studio lighting, sharp focus on the face, and a sophisticated atmosphere with a light-blue color palette that exudes authority and intelligence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtFAJTGFmNkMXq2zhOVUCiZwRb55CM8fq9LYIWK5paqyF7dZPjKkdR3T6SapvE6q8xIDnpK7VrDQBvUOpdMA8TFxy9U6NEhjtO9xG8tkfZEFBqxYNI7u2Nf4OBbG1E1miIktKwsu77QE9fkkMGdBIlpeOExR9XUVQg5US_FsGHPnlfYREY2zev4MpbbZle7XGlbP6CWC0A44UanrTBtwDpFFJnwQaDDVgvz4k9FGulwd1He7BP083IXJ6pOWcqst1HRbgFq4L13hk"/>
+</div>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-4rem)]">
+<!-- SideNav (Fixed Left) -->
+<aside class="hidden lg:flex flex-col w-64 h-[calc(100vh-4rem)] sticky top-16 bg-surface-container-low border-r border-outline-variant p-md space-y-base shrink-0">
+<div class="px-sm mb-lg">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-sm">Academic Environment</h3>
+<div class="flex items-center gap-sm p-sm">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<p class="font-headline-sm text-headline-sm font-bold text-primary">LumiNa Portal</p>
+</div>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-sm p-md bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span class="font-label-md">My Learning</span>
+</a>
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md">Assignments</span>
+</a>
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md">Community</span>
+</a>
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">Settings</span>
+</a>
+</nav>
+<div class="pt-xl mt-auto border-t border-outline-variant">
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="font-label-md">Support</span>
+</a>
+<a class="flex items-center gap-sm p-md text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined text-error">logout</span>
+<span class="font-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-margin-desktop bg-background max-w-max-width mx-auto w-full">
+<!-- Breadcrumbs -->
+<div class="mb-lg flex items-center gap-xs text-on-surface-variant text-label-md">
+<a class="hover:text-primary transition-colors" href="#">Course Management</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Moderation Queue</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Review: Advanced Neural Architectures</span>
+</div>
+<!-- Bento Layout Header -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg mb-3xl">
+<!-- Title & Meta -->
+<div class="md:col-span-8 flex flex-col justify-center">
+<span class="inline-flex items-center gap-sm bg-tertiary-fixed text-on-tertiary-fixed-variant px-md py-xs rounded-full font-code-sm uppercase tracking-widest text-[11px] mb-md w-fit">
+<span class="w-2 h-2 rounded-full bg-tertiary-accent animate-pulse"></span>
+                        Pending Review
+                    </span>
+<h2 class="font-headline-lg text-headline-lg mb-xs italic">Advanced Neural Architectures</h2>
+<p class="text-body-lg text-on-surface-variant flex items-center gap-md">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary">person</span> Prof. Marcus Thorne</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary">category</span> AI &amp; Data Science</span>
+</p>
+</div>
+<!-- Quick Stats Bento -->
+<div class="md:col-span-4 grid grid-cols-2 gap-md">
+<div class="glass-card p-lg rounded-xl flex flex-col items-center justify-center text-center">
+<span class="font-display text-headline-md text-primary">12</span>
+<span class="font-label-md text-outline uppercase">Modules</span>
+</div>
+<div class="glass-card p-lg rounded-xl flex flex-col items-center justify-center text-center">
+<span class="font-display text-headline-md text-primary">48h</span>
+<span class="font-label-md text-outline uppercase">Duration</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+<!-- Left Column: Content Details -->
+<div class="lg:col-span-8 space-y-xl">
+<!-- Curriculum Tree -->
+<section class="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-headline-md text-headline-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">account_tree</span>
+                                Curriculum Preview
+                            </h3>
+<button class="text-primary font-label-md hover:underline">Expand All</button>
+</div>
+<div class="space-y-md">
+<!-- Module 1 -->
+<details class="group" open="">
+<summary class="flex items-center justify-between p-md bg-surface-container-low rounded-lg cursor-pointer hover:bg-surface-container transition-colors border border-outline-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary group-open:rotate-90 transition-transform">chevron_right</span>
+<div>
+<p class="font-bold">Module 1: Foundations of Deep Learning</p>
+<p class="text-label-md text-on-surface-variant">4 Lessons • 3 Resources</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-tertiary-accent">check_circle</span>
+</summary>
+<div class="ml-xl pl-lg mt-md space-y-sm border-l-2 border-outline-variant">
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded transition-colors">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">play_circle</span>
+<span class="text-body-md">1.1 Linear Algebra &amp; Calculus Review</span>
+</div>
+<span class="text-label-md text-on-surface-variant bg-surface-container px-sm py-1 rounded">12:45</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded transition-colors">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">description</span>
+<span class="text-body-md">1.2 Activation Functions Depth Analysis</span>
+</div>
+<span class="text-label-md text-on-surface-variant">PDF • 4.2 MB</span>
+</div>
+<div class="flex items-center justify-between p-sm hover:bg-surface-container-low rounded transition-colors">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">quiz</span>
+<span class="text-body-md">1.3 Foundations Assessment</span>
+</div>
+<span class="text-label-md text-on-surface-variant">Quiz • 10 Questions</span>
+</div>
+</div>
+</details>
+<!-- Module 2 -->
+<details class="group">
+<summary class="flex items-center justify-between p-md bg-surface-container-low rounded-lg cursor-pointer hover:bg-surface-container transition-colors border border-outline-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary group-open:rotate-90 transition-transform">chevron_right</span>
+<div>
+<p class="font-bold">Module 2: Convolutional Neural Networks (CNNs)</p>
+<p class="text-label-md text-on-surface-variant">6 Lessons • 5 Resources</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-tertiary-accent">check_circle</span>
+</summary>
+<div class="ml-xl pl-lg mt-md space-y-sm border-l-2 border-outline-variant">
+<!-- Lesson items would go here -->
+<p class="text-body-md italic text-on-surface-variant py-sm">Click to expand curriculum details...</p>
+</div>
+</details>
+</div>
+</section>
+<!-- Resource Check Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-lg">
+<div class="glass-card p-xl rounded-xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-primary-container text-3xl mb-sm" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<h4 class="font-bold">Video High-Res</h4>
+<p class="text-label-md text-on-surface-variant">All 24 videos meet 1080p standards.</p>
+</div>
+<div class="glass-card p-xl rounded-xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-tertiary-accent text-3xl mb-sm" style="font-variation-settings: 'FILL' 1;">picture_as_pdf</span>
+<h4 class="font-bold">Documentation</h4>
+<p class="text-label-md text-on-surface-variant">8 PDF guides cross-referenced.</p>
+</div>
+<div class="glass-card p-xl rounded-xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-secondary-container text-3xl mb-sm" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<h4 class="font-bold">Quiz Validation</h4>
+<p class="text-label-md text-on-surface-variant">All 12 quizzes verified for answers.</p>
+</div>
+</section>
+<!-- Status History -->
+<section class="bg-surface-container-low p-xl rounded-xl border border-outline-variant">
+<h3 class="font-headline-sm text-headline-sm mb-lg">Approval Timeline</h3>
+<div class="space-y-lg relative">
+<div class="flex gap-lg relative status-line">
+<div class="w-4 h-4 rounded-full bg-primary mt-1 relative z-10 ring-4 ring-surface"></div>
+<div class="flex-1">
+<p class="font-bold">Final Submission for Approval</p>
+<p class="text-label-md text-on-surface-variant">Oct 24, 2023 • 14:32 PM by Prof. Marcus Thorne</p>
+<p class="text-body-md mt-xs">"Revised all quiz answers in Module 4 as per previous feedback. Added supplementary reading list."</p>
+</div>
+</div>
+<div class="flex gap-lg relative status-line">
+<div class="w-4 h-4 rounded-full bg-error mt-1 relative z-10 ring-4 ring-surface"></div>
+<div class="flex-1">
+<p class="font-bold text-error">Revision Requested</p>
+<p class="text-label-md text-on-surface-variant">Oct 20, 2023 • 09:15 AM by Admin Sarah J.</p>
+<div class="mt-xs p-md bg-error-container text-on-error-container rounded-lg border border-error/20">
+<p class="text-body-md italic font-semibold">"Please re-check the quiz answers for Module 4. Question 7 has no correct option selected. Also, video audio in lesson 2.3 is slightly muffled."</p>
+</div>
+</div>
+</div>
+<div class="flex gap-lg relative status-line">
+<div class="w-4 h-4 rounded-full bg-outline-muted mt-1 relative z-10 ring-4 ring-surface"></div>
+<div class="flex-1">
+<p class="font-bold">Course Created</p>
+<p class="text-label-md text-on-surface-variant">Oct 15, 2023 • 11:20 AM</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Approval Sidebar -->
+<aside class="lg:col-span-4">
+<div class="sticky top-margin-desktop space-y-lg">
+<div class="bg-surface-container-lowest p-xl rounded-xl border-2 border-primary/20 shadow-xl overflow-hidden relative">
+<div class="absolute top-0 right-0 p-lg opacity-10">
+<span class="material-symbols-outlined text-[80px]">gavel</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm mb-lg">Moderation Action</h3>
+<form class="space-y-xl">
+<div>
+<label class="font-label-md text-on-surface-variant block mb-sm uppercase tracking-wider">Internal Review Notes</label>
+<textarea class="w-full bg-surface rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md p-md" placeholder="Provide detailed feedback if rejecting, or notes for record..." rows="6"></textarea>
+</div>
+<div class="space-y-md">
+<button class="w-full bg-primary-container text-white font-bold py-lg rounded-xl btn-shadow hover:bg-primary transition-all flex items-center justify-center gap-md active:scale-95" type="button">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified</span>
+                                        Approve &amp; Publish Course
+                                    </button>
+<button class="w-full bg-surface border-2 border-error text-error font-bold py-lg rounded-xl hover:bg-error-container transition-all flex items-center justify-center gap-md active:scale-95" type="button">
+<span class="material-symbols-outlined">block</span>
+                                        Reject &amp; Request Revision
+                                    </button>
+</div>
+<p class="text-label-md text-center text-on-surface-variant mt-md">
+                                    Approval will immediately notify the instructor and make the course live on the platform.
+                                </p>
+</form>
+</div>
+<!-- Info Card -->
+<div class="bg-secondary-container p-xl rounded-xl border border-outline-variant">
+<h4 class="font-bold text-on-secondary-container flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined">info</span>
+                                Institutional Policy
+                            </h4>
+<p class="text-label-md text-on-secondary-fixed-variant leading-relaxed">
+                                Reviewers must ensure that all academic materials adhere to the <strong>LumiNa Quality Framework (LQF)</strong>. This includes checking for bias, technical accuracy, and ensuring all accessibility markers (ALT text, transcripts) are present.
+                            </p>
+<a class="inline-block mt-md text-primary font-bold text-label-md hover:underline" href="#">View LQF Guidelines</a>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full py-xl px-margin-desktop bg-surface-container-lowest border-t border-outline-variant mt-3xl">
+<div class="max-w-max-width mx-auto flex flex-col md:flex-row justify-between items-center gap-lg">
+<div class="flex items-center gap-md">
+<h4 class="font-headline-sm text-headline-sm text-on-surface italic font-extrabold">Lumi<span class="text-primary-container">Na</span></h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant ml-md">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex gap-xl">
+<a class="text-on-surface-variant hover:text-primary font-body-sm transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary font-body-sm transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary font-body-sm transition-colors" href="#">Accessibility</a>
+<a class="text-on-surface-variant hover:text-primary font-body-sm transition-colors" href="#">Contact</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction: Change button text on hover for a moment
+        const approveBtn = document.querySelector('.bg-primary-container');
+        approveBtn.addEventListener('mouseenter', () => {
+            // Subtle pulse effect handled by CSS but can add logic here
+        });
+
+        // Toggle Expand All functionality simulation
+        const expandBtn = document.querySelector('button.text-primary.font-label-md');
+        let allOpen = true;
+        expandBtn.addEventListener('click', () => {
+            const details = document.querySelectorAll('details');
+            allOpen = !allOpen;
+            details.forEach(d => d.open = allOpen);
+            expandBtn.textContent = allOpen ? 'Collapse All' : 'Expand All';
+        });
+
+        // Simple form validation visual
+        const textarea = document.querySelector('textarea');
+        const rejectBtn = document.querySelector('.border-error');
+        rejectBtn.addEventListener('click', () => {
+            if (textarea.value.trim() === '') {
+                textarea.classList.add('ring-2', 'ring-error');
+                textarea.placeholder = "Please enter feedback before rejecting...";
+                setTimeout(() => textarea.classList.remove('ring-2', 'ring-error'), 2000);
+            } else {
+                alert('Revision request sent to Prof. Marcus Thorne.');
+            }
+        });
+    </script>
+</body></html>

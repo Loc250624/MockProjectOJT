@@ -15,145 +15,97 @@
 <!-- Editor Topbar -->
 <header class="portal-topbar" style="justify-content:space-between;">
     <div class="breadcrumb">
-        <a th:href="@{/teacher/dashboard}">Courses</a>
+        <a th:href="@{/teacher/dashboard}">Dashboard</a>
         <span class="sep">›</span>
-        <span class="current">Advanced Quantum Mechanics</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:1rem;">
-        <span class="badge badge-warning">DRAFT</span>
-        <button class="btn btn-secondary btn-sm">Preview</button>
-        <button class="btn btn-primary btn-sm">Publish Course</button>
+        <a th:href="@{/teacher/lessons(courseId=${courseId})}">Lessons</a>
+        <span class="sep">›</span>
+        <span class="current" th:text="${selectedCourse != null ? selectedCourse.title : 'Course'}">Course Title</span>
     </div>
 </header>
 
 <main style="max-width:1200px;margin:2.5rem auto;padding:0 2rem;">
     
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5rem;">
         <div>
-            <h1 class="page-title">Curriculum Builder</h1>
-            <p class="page-subtitle">Drag and drop to reorder modules and lessons.</p>
+            <h1 class="page-title" th:text="${editMode != null && editMode ? 'Edit Lesson' : 'Add New Lesson'}">Curriculum Builder</h1>
+            <p class="page-subtitle">Manage lessons for your course.</p>
         </div>
-        <button class="btn btn-outline">+ Add New Module</button>
+        <a th:href="@{'/teacher/lessons/create?courseId=' + ${courseId}}" class="btn btn-outline">+ Add New Lesson</a>
     </div>
+
+    <!-- Flash messages -->
+    <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
 
     <div class="builder-layout">
         
-        <!-- Left: Module List -->
+        <!-- Left: Lesson List -->
         <div>
-            
             <div class="builder-module">
                 <div class="b-mod-header">
-                    <span class="b-mod-drag">⋮⋮</span>
                     <div style="flex:1;">
-                        <div style="font-size:0.6875rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;margin-bottom:2px;">MODULE 01</div>
-                        <div style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);">Foundations of Quantum States</div>
+                        <div style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);">Existing Lessons</div>
                     </div>
-                    <button class="btn btn-ghost btn-sm">Edit</button>
                 </div>
                 <div class="b-lesson-list">
                     
-                    <div class="b-lesson">
-                        <span class="b-mod-drag" style="font-size:1rem;">⋮⋮</span>
-                        <div style="width:32px;height:32px;border-radius:8px;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-size:0.875rem;">▶</div>
+                    <div th:each="lsn : ${lessons}" th:classappend="${lessonId != null && lsn.id == lessonId} ? 'active' : ''" class="b-lesson" style="cursor:pointer;" th:onclick="|window.location.href='@{/teacher/lessons/edit/}' + ${lsn.id} + '?courseId=' + ${courseId}|">
+                        <div style="width:32px;height:32px;border-radius:8px;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-size:0.875rem;" th:text="${lsn.orderIndex}">1</div>
                         <div style="flex:1;">
-                            <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">1.1 Introduction to Qubits</div>
-                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Video • 15:20</div>
+                            <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);" th:text="${lsn.title}">Lesson Title</div>
+                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${lsn.type}">Type</div>
                         </div>
                     </div>
 
-                    <div class="b-lesson active">
-                        <span class="b-mod-drag" style="font-size:1rem;">⋮⋮</span>
-                        <div style="width:32px;height:32px;border-radius:8px;background:#f0fdf4;color:var(--lumina-success);display:flex;align-items:center;justify-content:center;font-size:0.875rem;">📖</div>
-                        <div style="flex:1;">
-                            <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">1.2 Bloch Sphere Representation</div>
-                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Reading • 10 min</div>
-                        </div>
+                    <div th:if="${#lists.isEmpty(lessons)}" style="padding:1rem;font-size:0.875rem;color:var(--lumina-gray-500);text-align:center;">
+                        No lessons yet.
                     </div>
-
-                    <div class="b-lesson">
-                        <span class="b-mod-drag" style="font-size:1rem;">⋮⋮</span>
-                        <div style="width:32px;height:32px;border-radius:8px;background:#fef3c7;color:var(--lumina-warning);display:flex;align-items:center;justify-content:center;font-size:0.875rem;">✏</div>
-                        <div style="flex:1;">
-                            <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">1.3 Module 1 Checkpoint</div>
-                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Quiz • 10 questions</div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.5rem;color:var(--lumina-blue);">+ Add Lesson</button>
 
                 </div>
             </div>
-
-            <div class="builder-module">
-                <div class="b-mod-header" style="border-radius:12px;">
-                    <span class="b-mod-drag">⋮⋮</span>
-                    <div style="flex:1;">
-                        <div style="font-size:0.6875rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;margin-bottom:2px;">MODULE 02</div>
-                        <div style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);">Quantum Gates and Circuits</div>
-                    </div>
-                    <span style="font-size:0.75rem;color:var(--lumina-gray-500);">3 Lessons</span>
-                    <button class="btn btn-ghost btn-sm">Edit</button>
-                </div>
-            </div>
-
         </div>
 
         <!-- Right: Lesson Settings Panel -->
         <div class="b-settings-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                <h3 style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);">Lesson Settings</h3>
-                <span class="badge badge-success">Saved</span>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">LESSON TYPE</label>
-                <select class="form-control">
-                    <option>Video Lecture</option>
-                    <option selected>Reading Material</option>
-                    <option>Quiz/Assessment</option>
-                    <option>Coding Exercise</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">LESSON TITLE</label>
-                <input type="text" class="form-control" value="Bloch Sphere Representation">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">DESCRIPTION (OPTIONAL)</label>
-                <textarea class="form-control" rows="3">An in-depth reading on how to visualize qubit states geometrically using the Bloch sphere.</textarea>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">LESSON ASSETS</label>
-                <div class="b-upload-zone">
-                    <div class="b-upload-icon">📄</div>
-                    <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);">Drag & Drop PDF here</div>
-                    <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-top:4px;">or click to browse</div>
-                </div>
+            <form th:action="@{${editMode != null && editMode ? '/teacher/lessons/edit/' + lessonId : '/teacher/lessons/create'}}" th:object="${lesson}" method="post">
+                <input type="hidden" th:field="*{courseId}" />
                 
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem;background:var(--lumina-gray-50);border:1px solid var(--lumina-gray-200);border-radius:8px;">
-                    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;color:var(--lumina-gray-800);"><span style="color:var(--lumina-danger);">📄</span> bloch-sphere-guide.pdf</div>
-                    <button class="btn btn-ghost btn-sm" style="color:var(--lumina-danger);padding:0 0.5rem;">✕</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                    <h3 style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);">Lesson Details</h3>
                 </div>
-            </div>
 
-            <hr class="divider-line" style="margin:1.5rem 0;">
-
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                <div>
-                    <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);">Free Preview</div>
-                    <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Allow students to view without enrolling</div>
+                <div class="form-group">
+                    <label class="form-label">LESSON TYPE <span style="color:var(--lumina-danger);">*</span></label>
+                    <select class="form-control" th:field="*{type}">
+                        <option value="" disabled selected>-- Select Type --</option>
+                        <option th:each="t : ${lessonTypes}" th:value="${t}" th:text="${t}"></option>
+                    </select>
+                    <div th:if="${#fields.hasErrors('type')}" th:errors="*{type}" style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
                 </div>
-                <input type="checkbox" style="width:40px;height:20px;accent-color:var(--lumina-blue);">
-            </div>
 
-            <div style="display:flex;gap:0.75rem;margin-top:2rem;">
-                <button class="btn btn-primary" style="flex:1;">Save Changes</button>
-                <button class="btn btn-outline" style="flex:1;">Discard</button>
-            </div>
+                <div class="form-group">
+                    <label class="form-label">LESSON TITLE <span style="color:var(--lumina-danger);">*</span></label>
+                    <input type="text" class="form-control" th:field="*{title}" placeholder="Enter lesson title">
+                    <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
+                </div>
 
+                <div class="form-group">
+                    <label class="form-label">ORDER INDEX <span style="color:var(--lumina-danger);">*</span></label>
+                    <input type="number" class="form-control" th:field="*{orderIndex}" placeholder="e.g. 1" min="1">
+                    <div th:if="${#fields.hasErrors('orderIndex')}" th:errors="*{orderIndex}" style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">CONTENT <span style="color:var(--lumina-danger);">*</span></label>
+                    <textarea class="form-control" rows="5" th:field="*{content}" placeholder="Lesson content..."></textarea>
+                    <div th:if="${#fields.hasErrors('content')}" th:errors="*{content}" style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-top:2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save Lesson</button>
+                    <a th:href="@{'/teacher/lessons?courseId=' + ${courseId}}" class="btn btn-outline" style="flex:1;text-align:center;">Cancel</a>
+                </div>
+            </form>
         </div>
 
     </div>

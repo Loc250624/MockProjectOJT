@@ -9,11 +9,4 @@ document.addEventListener('DOMContentLoaded', function() {
             link.style.color = '#e94560';
         }
     });
-    var forms = document.querySelectorAll('form');
-    forms.forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Form submission placeholder');
-        });
-    });
 });

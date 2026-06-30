@@ -25,13 +25,13 @@ public class Transaction {
     
     private java.math.BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PaymentMethodConverter.class)
     private PaymentMethod paymentMethod;
 
     @Column(unique = true)
     private String transactionRef;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TransactionStatusConverter.class)
     private TransactionStatus status;
 
     

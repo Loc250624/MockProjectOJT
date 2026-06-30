@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-06-30T09:33:45+0700",
+    date = "2026-06-30T21:10:47+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.11 (Oracle Corporation)"
 )
 @Component
@@ -26,14 +26,18 @@ public class CourseMapperImpl implements CourseMapper {
         CourseResponseDTO courseResponseDTO = new CourseResponseDTO();
 
         courseResponseDTO.setInstructorId( entityInstructorId( entity ) );
+        courseResponseDTO.setInstructorName( entityInstructorFullName( entity ) );
         courseResponseDTO.setCategoryId( entityCategoryId( entity ) );
+        courseResponseDTO.setCategoryName( entityCategoryName( entity ) );
         courseResponseDTO.setRoadmapId( entityRoadmapId( entity ) );
+        courseResponseDTO.setRoadmapTitle( entityRoadmapTitle( entity ) );
         courseResponseDTO.setId( entity.getId() );
         courseResponseDTO.setTitle( entity.getTitle() );
         courseResponseDTO.setDescription( entity.getDescription() );
         courseResponseDTO.setThumbnailUrl( entity.getThumbnailUrl() );
         courseResponseDTO.setPrice( entity.getPrice() );
         courseResponseDTO.setStatus( entity.getStatus() );
+        courseResponseDTO.setRejectReason( entity.getRejectReason() );
         courseResponseDTO.setCreatedAt( entity.getCreatedAt() );
         courseResponseDTO.setUpdatedAt( entity.getUpdatedAt() );
 
@@ -75,6 +79,21 @@ public class CourseMapperImpl implements CourseMapper {
         return id;
     }
 
+    private String entityInstructorFullName(Course course) {
+        if ( course == null ) {
+            return null;
+        }
+        User instructor = course.getInstructor();
+        if ( instructor == null ) {
+            return null;
+        }
+        String fullName = instructor.getFullName();
+        if ( fullName == null ) {
+            return null;
+        }
+        return fullName;
+    }
+
     private Integer entityCategoryId(Course course) {
         if ( course == null ) {
             return null;
@@ -90,6 +109,21 @@ public class CourseMapperImpl implements CourseMapper {
         return id;
     }
 
+    private String entityCategoryName(Course course) {
+        if ( course == null ) {
+            return null;
+        }
+        Category category = course.getCategory();
+        if ( category == null ) {
+            return null;
+        }
+        String name = category.getName();
+        if ( name == null ) {
+            return null;
+        }
+        return name;
+    }
+
     private Integer entityRoadmapId(Course course) {
         if ( course == null ) {
             return null;
@@ -103,6 +137,21 @@ public class CourseMapperImpl implements CourseMapper {
             return null;
         }
         return id;
+    }
+
+    private String entityRoadmapTitle(Course course) {
+        if ( course == null ) {
+            return null;
+        }
+        Roadmap roadmap = course.getRoadmap();
+        if ( roadmap == null ) {
+            return null;
+        }
+        String title = roadmap.getTitle();
+        if ( title == null ) {
+            return null;
+        }
+        return title;
     }
 
     protected User courseRequestDTOToUser(CourseRequestDTO courseRequestDTO) {

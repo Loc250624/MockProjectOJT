@@ -15,12 +15,11 @@ public class CourseRequestDTO {
     private String thumbnailUrl;
 
     @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Min(value = 0, message = "Price cannot be negative")
     private java.math.BigDecimal price;
 
-    @jakarta.validation.constraints.NotNull
     private CourseStatus status;
 
-    @jakarta.validation.constraints.NotNull
     private Integer instructorId;
 
     @jakarta.validation.constraints.NotNull

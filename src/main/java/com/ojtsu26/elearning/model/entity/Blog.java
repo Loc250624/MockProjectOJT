@@ -28,7 +28,7 @@ public class Blog {
     
     private String content;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = BlogStatusConverter.class)
     private BlogStatus status;
 
     

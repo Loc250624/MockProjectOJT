@@ -17,13 +17,21 @@ public class CourseResponseDTO {
 
     private CourseStatus status;
 
+    private String rejectReason;
+
     private java.time.LocalDateTime createdAt;
 
     private java.time.LocalDateTime updatedAt;
 
     private Integer instructorId;
 
+    private String instructorName;
+
     private Integer categoryId;
 
+    private String categoryName;
+
     private Integer roadmapId;
+
+    private String roadmapTitle;
 }

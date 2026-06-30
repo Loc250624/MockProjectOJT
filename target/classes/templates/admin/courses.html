@@ -1,21 +1,103 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses Management - Admin - OJTSU26 E-Learning</title>
+    <title>All Courses — Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('admin')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
-        <main class="main-content">
-            <h1>Courses Management</h1>
-            <div class="search-bar"><input type="text" placeholder="Search courses"><button>Search</button></div><table class="table"><thead><tr><th>ID</th><th>Title</th><th>Teacher</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Java Spring Boot</td><td>John Doe</td><td>Active</td><td>2026-01-01</td><td><button class="btn btn-info">View</button></td></tr></tbody></table>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('All Courses')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;">
+                <div>
+                    <h1 class="page-title">All Courses</h1>
+                    <p class="page-subtitle">Complete list of all courses across all statuses.</p>
+                </div>
+                <a href="/admin/courses/approval" class="btn btn-primary">Go to Moderation Queue →</a>
+            </div>
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#15803d;font-size:0.875rem;font-weight:500;" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
+
+            <div class="admin-table-container">
+                <div class="admin-table-toolbar">
+                    <span style="font-weight:600;font-size:0.875rem;color:var(--lumina-gray-800);">
+                        All Courses
+                        <span th:text="'(' + ${#lists.size(courses)} + ')'" style="color:var(--lumina-gray-500);font-weight:400;"></span>
+                    </span>
+                    <div class="table-search">
+                        <input type="text" id="courseSearch" placeholder="Search courses..." oninput="filterTable(this.value)">
+                    </div>
+                </div>
+                <table class="lumina-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">ID</th>
+                            <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">Title</th>
+                            <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">Instructor</th>
+                            <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">Price</th>
+                            <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">Status</th>
+                            <th style="padding:0.75rem 1.25rem;text-align:right;font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="courseTableBody">
+                        <tr th:each="crs : ${courses}" style="border-bottom:1px solid var(--lumina-gray-100);">
+                            <td style="padding:0.875rem 1.25rem;font-size:0.8125rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${crs.id}"></td>
+                            <td style="padding:0.875rem 1.25rem;">
+                                <div style="font-weight:600;color:var(--lumina-gray-900);font-size:0.875rem;" th:text="${crs.title}"></div>
+                            </td>
+                            <td style="padding:0.875rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-700);"
+                                th:text="${crs.instructorId != null ? '#' + crs.instructorId : 'Unknown'}"></td>
+                            <td style="padding:0.875rem 1.25rem;font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);"
+                                th:text="${crs.price != null && crs.price.signum() == 0 ? 'Free' : (crs.price != null ? '$' + crs.price : 'N/A')}"></td>
+                            <td style="padding:0.875rem 1.25rem;">
+                                <span class="badge"
+                                      th:classappend="${crs.status.name() == 'PENDING_APPROVAL' ? 'badge-warning' : (crs.status.name() == 'APPROVED' ? 'badge-success' : 'badge-secondary')}"
+                                      th:text="${crs.status}"></span>
+                            </td>
+                            <td style="padding:0.875rem 1.25rem;text-align:right;">
+                                <a th:href="@{'/admin/courses/approval?status=' + ${crs.status.name()}}"
+                                   class="btn btn-outline btn-sm">Manage</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(courses)}">
+                            <td colspan="6" style="padding:3rem;text-align:center;color:var(--lumina-gray-400);">
+                                No courses found in the system.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/admin/admin.js}"></script>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
+<script>
+function filterTable(query) {
+    const rows = document.querySelectorAll('#courseTableBody tr');
+    const q = query.toLowerCase();
+    rows.forEach(row => {
+        if (row.cells.length === 1) return;
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
 </body>
 </html>

@@ -13,79 +13,57 @@
         <main class="main-content">
             <h1>Browse Courses</h1>
 
-            <div class="action-bar">
-                <div class="search-bar">
-                    <input type="text" placeholder="Search courses...">
-                    <button class="btn btn-primary">Search</button>
+            <!-- Flash messages -->
+            <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
+
+            <!-- Unified Search & Filter Form for Student Portal -->
+            <form th:action="@{/student/courses}" method="get">
+                <div class="action-bar">
+                    <div class="search-bar" style="display: flex; flex: 1;">
+                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search courses...">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <select name="categoryId" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; cursor:pointer;">
+                            <option value="">All Categories</option>
+                            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}" th:selected="${cat.id == selectedCategoryId}"></option>
+                        </select>
+                        <select name="sortBy" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; cursor:pointer;">
+                            <option value="newest" th:selected="${sortBy == 'newest'}">Newest</option>
+                            <option value="price-low" th:selected="${sortBy == 'price-low'}">Price: Low to High</option>
+                            <option value="price-high" th:selected="${sortBy == 'price-high'}">Price: High to Low</option>
+                            <option value="title" th:selected="${sortBy == 'title'}">Title: A-Z</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <select class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="">All Categories</option>
-                        <option value="programming">Programming</option>
-                        <option value="web">Web Development</option>
-                        <option value="data">Data Science</option>
-                        <option value="mobile">Mobile Development</option>
-                        <option value="devops">DevOps</option>
-                    </select>
-                    <select class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="">All Prices</option>
-                        <option value="free">Free</option>
-                        <option value="under500">Under 500,000 VND</option>
-                        <option value="500to1000">500,000 - 1,000,000 VND</option>
-                        <option value="over1000">Over 1,000,000 VND</option>
-                    </select>
+            </form>
+
+            <div class="course-grid" th:unless="${#lists.isEmpty(courses)}">
+                <div class="course-card" th:each="crs : ${courses}" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <!-- Thumbnail -->
+                        <div style="height: 140px; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position:relative;">
+                            <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" th:src="${crs.thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
+                            <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" style="font-size: 2.5rem;">📚</span>
+                        </div>
+                        <h3 th:text="${crs.title}">Java Programming Masterclass</h3>
+                        <p><strong>Instructor:</strong> <span th:text="${crs.instructorName}">Tran Van B</span></p>
+                        <p><strong>Category:</strong> <span th:text="${crs.categoryName}">Programming</span></p>
+                        <p><strong>Price:</strong> <span th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + crs.price}">799,000 VND</span></p>
+                        <p style="color: #666; font-size: 0.9rem;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <a th:href="@{/student/courses/detail(id=${crs.id})}" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none;">View Detail →</a>
+                    </div>
                 </div>
             </div>
 
-            <div class="course-grid">
-                <div class="course-card">
-                    <h3>Java Programming Masterclass</h3>
-                    <p><strong>Instructor:</strong> Tran Van B</p>
-                    <p><strong>Price:</strong> 799,000 VND</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐⭐ (4.8)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Learn Java from scratch to advanced level with hands-on projects.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
-                <div class="course-card">
-                    <h3>Web Development Bootcamp</h3>
-                    <p><strong>Instructor:</strong> Le Thi C</p>
-                    <p><strong>Price:</strong> 1,200,000 VND</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐ (4.5)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Full-stack web development with HTML, CSS, JavaScript, and React.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
-                <div class="course-card">
-                    <h3>Python for Data Science</h3>
-                    <p><strong>Instructor:</strong> Pham Van D</p>
-                    <p><strong>Price:</strong> 650,000 VND</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐⭐ (4.9)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Master Python for data analysis, visualization, and machine learning.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
-                <div class="course-card">
-                    <h3>Spring Boot Essentials</h3>
-                    <p><strong>Instructor:</strong> Nguyen Thi E</p>
-                    <p><strong>Price:</strong> Free</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐ (4.3)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Build RESTful APIs and microservices with Spring Boot framework.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
-                <div class="course-card">
-                    <h3>Mobile App Development</h3>
-                    <p><strong>Instructor:</strong> Hoang Van F</p>
-                    <p><strong>Price:</strong> 950,000 VND</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐ (4.6)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Create cross-platform mobile apps using React Native.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
-                <div class="course-card">
-                    <h3>DevOps &amp; CI/CD</h3>
-                    <p><strong>Instructor:</strong> Do Van G</p>
-                    <p><strong>Price:</strong> 1,500,000 VND</p>
-                    <p><strong>Rating:</strong> ⭐⭐⭐⭐⭐ (4.7)</p>
-                    <p style="color: #666; font-size: 0.9rem;">Learn Docker, Kubernetes, Jenkins, and deployment automation.</p>
-                    <button class="btn btn-primary" style="margin-top: 0.5rem;">Enroll</button>
-                </div>
+            <!-- Empty state -->
+            <div th:if="${#lists.isEmpty(courses)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 1px solid #eee; margin-top:2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+                <h3>No Courses Found</h3>
+                <p style="color: #666; margin-top: 0.5rem;">We couldn't find any courses matching your search. Try resetting filters.</p>
+                <a th:href="@{/student/courses}" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none;">Reset Filters</a>
             </div>
 
         </main>
