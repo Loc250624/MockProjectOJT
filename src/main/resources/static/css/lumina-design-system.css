@@ -288,6 +288,13 @@ a { text-decoration: none; color: inherit; }
 .user-chip .user-info { text-align: right; }
 .user-chip .user-name { font-size: 0.8125rem; font-weight: 600; color: var(--lumina-gray-800); line-height: 1.2; }
 .user-chip .user-role { font-size: 0.6875rem; font-weight: 500; color: var(--lumina-gray-500); text-transform: uppercase; letter-spacing: 0.05em; }
+.topbar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--lumina-blue);
+}
 
 /* -------------------------------------------------------------------
    PORTAL SIDEBAR

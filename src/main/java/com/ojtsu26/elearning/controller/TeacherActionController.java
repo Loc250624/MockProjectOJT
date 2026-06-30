@@ -1,12 +1,44 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
+import com.ojtsu26.elearning.dto.response.UserResponseDTO;
+import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.security.JwtCookieService;
+import com.ojtsu26.elearning.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/teacher")
+@RequiredArgsConstructor
 public class TeacherActionController {
+
+    private final UserService userService;
+    private final JwtCookieService jwtCookieService;
+
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UpdateProfileRequestDTO request,
+            HttpServletResponse response) {
+        String previousEmail = currentUser.getUsername();
+        AuthProvider authProvider = currentUser.getUser().getAuthProvider();
+        UserResponseDTO updatedProfile = userService.updateCurrentProfile(currentUser.getUser().getId(), request);
+
+        if (authProvider == AuthProvider.LOCAL && !Objects.equals(previousEmail, updatedProfile.getEmail())) {
+            jwtCookieService.addJwtCookie(response, updatedProfile.getEmail());
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Profile updated successfully"));
+    }
 
     @PostMapping("/courses")
     public ResponseEntity<?> createCourse() {

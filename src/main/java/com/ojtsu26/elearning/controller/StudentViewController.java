@@ -1,18 +1,31 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/student")
+@RequiredArgsConstructor
 public class StudentViewController {
+
+    private final UserService userService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "student/dashboard"; }
 
     @GetMapping("/profile")
-    public String profile() { return "student/profile"; }
+    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+        model.addAttribute("profile", userService.getCurrentProfile(currentUser.getUser().getId()));
+        model.addAttribute("profileRole", "student");
+        model.addAttribute("profilePortalName", "Student Portal");
+        return "student/profile";
+    }
 
     @GetMapping("/courses")
     public String courses() { return "student/courses"; }

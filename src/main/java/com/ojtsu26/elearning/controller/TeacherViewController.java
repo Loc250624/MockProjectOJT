@@ -1,15 +1,35 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.service.ProfileOverviewService;
+import com.ojtsu26.elearning.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/teacher")
+@RequiredArgsConstructor
 public class TeacherViewController {
+
+    private final UserService userService;
+    private final ProfileOverviewService profileOverviewService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
+
+    @GetMapping("/profile")
+    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+        Integer currentUserId = currentUser.getUser().getId();
+        model.addAttribute("profile", userService.getCurrentProfile(currentUserId));
+        model.addAttribute("teacherOverview", profileOverviewService.getTeacherOverview(currentUserId));
+        model.addAttribute("profileRole", "teacher");
+        model.addAttribute("profilePortalName", "Teacher Portal");
+        return "teacher/profile";
+    }
 
     @GetMapping("/courses")
     public String courses() { return "teacher/courses"; }

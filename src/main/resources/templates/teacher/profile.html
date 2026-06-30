@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Profile | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+    <link rel="stylesheet" th:href="@{/css/common/profile.css}">
+</head>
+<body>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Profile')}"></div>
+
+        <main class="lumina-portal-main">
+            <div id="profile-page"
+                 class="profile-page"
+                 th:data-profile-endpoint="@{/teacher/profile}"
+                 th:data-auth-provider="${profile.authProvider}"
+                 th:data-current-avatar-url="${profile.avatarUrl}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}">
+                <div class="grid-main-aside">
+                    <div>
+                        <div th:replace="~{fragments/profile :: header('Teacher')}"></div>
+
+                        <div class="stats-grid-4">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Courses</div>
+                                <div class="stat-value" th:text="${teacherOverview.totalCourses}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Approved Courses</div>
+                                <div class="stat-value text-success" th:text="${teacherOverview.approvedCourses}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Enrolled Students</div>
+                                <div class="stat-value" th:text="${teacherOverview.totalStudents}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Pending Grading</div>
+                                <div class="stat-value text-warning" th:text="${teacherOverview.pendingSubmissions}">0</div>
+                            </div>
+                        </div>
+
+                        <div th:replace="~{fragments/profile :: account-information('Teaching Account Information')}"></div>
+                    </div>
+
+                    <div>
+                        <div class="card card-padded profile-card">
+                            <h2 class="section-title">Teacher Quick Actions</h2>
+                            <div class="profile-actions-list">
+                                <a class="profile-action-link" th:href="@{/teacher/courses}">Course Management <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/teacher/courses/create}">Create Course <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/teacher/grading}">Pending Grading <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/teacher/analytics}">Teaching Analytics <span>-></span></a>
+                            </div>
+                        </div>
+
+                        <div class="card card-padded profile-card">
+                            <h2 class="section-title">Teaching Management</h2>
+                            <div class="profile-actions-list">
+                                <a class="profile-action-link" th:href="@{/teacher/students}">Students <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/teacher/lessons}">Lessons <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/teacher/quizzes}">Quizzes <span>-></span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:replace="~{fragments/profile :: edit-modal}"></div>
+            </div>
+        </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
+    </div>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
+<script th:src="@{/js/common/profile.js}"></script>
+</body>
+</html>
