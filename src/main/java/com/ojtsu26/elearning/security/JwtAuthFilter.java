@@ -30,7 +30,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+            if (jwt == null) {
+                log.debug("JWT not found: method={}, uri={}, hasAuthorizationHeader={}, hasJwtCookie={}",
+                        request.getMethod(), request.getRequestURI(),
+                        request.getHeader("Authorization") != null, hasJwtCookie(request));
+            } else if (jwtUtils.validateJwtToken(jwt)) {
                 String email = jwtUtils.getEmailFromJwtToken(jwt);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -39,9 +43,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("JWT authentication set: method={}, uri={}, username={}, authorities={}",
+                        request.getMethod(), request.getRequestURI(), email, userDetails.getAuthorities());
+            } else {
+                log.debug("JWT validation failed: method={}, uri={}", request.getMethod(), request.getRequestURI());
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+            log.warn("Cannot set user authentication: method={}, uri={}, exceptionType={}, message={}",
+                    request.getMethod(), request.getRequestURI(), e.getClass().getSimpleName(), e.getMessage());
         }
 
         filterChain.doFilter(request, response);
@@ -64,5 +73,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    private boolean hasJwtCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return false;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("jwt_token".equals(cookie.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

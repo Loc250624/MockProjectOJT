@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,12 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
-        log.error("Unauthorized error: {}", authException.getMessage());
+        log.warn("Unauthorized error: method={}, uri={}, hasAuthorizationHeader={}, hasJwtCookie={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getHeader("Authorization") != null,
+                hasJwtCookie(request),
+                authException.getMessage());
         
         if (request.getRequestURI().startsWith("/api/")) {
             response.setContentType("application/json");
@@ -31,5 +37,18 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
         } else {
             response.sendRedirect("/auth/login");
         }
+    }
+
+    private boolean hasJwtCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return false;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("jwt_token".equals(cookie.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
