@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Governance — Admin Portal | LumiNa</title>
+    <title>User Governance - Admin Portal | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
         <div th:replace="~{fragments/layout :: topbar-admin('User Governance')}"></div>
-        
+
         <main class="lumina-portal-main">
             <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
                 <div>
@@ -25,37 +25,46 @@
                     <p class="page-subtitle">Manage institutional access, roles, and security compliance.</p>
                 </div>
                 <div style="display:flex;gap:0.75rem;">
-                    <button class="btn btn-secondary">Export CSV</button>
-                    <button class="btn btn-primary">+ Create New User</button>
+                    <button class="btn btn-secondary" disabled>Export CSV</button>
+                    <button class="btn btn-primary" disabled>+ Create New User</button>
                 </div>
             </div>
 
             <div class="admin-table-container">
                 <div class="admin-table-toolbar">
                     <div class="table-search">
-                        <input type="text" placeholder="Search by name, email, or ID...">
+                        <input id="user-search-input" type="text" placeholder="Search by name, email, or ID...">
                     </div>
                     <div class="table-filters">
-                        <select class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
-                            <option>All Roles</option>
-                            <option>Student</option>
-                            <option>Teacher</option>
-                            <option>Admin</option>
+                        <select id="user-role-filter" class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
+                            <option value="">All Roles</option>
+                            <option value="STUDENT">Student</option>
+                            <option value="TEACHER">Teacher</option>
+                            <option value="ADMIN">Admin</option>
                         </select>
-                        <select class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
-                            <option>All Statuses</option>
-                            <option>Active</option>
-                            <option>Pending</option>
-                            <option>Blocked</option>
+                        <select id="user-status-filter" class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
+                            <option value="">All Statuses</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="BLOCKED">Blocked</option>
+                        </select>
+                        <select id="user-provider-filter" class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
+                            <option value="">All Providers</option>
+                            <option value="LOCAL">Local</option>
+                            <option value="GOOGLE">Google</option>
+                            <option value="GITHUB">GitHub</option>
                         </select>
                     </div>
                 </div>
-                
+
+                <div id="users-loading" style="display:none;padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);">Loading users...</div>
+                <div id="users-error" style="display:none;padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-danger);"></div>
+                <div id="users-empty-state" style="display:none;padding:2rem 1.5rem;text-align:center;color:var(--lumina-gray-500);">No users match the current filters.</div>
+
                 <div style="overflow-x:auto;">
                     <table class="lumina-table">
                         <thead>
                             <tr>
-                                <th style="width:40px;"><input type="checkbox" style="accent-color:var(--lumina-blue);"></th>
+                                <th style="width:40px;"><input type="checkbox" style="accent-color:var(--lumina-blue);" disabled></th>
                                 <th>User Details</th>
                                 <th>Role</th>
                                 <th>Status</th>
@@ -63,99 +72,34 @@
                                 <th style="width:80px;text-align:center;">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Sample 1 -->
-                            <tr>
-                                <td><input type="checkbox" style="accent-color:var(--lumina-blue);"></td>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">ER</div>
-                                        <div>
-                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Elena Rostova</div>
-                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">elena.r@student.edu</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge" style="background:var(--lumina-gray-100);color:var(--lumina-gray-700);">STUDENT</span></td>
-                                <td><span class="badge status-active badge-dot">Active</span></td>
-                                <td style="font-size:0.8125rem;color:var(--lumina-gray-600);">Oct 12, 2024</td>
-                                <td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-panel').classList.add('open')">⋮</button></td>
-                            </tr>
-                            
-                            <!-- Sample 2 -->
-                            <tr>
-                                <td><input type="checkbox" style="accent-color:var(--lumina-blue);"></td>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <div style="width:36px;height:36px;border-radius:50%;background:#f3e8ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">JT</div>
-                                        <div>
-                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Dr. Julian Thorne</div>
-                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">j.thorne@faculty.edu</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge badge-primary">TEACHER</span></td>
-                                <td><span class="badge status-active badge-dot">Active</span></td>
-                                <td style="font-size:0.8125rem;color:var(--lumina-gray-600);">Aug 05, 2023</td>
-                                <td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-panel').classList.add('open')">⋮</button></td>
-                            </tr>
-
-                            <!-- Sample 3 -->
-                            <tr>
-                                <td><input type="checkbox" style="accent-color:var(--lumina-blue);"></td>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-gray-200);color:var(--lumina-gray-600);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">MC</div>
-                                        <div>
-                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Marcus Chen</div>
-                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">m.chen@student.edu</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge" style="background:var(--lumina-gray-100);color:var(--lumina-gray-700);">STUDENT</span></td>
-                                <td><span class="badge" style="background:var(--lumina-danger-bg);color:var(--lumina-danger);"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:4px;"></span>Blocked</span></td>
-                                <td style="font-size:0.8125rem;color:var(--lumina-gray-600);">Nov 01, 2024</td>
-                                <td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('user-panel').classList.add('open')">⋮</button></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="users-table-body"></tbody>
                     </table>
                 </div>
 
                 <div style="padding:1rem 1.5rem;border-top:1px solid var(--lumina-gray-200);display:flex;justify-content:space-between;align-items:center;background:white;">
-                    <span style="font-size:0.8125rem;color:var(--lumina-gray-500);">Showing 1-10 of 1,240 Users</span>
-                    <div class="pagination">
-                        <button class="page-btn">‹</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <button class="page-btn dots">…</button>
-                        <button class="page-btn">124</button>
-                        <button class="page-btn">›</button>
-                    </div>
+                    <span id="users-result-summary" style="font-size:0.8125rem;color:var(--lumina-gray-500);"></span>
+                    <div id="users-pagination" class="pagination"></div>
                 </div>
-
             </div>
-
         </main>
-        
+
         <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>
 
-<!-- Slide-out User Profile Panel -->
 <div class="admin-side-panel" id="user-panel">
     <div class="asp-header">
         <h3 class="asp-title">User Profile</h3>
-        <button class="asp-close" onclick="document.getElementById('user-panel').classList.remove('open')">✕</button>
+        <button class="asp-close" onclick="document.getElementById('user-panel').classList.remove('open')">x</button>
     </div>
     <div class="asp-body">
         <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:2rem;">
-            <div style="width:80px;height:80px;border-radius:50%;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2rem;margin-bottom:1rem;">ER</div>
-            <h2 style="font-size:1.25rem;font-weight:800;color:var(--lumina-gray-900);margin-bottom:4px;">Elena Rostova</h2>
-            <div style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:0.75rem;">elena.r@student.edu</div>
+            <div id="user-panel-avatar" style="width:80px;height:80px;border-radius:50%;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2rem;margin-bottom:1rem;">--</div>
+            <h2 id="user-panel-name" style="font-size:1.25rem;font-weight:800;color:var(--lumina-gray-900);margin-bottom:4px;">Select a user</h2>
+            <div id="user-panel-email" style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:0.75rem;">No user selected</div>
             <div style="display:flex;gap:0.5rem;justify-content:center;">
-                <span class="badge" style="background:var(--lumina-gray-100);color:var(--lumina-gray-700);">STUDENT</span>
-                <span class="badge status-active badge-dot">Active</span>
+                <span id="user-panel-role" class="badge" style="background:var(--lumina-gray-100);color:var(--lumina-gray-700);">--</span>
+                <span id="user-panel-status" class="badge">--</span>
             </div>
         </div>
 
@@ -163,28 +107,28 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem;">
             <div>
                 <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-bottom:2px;">Join Date</div>
-                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">Oct 12, 2024</div>
+                <div id="user-panel-created-at" style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">--</div>
             </div>
             <div>
-                <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-bottom:2px;">Last Login</div>
-                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">Today, 10:45 AM</div>
+                <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-bottom:2px;">Auth Provider</div>
+                <div id="user-panel-provider" style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);">--</div>
             </div>
             <div>
                 <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-bottom:2px;">2FA Status</div>
-                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-success);">Enabled</div>
+                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-500);">Not available</div>
             </div>
             <div>
                 <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-bottom:2px;">Risk Score</div>
-                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-success);">Low (0.02)</div>
+                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-500);">Not available</div>
             </div>
         </div>
 
         <h4 style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem;border-bottom:1px solid var(--lumina-gray-200);padding-bottom:0.5rem;">Administrative Actions</h4>
         <div style="display:flex;flex-direction:column;gap:0.75rem;">
-            <button class="btn btn-outline" style="justify-content:flex-start;">Reset Password Link</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;">Change Role</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);">Block User Account</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);">Delete User Data</button>
+            <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Reset Password Link - Not available</button>
+            <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Change Role - Not available</button>
+            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Block User Account - Not available</button>
+            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Delete User Data - Not available</button>
         </div>
     </div>
 </div>
