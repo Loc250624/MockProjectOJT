@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa | Modern Academic E-Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#b3c5ff",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed": "#dae2fd",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "on-surface-variant": "#424656",
+                    "surface-container-high": "#dce9ff",
+                    "surface-bright": "#f8f9ff",
+                    "outline-variant": "#c2c6d8",
+                    "on-primary-container": "#f8f7ff",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary-container": "#5c647a",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-primary-fixed": "#001849",
+                    "on-surface": "#0b1c30",
+                    "inverse-surface": "#213145",
+                    "outline": "#727687",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "tertiary-fixed": "#6ffbbe",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-secondary-fixed": "#131b2e",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "secondary-container": "#dae2fd",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-container": "#0066ff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#008259",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "surface-dim": "#cbdbf5",
+                    "inverse-primary": "#b3c5ff",
+                    "primary-fixed": "#dae1ff",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f8f9ff",
+                    "tertiary": "#006645",
+                    "surface-container": "#e5eeff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-tertiary-container": "#e1ffec",
+                    "surface-tint": "#0054d6",
+                    "on-tertiary-fixed": "#002113",
+                    "secondary": "#565e74",
+                    "primary": "#0050cb",
+                    "surface": "#f8f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "max-width": "1440px",
+                    "2xl": "48px",
+                    "3xl": "64px",
+                    "md": "16px",
+                    "base": "4px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "gutter": "24px",
+                    "margin-desktop": "40px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "display": ["Hanken Grotesk"],
+                    "code-sm": ["JetBrains Mono"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "display": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "code-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                    "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                    "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f8f9ff;
+            color: #0b1c30;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md">
+<!-- TopNavBar (Shared Component Identity) -->
+<nav class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface border-b border-outline-variant h-16">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md text-primary font-extrabold tracking-tight">LumiNa</span>
+<!-- Desktop Navigation -->
+<div class="hidden md:flex items-center gap-lg">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1" href="#">Courses</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Schedule</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<!-- Search Bar Integration (on_left in TopNavBar but usually right-aligned for Public site) -->
+<div class="hidden lg:flex items-center bg-surface-container px-sm py-1 rounded border border-outline-variant">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-48" placeholder="Find a course..." type="text"/>
+</div>
+<div class="flex items-center gap-sm ml-lg">
+<button class="px-lg py-sm font-label-md text-label-md text-primary border border-primary rounded hover:bg-surface-container-low transition-all">
+                    Login
+                </button>
+<button class="px-lg py-sm font-label-md text-label-md bg-primary text-on-primary rounded btn-shadow hover:opacity-90 transition-all">
+                    Register
+                </button>
+</div>
+</div>
+</nav>
+<main class="min-h-screen">
+<!-- Hero Section: Asymmetric Layout -->
+<section class="relative w-full overflow-hidden bg-surface-container-lowest pt-2xl pb-3xl px-margin-desktop">
+<div class="max-w-max-width mx-auto flex flex-col lg:flex-row items-center gap-3xl">
+<!-- Hero Content -->
+<div class="flex-1 space-y-lg z-10">
+<div class="inline-flex items-center px-sm py-base bg-tertiary-container/10 border border-tertiary-container/20 rounded-full text-tertiary">
+<span class="material-symbols-outlined text-[14px] mr-base" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md">ACADEMIC PRECISION MEETS MODERN TOOLS</span>
+</div>
+<h1 class="font-display text-display text-on-surface max-w-2xl leading-[1.1]">
+                        Advanced Learning <span class="text-primary italic">Systems</span> for High-Performance Minds.
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Experience a sophisticated portal that bridges the gap between structured academic rigor and high-velocity digital productivity. Designed for educators and learners who demand technical excellence.
+                    </p>
+<div class="flex flex-wrap gap-md pt-md">
+<button class="px-2xl py-md bg-primary text-on-primary rounded-lg font-headline-sm flex items-center gap-sm btn-shadow group">
+                            Explore Catalog
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="px-2xl py-md border border-outline text-on-surface font-headline-sm rounded-lg hover:bg-surface-container transition-all">
+                            Institutional Access
+                        </button>
+</div>
+<div class="flex items-center gap-md pt-lg border-t border-outline-variant max-w-sm">
+<div class="flex -space-x-2">
+<img class="w-10 h-10 rounded-full border-2 border-surface bg-slate-200" data-alt="Close up headshot of a professional academic woman with glasses and a friendly smile, clean studio lighting, high-contrast corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3Aul1mJlDiB4skbAFxCvZqdDDaTKyhIOSv20GnrejmrSPj9fmbb8ktqVikv8FMs0bwsEKJNpqvOPfyomGmmdaOmOPO6WJJ8cQZ0kiynG3a-2Nh1bCj6uxp8eAU7q6odbBdhA0ja2MR85A46xqKAOaSrngPGW--vavMnaUBiNgI8iWzvX9yq6idak_f3wEGVVdRSfLCBgUpUT7aHsgkiAbHNf9VzfOfNZIVBHfBcGZyCZBqh5YYtZOcJ_Ex_R2NgfGYFMlThl0qN8"/>
+<img class="w-10 h-10 rounded-full border-2 border-surface bg-slate-200" data-alt="Portrait of a young male software developer in a minimalist workspace, focusing on a monitor with soft blue ambient light, clean professional look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACKmeDf1cUM9sp-CjJi3jeT-noeV2xcTrqN0uVBZ4ZSn_Z1UMy4oTQNtBjkcgUjz4RwufOeAqTLDNg7H5xoNULvZm3AKIbRhzwaX55Aoh5-ixRxmdUA8FcmQDQ1JyQ3NAArmzcZHlj5Y5mWZY4sukbeUI8ujlqUi50Rqy7OrtK4rlwDAbpNSgK-ZrhBSfW4zsO_7_NSmzSUigtiJxUMkBopVbUMYghJf7impYQ4a5kN_I1Dk-F0__M67sZwr1cwjlZajbb7IqTwZU"/>
+<img class="w-10 h-10 rounded-full border-2 border-surface bg-slate-200" data-alt="Candid shot of a diverse group of students collaborating over a tablet in a bright, modern university library, high-key lighting, focused atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAct3qkkamvP387ibwHFFwSJZQDM1LViAnHt1Pyd8ZdGaAWcL7phmvqlxGxi9Ikhav9gu4vONitT9by49d-2HxAZc3C1BXjVOwQMYN2LNsESNolgDv4ry6-KtP3p0WOE3eZ8Y9llhIGZ6jvh4apRGFD_nuljUkvbDf3jd_Ys-gYtRiDOfEEQtekQ6L8T0dYCXFpSTaJ67CGYnpDeiQyHkVTkkx6VgDcf5xvrBGCIS_y5rYP0qXSX5_2sxtVIbWCOm8mvXdpb9GAv9U"/>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">Trusted by 14,000+ researchers and students</p>
+</div>
+</div>
+<!-- Hero Image Area (Asymmetric) -->
+<div class="flex-1 relative">
+<div class="relative w-full h-[500px] rounded-xl overflow-hidden shadow-2xl border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist high-trust SaaS dashboard interface showing complex data visualizations, academic progress charts, and a sidebar navigation. The UI is displayed on a high-resolution sleek laptop screen floating in a bright, neutral architectural space with soft shadows and refined corporate atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWhtxR1y0SXX_oT8H1RlygtLbmgoebkOyxsas6kC6E8E7M42qt3zjztFAJe3ePVGW_KBUQIHKQgps4uClJ0kUzloLKwFY4of-wGouCEYimTb7mi4yqLDpPOeIBbKh0xbl6iQ8Z8Cxa18ePzXX9tYK0VmLkapRIaJVbbtheZMZ-poyaE2Eg1kfjADBw2Pf_cqDVA15r97B0Y6s0tdzLmhuyysGBHNImI8v6fE4DkFNsAs8Ls6sy__QseK0vErZjq_IsF1DildKhzRI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/20 to-transparent"></div>
+</div>
+<!-- Floating Widget Decorator -->
+<div class="absolute -bottom-xl -left-xl p-lg bg-surface border border-outline-variant rounded-xl shadow-lg glass-panel max-w-[240px] hidden md:block">
+<div class="flex items-center gap-sm mb-sm">
+<div class="w-8 h-8 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<span class="font-headline-sm text-headline-sm">Course Certified</span>
+</div>
+<div class="h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="w-full h-full bg-tertiary transition-all duration-1000" style="width: 100%"></div>
+</div>
+<p class="font-body-sm text-body-sm mt-sm text-on-surface-variant">LumiNa accreditation recognized by 450+ global institutions.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid: Key Value Propositions -->
+<section class="py-3xl px-margin-desktop max-w-max-width mx-auto">
+<div class="text-center mb-2xl">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-sm">The Portal Infrastructure</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">Seamlessly bridging the gap between instructional design and data-driven administrative control.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Bento Card 1 -->
+<div class="md:col-span-8 bg-surface border border-outline-variant rounded-xl p-xl flex flex-col md:flex-row gap-lg group hover:border-primary transition-all">
+<div class="flex-1">
+<span class="font-code-sm text-code-sm text-primary uppercase tracking-widest block mb-sm">01 / Dynamic Engines</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Fluid Adaptive Learning</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Our algorithms analyze comprehension gaps in real-time, adjusting the pedagogical sequence to ensure master-level retention across every module.</p>
+</div>
+<div class="flex-1 h-48 md:h-full min-h-[200px] bg-surface-container-low rounded-lg overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean, abstract architectural visualization of interlocking glass structures and data nodes, symbolizing complex information systems and fluidity. The lighting is cold and precise with professional office-like reflections, primarily using shades of blue, white, and slate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2cYobi_Cs28lLNPRtDOHES3erEcTQPXngjGhDLpOIeDhTFpmRlJJmkHbo9ZIZnM2TuIAd5F5TfDCFGuwvlEHAsxsVbtaGElMXSWzaVPa_yw9gbKeXjaKttzWSU4MbjuPnFyCujQxjl_jykg_J09hAY3qcZ9IPVCbbPyVQkvzEE9Ipm9qJA3d7fBIs1ReHVNCF7mwDbQbMJkJsucLHIMiCsfVafnou6tuEXxsGs-QO7n_LcUMXVcdrYEb3LQEIWUgLjlBDA7TT0og"/>
+</div>
+</div>
+<!-- Bento Card 2 -->
+<div class="md:col-span-4 bg-primary text-on-primary rounded-xl p-xl flex flex-col justify-between hover:opacity-95 transition-all">
+<div>
+<span class="material-symbols-outlined text-[40px] mb-lg" style="font-variation-settings: 'FILL' 1;">groups</span>
+<h3 class="font-headline-md text-headline-md mb-md">Collaborative Classrooms</h3>
+</div>
+<p class="font-body-md text-body-md opacity-90">Experience live-streamed technical seminars with integrated code-sharing and peer-review systems.</p>
+</div>
+<!-- Bento Card 3 -->
+<div class="md:col-span-4 bg-surface border border-outline-variant rounded-xl p-xl hover:border-primary transition-all">
+<div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center text-on-secondary-container mb-lg">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Deep Analytics</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Detailed telemetry on student engagement, heatmaps of difficult content, and predictive success metrics for administrators.</p>
+</div>
+<!-- Bento Card 4 -->
+<div class="md:col-span-8 bg-surface-container border border-outline-variant rounded-xl p-xl flex flex-col justify-center relative overflow-hidden group">
+<div class="relative z-10 max-w-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Enterprise-Grade Security</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Built on a SOC2 Type II compliant infrastructure with end-to-end encryption for all academic data and student records.</p>
+</div>
+<!-- Background texture/pattern simulation -->
+<div class="absolute right-0 top-0 w-1/3 h-full opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[160px] translate-x-12 translate-y-12">security</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Course Catalog Highlight -->
+<section class="bg-inverse-surface py-3xl px-margin-desktop">
+<div class="max-w-max-width mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-end gap-lg mb-2xl">
+<div class="max-w-xl">
+<h2 class="font-display text-headline-lg text-surface-bright mb-md">Curated Learning Paths</h2>
+<p class="font-body-lg text-body-lg text-outline-variant">Explore high-fidelity courses developed in collaboration with top-tier research universities.</p>
+</div>
+<a class="font-label-md text-label-md text-primary-fixed-dim hover:text-white flex items-center gap-sm" href="#">
+                        View Full Catalog <span class="material-symbols-outlined">arrow_outward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg">
+<!-- Course Card 1 -->
+<div class="bg-on-surface-variant/20 border border-outline rounded-lg overflow-hidden group">
+<div class="h-40 bg-slate-800 relative">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" data-alt="Technical 3D rendering of a DNA double helix and molecular structures with neon highlights. Dark, sophisticated lighting aesthetic. Modern science education background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6KZfAVV1kGdhEhkDBlEQCFdvbz14FYgjKkGLXKl3A5RwPr7P6G3t6PYP0UEYzsXY3ZMXQdbo1Xo1VCi8gY56oS4P9wW22QqhmfCZ_tMjrfr79OSgJZj6YjJh7NhEjq23-cO3lqHBPHrj6gE5Ac2qyGNhXeYMyRXMmOoSpVwt_1WdOy2VqZpbDKFAsIbT5LtK71iYRoqum_bdV5wP49quVtGtUjQbsdGZwJn4G3-curRU8tXGqpbNppuFxWOOCUbVHdUQGbC13HYM"/>
+<div class="absolute top-sm left-sm px-sm py-base bg-tertiary text-on-tertiary text-[10px] rounded uppercase font-bold tracking-tighter">Advanced</div>
+</div>
+<div class="p-lg">
+<h4 class="font-headline-sm text-headline-sm text-surface-bright mb-base">Molecular Dynamics</h4>
+<p class="font-body-sm text-body-sm text-outline-variant mb-lg">Computational approaches to biological modeling and analysis.</p>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary-fixed-dim">12 Modules</span>
+<span class="material-symbols-outlined text-surface-bright text-[20px]">add_circle</span>
+</div>
+</div>
+</div>
+<!-- Course Card 2 -->
+<div class="bg-on-surface-variant/20 border border-outline rounded-lg overflow-hidden group">
+<div class="h-40 bg-slate-800 relative">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" data-alt="Futuristic server room with blue glowing lines and floating data packets, representing cloud computing and network infrastructure. Sleek, high-tech corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvDRNVxkzeKcW3nLJBWh9kQp25XDgXhPVLei10KuIIUhaMLqVmywFrVcbPVk14xqlOF4pqptgahcOei6YbzU_TTO_PxqrO2wb5FMIX3l2doicnusheZ969KMcj63cp3o4LX8Yap6OHLWnPOm0YLhuQmNJ6opokdiJUl9V-GRfr9jl6xk8kmPyvyXZrHFYBrDQuXDB_zQZkJMdaEEGjGPrC5d8oeYphmaQkpJ8H2h3qq8n2IvK5Kb3Eu5ynsAX3m05S7A4uHGc9-GY"/>
+</div>
+<div class="p-lg">
+<h4 class="font-headline-sm text-headline-sm text-surface-bright mb-base">Cloud Architecture</h4>
+<p class="font-body-sm text-body-sm text-outline-variant mb-lg">Scalable systems design for high-load educational platforms.</p>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary-fixed-dim">18 Modules</span>
+<span class="material-symbols-outlined text-surface-bright text-[20px]">add_circle</span>
+</div>
+</div>
+</div>
+<!-- Course Card 3 -->
+<div class="bg-on-surface-variant/20 border border-outline rounded-lg overflow-hidden group">
+<div class="h-40 bg-slate-800 relative">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" data-alt="Close up of a premium mechanical keyboard with macro lenses, selective focus, moody lighting, professional productivity environment, engineering aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa0BO9ECj0dQN25vTr9VHEDAKNw6IPN5XEtxSgqLNgRyIBFu9DBQ2gr8cd4qnAeiq0QZjFW4XCmZAJndoEjHsCtrswRYOkEN7uksucwOGP8Ky_lmrhtzk8I3WwyCDnKfqcOGKmsmi_FiJcWDRgL5mUPKTk0Kdmv120_QDhafs13Xuo4lHKfNCRytiWqfexyuGRoTTwl9QleKFHvMMXVUv61ttujO0E2QLXLi_FmzKzkSOMwvXxdNaaLiXg-Ekat5EePPGUR7Odrww"/>
+</div>
+<div class="p-lg">
+<h4 class="font-headline-sm text-headline-sm text-surface-bright mb-base">Systems Engineering</h4>
+<p class="font-body-sm text-body-sm text-outline-variant mb-lg">Methodologies for managing complex integrated systems.</p>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary-fixed-dim">10 Modules</span>
+<span class="material-symbols-outlined text-surface-bright text-[20px]">add_circle</span>
+</div>
+</div>
+</div>
+<!-- Course Card 4 -->
+<div class="bg-on-surface-variant/20 border border-outline rounded-lg overflow-hidden group">
+<div class="h-40 bg-slate-800 relative">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" data-alt="Abstract visualization of financial growth charts and stock market tickers projected onto a glass surface with city lights in the background. Professional finance and data science look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA2oQGHUuZ2UIL0d69g2e5lek9zIAboAh9ozO4VIkT8UvNGAchgW5l4jc4lLDvTPSjm1_JfkYpLNxh-oWR2tOSeZdEo1NnyI1JYhQmiICuxJCI9YXKXsQy1VssqxmTbKA5IbABxwbo0WH9b1vcxj6i9BuamN6q62T4W-eG1jw79gAQ-6Do_6gYwtsOowfEGElbZdKr_jeQI9RcZjEKjad0e3MNAuIJ3J7NvbAQV3agauwEa2Jmu6ZkBn0albYRtRtEaaIXDr0dv70"/>
+<div class="absolute top-sm left-sm px-sm py-base bg-secondary-fixed text-on-secondary-fixed text-[10px] rounded uppercase font-bold tracking-tighter">New</div>
+</div>
+<div class="p-lg">
+<h4 class="font-headline-sm text-headline-sm text-surface-bright mb-base">Applied Data Science</h4>
+<p class="font-body-sm text-body-sm text-outline-variant mb-lg">Statistical inference and machine learning for researchers.</p>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary-fixed-dim">24 Modules</span>
+<span class="material-symbols-outlined text-surface-bright text-[20px]">add_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-3xl px-margin-desktop bg-surface-container-high overflow-hidden relative">
+<div class="max-w-max-width mx-auto text-center relative z-10">
+<h2 class="font-display text-display text-on-surface mb-lg">Deploy LumiNa Today.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-xl">
+                    Join the ecosystem of elite universities and professional training centers using LumiNa to redefine the standard of digital education.
+                </p>
+<div class="flex flex-col sm:flex-row justify-center gap-md">
+<button class="px-3xl py-lg bg-primary text-on-primary rounded-lg font-headline-sm btn-shadow">Create Free Account</button>
+<button class="px-3xl py-lg bg-white border border-outline-variant text-on-surface rounded-lg font-headline-sm hover:bg-surface-container transition-all">Schedule a Demo</button>
+</div>
+</div>
+<!-- Background Decoration -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-outline-variant">
+<div class="flex flex-col items-center md:items-start gap-sm mb-lg md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">LumiNa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-xl">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+<div class="flex gap-md mt-lg md:mt-0">
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-outline-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-outline-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">language</span>
+</button>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-sm', 'bg-white/90', 'backdrop-blur-md');
+            } else {
+                nav.classList.remove('shadow-sm', 'bg-white/90', 'backdrop-blur-md');
+            }
+        });
+    </script>
+</body></html>

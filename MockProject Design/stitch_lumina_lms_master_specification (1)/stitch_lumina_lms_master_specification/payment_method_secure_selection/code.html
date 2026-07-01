@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa | Secure Payment Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#213145",
+                    "outline": "#737685",
+                    "surface-container-low": "#eff4ff",
+                    "on-primary-container": "#c1cfff",
+                    "secondary-container": "#d7dff9",
+                    "on-tertiary-fixed": "#002113",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f8f9ff",
+                    "on-primary": "#ffffff",
+                    "surface-bg": "#f8f9ff",
+                    "on-background": "#0b1c30",
+                    "tertiary-fixed": "#a0f4c9",
+                    "inverse-primary": "#b3c5ff",
+                    "background": "#f8f9ff",
+                    "tertiary-container": "#026746",
+                    "surface-container-high": "#dde9ff",
+                    "on-secondary-fixed-variant": "#3e465b",
+                    "inverse-on-surface": "#ebf1ff",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "surface-container-highest": "#d3e3ff",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-tertiary-container": "#8fe2b8",
+                    "surface": "#f8f9ff",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "outline-muted": "#c2c6d8",
+                    "secondary": "#565e74",
+                    "on-primary-fixed": "#001849",
+                    "on-secondary": "#ffffff",
+                    "tertiary": "#004d33",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#dae2fc",
+                    "tertiary-accent": "#10b981",
+                    "surface-tint": "#1155d0",
+                    "on-surface": "#0b1c30",
+                    "on-secondary-container": "#5a6278",
+                    "tertiary-fixed-dim": "#85d7ae",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#434654",
+                    "surface-variant": "#d3e3ff",
+                    "on-secondary-fixed": "#131b2e",
+                    "primary-container": "#0050cb",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "outline-variant": "#c3c6d6",
+                    "primary": "#003b9a",
+                    "surface-container": "#e6eeff",
+                    "surface-dim": "#cbdbf6",
+                    "primary-fixed": "#dae1ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "margin-desktop": "40px",
+                    "2xl": "48px",
+                    "3xl": "64px",
+                    "margin-mobile": "16px",
+                    "xl": "32px",
+                    "md": "16px",
+                    "max-width": "1440px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "display": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "code-sm": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(194, 198, 216, 0.3);
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        .bento-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bento-card:hover {
+            border-color: #0050cb;
+            transform: translateY(-2px);
+        }
+        .method-radio:checked + .method-label {
+            border-color: #0050cb;
+            background-color: #eff4ff;
+        }
+        .method-radio:checked + .method-label .radio-circle {
+            border-color: #0050cb;
+            background-color: #0050cb;
+        }
+        .method-radio:checked + .method-label .radio-inner {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar (Simplified for Checkout) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface py-md border-b border-outline-variant">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md text-primary font-bold">LumiNa</span>
+<!-- Breadcrumb Navigation -->
+<nav class="hidden md:flex items-center gap-sm">
+<span class="font-label-md text-label-md text-on-surface-variant">Cart</span>
+<span class="material-symbols-outlined text-outline text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Information</span>
+<span class="material-symbols-outlined text-outline text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md text-primary font-bold">Payment</span>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs text-outline font-label-md">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span class="uppercase tracking-widest text-[10px]">Secure Encryption</span>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-max-width mx-auto px-margin-desktop py-3xl flex flex-col md:flex-row gap-gutter">
+<!-- Payment Selection Column (60%) -->
+<div class="w-full md:w-[60%] space-y-xl">
+<div class="space-y-sm">
+<h1 class="font-headline-lg text-headline-lg italic">Select Payment Method</h1>
+<p class="text-on-surface-variant font-body-md">All transactions are secured with 256-bit SSL encryption. Choose your preferred academic billing path.</p>
+</div>
+<!-- Payment Methods List -->
+<form class="space-y-md" id="payment-form">
+<!-- MoMo (Recommended) -->
+<div class="relative">
+<input checked="" class="hidden method-radio" id="momo" name="payment_method" type="radio"/>
+<label class="method-label block bento-card glass-panel p-xl rounded-xl cursor-pointer border border-outline-variant" for="momo">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="radio-circle w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center p-xs">
+<div class="radio-inner hidden w-full h-full rounded-full bg-white"></div>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+                                        MoMo E-Wallet
+                                        <span class="bg-primary text-white font-code-sm text-label-md px-sm py-0.5 rounded-full uppercase tracking-tighter">Recommended</span>
+</span>
+<span class="text-on-surface-variant font-body-md">Instant activation and exclusive academic cashback.</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center border border-outline-variant">
+<img class="w-8 h-8 object-contain" data-alt="The official MoMo e-wallet logo, featuring a minimalist vibrant pink design on a clean white rounded square background. The aesthetic is modern and corporate, fitting for a premium fintech application. Bright, high-key lighting ensures the logo colors pop with clarity and professional precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAf6vybfd7UeVJWnKdAOOSSSlSyyKzsI9Vh4udhwu98yUEVWXBT5y20YDk1YcEbFK7d-LichFexl7C4KESGsigvi1ygjzAlKdQPLoVsIkbjN6scjRkuBOLu_H3migC8ykUy7dLKz5BybFv70ZUaN_KoguqXSig5zXr4jdfu-CSXDnsXZO7FM00HkbLNqE_CJbfqeJDqgYBukxqBMTTjBOKR4msk15vXi7SXsMnrOHAfCih3hoAWF6MHJywrnwxB1jzyzBnyTy2xzSk"/>
+</div>
+</div>
+</label>
+</div>
+<!-- VNPay -->
+<div class="relative">
+<input class="hidden method-radio" id="vnpay" name="payment_method" type="radio"/>
+<label class="method-label block bento-card glass-panel p-xl rounded-xl cursor-pointer border border-outline-variant" for="vnpay">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="radio-circle w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center p-xs">
+<div class="radio-inner hidden w-full h-full rounded-full bg-white"></div>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">VNPay QR / Banking</span>
+<span class="text-on-surface-variant font-body-md">Pay via QR code or local bank transfer.</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center border border-outline-variant">
+<img class="w-10 h-10 object-contain" data-alt="The VNPay logo, showcasing its characteristic red and blue color palette on a white background. The logo is sharp and vector-based, representing reliability and institutional trust. The design is integrated into a light-mode UI context, maintaining a professional and clean academic appearance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9437zgjmLJeCKXdUD_2ld8lnHOZobUBYW4VFSmc-QesCrC4_B8Mwzbz4ETzjrhdDcNyApuVoMSCKbC07DKBJ5EM1vQe8M-Za0yNUnmXATez43tTJny0Q9fzNsJjrZsLC2ZvMiH1HtFepVa1M72s2yvzn_3WkvYyGpbogHOrHFcb8DQ66Y0fAdDsmYHaJkq2n2LX2-ZxSD4KaCDZYlF7ceA15NhSH95ikw1METOaDXtV31NU3iBEeZOu7dRuH6ufkCjQEaUvnV3HM"/>
+</div>
+</div>
+</label>
+</div>
+<!-- Credit/Debit Card -->
+<div class="relative">
+<input class="hidden method-radio" id="card" name="payment_method" type="radio"/>
+<label class="method-label block bento-card glass-panel p-xl rounded-xl cursor-pointer border border-outline-variant" for="card">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="radio-circle w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center p-xs">
+<div class="radio-inner hidden w-full h-full rounded-full bg-white"></div>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">Credit or Debit Card</span>
+<span class="text-on-surface-variant font-body-md">Visa, Mastercard, and JCB accepted worldwide.</span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline text-[32px]">credit_card</span>
+</div>
+</div>
+<!-- Collapsible Card Inputs (Simulated appearance) -->
+<div class="mt-xl pt-xl border-t border-outline-variant grid grid-cols-2 gap-md opacity-50 group-hover:opacity-100">
+<div class="col-span-2 space-y-xs">
+<label class="font-label-md text-label-md uppercase text-outline">Card Number</label>
+<div class="bg-surface-container border border-outline-variant rounded-lg p-md flex justify-between items-center">
+<span class="text-on-surface-variant">•••• •••• •••• ••••</span>
+<span class="material-symbols-outlined text-outline">lock</span>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md uppercase text-outline">Expiry</label>
+<div class="bg-surface-container border border-outline-variant rounded-lg p-md text-on-surface-variant">MM / YY</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md uppercase text-outline">CVV</label>
+<div class="bg-surface-container border border-outline-variant rounded-lg p-md text-on-surface-variant">•••</div>
+</div>
+</div>
+</label>
+</div>
+</form>
+<!-- Trust Indicators -->
+<div class="pt-xl flex flex-wrap gap-xl items-center border-t border-outline-variant">
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="font-label-md text-label-md uppercase">PCI-DSS Compliant</span>
+</div>
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined">shield_lock</span>
+<span class="font-label-md text-label-md uppercase">AES-256 Encryption</span>
+</div>
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined">assured_workload</span>
+<span class="font-label-md text-label-md uppercase">Institutional Grade</span>
+</div>
+</div>
+</div>
+<!-- Summary Column (40%) -->
+<div class="w-full md:w-[40%] space-y-lg">
+<div class="glass-panel p-xl rounded-xl space-y-xl sticky top-2xl">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Order Summary</h2>
+<!-- Items -->
+<div class="space-y-md">
+<div class="flex justify-between items-start gap-md">
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-variant border border-outline-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up shot of an advanced neural network visualization on a laptop screen, symbolizing an AI-focused academic course. The lighting is cold and professional with cyan and deep blue tones. The focus is sharp on the intricate data connections, reflecting the elite and precise nature of the LumiNa platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqDIrCk7hpPwTc--Ym2_4lFIpy8InfziX5FTKP9yiXCdzYBbZm1D6-FFuOIFFbvTddT8AR992KYw7jok0h3LI-P1bilZsn5_1psB4yAiN6nABlT35zVQ_sMC3gJdTpjSuuuF77kPYrqmlJ77yfhWSDfwwBsDP4wEsYc4b6LnF0Fck4-ojCbdQpY0IV4JFTU168LirVNHXMgBOZk_2n73BzCKrRQcksQuHYrrczfNEgxvTSY9J-8iPsWMsz28eVQg-_UY1dGeA5XAY"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-body-md font-bold leading-tight">Advanced Machine Learning: Neural Architecture</h3>
+<p class="font-label-md text-on-surface-variant">Specialization Track • 12 Modules</p>
+</div>
+<span class="font-body-md font-bold">$199.00</span>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-lg space-y-sm">
+<div class="flex justify-between text-on-surface-variant">
+<span>Subtotal</span>
+<span>$199.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Academic Discount (LMN20)</span>
+<span class="text-tertiary">-$39.80</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Processing Fee</span>
+<span>$0.00</span>
+</div>
+<div class="flex justify-between pt-md border-t border-outline-variant">
+<span class="font-headline-md text-headline-md font-bold">Total</span>
+<div class="text-right">
+<span class="font-headline-md text-headline-md font-bold text-primary-container">$159.20</span>
+<p class="font-label-md text-on-surface-variant">Inc. all local taxes</p>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-white py-xl rounded-xl font-bold font-headline-md btn-shadow hover:bg-primary transition-colors flex items-center justify-center gap-md group">
+                    Continue to Payment
+                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+<p class="text-center font-label-md text-outline px-xl">
+                    By completing this purchase, you agree to our <a class="underline hover:text-primary" href="#">Terms of Service</a> and <a class="underline hover:text-primary" href="#">Academic Integrity Policy</a>.
+                </p>
+<!-- Security Badges -->
+<div class="grid grid-cols-2 gap-md pt-lg border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center p-md bg-surface-container rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-primary mb-xs">verified</span>
+<span class="font-label-md text-[10px] text-center uppercase font-bold">Norton Secured</span>
+</div>
+<div class="flex flex-col items-center justify-center p-md bg-surface-container rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-primary mb-xs">gpp_good</span>
+<span class="font-label-md text-[10px] text-center uppercase font-bold">Trustwave Validated</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Using Shared Component Logic) -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-outline-variant">
+<div class="mb-md md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">LumiNa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-sm">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-xl">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</footer>
+<script>
+        // Simple Interaction logic for selecting payment methods
+        document.querySelectorAll('.method-label').forEach(label => {
+            label.addEventListener('click', () => {
+                // Radio buttons handle the visual state via CSS selectors in this layout
+                // Adding a ripple or scale effect could go here
+                console.log('Payment method updated');
+            });
+        });
+
+        // Form submission simulation
+        document.querySelector('button').addEventListener('click', (e) => {
+            const selected = document.querySelector('input[name="payment_method"]:checked').id;
+            console.log(`Redirecting to secure ${selected} gateway...`);
+            
+            // Visual feedback
+            const btn = e.currentTarget;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">progress_activity</span> Processing Securely...`;
+            btn.disabled = true;
+            btn.classList.add('opacity-80');
+
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> Redirecting...`;
+                btn.classList.replace('bg-primary-container', 'bg-tertiary-container');
+            }, 1500);
+        });
+    </script>
+</body></html>

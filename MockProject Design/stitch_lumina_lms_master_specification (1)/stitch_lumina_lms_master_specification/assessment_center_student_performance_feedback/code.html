@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa Portal | Student Grading</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Hanken+Grotesk:ital,wght@0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .btn-shadow { box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08); }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); }
+        .bento-card { border: 1px solid rgba(194, 198, 216, 0.3); transition: all 0.2s ease-in-out; }
+        .bento-card:hover { border-color: rgba(194, 198, 216, 0.8); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c3c6d6; border-radius: 10px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#213146",
+                        "on-primary-container": "#c1cfff",
+                        "secondary-container": "#d7dff9",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-container": "#5a6278",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-container-high": "#dde9ff",
+                        "on-surface": "#0b1c30",
+                        "primary": "#003b9a",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "outline": "#737685",
+                        "on-secondary-fixed-variant": "#3e465b",
+                        "on-surface-variant": "#434654",
+                        "tertiary-container": "#026746",
+                        "tertiary": "#004d33",
+                        "primary-container": "#0050cb",
+                        "on-primary-fixed": "#001849",
+                        "primary-fixed": "#dae1ff",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#dae2fc",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "inverse-primary": "#b3c5ff",
+                        "surface": "#f8f9ff",
+                        "surface-bg": "#f8f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#c3c6d6",
+                        "outline-muted": "#c2c6d8",
+                        "surface-variant": "#d3e3ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "secondary": "#565e74",
+                        "on-secondary-fixed": "#131b2e",
+                        "tertiary-accent": "#10b981",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#1155d0",
+                        "inverse-on-surface": "#ebf1ff",
+                        "on-background": "#0b1c30",
+                        "surface-dim": "#cbdbf6",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#85d7ae",
+                        "on-tertiary-fixed": "#002113",
+                        "tertiary-fixed": "#a0f4c9",
+                        "surface-container-highest": "#d3e3ff",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-tertiary-container": "#8fe2b8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "3xl": "64px"
+                    },
+                    "fontFamily": {
+                        "display": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-md": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden">
+<!-- Global Layout Wrapper -->
+<div class="flex h-screen w-full">
+<!-- SideNavBar (Shared Component) -->
+<aside class="bg-surface-container-lowest border-r border-outline-variant/30 w-64 flex flex-col h-full py-md px-sm fixed left-0 top-0 z-40 hidden md:flex">
+<div class="px-md mb-3xl">
+<div class="font-headline-md text-headline-md font-bold italic text-primary mb-xs">LumiNa</div>
+<div class="font-label-md text-label-md uppercase tracking-wider text-secondary">Academic Excellence</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Course Management</span>
+</a>
+<!-- Active State Logic: Student Grading -->
+<a class="flex items-center gap-md px-md py-sm text-primary font-bold border-r-4 border-primary bg-surface-container-low font-label-md text-label-md uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span>Student Grading</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">map</span>
+<span>Roadmaps</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">article</span>
+<span>Blog</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/30 pt-md space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-surface/70 backdrop-blur-md border-b border-outline-variant/30 h-16 flex justify-between items-center w-full px-lg sticky top-0 z-50">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-md bg-surface-container border border-outline-muted rounded-full px-md py-1 w-64">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none" placeholder="Search submissions..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="hidden lg:flex gap-lg font-body-md text-body-md">
+<span class="text-primary font-bold border-b-2 border-primary pb-1 cursor-pointer">Queue</span>
+<span class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer px-sm rounded">History</span>
+<span class="text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer px-sm rounded">Rubrics</span>
+</div>
+<div class="flex items-center gap-md border-l border-outline-variant/30 pl-lg">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-transform">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-transform">help</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional close-up portrait of a university professor in a modern office, wearing a navy blazer over a light blue shirt. The lighting is soft and natural from a nearby window, creating an intellectual and approachable atmosphere. The background is slightly blurred, showing books and a computer monitor, emphasizing the academic setting of the LumiNa platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVEnGMakt2-eS1lKw4PMUmxeBOok6lqoI0BA8HnmnHWejRT_-FH_lorbI_-AlsQ6tJ_9kqafR6VytY-jDpAaqzUdb9YY62t0ho2wQAAMO0niwYDCyUhqZgBpqrXszO4Tpbwu59gSD1YuvlfCe0kCkRBYkfWDBh4m2anEyUw2prDsrCVfYP76A94y-TdRBsT_40HjAaZ1ueM5hrMYJptzkN053veW0ppqSGxjkp1w4gSkSO_jv50uU9poBSUt_jj2s4VTuF2jz6FsY"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Grading Interface Body -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar: Submission List (3 Columns Equivalent) -->
+<div class="w-80 border-r border-outline-variant/30 flex flex-col bg-surface-container-lowest">
+<div class="p-md border-b border-outline-variant/30">
+<h2 class="font-headline-md text-lg font-bold text-on-surface italic">Submissions</h2>
+<p class="text-xs text-outline font-label-md mt-1">ADVANCED QUANTUM MECHANICS - HW 04</p>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Submission Item: Active -->
+<div class="p-md bg-surface-container border-b border-outline-variant/30 cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-on-surface">Julian Thorne</span>
+<span class="text-[10px] bg-primary text-on-primary px-2 py-0.5 rounded-full font-label-md uppercase">Reviewing</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-2">Oct 24, 11:42 PM</p>
+<div class="flex items-center gap-xs text-[11px] text-outline">
+<span class="material-symbols-outlined text-[14px]">attach_file</span>
+<span>Thorne_Quantum_HW4.pdf</span>
+</div>
+</div>
+<!-- Submission Item: Graded -->
+<div class="p-md hover:bg-surface-container-low border-b border-outline-variant/30 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-semibold text-on-surface">Elena Rodriguez</span>
+<span class="text-[10px] bg-tertiary-container text-on-tertiary px-2 py-0.5 rounded-full font-label-md uppercase">Graded 94/100</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-2">Oct 23, 09:15 AM</p>
+</div>
+<!-- Submission Item: Pending -->
+<div class="p-md hover:bg-surface-container-low border-b border-outline-variant/30 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-semibold text-on-surface">Markus Vogel</span>
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-label-md uppercase">Pending</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-2">Oct 22, 02:30 PM</p>
+</div>
+<!-- Repeated Items for Scroll Simulation -->
+<div class="p-md hover:bg-surface-container-low border-b border-outline-variant/30 transition-colors cursor-pointer opacity-70">
+<div class="flex justify-between items-start mb-1">
+<span class="font-semibold text-on-surface">Sarah Chen</span>
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-label-md uppercase">Pending</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-2">Oct 22, 10:05 AM</p>
+</div>
+</div>
+</div>
+<!-- Main Area: Submission Review (Bento Layout Logic) -->
+<div class="flex-1 bg-surface flex flex-col p-lg gap-lg overflow-hidden">
+<!-- Preview Header -->
+<div class="flex justify-between items-center">
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface">Julian Thorne</h1>
+<div class="flex items-center gap-md mt-1">
+<span class="font-code-sm text-code-sm text-primary uppercase">Assignment: Matrix Mechanics &amp; Schrödinger Representation</span>
+<span class="text-outline">•</span>
+<span class="text-xs text-on-surface-variant">Attempt 1 of 1</span>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="bg-surface-container-lowest border border-outline-muted p-sm rounded-xl hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="bg-surface-container-lowest border border-outline-muted p-sm rounded-xl hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- File Content Container (Glassmorphic Edge) -->
+<div class="flex-1 bento-card glass-panel rounded-xl overflow-y-auto relative p-xl shadow-sm">
+<!-- Simulated Document Content -->
+<div class="max-w-2xl mx-auto space-y-xl">
+<section>
+<h3 class="font-headline-md text-lg font-bold mb-md">Abstract</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                                    In this submission, I explore the fundamental equivalence between Heisenberg's matrix mechanics and Schrödinger's wave mechanics. The analysis focuses specifically on the harmonic oscillator problem and the derivation of energy eigenvalues using the ladder operator method.
+                                </p>
+</section>
+<div class="bg-inverse-surface rounded-lg p-xl text-inverse-on-surface font-code-sm shadow-inner relative overflow-hidden">
+<div class="absolute top-0 right-0 p-sm opacity-20">
+<span class="material-symbols-outlined text-[48px]">terminal</span>
+</div>
+<div class="mb-md text-tertiary-fixed-dim border-b border-white/10 pb-sm">// Mathematical Proof Implementation</div>
+<p class="whitespace-pre-wrap">
+H = p² / 2m + ½ m ω² x²
+[x, p] = iħ
+a = √(mω/2ħ) (x + ip/mω)
+a† = √(mω/2ħ) (x - ip/mω)
+[a, a†] = 1
+H = ħω (a†a + ½)
+                                </p>
+</div>
+<section>
+<h3 class="font-headline-md text-lg font-bold mb-md">Analysis</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                                    The commutation relation [a, a†] = 1 is the cornerstone of the ladder operator approach. By defining the number operator N = a†a, we can show that the eigenvalues of N are non-negative integers. This leads directly to the quantized energy levels of the quantum harmonic oscillator...
+                                </p>
+<div class="grid grid-cols-2 gap-md mt-lg">
+<div class="aspect-video bg-surface-dim rounded border border-outline-muted overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A detailed scientific plot showing the energy levels and wavefunctions of a quantum harmonic oscillator. The visual style is crisp and academic, with thin, precise lines in blue and black against a white background. Labels are in a clean sans-serif font. The image feels technical and accurate, fitting the intellectual tone of the LumiNa platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADkb1_ZOC3p7oNICUgsV9cIjtsm0O57XCtmTGjVAj_SNXP-ZYYH9NMxcAC5r12Xl0q_G6H-mulvuzIW8EzUQeaLPq32pia5eJLU3UawUxZ7g_QIQ9FiLh577keei51sRZL86pgk-f8fVzIZGASMp3XKXoZEbeBZL-W9x3DWlz4088T8cxBCuwGjJ72WsS_N3mUiRQj3_NG-3DHfC0Bp0nWXEe57oTRPxQseisA41NbnOhQjKUPtbDSWQz3Ds7jGxiT2R7Bk_tFX7A"/>
+</div>
+<div class="aspect-video bg-surface-dim rounded border border-outline-muted overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A close-up of handwritten mathematical equations on a digital tablet screen, featuring Greek symbols and complex calculus related to quantum field theory. The ink is a deep navy blue, and the digital paper has a subtle grid pattern. The lighting is bright and uniform, suggesting a high-fidelity scan of a student's technical work." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbosQo0vbL_yBIRoLtrowS9kLbw6Bv6bQ_xvvtU6-QI1rjDxO1DXXZAxqGqNyvVxyXeVB9HR5B6nrthjeffJBLaW_BN9C_dTu4Dj1j0piUueXcGNw1ldabSuz4Qa8qVE3GDgY4T6koEMtHgIMGtI4Lu7zO35qtnCE8e8hdkmQGXkpFCMeZSIMUsT2p0DGEQCUTBZU5vryVePGQATnsUdJXndfNQuEXEovKj4djoUZliZq9YWCnlXq9IxOV_14fkkRrL3IiS4gL4Fc"/>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Navigation Footer -->
+<div class="flex justify-between items-center bg-surface-container-lowest p-md border border-outline-variant/30 rounded-xl">
+<button class="flex items-center gap-sm px-lg py-sm text-on-surface-variant hover:text-primary transition-all font-semibold">
+<span class="material-symbols-outlined">chevron_left</span>
+<span>Previous Submission</span>
+</button>
+<div class="text-sm text-outline font-label-md">Student 4 of 28</div>
+<button class="flex items-center gap-sm px-lg py-sm text-on-surface-variant hover:text-primary transition-all font-semibold">
+<span>Next Submission</span>
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Right Sidebar: Grading Panel (3 Columns Equivalent) -->
+<div class="w-96 border-l border-outline-variant/30 flex flex-col bg-surface-container-low">
+<div class="p-lg flex flex-col h-full gap-lg overflow-y-auto">
+<!-- Score Module -->
+<div class="bg-surface-container-lowest p-lg rounded-xl bento-card shadow-sm">
+<label class="font-label-md text-label-md uppercase tracking-wider text-secondary block mb-md">Assignment Score</label>
+<div class="flex items-end gap-md">
+<input class="text-3xl font-bold w-24 bg-surface-container border border-outline-muted rounded-lg focus:ring-primary focus:border-primary px-md py-sm" type="number" value="0"/>
+<span class="text-headline-md text-outline mb-sm">/ 100</span>
+</div>
+</div>
+<!-- Rubric Module -->
+<div class="bg-surface-container-lowest p-lg rounded-xl bento-card shadow-sm">
+<label class="font-label-md text-label-md uppercase tracking-wider text-secondary block mb-md">Rubric Checklist</label>
+<div class="space-y-md">
+<div class="flex items-start gap-md group cursor-pointer">
+<div class="mt-1">
+<input checked="" class="rounded text-primary focus:ring-primary h-5 w-5 border-outline-muted" type="checkbox"/>
+</div>
+<div class="flex-1">
+<div class="font-semibold text-sm">Mathematical Rigor</div>
+<p class="text-xs text-on-surface-variant">Clarity of proofs and formal notation.</p>
+</div>
+<span class="text-xs font-bold text-primary">25/25</span>
+</div>
+<div class="flex items-start gap-md group cursor-pointer">
+<div class="mt-1">
+<input checked="" class="rounded text-primary focus:ring-primary h-5 w-5 border-outline-muted" type="checkbox"/>
+</div>
+<div class="flex-1">
+<div class="font-semibold text-sm">Conceptual Accuracy</div>
+<p class="text-xs text-on-surface-variant">Understanding of the ladder operator mechanics.</p>
+</div>
+<span class="text-xs font-bold text-primary">40/40</span>
+</div>
+<div class="flex items-start gap-md group cursor-pointer">
+<div class="mt-1">
+<input class="rounded text-primary focus:ring-primary h-5 w-5 border-outline-muted" type="checkbox"/>
+</div>
+<div class="flex-1">
+<div class="font-semibold text-sm">Visual Representation</div>
+<p class="text-xs text-on-surface-variant">Proper formatting of plots and diagrams.</p>
+</div>
+<span class="text-xs font-bold text-outline">0/15</span>
+</div>
+<div class="flex items-start gap-md group cursor-pointer">
+<div class="mt-1">
+<input class="rounded text-primary focus:ring-primary h-5 w-5 border-outline-muted" type="checkbox"/>
+</div>
+<div class="flex-1">
+<div class="font-semibold text-sm">Writing Clarity</div>
+<p class="text-xs text-on-surface-variant">Academic tone and organization.</p>
+</div>
+<span class="text-xs font-bold text-outline">0/20</span>
+</div>
+</div>
+</div>
+<!-- Feedback Module -->
+<div class="bg-surface-container-lowest p-lg rounded-xl bento-card shadow-sm flex flex-col gap-md flex-1 min-h-[300px]">
+<label class="font-label-md text-label-md uppercase tracking-wider text-secondary block">Instructor Feedback</label>
+<textarea class="flex-1 bg-surface-container border border-outline-muted rounded-lg focus:ring-primary focus:border-primary p-md text-sm leading-relaxed resize-none" placeholder="Provide detailed feedback for the student..."></textarea>
+<div class="flex gap-sm">
+<button class="flex-1 py-md bg-primary-container text-on-primary font-bold rounded-lg btn-shadow active:scale-95 transition-transform">
+                                    Post Grade
+                                </button>
+<button class="p-md border border-outline-muted rounded-lg text-secondary hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">save</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple numeric logic for checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const scoreInput = document.querySelector('input[type="number"]');
+        
+        checkboxes.forEach(box => {
+            box.addEventListener('change', () => {
+                let currentScore = parseInt(scoreInput.value) || 0;
+                const scoreValue = parseInt(box.closest('.group').querySelector('.text-xs.font-bold').textContent.split('/')[0]);
+                
+                if (box.checked) {
+                    scoreInput.value = currentScore + scoreValue;
+                } else {
+                    scoreInput.value = Math.max(0, currentScore - scoreValue);
+                }
+            });
+        });
+
+        // Initialize score based on checked boxes
+        window.addEventListener('load', () => {
+            let initialScore = 0;
+            checkboxes.forEach(box => {
+                if (box.checked) {
+                    initialScore += parseInt(box.closest('.group').querySelector('.text-xs.font-bold').textContent.split('/')[0]);
+                }
+            });
+            scoreInput.value = initialScore;
+        });
+    </script>
+</body></html>

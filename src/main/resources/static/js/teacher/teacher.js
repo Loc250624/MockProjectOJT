@@ -2,11 +2,11 @@
 console.log('Teacher JS loaded');
 document.addEventListener('DOMContentLoaded', function() {
     var currentPath = window.location.pathname;
-    var sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+    var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
     sidebarLinks.forEach(function(link) {
-        if (link.getAttribute('href') === currentPath) {
-            link.style.background = 'rgba(39,174,96,0.2)';
-            link.style.color = '#27ae60';
+        var linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
+        if (linkPath === currentPath) {
+            link.classList.add('active');
         }
     });
 });

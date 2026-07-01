@@ -1,136 +1,380 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:with="normalizedProfileRole=${profileRole == null ? 'student' : #strings.toLowerCase(#strings.replace(profileRole, 'ROLE_', ''))},
+               activePortalName=${profilePortalName == null ? 'Student Portal' : profilePortalName},
+               placeholderAvatar=@{/images/avatar-placeholder.png}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Profile — Student Portal | LumiNa</title>
+    <title th:text="'Profile - ' + ${activePortalName} + ' | LumiNa'">Profile - LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
+    <link rel="stylesheet" th:if="${normalizedProfileRole == 'teacher'}" th:href="@{/css/teacher/teacher.css}">
+    <link rel="stylesheet" th:if="${normalizedProfileRole == 'admin'}" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
 
 <div class="lumina-portal">
-    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+    <th:block th:switch="${normalizedProfileRole}">
+        <th:block th:case="'admin'">
+            <th:block th:replace="~{fragments/layout :: sidebar-admin}"></th:block>
+        </th:block>
+        <th:block th:case="'teacher'">
+            <th:block th:replace="~{fragments/layout :: sidebar-teacher}"></th:block>
+        </th:block>
+        <th:block th:case="*">
+            <th:block th:replace="~{fragments/layout :: sidebar-student}"></th:block>
+        </th:block>
+    </th:block>
 
-    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
-        <div th:replace="~{fragments/layout :: topbar-student('Profile')}"></div>
-        
-        <main class="lumina-portal-main">
-            <div class="grid-main-aside">
-                
-                <!-- Left Column -->
-                <div>
-                    <!-- Profile Header Card -->
-                    <div class="card card-padded" style="margin-bottom:1.5rem;display:flex;align-items:center;gap:2rem;">
-                        <img th:src="@{/images/avatar-placeholder.png}" alt="Avatar" class="avatar" style="width:100px;height:100px;border-width:4px;">
-                        <div>
-                            <h1 class="page-title" style="margin-bottom:0.25rem;">Alex Johnson</h1>
-                            <div style="font-size:0.9375rem;color:var(--lumina-gray-500);margin-bottom:0.75rem;">alex.johnson@university.edu</div>
-                            <span class="badge badge-primary">Computer Science Major</span>
-                            <span class="badge badge-success" style="margin-left:0.5rem;">Verified</span>
-                        </div>
-                        <div style="margin-left:auto;">
-                            <button class="btn btn-secondary">Edit Profile</button>
-                        </div>
-                    </div>
+    <div class="lumina-portal-content">
+        <th:block th:switch="${normalizedProfileRole}">
+            <th:block th:case="'admin'">
+                <th:block th:replace="~{fragments/layout :: topbar-admin('Profile')}"></th:block>
+            </th:block>
+            <th:block th:case="'teacher'">
+                <th:block th:replace="~{fragments/layout :: topbar-teacher('Profile')}"></th:block>
+            </th:block>
+            <th:block th:case="*">
+                <th:block th:replace="~{fragments/layout :: topbar-student('Profile')}"></th:block>
+            </th:block>
+        </th:block>
 
-                    <!-- Stats -->
-                    <div class="stats-grid-4">
-                        <div class="stat-card">
-                            <div class="stat-label">Cumulative GPA</div>
-                            <div class="stat-value text-blue">3.8</div>
-                            <div class="stat-change stat-change-up">↑ Top 10%</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Courses</div>
-                            <div class="stat-value">12</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Assignments</div>
-                            <div class="stat-value">47</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Certificates</div>
-                            <div class="stat-value text-success">3</div>
-                        </div>
-                    </div>
-
-                    <!-- Skills Map -->
-                    <div class="card card-padded" style="margin-bottom:1.5rem;">
-                        <h2 class="section-title" style="margin-bottom:1.5rem;">Skills Map</h2>
-                        <div class="skills-map">
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="s-name">Java Programming</span>
-                                    <span class="s-lvl">Advanced (90%)</span>
-                                </div>
-                                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:90%;"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="s-name">Systems Architecture</span>
-                                    <span class="s-lvl">Intermediate (65%)</span>
-                                </div>
-                                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:65%;"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="s-name">Data Structures</span>
-                                    <span class="s-lvl">Advanced (85%)</span>
-                                </div>
-                                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:85%;"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column -->
-                <div>
-                    <!-- AI Advisor -->
-                    <div class="advisor-card" style="margin-bottom:1.5rem;">
-                        <div class="adv-header">
-                            <div class="adv-icon">🤖</div>
-                            <div class="adv-title">AI Academic Advisor</div>
-                        </div>
-                        <p class="adv-message">Based on your recent progress in Systems Architecture, I recommend taking "Distributed Databases" next semester to solidify your backend knowledge.</p>
-                        <button class="btn btn-outline" style="background:white;color:var(--lumina-blue);border:none;">View Course Recommendations</button>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="card card-padded">
-                        <h2 class="section-title" style="margin-bottom:1.5rem;">Recent Activity</h2>
-                        <div class="timeline">
-                            <div class="timeline-item success">
-                                <div class="timeline-content">
-                                    <div class="t-time">Today, 10:30 AM</div>
-                                    <div class="t-title">Completed Assignment</div>
-                                    <div class="t-desc">Submitted "UI Wireframes" for Advanced UI/UX Research.</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-content">
-                                    <div class="t-time">Yesterday, 2:15 PM</div>
-                                    <div class="t-title">Watched Video Lesson</div>
-                                    <div class="t-desc">Completed "Monolithic vs Microservices" in Systems Architecture.</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item warning">
-                                <div class="timeline-content">
-                                    <div class="t-time">Nov 01, 9:00 AM</div>
-                                    <div class="t-title">Earned Certificate</div>
-                                    <div class="t-desc">Java Spring Boot Masterclass.</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+        <main class="lumina-portal-main profile-page">
+            <div class="breadcrumb-trail">
+                <span th:text="${activePortalName}">Student Portal</span>
+                <span>/</span>
+                <span class="current">Profile</span>
             </div>
+
+            <section class="profile-hero" th:classappend="' profile-hero-' + ${normalizedProfileRole}">
+                <div class="profile-hero-mark" aria-hidden="true" th:text="${normalizedProfileRole == 'admin' ? 'ADM' : (normalizedProfileRole == 'teacher' ? 'TCH' : 'STU')}">STU</div>
+                <div class="profile-avatar-wrap">
+                    <img id="profile-avatar"
+                         th:src="${#strings.isEmpty(profile.avatarUrl)} ? ${placeholderAvatar} : ${profile.avatarUrl}"
+                         th:data-placeholder-src="${placeholderAvatar}"
+                         data-profile-avatar="true"
+                         alt="Profile avatar"
+                         class="profile-avatar"
+                         onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
+                    <button id="profile-avatar-quick-edit" type="button" class="profile-avatar-edit" aria-label="Edit avatar">Edit</button>
+                </div>
+
+                <div class="profile-hero-copy">
+                    <div class="profile-eyebrow" th:text="${overview.identifierLabel} + ' ' + ${overview.identifierValue}">Student ID STU-00001</div>
+                    <h1 id="profile-name" class="profile-title" th:text="${profile.fullName == null ? 'User Name' : profile.fullName}">User Name</h1>
+                    <div id="profile-email" class="profile-subtitle" th:text="${profile.email == null ? 'user@example.com' : profile.email}">user@example.com</div>
+                    <div class="profile-badges">
+                        <span id="profile-role" class="profile-badge primary" th:text="${overview.roleLabel}">Student</span>
+                        <span id="profile-status" class="profile-badge success" th:text="${profile.status}">ACTIVE</span>
+                        <span class="profile-badge muted" th:text="${overview.metaLabel} + ': ' + ${overview.metaValue}">Academic Tier: Learning member</span>
+                    </div>
+                </div>
+
+                <div class="profile-hero-actions">
+                    <button id="profile-edit-button" type="button" class="btn btn-primary">Edit Profile</button>
+                    <a class="btn btn-outline" th:href="${normalizedProfileRole == 'admin' ? '/admin/dashboard' : (normalizedProfileRole == 'teacher' ? '/teacher/dashboard' : '/student/dashboard')}">Back to Dashboard</a>
+                </div>
+            </section>
+
+            <nav class="profile-tabs" aria-label="Profile sections">
+                <button type="button" class="profile-tab active" data-profile-tab="overview">Overview</button>
+                <button type="button" class="profile-tab" data-profile-tab="edit">Edit Profile</button>
+                <button type="button" class="profile-tab" data-profile-tab="security">Security</button>
+                <button type="button" class="profile-tab" data-profile-tab="notifications">Notifications</button>
+                <button type="button" class="profile-tab" data-profile-tab="privacy">Privacy</button>
+            </nav>
+            <div id="profile-toast" class="profile-toast" role="status" aria-live="polite" hidden></div>
+
+            <section class="profile-tab-panel active" data-profile-panel="overview">
+                <div class="profile-grid">
+                    <div class="profile-main-column">
+                        <div class="profile-stats-grid">
+                            <article class="profile-stat-card" th:each="stat : ${overview.statCards}" th:classappend="' tone-' + ${stat.tone}">
+                                <div class="profile-stat-label" th:text="${stat.label}">Courses Enrolled</div>
+                                <div class="profile-stat-value" th:text="${stat.value}">0</div>
+                                <div class="profile-stat-caption" th:text="${stat.caption}">From database</div>
+                            </article>
+                        </div>
+
+                        <section class="profile-card" th:if="${normalizedProfileRole == 'student'}">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h2>Learning Performance</h2>
+                                    <p>Progress grouped by the course categories you are enrolled in.</p>
+                                </div>
+                            </div>
+                            <div class="profile-empty" th:if="${#lists.isEmpty(overview.skillMetrics)}">No enrolled courses yet.</div>
+                            <div class="profile-progress-list" th:if="${!#lists.isEmpty(overview.skillMetrics)}">
+                                <div class="profile-progress-item" th:each="skill : ${overview.skillMetrics}">
+                                    <div class="profile-progress-meta">
+                                        <span th:text="${skill.label}">Category</span>
+                                        <strong th:text="${skill.percentage} + '%'">0%</strong>
+                                    </div>
+                                    <div class="profile-progress-track">
+                                        <div class="profile-progress-fill" th:style="'width:' + ${skill.percentage} + '%'"></div>
+                                    </div>
+                                    <div class="profile-muted" th:text="${skill.caption}">Course count</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="profile-card profile-advisor" th:if="${normalizedProfileRole == 'student'}">
+                            <div>
+                                <span class="profile-pill">Coming soon</span>
+                                <h2>LumiNa AI Advisor</h2>
+                                <p th:text="${overview.advisorMessage}">Coming soon.</p>
+                            </div>
+                        </section>
+
+                        <section class="profile-card" th:if="${normalizedProfileRole == 'teacher'}">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h2>Created Courses</h2>
+                                    <p>Only courses owned by your instructor account are shown.</p>
+                                </div>
+                            </div>
+                            <div class="profile-empty" th:if="${#lists.isEmpty(overview.teacherCourses)}">You have not created any courses yet.</div>
+                            <div class="profile-table-wrap" th:if="${!#lists.isEmpty(overview.teacherCourses)}">
+                                <table class="profile-table">
+                                    <thead>
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Category</th>
+                                        <th>Status</th>
+                                        <th>Students</th>
+                                        <th>Avg Progress</th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="course : ${overview.teacherCourses}">
+                                        <td>
+                                            <div class="course-cell">
+                                                <img th:src="${#strings.isEmpty(course.thumbnailUrl)} ? ${placeholderAvatar} : ${course.thumbnailUrl}" alt="" onerror="this.style.display='none';">
+                                                <span th:text="${course.title}">Course title</span>
+                                            </div>
+                                        </td>
+                                        <td th:text="${course.category}">Category</td>
+                                        <td><span class="profile-badge muted" th:text="${course.status}">DRAFT</span></td>
+                                        <td th:text="${course.enrolledStudents}">0</td>
+                                        <td th:text="${course.averageProgress} + '%'">0%</td>
+                                        <td><a class="profile-link" th:href="@{/teacher/courses}">Manage</a></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="profile-card" th:if="${normalizedProfileRole == 'teacher'}">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h2>Students In Your Courses</h2>
+                                    <p>Students are limited to enrollments in courses you created.</p>
+                                </div>
+                            </div>
+                            <div class="profile-filters">
+                                <input type="search" id="teacher-student-search" placeholder="Search by name, email, or ID">
+                                <select id="teacher-student-status-filter">
+                                    <option value="">All statuses</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="learning">Learning</option>
+                                </select>
+                            </div>
+                            <div class="profile-empty" th:if="${#lists.isEmpty(overview.teacherStudents)}">No students are enrolled in your courses yet.</div>
+                            <div class="teacher-student-list" th:if="${!#lists.isEmpty(overview.teacherStudents)}">
+                                <article class="teacher-student-card"
+                                         th:each="student : ${overview.teacherStudents}"
+                                         th:data-search="${(student.fullName ?: '') + ' ' + (student.email ?: '') + ' ' + (student.studentId ?: '')}"
+                                         th:data-status="${student.completed == true ? 'completed' : 'learning'}">
+                                    <img th:src="${#strings.isEmpty(student.avatarUrl)} ? ${placeholderAvatar} : ${student.avatarUrl}" alt="" onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;" th:data-placeholder-src="${placeholderAvatar}">
+                                    <div>
+                                        <strong th:text="${student.fullName}">Student name</strong>
+                                        <span th:text="${student.email}">student@email.com</span>
+                                        <span th:text="${student.courseTitle}">Course</span>
+                                    </div>
+                                    <div class="student-progress">
+                                        <b th:text="${student.progressPercentage} + '%'">0%</b>
+                                        <small th:text="${student.completed == true ? 'Completed' : 'Learning'}">Learning</small>
+                                    </div>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section class="profile-card" th:if="${normalizedProfileRole == 'admin'}">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h2>System Summary</h2>
+                                    <p>Operational indicators from users, courses, and moderation queues.</p>
+                                </div>
+                            </div>
+                            <div class="system-summary-grid">
+                                <div>
+                                    <span>User Growth</span>
+                                    <strong th:text="${overview.statCards[7].value}">0</strong>
+                                    <small>new users this month</small>
+                                </div>
+                                <div>
+                                    <span>Course Catalog</span>
+                                    <strong th:text="${overview.statCards[3].value}">0</strong>
+                                    <small>total courses</small>
+                                </div>
+                                <div>
+                                    <span>Platform Status</span>
+                                    <strong th:text="${profile.status}">ACTIVE</strong>
+                                    <small>current admin account status</small>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <aside class="profile-side-column">
+                        <section class="profile-card">
+                            <div class="profile-section-head compact">
+                                <div>
+                                    <h2 th:text="${normalizedProfileRole == 'admin' ? 'Administrative Activity' : 'Recent Activity'}">Recent Activity</h2>
+                                    <p th:text="${normalizedProfileRole == 'teacher' ? 'Recent work on your courses.' : (normalizedProfileRole == 'admin' ? 'Recent platform records.' : 'Recent learning records.')}">Activity</p>
+                                </div>
+                            </div>
+                            <div class="profile-empty" th:if="${#lists.isEmpty(overview.activities)}">No recent activity yet.</div>
+                            <div class="profile-activity-list" th:if="${!#lists.isEmpty(overview.activities)}">
+                                <a class="profile-activity-item" th:each="activity : ${overview.activities}" th:href="${activity.link}">
+                                    <span class="activity-icon" th:text="${#strings.substring(activity.type,0,1)}">A</span>
+                                    <span>
+                                        <strong th:text="${activity.title}">Activity</strong>
+                                        <em th:text="${activity.caption}">Caption</em>
+                                        <small th:text="${activity.occurredAt == null ? 'Date unavailable' : #temporals.format(activity.occurredAt, 'MMM dd, yyyy HH:mm')}">Date</small>
+                                    </span>
+                                </a>
+                            </div>
+                        </section>
+
+                        <section class="profile-card">
+                            <div class="profile-section-head compact">
+                                <div>
+                                    <h2>Account Scope</h2>
+                                    <p>Fields protected from ordinary profile edits.</p>
+                                </div>
+                            </div>
+                            <div class="profile-scope-list">
+                                <div><strong>Editable</strong><span>Full name, permitted email, avatar.</span></div>
+                                <div><strong>Protected</strong><span>Role, status, permissions, password hash.</span></div>
+                                <div><strong>Route</strong><span th:text="${'/' + normalizedProfileRole + '/profile'}">/student/profile</span></div>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
+            </section>
+
+            <section class="profile-tab-panel" data-profile-panel="edit">
+                <form id="profile-edit-form" class="profile-card profile-edit-card" th:data-placeholder-src="${placeholderAvatar}">
+                    <div class="profile-section-head">
+                        <div>
+                            <h2>Edit Profile Information</h2>
+                            <p>Profile changes are saved to your current account only.</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-edit-layout">
+                        <div class="profile-photo-editor">
+                            <img id="profile-avatar-preview"
+                                 th:src="${#strings.isEmpty(profile.avatarUrl)} ? ${placeholderAvatar} : ${profile.avatarUrl}"
+                                 th:data-placeholder-src="${placeholderAvatar}"
+                                 alt="Avatar preview"
+                                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
+                            <div>
+                                <strong>Profile Photo</strong>
+                                <span>Upload JPG, JPEG, PNG, or WEBP up to 5MB.</span>
+                            </div>
+                            <label for="profile-avatar-input" class="btn btn-outline">Upload Image</label>
+                            <input id="profile-avatar-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                            <button id="profile-avatar-url-button" type="button" class="btn btn-outline">Use Image URL</button>
+                            <button id="profile-avatar-remove-button" type="button" class="btn btn-outline danger">Remove Photo</button>
+                            <div id="profile-avatar-file-name" class="profile-muted">No file selected</div>
+                            <div id="profile-avatar-url-panel" class="profile-url-panel" hidden>
+                                <input id="profile-avatar-url-input" type="url" maxlength="2048" placeholder="https://example.com/avatar.png">
+                                <button id="profile-avatar-preview-url-button" type="button" class="btn btn-secondary">Preview</button>
+                            </div>
+                        </div>
+
+                        <div class="profile-form-grid">
+                            <label>
+                                <span>Full Name</span>
+                                <input id="profile-full-name-input" type="text" th:value="${profile.fullName == null ? '' : profile.fullName}" maxlength="100" required>
+                            </label>
+                            <label>
+                                <span>Email</span>
+                                <input id="profile-email-input" type="email" th:value="${profile.email == null ? '' : profile.email}" th:readonly="${profile.authProvider != T(com.ojtsu26.elearning.model.enums.AuthProvider).LOCAL}" maxlength="255" required>
+                            </label>
+                            <label>
+                                <span th:text="${overview.identifierLabel}">Student ID</span>
+                                <input type="text" th:value="${overview.identifierValue}" readonly>
+                            </label>
+                            <label>
+                                <span th:text="${overview.metaLabel}">Academic Tier</span>
+                                <input type="text" th:value="${overview.metaValue}" readonly>
+                            </label>
+                            <label>
+                                <span>Phone</span>
+                                <input type="text" value="Not configured" readonly>
+                            </label>
+                            <label>
+                                <span>Language</span>
+                                <input type="text" value="System default" readonly>
+                            </label>
+                            <label class="wide">
+                                <span>Bio</span>
+                                <textarea rows="4" readonly>Bio is not available in the current user entity.</textarea>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="profile-form-actions">
+                        <button id="profile-save-button" type="submit" class="btn btn-primary">Save Changes</button>
+                        <button id="profile-cancel-button" type="button" class="btn btn-outline">Cancel</button>
+                        <span id="profile-message" role="status" aria-live="polite"></span>
+                    </div>
+                </form>
+            </section>
+
+            <section class="profile-tab-panel" data-profile-panel="security">
+                <div class="profile-card">
+                    <div class="profile-section-head">
+                        <div>
+                            <h2 th:text="${normalizedProfileRole == 'admin' ? 'Security Summary' : 'Security'}">Security</h2>
+                            <p>No passwords, tokens, secret keys, or OAuth credentials are displayed here.</p>
+                        </div>
+                    </div>
+                    <div class="profile-security-grid">
+                        <article th:each="item : ${overview.securityItems}">
+                            <span th:text="${item.label}">Security item</span>
+                            <strong th:text="${item.value}">Value</strong>
+                            <small th:text="${item.caption}">Caption</small>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-tab-panel" data-profile-panel="notifications">
+                <div class="profile-card profile-placeholder-panel">
+                    <h2>Notifications</h2>
+                    <p>Notification preferences are not part of the current profile entity. Existing notification pages remain unchanged.</p>
+                    <a class="btn btn-outline" th:if="${normalizedProfileRole == 'student'}" th:href="@{/student/notifications}">Open Notification Center</a>
+                </div>
+            </section>
+
+            <section class="profile-tab-panel" data-profile-panel="privacy">
+                <div class="profile-card profile-placeholder-panel">
+                    <h2>Privacy</h2>
+                    <p>Your profile update API only accepts safe editable fields and never accepts role, status, permission level, or security tokens.</p>
+                </div>
+            </section>
         </main>
-        
+
         <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa | Teacher Notification Center</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;1,600;1,700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d3e3ff",
+                    "tertiary-fixed": "#a0f4c9",
+                    "on-surface-variant": "#434654",
+                    "outline": "#737685",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary-fixed-variant": "#3e465b",
+                    "on-primary-fixed-variant": "#003fa4",
+                    "surface-variant": "#d3e3ff",
+                    "secondary-fixed": "#dae2fc",
+                    "secondary-container": "#d7dff9",
+                    "inverse-surface": "#213146",
+                    "on-surface": "#0b1c30",
+                    "surface-container": "#e6eeff",
+                    "primary-container": "#0050cb",
+                    "on-error-container": "#93000a",
+                    "primary": "#003b9a",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-tertiary-fixed": "#002113",
+                    "tertiary-accent": "#10b981",
+                    "surface-bright": "#f8f9ff",
+                    "background": "#f8f9ff",
+                    "surface-container-low": "#eff4ff",
+                    "surface-bg": "#f8f9ff",
+                    "on-primary-fixed": "#001849",
+                    "tertiary-fixed-dim": "#85d7ae",
+                    "primary-fixed": "#dae1ff",
+                    "outline-muted": "#c2c6d8",
+                    "on-tertiary-container": "#8fe2b8",
+                    "on-background": "#0b1c30",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#004d33",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface-dim": "#cbdbf6",
+                    "tertiary-container": "#026746",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "on-error": "#ffffff",
+                    "secondary": "#565e74",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#5a6278",
+                    "outline-variant": "#c3c6d6",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "surface": "#f8f9ff",
+                    "on-primary-container": "#c1cfff",
+                    "inverse-primary": "#b3c5ff",
+                    "surface-tint": "#1155d0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "sm": "8px",
+                    "margin-desktop": "40px",
+                    "lg": "24px",
+                    "2xl": "48px",
+                    "xl": "32px",
+                    "max-width": "1440px",
+                    "gutter": "24px",
+                    "3xl": "64px",
+                    "md": "16px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "display": ["Hanken Grotesk"],
+                    "code-sm": ["JetBrains Mono"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c3c6d6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface-bg text-on-background font-body-md overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-surface/70 backdrop-blur-md dark:bg-inverse-surface/70 border-b border-outline-variant/30 shadow-sm flex justify-between items-center w-full px-lg h-16 z-50 fixed top-0 left-0">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-bold italic text-primary dark:text-inverse-primary">LumiNa</span>
+<div class="hidden md:flex ml-lg gap-lg">
+<span class="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1 cursor-pointer">Instructor Portal</span>
+<span class="font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer px-2">Knowledge Base</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden md:flex bg-surface-container rounded-full px-md py-xs border border-outline-variant/30 items-center">
+<span class="material-symbols-outlined text-outline mr-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48" placeholder="Search notifications..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors relative">
+                notifications
+                <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors">help</button>
+<div class="w-8 h-8 rounded-full bg-primary-container overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a distinguished university professor in a modern library setting, wearing a tailored charcoal suit. The lighting is soft and academic, emphasizing wisdom and authority. The background features blurred mahogany shelves filled with technical journals and leather-bound books, in a clean light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn8QUD2xiMLexjbB5o-BpvSa1H2P2oKVb86AyLPS_dzgiSqG6u8o4DMUO5lYjhsFv6F6zEIMRbbc__hD_kgw0di2k4X0NkfuRXT6i_QOjBlMk2DskzviWqcvGO9CtgvrqNwjR3U7PByWSoj9wQjEQWP2CKCH6Wh3QJyxw-JcQEA0MUgF8KLr2c-vyQpJPijluQblFpz8QcTP-u07JaJKLruE2VPlZ1zr1SxO9zv2tgT3pUBhBdoSt3lKx2MGXqtV74JoUeg62CIz4"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16 h-screen">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full py-md px-sm bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant/30 w-64 fixed left-0">
+<div class="px-md mb-lg">
+<h2 class="font-headline-md text-headline-md font-bold italic text-primary">LumiNa Portal</h2>
+<p class="font-label-md text-label-md uppercase tracking-wider text-secondary">Academic Excellence</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs overflow-y-auto px-xs">
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider" onclick="window.location.href='{{DATA:SCREEN:SCREEN_36}}'">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider" onclick="window.location.href='{{DATA:SCREEN:SCREEN_59}}'">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Course Management</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined">grade</span>
+<span>Student Grading</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-primary dark:text-inverse-primary font-bold border-r-4 border-primary bg-surface-container-low transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<span>Notifications</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined">map</span>
+<span>Roadmaps</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider" onclick="window.location.href='{{DATA:SCREEN:SCREEN_2}}'">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</div>
+<div class="mt-lg px-md">
+<button class="w-full py-md bg-primary text-on-primary font-bold rounded-lg btn-shadow flex items-center justify-center gap-sm hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Create New Course</span>
+</button>
+</div>
+</nav>
+<div class="pt-md border-t border-outline-variant/30 flex flex-col gap-xs">
+<div class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm text-error hover:bg-error-container/20 transition-all cursor-pointer rounded-lg font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign Out</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 overflow-y-auto bg-surface-bg p-md md:p-xl">
+<div class="max-w-max-width mx-auto">
+<header class="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h1 class="font-display text-display italic mb-xs">Notification Center</h1>
+<p class="text-on-surface-variant font-body-lg">Manage submissions, grading tasks, and institutional updates.</p>
+</div>
+<div class="flex gap-sm">
+<button class="px-lg py-sm bg-surface-container-high text-primary font-bold rounded-lg border border-outline-variant/50 hover:bg-surface-container-highest transition-colors font-label-md text-label-md uppercase tracking-wider">Mark All as Read</button>
+<button class="px-lg py-sm bg-primary text-on-primary font-bold rounded-lg btn-shadow hover:opacity-90 transition-opacity font-label-md text-label-md uppercase tracking-wider">Filter Settings</button>
+</div>
+</header>
+<!-- Two-Column Bento Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column: Categories & Stats -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<!-- Category Filter Bento -->
+<div class="glass-card border border-outline-variant/30 rounded-xl p-xl shadow-sm">
+<h3 class="font-headline-md text-headline-md mb-lg">Categories</h3>
+<div class="space-y-sm">
+<button class="w-full flex items-center justify-between p-md rounded-lg bg-primary-container/10 border border-primary/20 text-primary">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">all_inbox</span>
+<span class="font-bold">All Activity</span>
+</div>
+<span class="font-code-sm text-code-sm bg-primary text-on-primary px-2 py-0.5 rounded-full">14</span>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">publish</span>
+<span>New Submissions</span>
+</div>
+<span class="font-code-sm text-code-sm bg-surface-container-highest px-2 py-0.5 rounded-full">5</span>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">grading</span>
+<span>Grading</span>
+</div>
+<span class="font-code-sm text-code-sm bg-surface-container-highest px-2 py-0.5 rounded-full">3</span>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">gavel</span>
+<span>Course Moderation</span>
+</div>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">forum</span>
+<span>Comments</span>
+</div>
+<span class="font-code-sm text-code-sm bg-surface-container-highest px-2 py-0.5 rounded-full">2</span>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">payments</span>
+<span>Revenue</span>
+</div>
+</button>
+<button class="w-full flex items-center justify-between p-md rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">settings_suggest</span>
+<span>System</span>
+</div>
+</button>
+</div>
+</div>
+<!-- System Status Card -->
+<div class="bg-inverse-surface text-on-primary rounded-xl p-xl shadow-xl overflow-hidden relative">
+<div class="relative z-10">
+<span class="font-label-md text-label-md uppercase tracking-widest text-primary-fixed-dim">Institutional Pulse</span>
+<h3 class="font-display text-headline-lg italic mt-sm">Academic Performance</h3>
+<div class="mt-lg space-y-md">
+<div class="flex justify-between items-center border-b border-outline/20 pb-sm">
+<span class="text-surface-dim opacity-80">Course Completion Rate</span>
+<span class="font-code-sm text-tertiary-fixed">88.4%</span>
+</div>
+<div class="flex justify-between items-center border-b border-outline/20 pb-sm">
+<span class="text-surface-dim opacity-80">Student Satisfaction</span>
+<span class="font-code-sm text-tertiary-fixed">4.9/5</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-surface-dim opacity-80">Active Learners</span>
+<span class="font-code-sm text-tertiary-fixed">1,240</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Notifications Stream -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-md">
+<!-- Notification 1: New Submission -->
+<div class="glass-card border border-outline-variant rounded-xl p-lg flex gap-lg group hover:border-primary/50 transition-all cursor-default">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container/10 text-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">publish</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary">New Submission</span>
+<span class="text-xs text-on-surface-variant/60 font-code-sm">12 mins ago</span>
+</div>
+<h4 class="font-headline-md text-body-lg font-bold mb-xs italic">Marcus Thorne submitted "Data Structures HW1".</h4>
+<p class="text-on-surface-variant font-body-md mb-lg">Student has attached a ZIP file containing C++ source code and a technical documentation PDF for the first assignment.</p>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-bold btn-shadow hover:scale-105 transition-transform flex items-center gap-xs" onclick="window.location.href='{{DATA:SCREEN:SCREEN_34}}'">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                                        Review
+                                    </button>
+<button class="px-md py-sm bg-surface-container-low text-primary border border-outline-variant/50 rounded-lg font-bold hover:bg-surface-container-high transition-colors">Dismiss</button>
+</div>
+</div>
+<div class="flex-shrink-0">
+<div class="w-1 h-1 bg-primary rounded-full group-hover:scale-150 transition-transform"></div>
+</div>
+</div>
+<!-- Notification 2: Course Moderation -->
+<div class="glass-card border border-outline-variant rounded-xl p-lg flex gap-lg group hover:border-tertiary-accent/50 transition-all cursor-default">
+<div class="flex-shrink-0 w-12 h-12 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-tertiary-container">Course Moderation</span>
+<span class="text-xs text-on-surface-variant/60 font-code-sm">2 hours ago</span>
+</div>
+<h4 class="font-headline-md text-body-lg font-bold mb-xs italic">Course Approved: "Introduction to Quantum Logic" is now live.</h4>
+<p class="text-on-surface-variant font-body-md mb-lg">The Institutional Review Board has verified all modules. The course is now visible to the student body and public catalog.</p>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-tertiary-container text-on-tertiary-container rounded-lg font-bold btn-shadow hover:scale-105 transition-transform flex items-center gap-xs" onclick="window.location.href='{{DATA:SCREEN:SCREEN_47}}'">
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        View Live
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Notification 3: Revenue -->
+<div class="glass-card border border-outline-variant rounded-xl p-lg flex gap-lg group hover:border-secondary/50 transition-all cursor-default">
+<div class="flex-shrink-0 w-12 h-12 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-secondary">Revenue</span>
+<span class="text-xs text-on-surface-variant/60 font-code-sm">Yesterday</span>
+</div>
+<h4 class="font-headline-md text-body-lg font-bold mb-xs italic">Settlement Processed: Your payout for Oct 2024 is complete.</h4>
+<p class="text-on-surface-variant font-body-md mb-lg">Funds have been transferred to your registered account. Please allow 1-3 business days for institutional clearing.</p>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-surface-container-high text-primary border border-outline-variant rounded-lg font-bold hover:bg-primary/10 transition-colors flex items-center gap-xs" onclick="window.location.href='{{DATA:SCREEN:SCREEN_33}}'">
+<span class="material-symbols-outlined text-sm">receipt_long</span>
+                                        View Statement
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Notification 4: Comment -->
+<div class="glass-card border border-outline-variant rounded-xl p-lg flex gap-lg group hover:border-primary/50 transition-all cursor-default relative">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-container/10 text-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">forum</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary">Comment</span>
+<span class="text-xs text-on-surface-variant/60 font-code-sm">Nov 14, 2024</span>
+</div>
+<h4 class="font-headline-md text-body-lg font-bold mb-xs italic">New Lesson Comment - Student Elena Rostova asked a question in Module 1.2.</h4>
+<div class="bg-surface-container-low p-md rounded-lg border-l-4 border-primary italic text-on-surface-variant font-body-md mb-lg">
+                                    "Could you clarify the distinction between O(n) and O(log n) complexity in the context of binary search trees?"
+                                </div>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-bold btn-shadow hover:scale-105 transition-transform flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">reply</span>
+                                        Reply
+                                    </button>
+<button class="px-md py-sm bg-surface-container-low text-primary border border-outline-variant/50 rounded-lg font-bold hover:bg-surface-container-high transition-colors">Mark as Resolved</button>
+</div>
+</div>
+<div class="absolute right-lg top-lg flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface shadow-sm object-cover" data-alt="A clean, minimalist portrait of a serious young student looking thoughtfully into the distance, characterized by a bright, high-key light mode background with subtle crystalline structures. The color palette consists of cool blues and greys, matching a corporate academic environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTJmdC__2W_pJo9jpNPhttX5MMO8ZU-tqf80upAZSN2Pn1myE5jSlSRyyONPEnhWK7b6RNnrABtD0mB1Jj_O_CKz6UCP1sGjGzQija8-0cEE8C0MiH0dJehOFvvLnIWap0pBRswLRMMVNQfKRZmTh9EGId6Twx8AOuT1Zj34kFej1clieF3WyKlSv_PNAe_Hq8zKiw8fJFt38i2x_5ciw6fIJqzsbT7R3zf0s7mQlOAhggqaSB6BYunE6FReHQVLn9bKe_-s70b6k"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Spacing -->
+<footer class="mt-3xl py-xl border-t border-outline-variant/30 flex justify-between items-center text-on-surface-variant/60 font-label-md text-label-md uppercase tracking-widest">
+<span>© 2024 LumiNa Institute of Higher Learning</span>
+<div class="flex gap-lg">
+<span class="hover:text-primary cursor-pointer">Terms of Service</span>
+<span class="hover:text-primary cursor-pointer">Privacy Policy</span>
+</div>
+</footer>
+</main>
+</div>
+<!-- Floating Action Button (Supressed based on context, but useful for 'New Announcement') -->
+<button class="fixed bottom-lg right-lg w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 md:hidden">
+<span class="material-symbols-outlined">add</span>
+</button>
+<script>
+        // Micro-interaction for notification dismissal animation
+        document.querySelectorAll('button').forEach(btn => {
+            if(btn.innerText.includes('Dismiss') || btn.innerText.includes('Resolved')) {
+                btn.addEventListener('click', (e) => {
+                    const card = e.target.closest('.glass-card');
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                });
+            }
+        });
+
+        // Hover atmosphere effect for the bento cards
+        const glassCards = document.querySelectorAll('.glass-card');
+        glassCards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'rgba(255, 255, 255, 0.7)';
+            });
+        });
+    </script>
+</body></html>

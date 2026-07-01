@@ -11,8 +11,6 @@ public class UserResponseDTO {
 
     private String email;
 
-    private String passwordHash;
-
     private String avatarUrl;
 
     private Role role;

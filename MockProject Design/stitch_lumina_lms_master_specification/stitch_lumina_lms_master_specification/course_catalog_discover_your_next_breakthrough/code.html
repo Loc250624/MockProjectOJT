@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Course Catalog | LumiNa E-Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;1,600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Hanken Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(194, 198, 216, 0.3);
+        }
+        .btn-shadow { box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08); }
+        .course-card:hover .card-overlay { opacity: 1; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c3c6d6",
+                        "primary-container": "#0050cb",
+                        "surface-container-low": "#eff4ff",
+                        "surface-tint": "#1155d0",
+                        "tertiary-fixed": "#a0f4c9",
+                        "surface-dim": "#cbdbf6",
+                        "primary": "#003b9a",
+                        "surface": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#3e465b",
+                        "tertiary": "#004d33",
+                        "primary-fixed": "#dae1ff",
+                        "on-primary-container": "#c1cfff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "inverse-surface": "#213146",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "on-tertiary-container": "#8fe2b8",
+                        "tertiary-container": "#026746",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-bg": "#f8f9ff",
+                        "tertiary-fixed-dim": "#85d7ae",
+                        "surface-container-highest": "#d3e3ff",
+                        "inverse-on-surface": "#ebf1ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "on-surface": "#0b1c30",
+                        "on-background": "#0b1c30",
+                        "surface-variant": "#d3e3ff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#dae2fc",
+                        "inverse-primary": "#b3c5ff",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#d7dff9",
+                        "outline": "#737685",
+                        "secondary": "#565e74",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-tertiary-fixed": "#002113",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001849",
+                        "on-secondary-container": "#5a6278",
+                        "on-error-container": "#93000a",
+                        "tertiary-accent": "#10b981",
+                        "surface-bright": "#f8f9ff",
+                        "outline-muted": "#c2c6d8",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#434654"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "max-width": "1440px",
+                        "xs": "4px",
+                        "2xl": "48px",
+                        "3xl": "64px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "margin-desktop": "40px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Hanken Grotesk"],
+                        "code-sm": ["JetBrains Mono"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<nav class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline h-20">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold">LumiNa</span>
+<div class="hidden md:flex items-center gap-lg">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-primary dark:text-primary-fixed-dim border-b-2 border-primary pb-1 font-bold" href="#">Courses</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Schedule</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden lg:block group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-surface-container border border-outline-muted rounded-xl py-2 pl-10 pr-4 w-64 focus:outline-none focus:ring-1 focus:ring-primary text-body-md transition-all group-hover:w-80" placeholder="Search courses..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<img class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a young academic woman with glasses, smiling confidently against a soft-focus library background. The lighting is warm and intellectual, matching the LumiNa elite academic brand. The image is crisp, high-resolution, and perfectly centered." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6BnqidLx3j7G4iQYZy9D3AAI8PaQxhntYQpdtEIs_SvzIlqCmtLbxW5L68tdRa9VP7ihb3TJItz_cPP0ypfMGTqw866Q9lPO81JUPtHE7ZvqCUXDUvX0ftXs9KCYr08VahwxHriBqPFnJlnxEQMB-nDbUCEvaTbXWiR8iHmmtnhGGkrKkzgQR8amF8jii8QJMbZvT7cCzSEYo6B2WJq4TgEgTQI52MyJ5un4xnTzQe2UDsQS6mrPoaeomocXZzR1I_kvvTdOspWE"/>
+</div>
+</nav>
+<!-- Main Content Cluster -->
+<main class="flex-grow max-w-max-width mx-auto w-full px-margin-desktop py-xl flex gap-gutter">
+<!-- Sidebar Filter Section -->
+<aside class="hidden lg:block w-72 flex-shrink-0">
+<div class="sticky top-24 space-y-xl">
+<!-- Header / Breadcrumbs -->
+<div class="space-y-xs">
+<nav class="flex items-center gap-xs font-label-md text-label-md text-on-surface-variant">
+<a class="hover:text-primary" href="#">Home</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">Courses</span>
+</nav>
+<h1 class="font-headline-lg text-headline-lg text-on-surface italic">Knowledge <i>Vault</i></h1>
+</div>
+<!-- Filter Groups -->
+<div class="space-y-lg">
+<!-- Categories -->
+<div class="space-y-md">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-wider">Categories</h3>
+<div class="flex flex-col gap-sm">
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Computer Science</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input checked="" class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-primary font-bold">Business</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Engineering</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Arts</span>
+</label>
+</div>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Level -->
+<div class="space-y-md">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-wider">Academic Level</h3>
+<div class="flex flex-col gap-sm">
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 border-outline-muted text-primary focus:ring-primary" name="level" type="radio"/>
+<span class="font-body-md text-on-surface">Beginner</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 border-outline-muted text-primary focus:ring-primary" name="level" type="radio"/>
+<span class="font-body-md text-on-surface">Intermediate</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 border-outline-muted text-primary focus:ring-primary" name="level" type="radio"/>
+<span class="font-body-md text-on-surface">Advanced</span>
+</label>
+</div>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Price -->
+<div class="space-y-md">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-wider">Tuition</h3>
+<div class="flex flex-col gap-sm">
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-on-surface">Free Scholarship</span>
+</label>
+<label class="flex items-center gap-md group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline-muted text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-md text-on-surface">Paid Enrollment</span>
+</label>
+</div>
+</div>
+<div class="pt-md">
+<button class="w-full py-3 bg-surface-container-high text-primary font-bold rounded-xl border border-primary/20 hover:bg-primary hover:text-on-primary transition-all duration-300">
+                            Reset Filters
+                        </button>
+</div>
+</div>
+</div>
+</aside>
+<!-- Course Grid & Header -->
+<section class="flex-grow">
+<!-- Grid Header Controls -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-xl gap-md">
+<p class="font-body-md text-on-surface-variant">Showing <span class="text-on-surface font-bold">128</span> elite courses in <span class="text-primary font-bold">Business</span></p>
+<div class="flex items-center gap-md w-full sm:w-auto">
+<span class="font-label-md text-outline">Sort by:</span>
+<div class="relative w-full sm:w-48">
+<select class="appearance-none w-full bg-surface-container-lowest border border-outline-muted px-4 py-2 rounded-xl text-body-md focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+<option>Popularity</option>
+<option>Newest</option>
+<option>Price: Low to High</option>
+<option>Price: High to Low</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid of Courses -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A sophisticated digital visualization of complex neural network nodes connecting in a deep blue 3D space. The aesthetic is highly technical, academic, and modern, using clean lines and glowing data points to represent advanced artificial intelligence. Soft bokeh effect adds depth and professional polish." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWNQ042nRhR6X2BzMZKsAtzaxTeAMnaJ1HE5q6Kpu5mynTbQ3j7vkE5eK52oopqMVWO_ADkeS-2uEHY8GR45fyoh8r8OVSTO5GQ_jvlOA8hJGXbiCl_U8Is29Zr48yFjKghHBq5cxrgoDuMt0FISMKTEulsMI_n4LylKhjNeBKUu0_KVsGA4J2-dGs6LFMoYhKn_72-FVzhfs3eV7liOrV6ixSOhX9hXRMjw4r2JW7VPHLCUu6zNr9k1uGcMZfsc8nzHx9d__wE3w"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-primary text-on-primary rounded-full font-bold">Advanced</span>
+</div>
+<div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-white/90 text-primary px-6 py-2 rounded-full font-bold backdrop-blur-md shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">Preview Course</button>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Computer Science</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">4.9</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">Advanced Neural Architectures</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">Master transformer models and LLM scaling laws with hands-on research-grade implementations.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Dr. Sarah Jenkins</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-primary font-bold">$89.00</span>
+<span class="font-label-md text-outline">1.2k Students</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A modern office workspace with high-end architecture, featuring a clean desk, a designer lamp, and a window overlooking a corporate skyline at twilight. The mood is ambitious and sophisticated, with cool blue and warm gold tones. Professionalism and strategic leadership are conveyed through the minimalist and precise composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABY4zMIEIOKHdESi39xseJ_vhE7oM9S4KjmtALt7BgioVF9P7eT8uLr7dTpUYqlr2ntlfJl1KtBT1y5wGOot7kD75La1TBrnLEXVE1Hmx3OS-SsMgrxbvpt_KeWkkV9TZK3cyFyDlntDrvkH7g2z7h8zrm0GB_8ECzSyjzDNkPxZooDk3i1Xlg6gW9a61zZ4B4utja6vqqn1hVxclbM-mAH_JnXY4PdYzsMjWgpJWyDsjADTYwRscGLlDtStbJpxbDB7PKckTrrBU"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full font-bold">Intermediate</span>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Business Strategy</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">4.8</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">Venture Capital &amp; IPO Strategy</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">Comprehensive guide to equity rounds, term sheets, and the path to public market listing for tech founders.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Markus Sterling</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-primary font-bold">$124.00</span>
+<span class="font-label-md text-outline">850 Students</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A microscopic, high-detail rendering of CRISPR gene editing sequences glowing in a sterile biolab environment. The palette is dominated by deep teal and emerald greens, conveying precision engineering and biological breakthroughs. The lighting is focused and technical, emphasizing the intellectual rigor of modern genetic engineering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6yB0PeUCfIydiJjz01s5tm6HU1KB4q7p-aLQxkdjcrTEvw6kocYBjIaEbIODN6xPotxH_pzZal9I0O9Mn3I5XmS4im2mwBDrMyz4ZGXY2Sy9_kuHf9ri05Ys_6gIa_5kZy46mJF5PbtPz3iO_iNAbxoDkvuMCCHdvIGkkbae5AAxg7JsA_HF-H0r94YvX9V6kgEFcozMO4eER0Y2tnU2NhpkklH8jqLZvz3NoOg472THQ9k1GvWiPzvaB9GNWuSlZ_gvAXSWE810"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-primary text-on-primary rounded-full font-bold">Advanced</span>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Bio-Engineering</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">5.0</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">CRISPR &amp; Synthetic Biology</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">Exploration of genetic modularity and the latest protocols in precision genome editing and lab automation.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Dr. Helena Vost</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-primary font-bold">$199.00</span>
+<span class="font-label-md text-outline">420 Students</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Repeat Pattern for more cards -->
+<!-- Card 4 (Free) -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Elegant minimalist typography and geometric shapes in a high-contrast black and white composition. A single accent of corporate blue highlights the golden ratio in architectural design. The mood is intellectual, artistic, and precise, capturing the essence of advanced graphic design and visual communication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhll-VToHDQ3ZxRC0K-5Y6xlrMfndKpfnHnZnYJOwOXS6O8XZOBF_OPgnjbyCEnH8nLPUWLsawDiNi60QID_Y-_Ty4tY60BOTKM5rTBl5UnsxXXDC7quC6k8M3dgNacZz3h2rx6n9Y7xKbGw0lm8NVvYg7AAcLxlwv85o9NRqN1BDc0_A8cap_I7jazZwmdjjgVi1O4oCHuOGeC7qtQNyTbNHEIG4ntfOSrbOjVqur_h0JYyKqD08T-Bqja2niHTe5DblBRvWqfD8"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-tertiary text-on-tertiary rounded-full font-bold">Beginner</span>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Fine Arts</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">4.7</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">Principles of Modern Typography</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">An introductory masterclass into the history, anatomy, and application of type in digital ecosystems.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Julianna Thorne</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-tertiary-accent font-bold">Free</span>
+<span class="font-label-md text-outline">3.1k Students</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A futuristic laboratory console with multiple data screens displaying high-speed fluid dynamic simulations. The lighting is dark and moody with vibrant cyan highlights, emphasizing the high-tech engineering environment. The composition is angled and dynamic, representing the motion and precision of aerospace engineering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmlpiOmQjtoahRPxipZBqc9_p_hjgfbio5J8Co9CkzbWH_3H638q73VJlu1YUnmNS4rLIEhuSgnfAmuEmtFzcmMqj4zkHWnKsHaDxch6LjiUnhSZdDvRIO_qDGtBOrTu2EAXAalKhpInBrHVwcjMQw_bMmdyAO5dj_AWiZzCVdAiGMvHVY9k_LaspsBjhSdSCSH0F2hQb9ohHvt75XGdSEw0X-Y1IMAaGr7DpknDuyv0mt-PGevjr9LGEZbgddH-UhC2HnWo7iw0c"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-primary text-on-primary rounded-full font-bold">Advanced</span>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Engineering</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">4.9</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">Computational Fluid Dynamics</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">Solving Navier-Stokes equations using finite volume methods for aerodynamic optimization.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Prof. David Chen</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-primary font-bold">$149.00</span>
+<span class="font-label-md text-outline">980 Students</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="group flex flex-col bg-surface-container-lowest border border-outline-muted/30 rounded-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A sleek glass architectural model with intricate layered details, illuminated from beneath with soft white light. The image captures the precision of structural engineering and urban planning. The background is a blurred high-end design studio, creating an elite academic and professional atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMySQ5wx4Ypze5ExpHRqCimdM1GtqfUiPvqxEscv_cNv7ztrB51mgBgrOdKSOIumgMNKC7xwfkQoJTI14hFIQoHajfUH4Ieils1S7cF8PnLkYeVU1B9WRn_gVjOiYr1cacj4u2XHyJnYYB54I2JV6k9tip25w1WyAAVquAp7P8Zi6YHZPJw2ZtrcY_d3aFSI6I5KF2kRyxDt-CjpSLYOOXt8vI1CWSgTJIq80vGSgp4VJ-5xCl_EY1MrbqVpZ0Tye5gcPMiMuEQ9c"/>
+<div class="absolute top-4 left-4">
+<span class="font-mono text-[10px] uppercase tracking-widest px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full font-bold">Intermediate</span>
+</div>
+</div>
+<div class="p-xl flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-sm">
+<span class="font-mono text-label-md text-tertiary font-semibold uppercase">Architecture</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-body-md font-bold text-on-surface">4.6</span>
+</div>
+</div>
+<h3 class="font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight mb-md">Sustainable Urban Systems</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 mb-xl">Designing resilient metropolitan infrastructures using green technology and smart-grid integration.</p>
+<div class="mt-auto flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-md text-outline">Instructor</span>
+<span class="font-body-md text-on-surface font-semibold">Elena Rossi</span>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-primary font-bold">$110.00</span>
+<span class="font-label-md text-outline">1.5k Students</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-3xl flex flex-col sm:flex-row items-center justify-between gap-xl py-xl border-t border-outline-variant/30">
+<p class="font-body-md text-on-surface-variant">Showing 1-12 of 128 results</p>
+<div class="flex items-center gap-sm">
+<button class="p-2 border border-outline-muted rounded-lg hover:bg-surface-container transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-muted hover:bg-surface-container transition-colors font-semibold">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-muted hover:bg-surface-container transition-colors font-semibold">3</button>
+<span class="px-2 text-outline">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-muted hover:bg-surface-container transition-colors font-semibold">11</button>
+</div>
+<button class="p-2 border border-outline-muted rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest dark:bg-on-surface border-t border-outline-variant dark:border-outline mt-2xl">
+<div class="flex flex-col gap-sm items-center md:items-start mb-lg md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface dark:text-surface-bright font-bold">LumiNa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-xl">
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</footer>
+<!-- Simple sorting logic and search focus interaction -->
+<script>
+        // Micro-interaction for search bar focus expansion
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('lg:w-96');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('lg:w-96');
+        });
+
+        // Hover effect for filter labels
+        document.querySelectorAll('label').forEach(label => {
+            label.addEventListener('mouseenter', () => {
+                label.style.transform = 'translateX(4px)';
+                label.style.transition = 'transform 0.2s ease';
+            });
+            label.addEventListener('mouseleave', () => {
+                label.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body></html>
