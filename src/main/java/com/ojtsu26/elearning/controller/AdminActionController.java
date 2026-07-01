@@ -5,6 +5,7 @@ import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
+import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Locale;
@@ -96,13 +98,19 @@ public class AdminActionController {
     }
 
     @PatchMapping("/users/{id}/block")
-    public ResponseEntity<?> blockUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Block user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> blockUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.blockUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User blocked successfully"));
     }
 
     @PatchMapping("/users/{id}/unblock")
-    public ResponseEntity<?> unblockUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Unblock user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> unblockUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.unblockUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User unblocked successfully"));
     }
 
     @PostMapping("/categories")

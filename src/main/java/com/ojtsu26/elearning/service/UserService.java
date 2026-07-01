@@ -16,5 +16,7 @@ public interface UserService {
     UserResponseDTO findById(Integer id);
     UserResponseDTO create(UserRequestDTO requestDTO);
     UserResponseDTO update(Integer id, UserRequestDTO requestDTO);
+    UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId);
+    UserResponseDTO unblockUser(Integer targetUserId, Integer currentAdminId);
     void delete(Integer id);
 }

@@ -16,7 +16,10 @@ public enum ErrorCode {
 
     // Business Errors
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "User does not exist"),
-    USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists");
+    USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists"),
+    CANNOT_MODIFY_OWN_ACCOUNT(400, HttpStatus.BAD_REQUEST, "Admin cannot modify their own account"),
+    USER_ALREADY_BLOCKED(409, HttpStatus.CONFLICT, "User is already blocked"),
+    USER_NOT_BLOCKED(409, HttpStatus.CONFLICT, "User is not blocked");
 
     private final int code;
     private final HttpStatus status;

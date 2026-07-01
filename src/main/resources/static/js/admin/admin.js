@@ -27,8 +27,13 @@ function initUserAdministration() {
         size: 10,
         sortBy: 'createdAt',
         sortDir: 'desc',
-        users: []
+        users: [],
+        selectedUser: null,
+        pendingStatusUserId: null
     };
+
+    var portal = document.querySelector('.lumina-portal');
+    var currentAdminId = portal ? Number(portal.getAttribute('data-current-admin-id')) : NaN;
 
     var elements = {
         searchInput: document.getElementById('user-search-input'),
@@ -37,6 +42,7 @@ function initUserAdministration() {
         providerFilter: document.getElementById('user-provider-filter'),
         tableBody: tableBody,
         loading: document.getElementById('users-loading'),
+        feedback: document.getElementById('users-feedback'),
         emptyState: document.getElementById('users-empty-state'),
         error: document.getElementById('users-error'),
         pagination: document.getElementById('users-pagination'),
@@ -48,7 +54,8 @@ function initUserAdministration() {
         panelStatus: document.getElementById('user-panel-status'),
         panelAvatar: document.getElementById('user-panel-avatar'),
         panelCreatedAt: document.getElementById('user-panel-created-at'),
-        panelProvider: document.getElementById('user-panel-provider')
+        panelProvider: document.getElementById('user-panel-provider'),
+        panelStatusAction: document.getElementById('user-panel-status-action')
     };
 
     var debouncedLoadUsers = debounce(function() {
@@ -78,11 +85,19 @@ function initUserAdministration() {
         }
     });
 
+    elements.panelStatusAction.addEventListener('click', function() {
+        if (!state.selectedUser || state.pendingStatusUserId) {
+            return;
+        }
+        changeSelectedUserStatus();
+    });
+
     loadUsers();
 
     function loadUsers() {
         setLoading(true);
         setError('');
+        setFeedback('', false);
 
         var params = new URLSearchParams();
         appendParam(params, 'keyword', elements.searchInput.value.trim());
@@ -193,6 +208,7 @@ function initUserAdministration() {
     }
 
     function openUserPanel(user) {
+        state.selectedUser = user;
         elements.panelName.textContent = user.fullName || 'Unnamed user';
         elements.panelEmail.textContent = user.email || '';
         elements.panelRole.textContent = user.role || '--';
@@ -207,7 +223,85 @@ function initUserAdministration() {
         elements.panelCreatedAt.textContent = formatDate(user.createdAt);
         elements.panelProvider.textContent = user.authProvider || '--';
         renderPanelAvatar(user);
+        renderStatusAction(user);
         elements.panel.classList.add('open');
+    }
+
+    function renderStatusAction(user) {
+        var isSelfAdmin = Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId;
+        elements.panelStatusAction.disabled = isSelfAdmin || state.pendingStatusUserId === user.id;
+        elements.panelStatusAction.style.color = user.status === 'BLOCKED' ? 'var(--lumina-blue)' : 'var(--lumina-danger)';
+        elements.panelStatusAction.style.borderColor = user.status === 'BLOCKED' ? 'var(--lumina-blue-pale)' : 'var(--lumina-danger-bg)';
+
+        if (isSelfAdmin) {
+            elements.panelStatusAction.textContent = 'Cannot Modify Own Account';
+        } else if (state.pendingStatusUserId === user.id) {
+            elements.panelStatusAction.textContent = 'Updating...';
+        } else if (user.status === 'BLOCKED') {
+            elements.panelStatusAction.textContent = 'Unblock User Account';
+        } else {
+            elements.panelStatusAction.textContent = 'Block User Account';
+        }
+    }
+
+    function changeSelectedUserStatus() {
+        var user = state.selectedUser;
+        var shouldUnblock = user.status === 'BLOCKED';
+        var action = shouldUnblock ? 'unblock' : 'block';
+        var confirmMessage = shouldUnblock
+            ? 'Unblock this user account?'
+            : 'Block this user account?';
+
+        if (Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId) {
+            setFeedback('You cannot modify your own admin account.', false);
+            return;
+        }
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        state.pendingStatusUserId = user.id;
+        renderStatusAction(user);
+        setFeedback('', false);
+        setError('');
+
+        fetch('/api/admin/users/' + encodeURIComponent(user.id) + '/' + action, {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return { message: 'Unable to update user account.' };
+                }).then(function(apiResponse) {
+                    if (!response.ok) {
+                        throw new Error(apiResponse.message || 'Unable to update user account.');
+                    }
+                    return apiResponse;
+                });
+            })
+            .then(function(apiResponse) {
+                var updatedUser = apiResponse.data;
+                state.users = state.users.map(function(item) {
+                    return item.id === updatedUser.id ? updatedUser : item;
+                });
+                state.selectedUser = updatedUser;
+                renderUsers(state.users);
+                openUserPanel(updatedUser);
+                setFeedback(apiResponse.message || 'User account updated successfully.', true);
+            })
+            .catch(function(error) {
+                setFeedback(error.message || 'Unable to update user account.', false);
+                renderStatusAction(user);
+            })
+            .finally(function() {
+                state.pendingStatusUserId = null;
+                if (state.selectedUser) {
+                    renderStatusAction(state.selectedUser);
+                }
+            });
     }
 
     function renderPanelAvatar(user) {
@@ -247,6 +341,12 @@ function initUserAdministration() {
     function setError(message) {
         elements.error.textContent = message;
         elements.error.style.display = message ? 'block' : 'none';
+    }
+
+    function setFeedback(message, success) {
+        elements.feedback.textContent = message;
+        elements.feedback.style.display = message ? 'block' : 'none';
+        elements.feedback.style.color = success ? 'var(--lumina-success)' : 'var(--lumina-danger)';
     }
 }
 

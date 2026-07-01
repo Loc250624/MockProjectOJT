@@ -5,21 +5,41 @@ import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.UserRepository;
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.security.JwtUtils;
+import com.ojtsu26.elearning.security.OAuth2LoginSuccessHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +60,12 @@ class AdminActionControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    @Autowired
+    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @BeforeEach
     void setUp() {
@@ -165,6 +191,136 @@ class AdminActionControllerTest {
                 .andExpect(jsonPath("$.message", notNullValue()));
     }
 
+    @Test
+    void adminBlocksActiveUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(target.getId()))
+                .andExpect(jsonPath("$.data.status").value("BLOCKED"));
+
+        assertEquals(UserStatus.BLOCKED, findByEmail("alice.student@example.com").getStatus());
+    }
+
+    @Test
+    void adminUnblocksBlockedUser() throws Exception {
+        User target = findByEmail("david.blocked@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/unblock", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(target.getId()))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+
+        assertEquals(UserStatus.ACTIVE, findByEmail("david.blocked@example.com").getStatus());
+    }
+
+    @Test
+    void blockMissingUserReturnsNotFound() throws Exception {
+        mockMvc.perform(patch("/api/admin/users/{id}/block", 999_999)
+                        .with(adminPrincipal()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User does not exist"));
+    }
+
+    @Test
+    void adminCannotBlockSelf() throws Exception {
+        User admin = findByEmail("carla.admin@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", admin.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Admin cannot modify their own account"));
+
+        assertEquals(UserStatus.ACTIVE, findByEmail("carla.admin@example.com").getStatus());
+    }
+
+    @Test
+    void blockAlreadyBlockedUserReturnsConflict() throws Exception {
+        User target = findByEmail("david.blocked@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("User is already blocked"));
+    }
+
+    @Test
+    void unblockActiveUserReturnsConflict() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/unblock", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("User is not blocked"));
+    }
+
+    @Test
+    @WithMockUser(roles = "STUDENT")
+    void studentCannotBlockUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "TEACHER")
+    void teacherCannotBlockUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void blockedUserCannotLoginLocally() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("{\"email\":\"frank.teacher@example.com\",\"password\":\"secret-hash\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(cookie().doesNotExist("jwt_token"));
+    }
+
+    @Test
+    void blockedUserCannotUseOldJwt() throws Exception {
+        User student = findByEmail("alice.student@example.com");
+        String token = jwtUtils.generateTokenFromEmail(student.getEmail());
+        student.setStatus(UserStatus.BLOCKED);
+        userRepository.save(student);
+
+        mockMvc.perform(get("/api/admin/users")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void blockedUserCannotLoginWithOAuth2() throws Exception {
+        User blocked = findByEmail("david.blocked@example.com");
+        blocked.setAuthProvider(AuthProvider.LOCAL);
+        userRepository.save(blocked);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        OAuth2User principal = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("ROLE_STUDENT")),
+                Map.of("email", blocked.getEmail(), "name", blocked.getFullName()),
+                "email");
+        OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
+                principal,
+                principal.getAuthorities(),
+                "google");
+
+        oAuth2LoginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+
+        assertEquals("/auth/login?error=blocked", response.getRedirectedUrl());
+        assertNull(response.getHeader(HttpHeaders.SET_COOKIE));
+        assertEquals(AuthProvider.LOCAL, findByEmail("david.blocked@example.com").getAuthProvider());
+        assertEquals(UserStatus.BLOCKED, findByEmail("david.blocked@example.com").getStatus());
+    }
+
     private User user(String fullName, String email, Role role, UserStatus status, AuthProvider authProvider) {
         return User.builder()
                 .fullName(fullName)
@@ -175,5 +331,15 @@ class AdminActionControllerTest {
                 .status(status)
                 .authProvider(authProvider)
                 .build();
+    }
+
+    private User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow();
+    }
+
+    private RequestPostProcessor adminPrincipal() {
+        User admin = findByEmail("carla.admin@example.com");
+        return org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+                .user(new CustomUserDetails(admin));
     }
 }

@@ -3,6 +3,8 @@ package com.ojtsu26.elearning.service.impl;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.dto.request.UserRequestDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
+import com.ojtsu26.elearning.exception.BusinessException;
+import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.mapper.UserMapper;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.Role;
@@ -10,6 +12,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.service.UserService;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,6 +104,38 @@ public class UserServiceImpl implements UserService {
         entity.setId(id);
         User updated = userRepository.save(entity);
         return userMapper.toDto(updated);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId) {
+        User user = getTargetUserForAdminAction(targetUserId, currentAdminId);
+        if (user.getStatus() == UserStatus.BLOCKED) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_BLOCKED);
+        }
+
+        user.setStatus(UserStatus.BLOCKED);
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO unblockUser(Integer targetUserId, Integer currentAdminId) {
+        User user = getTargetUserForAdminAction(targetUserId, currentAdminId);
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.USER_NOT_BLOCKED);
+        }
+
+        user.setStatus(UserStatus.ACTIVE);
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    private User getTargetUserForAdminAction(Integer targetUserId, Integer currentAdminId) {
+        if (targetUserId != null && targetUserId.equals(currentAdminId)) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_OWN_ACCOUNT);
+        }
+        return userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Override

@@ -12,7 +12,8 @@
 </head>
 <body>
 
-<div class="lumina-portal">
+<div class="lumina-portal"
+     th:attr="data-current-admin-id=${#authentication?.principal?.user?.id}">
     <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
@@ -57,6 +58,7 @@
                 </div>
 
                 <div id="users-loading" style="display:none;padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);">Loading users...</div>
+                <div id="users-feedback" style="display:none;padding:1rem 1.5rem;font-size:0.875rem;"></div>
                 <div id="users-error" style="display:none;padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-danger);"></div>
                 <div id="users-empty-state" style="display:none;padding:2rem 1.5rem;text-align:center;color:var(--lumina-gray-500);">No users match the current filters.</div>
 
@@ -127,7 +129,7 @@
         <div style="display:flex;flex-direction:column;gap:0.75rem;">
             <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Reset Password Link - Not available</button>
             <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Change Role - Not available</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Block User Account - Not available</button>
+            <button id="user-panel-status-action" class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Block User Account</button>
             <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Delete User Data - Not available</button>
         </div>
     </div>
