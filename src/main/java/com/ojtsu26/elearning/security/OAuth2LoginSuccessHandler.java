@@ -6,11 +6,12 @@ import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.UserRepository;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -62,11 +64,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String jwt = jwtUtils.generateTokenFromEmail(user.getEmail());
 
-        Cookie cookie = new Cookie("jwt_token", jwt);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(86400); // 1 day
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from("jwt_token", jwt)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(Duration.ofDays(1))
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         if (user.getRole() == Role.ADMIN) {
             response.sendRedirect("/admin/dashboard");

@@ -1,0 +1,45 @@
+# Maven build output
+target/
+
+# IDE/editor settings
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Environment/local configuration
+.env
+.env.*
+!.env.example
+
+# Spring Boot local/secret configuration
+**/application.secret.properties
+**/application-secret.properties
+**/application-*.secret.properties
+**/application-local.properties
+**/application-*.local.properties
+**/application.secret.yml
+**/application-secret.yml
+**/application-*.secret.yml
+**/application-local.yml
+**/application-*.local.yml
+**/application.secret.yaml
+**/application-secret.yaml
+**/application-*.secret.yaml
+**/application-local.yaml
+**/application-*.local.yaml
