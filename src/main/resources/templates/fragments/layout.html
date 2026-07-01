@@ -129,6 +129,9 @@
         <a th:href="@{/admin/system-settings}" id="nav-admin-settings">
             <span class="nav-icon">⚙</span> Settings
         </a>
+        <a th:href="@{/admin/profile}" id="nav-admin-profile">
+            <span class="nav-icon">👤</span> Profile
+        </a>
     </nav>
 
     <div class="sidebar-divider"></div>
@@ -193,7 +196,10 @@
     <div class="sidebar-divider"></div>
 
     <div class="sidebar-support-links">
-        <a th:href="@{/teacher/settings}" id="nav-teacher-settings">
+        <a th:href="@{/teacher/profile}" id="nav-teacher-profile">
+            <span class="nav-icon">👤</span> Profile
+        </a>
+        <a th:href="@{/teacher/profile}" id="nav-teacher-settings" style="display:none;">
             <span class="nav-icon">⚙</span> Settings
         </a>
         <a th:href="@{/auth/logout}" id="logoutBtn" style="color: #ef4444;">
@@ -234,6 +240,12 @@
         <a th:href="@{/public/courses}" id="nav-student-public-catalog">
             <span class="nav-icon">🌐</span> Public Catalog
         </a>
+        <a th:href="@{/student/profile}" id="nav-student-profile-learning">
+            <span class="nav-icon">👤</span> Profile
+        </a>
+        <a th:href="@{/student/dashboard}" id="nav-student-assignments" style="display:none;">
+            <span class="nav-icon">📋</span> Assignments
+        </a>
         <a th:href="@{/student/certificates}" id="nav-student-certificates">
             <span class="nav-icon">🏆</span> Certificates
         </a>
@@ -261,7 +273,7 @@
 <!-- ===== PORTAL TOPBAR (Admin) ===== -->
 <div th:fragment="topbar-admin(pageTitle)" class="portal-topbar">
     <div class="breadcrumb">
-        <a th:href="@{/}">LumiNa</a>
+        <span>Admin Portal</span>
         <span class="sep">›</span>
         <span class="current" th:text="${pageTitle}">Dashboard</span>
     </div>
@@ -280,11 +292,15 @@
         <button class="icon-btn" id="btn-topbar-help">?</button>
         <div class="user-chip">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Admin'}">Admin</div>
-                <div class="user-role">Superuser</div>
+                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Admin'}">Admin</div>
+                <div class="user-role" th:text="${profile?.role ?: 'ADMIN'}">ADMIN</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;"
-                 th:text="${#authentication?.name != null ? #authentication.name.substring(0,1).toUpperCase() : 'A'}">A</div>
+            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 data-profile-avatar="true"
+                 alt="Admin avatar"
+                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </div>
     </div>
 </div>
@@ -292,7 +308,7 @@
 <!-- ===== PORTAL TOPBAR (Teacher) ===== -->
 <div th:fragment="topbar-teacher(pageTitle)" class="portal-topbar">
     <div class="breadcrumb">
-        <a th:href="@{/}">LumiNa</a>
+        <span>Teacher Portal</span>
         <span class="sep">›</span>
         <span class="current" th:text="${pageTitle}">Dashboard</span>
     </div>
@@ -310,10 +326,15 @@
         <button class="icon-btn" id="btn-teacher-help">?</button>
         <div class="user-chip">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Instructor'}">Instructor</div>
-                <div class="user-role">Senior Instructor</div>
+                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Instructor'}">Instructor</div>
+                <div class="user-role" th:text="${profile?.role ?: 'TEACHER'}">TEACHER</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">T</div>
+            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 data-profile-avatar="true"
+                 alt="Teacher avatar"
+                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </div>
     </div>
 </div>
@@ -321,7 +342,7 @@
 <!-- ===== PORTAL TOPBAR (Student) ===== -->
 <div th:fragment="topbar-student(pageTitle)" class="portal-topbar">
     <div class="breadcrumb">
-        <a th:href="@{/}">LumiNa</a>
+        <a th:href="@{/student/dashboard}">Student Portal</a>
         <span class="sep">›</span>
         <span class="current" th:text="${pageTitle}">Dashboard</span>
     </div>
@@ -339,10 +360,15 @@
         <button class="icon-btn" id="btn-student-help">?</button>
         <div class="user-chip">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Student'}">Student</div>
-                <div class="user-role">Year 3 Student</div>
+                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Student'}">Student</div>
+                <div class="user-role" th:text="${profile?.role ?: 'STUDENT'}">STUDENT</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">S</div>
+            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 data-profile-avatar="true"
+                 alt="Student avatar"
+                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </div>
     </div>
 </div>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LumiNa | Notification Preferences</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#d3e3ff",
+                      "tertiary-fixed": "#a0f4c9",
+                      "on-surface-variant": "#434654",
+                      "outline": "#737685",
+                      "surface-container-high": "#dce9ff",
+                      "on-secondary-fixed-variant": "#3e465b",
+                      "on-primary-fixed-variant": "#003fa4",
+                      "surface-variant": "#d3e3ff",
+                      "secondary-fixed": "#dae2fc",
+                      "secondary-container": "#d7dff9",
+                      "inverse-surface": "#213146",
+                      "on-surface": "#0b1c30",
+                      "surface-container": "#e6eeff",
+                      "primary-container": "#0050cb",
+                      "on-error-container": "#93000a",
+                      "primary": "#003b9a",
+                      "on-tertiary-fixed-variant": "#005236",
+                      "on-tertiary-fixed": "#002113",
+                      "tertiary-accent": "#10b981",
+                      "surface-bright": "#f8f9ff",
+                      "background": "#f8f9ff",
+                      "surface-container-low": "#eff4ff",
+                      "surface-bg": "#f8f9ff",
+                      "on-primary-fixed": "#001849",
+                      "tertiary-fixed-dim": "#85d7ae",
+                      "primary-fixed": "#dae1ff",
+                      "outline-muted": "#c2c6d8",
+                      "on-tertiary-container": "#8fe2b8",
+                      "on-background": "#0b1c30",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#004d33",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed": "#131b2e",
+                      "surface-dim": "#cbdbf6",
+                      "tertiary-container": "#026746",
+                      "on-secondary": "#ffffff",
+                      "inverse-on-surface": "#ebf1ff",
+                      "error": "#ba1a1a",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "on-error": "#ffffff",
+                      "secondary": "#565e74",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-container": "#5a6278",
+                      "outline-variant": "#c3c6d6",
+                      "error-container": "#ffdad6",
+                      "primary-fixed-dim": "#b3c5ff",
+                      "surface": "#f8f9ff",
+                      "on-primary-container": "#c1cfff",
+                      "inverse-primary": "#b3c5ff",
+                      "surface-tint": "#1155d0"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "sm": "8px",
+                      "margin-desktop": "40px",
+                      "lg": "24px",
+                      "2xl": "48px",
+                      "xl": "32px",
+                      "max-width": "1440px",
+                      "gutter": "24px",
+                      "3xl": "64px",
+                      "md": "16px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "display": ["Hanken Grotesk"],
+                      "code-sm": ["JetBrains Mono"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "label-md": ["Inter"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "body-md": ["Inter"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: #c3c6d6;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .toggle-switch.active {
+            background: #0050cb;
+        }
+        .toggle-thumb {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s ease;
+        }
+        .toggle-switch.active .toggle-thumb {
+            transform: translateX(20px);
+        }
+        /* Custom Scrollbar for side nav */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: rgba(194, 198, 216, 0.4);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-xl border-b border-outline-muted/20 h-16 flex justify-between items-center px-margin-desktop shadow-sm">
+<div class="flex items-center gap-xl max-w-max-width mx-auto w-full">
+<span class="font-display text-headline-md italic text-primary">LumiNa</span>
+<div class="hidden md:flex gap-lg">
+<a class="font-body-md text-on-surface-variant hover:text-primary-container transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary-container transition-colors" href="#">Marketplace</a>
+</div>
+<div class="flex-grow flex justify-center max-w-md ml-auto">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container border border-outline-muted/50 rounded-full py-2 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-body-md" placeholder="Search resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined">shopping_cart</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden border border-outline-muted">
+<img class="w-full h-full object-cover" data-alt="A professional student profile portrait of a focused young adult in a modern library setting. Soft natural lighting from a large window illuminates the scene, highlighting a studious yet friendly expression. The aesthetic is clean, light-mode, and intellectually driven." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBINM7KfFVXjCXIOxjwP3kXWx5jUh9yKBIW1szq68K3FXekxZlMShBfrT7Ijc7nmalOxT8pcqaK0c6910ozNEajd-sDmUJRVzldCFlC5Rggj8qju9w9f_RjQ7rJyEo4xDjQ6QN1g95Qbziin4SDH0kPP6Uqmf5gO2WmdGRUWqDIW13kJtsO_DQDc1fUdfxZD9mGQz1Uc-IuIyTfUqiC5JRQvO4Ib68Nx5NbbWQnb0Ly7uhy-50UZkc2oks7qRUK2b_15sjka2SIufE"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-40 bg-surface-container-low border-r border-outline-muted/20 flex flex-col p-lg gap-sm pt-20">
+<div class="flex flex-col gap-xs mb-lg">
+<span class="font-display text-headline-md italic text-primary">LumiNa Academy</span>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Student Portal</p>
+</div>
+<nav class="flex-grow flex flex-col gap-1 sidebar-scroll overflow-y-auto">
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">school</span> My Courses
+            </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">store</span> Marketplace
+            </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">favorite</span> Wishlist
+            </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">assignment</span> Assignments
+            </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">verified</span> Certificates
+            </a>
+<div class="mt-xl pt-xl border-t border-outline-muted/20 flex flex-col gap-1">
+<a class="flex items-center gap-md p-md bg-primary-container text-on-primary-container rounded-xl font-bold transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+                </a>
+<a class="flex items-center gap-md p-md text-on-secondary-container hover:bg-surface-container-high rounded-xl transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">help_outline</span> Help
+                </a>
+</div>
+</nav>
+<div class="mt-auto pt-lg">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-xl font-label-md btn-shadow hover:brightness-110 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+                Upgrade to Pro
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-32 px-margin-desktop min-h-screen">
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<div class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Notification Preferences</h1>
+<p class="text-on-surface-variant text-body-lg">Control how and where you receive academic updates and institutional alerts.</p>
+</div>
+<!-- Bento Layout Settings -->
+<div class="flex flex-col gap-lg">
+<!-- Category 1: Learning & Academic -->
+<section class="glass-panel border border-outline-muted/20 rounded-xl p-xl shadow-sm">
+<div class="flex items-center gap-md mb-lg">
+<div class="p-3 bg-primary/10 rounded-full">
+<span class="material-symbols-outlined text-primary">school</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Learning &amp; Academic</h2>
+<p class="text-label-md text-on-surface-variant">Stay updated on your course progress and grades.</p>
+</div>
+</div>
+<div class="space-y-md">
+<!-- Setting Row -->
+<div class="flex items-center justify-between p-md bg-surface-container-lowest/50 rounded-lg border border-outline-muted/10">
+<div>
+<h3 class="font-bold text-on-surface">Grading</h3>
+<p class="text-sm text-on-surface-variant">Instant notification when a grade is posted.</p>
+</div>
+<div class="flex gap-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">In-App</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">Email</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+<!-- Setting Row -->
+<div class="flex items-center justify-between p-md bg-surface-container-lowest/50 rounded-lg border border-outline-muted/10">
+<div>
+<h3 class="font-bold text-on-surface">Feedback</h3>
+<p class="text-sm text-on-surface-variant">Comments from instructors on your submissions.</p>
+</div>
+<div class="flex gap-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">In-App</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">Email</span>
+<div class="toggle-switch" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+<!-- Setting Row -->
+<div class="flex items-center justify-between p-md bg-surface-container-lowest/50 rounded-lg border border-outline-muted/10">
+<div>
+<h3 class="font-bold text-on-surface">Assignments</h3>
+<p class="text-sm text-on-surface-variant">Due date reminders and new project releases.</p>
+</div>
+<div class="flex gap-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">In-App</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">Email</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Category 2: Commerce & Billing -->
+<section class="glass-panel border border-outline-muted/20 rounded-xl p-xl shadow-sm">
+<div class="flex items-center gap-md mb-lg">
+<div class="p-3 bg-tertiary-container/10 rounded-full">
+<span class="material-symbols-outlined text-tertiary-container">receipt_long</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Commerce &amp; Billing</h2>
+<p class="text-label-md text-on-surface-variant">Transaction history and subscription status.</p>
+</div>
+</div>
+<div class="space-y-md">
+<!-- Setting Row -->
+<div class="flex items-center justify-between p-md bg-surface-container-lowest/50 rounded-lg border border-outline-muted/10">
+<div>
+<h3 class="font-bold text-on-surface">Purchase success</h3>
+<p class="text-sm text-on-surface-variant">Confirmations for course enrollments.</p>
+</div>
+<div class="flex gap-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">In-App</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">Email</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+<!-- Setting Row -->
+<div class="flex items-center justify-between p-md bg-surface-container-lowest/50 rounded-lg border border-outline-muted/10">
+<div>
+<h3 class="font-bold text-on-surface">Invoices &amp; Refunds</h3>
+<p class="text-sm text-on-surface-variant">Official documents for your records.</p>
+</div>
+<div class="flex gap-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">In-App</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-[10px] font-code-sm text-outline uppercase tracking-widest">Email</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 2-Column Bento for Community & Achievements -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Community -->
+<section class="glass-panel border border-outline-muted/20 rounded-xl p-xl shadow-sm">
+<div class="flex items-center gap-md mb-lg">
+<div class="p-3 bg-secondary/10 rounded-full">
+<span class="material-symbols-outlined text-secondary">forum</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Community</h2>
+</div>
+</div>
+<div class="space-y-md">
+<div class="flex flex-col gap-sm">
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">Comment replies</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">Blog updates</span>
+<div class="toggle-switch" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Achievements -->
+<section class="glass-panel border border-outline-muted/20 rounded-xl p-xl shadow-sm">
+<div class="flex items-center gap-md mb-lg">
+<div class="p-3 bg-tertiary-accent/10 rounded-full">
+<span class="material-symbols-outlined text-tertiary-accent">military_tech</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Achievements</h2>
+</div>
+</div>
+<div class="space-y-md">
+<div class="flex flex-col gap-sm">
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">Certificates</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">Badges</span>
+<div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Action Footer -->
+<div class="mt-lg flex justify-end items-center gap-lg border-t border-outline-muted/20 pt-lg">
+<button class="px-xl py-3 text-on-surface-variant font-label-md hover:text-on-surface transition-colors">Discard changes</button>
+<button class="px-3xl py-3 bg-primary text-on-primary rounded-xl font-label-md btn-shadow hover:brightness-110 active:scale-95 transition-all" id="save-btn"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary-fixed">check_circle</span>Save Changes</div></button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xl bg-on-background border-t border-outline-muted/10 mt-2xl">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-max-width mx-auto">
+<span class="font-display text-headline-md italic text-surface-bright mb-md md:mb-0">LumiNa</span>
+<div class="flex gap-lg mb-md md:mb-0">
+<a class="font-body-md text-outline-variant hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-outline-variant hover:text-white transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-outline-variant hover:text-white transition-colors" href="#">Institutional Access</a>
+<a class="font-body-md text-outline-variant hover:text-white transition-colors" href="#">Support</a>
+</div>
+<p class="font-body-md text-outline-variant text-center md:text-right">© 2024 LumiNa Academic Systems. All Rights Reserved.</p>
+</div>
+</footer>
+<!-- Success Toast -->
+<div class="fixed right-8 z-[100] translate-y-24 opacity-0 transition-all duration-500 ease-out pt-24" id="toast"><div class="bg-on-surface text-surface-bright px-xl py-md rounded-full shadow-2xl flex items-center gap-md"><span class="material-symbols-outlined text-tertiary-fixed">check_circle</span><span class="font-label-md">Preferences saved successfully</span></div></div>
+<script>
+        // Micro-interaction for the save button
+        const saveBtn = document.getElementById('save-btn');
+        const toast = document.getElementById('toast');
+
+        saveBtn.addEventListener('click', () => {
+            // Animation for button
+            saveBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Updating...';
+            
+            setTimeout(() => {
+                // Restore button
+                saveBtn.innerHTML = 'Save Changes';
+                
+                // Show Toast
+                toast.classList.remove('translate-y-24', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+                
+                // Hide Toast
+                setTimeout(() => {
+                    toast.classList.add('translate-y-24', 'opacity-0');
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                }, 3000);
+            }, 800);
+        });
+
+        // Ensure toggles work visually (already handled inline but centralized for logic expansion)
+        document.querySelectorAll('.toggle-switch').forEach(toggle => {
+            toggle.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter' || e.key === ' ') {
+                    toggle.classList.toggle('active');
+                }
+            });
+            // Make toggles accessible
+            toggle.setAttribute('tabindex', '0');
+            toggle.setAttribute('role', 'switch');
+        });
+    </script>
+</body></html>

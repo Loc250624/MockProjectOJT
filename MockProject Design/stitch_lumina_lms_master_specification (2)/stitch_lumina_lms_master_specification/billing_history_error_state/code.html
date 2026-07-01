@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaction History | LumiNa Student Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:ital,wght@0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-primary-fixed": "#001849",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "outline": "#737685",
+                        "primary-container": "#0050cb",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-high": "#dce9ff",
+                        "primary": "#003b9a",
+                        "surface-variant": "#d3e3ff",
+                        "background": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-dim": "#cbdbf6",
+                        "surface-container": "#e6eeff",
+                        "surface-tint": "#1155d0",
+                        "outline-muted": "#c2c6d8",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#8fe2b8",
+                        "secondary-container": "#d7dff9",
+                        "tertiary-fixed-dim": "#85d7ae",
+                        "inverse-on-surface": "#ebf1ff",
+                        "on-surface": "#0b1c30",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#002113",
+                        "tertiary-accent": "#10b981",
+                        "on-background": "#0b1c30",
+                        "surface-bg": "#f8f9ff",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-highest": "#d3e3ff",
+                        "inverse-primary": "#b3c5ff",
+                        "on-secondary-fixed": "#131b2e",
+                        "tertiary-fixed": "#a0f4c9",
+                        "tertiary": "#004d33",
+                        "on-primary-container": "#c1cfff",
+                        "secondary": "#565e74",
+                        "on-secondary-container": "#5a6278",
+                        "outline-variant": "#c3c6d6",
+                        "on-surface-variant": "#434654",
+                        "on-secondary-fixed-variant": "#3e465b",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed": "#dae2fc",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#026746",
+                        "primary-fixed": "#dae1ff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-primary-fixed-variant": "#003fa4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "2xl": "48px",
+                        "xl": "32px",
+                        "margin-desktop": "40px",
+                        "sm": "8px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "3xl": "64px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "max-width": "1440px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-md": ["Inter"],
+                        "display": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "code-sm": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .btn-shadow {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        .bento-grid {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c3c6d6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed h-screen left-0 w-64 bg-surface-container-low border-r border-outline-variant flex flex-col p-md space-y-base z-50 hidden md:flex">
+<div class="mb-xl px-sm">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary italic">LumiNa Portal</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Academic Environment</p>
+</div>
+<nav class="flex-1 space-y-xs">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-label-md text-label-md">My Learning</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md text-label-md">Assignments</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">grade</span>
+<span class="font-label-md text-label-md">Grades</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Community</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-md space-y-xs">
+<button class="w-full bg-primary text-on-primary py-sm rounded-xl font-bold btn-shadow hover:opacity-90 transition-all flex items-center justify-center gap-sm mb-lg">
+<span class="material-symbols-outlined">video_call</span>
+                Join Live Class
+            </button>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-40 flex justify-between items-center w-full h-16 px-margin-desktop bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-xl">
+<div class="md:hidden font-headline-md text-headline-md text-primary italic">LumiNa</div>
+<div class="hidden lg:flex items-center gap-lg">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Courses</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Schedule</a>
+</div>
+</div>
+<div class="flex items-center gap-md flex-1 max-w-md mx-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border border-outline-muted focus:border-primary focus:ring-0 text-sm" placeholder="Search orders..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-sm hover:bg-surface-variant rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-sm hover:bg-surface-variant rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border border-outline-muted overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a young academic student wearing a navy blazer, looking directly at the camera with a confident and intellectual expression. The background is a soft, blurred library setting with warm, ambient lighting. The overall aesthetic is high-fidelity, polished, and fits a premium corporate educational platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1OGEUH_VnO3h1I7CaVYsswJ6X7-2FU1kfcFQBYlyGgRG3zA9s0gIZdSl-gv5EmYucUQeGk71bbLZ6u2C-z3w_1NJzxbMLbvYyO3CeLYv-D4IVima6JSj2Mb2RYBFWZ5ehStrOrRW3ERywQCon3WuCqqQGHzvygrwvDv8Sm9JFZaUzy9BQwdmF7L6GDRjQCDLSk_D9mcFzN6_L2IMqaW_ENHXOXtrCn72O-YaOh6ml3B7z2D-q8E6YS_BSFBA7kpRflPolKu3gZJY"/>
+</div>
+</div>
+</header>
+<!-- Page Hero -->
+<section class="px-margin-desktop py-xl">
+<div class="flex flex-col md:flex-row justify-between items-end gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg italic">Transaction <span class="text-primary">History</span></h2>
+<p class="text-on-surface-variant font-body-md mt-sm max-w-2xl">
+                        Monitor your academic investments and subscription status. All records are cryptographically verified for institutional compliance.
+                    </p>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-surface border border-outline-muted rounded-xl flex items-center gap-xs font-label-md text-label-md hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export CSV
+                    </button>
+<button class="px-md py-sm bg-primary text-on-primary rounded-xl flex items-center gap-xs font-label-md text-label-md btn-shadow hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                        Request Audit
+                    </button>
+</div>
+</div>
+</section>
+<!-- Content Area: Filter & Table -->
+<section class="px-margin-desktop pb-3xl flex-1">
+<div class="bg-surface-container-lowest border border-outline-muted rounded-xl overflow-hidden shadow-sm">
+<!-- Filters Bar -->
+<div class="p-lg border-b border-outline-variant flex flex-col lg:flex-row gap-lg items-center justify-between bg-surface-container-low">
+<div class="flex flex-wrap gap-md w-full lg:w-auto">
+<div class="flex flex-col gap-xs min-w-[160px]">
+<label class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider pl-1">Status</label>
+<select class="bg-surface-container-lowest border border-outline-muted rounded-lg px-md py-sm text-sm focus:border-primary outline-none">
+<option>All Statuses</option>
+<option>Paid</option>
+<option>Pending</option>
+<option>Failed</option>
+<option>Refunded</option>
+</select>
+</div>
+<div class="flex flex-col gap-xs min-w-[180px]">
+<label class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider pl-1">Date Range</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">calendar_today</span>
+<input class="w-full bg-surface-container-lowest border border-outline-muted rounded-lg px-md py-sm text-sm focus:border-primary outline-none pr-10" type="text" value="Last 90 Days"/>
+</div>
+</div>
+<div class="flex flex-col gap-xs min-w-[200px]">
+<label class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider pl-1">Search</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-muted rounded-lg px-md py-sm text-sm focus:border-primary outline-none pr-10" placeholder="Course ID or Name..." type="text"/>
+</div>
+</div>
+</div>
+<div class="text-on-surface-variant font-label-md text-label-md">
+                        Showing 1-8 of 24 transactions
+                    </div>
+</div>
+<!-- Transaction Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-high">
+<tr>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">Transaction ID</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">Course</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant text-right">Amount</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">Method</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">Status</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">Date</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant uppercase tracking-widest border-b border-outline-variant"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-8842-QC</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+</div>
+<span class="font-medium text-on-surface">Quantum Information Theory: Advanced Cryptography</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$1,250.00</td>
+<td class="px-lg py-md text-on-surface-variant">Institutional Grant</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-fixed-dim">
+                                        PAID
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 24, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-9102-AI</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined text-[18px]">neurology</span>
+</div>
+<span class="font-medium text-on-surface">LLM Architecture &amp; Distributed Training</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$890.00</td>
+<td class="px-lg py-md text-on-surface-variant">Visa Ending ••44</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-fixed-dim">
+                                        PAID
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 20, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-7763-ML</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-[18px]">analytics</span>
+</div>
+<span class="font-medium text-on-surface">Bayesian Inference for Predictive Modeling</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$540.00</td>
+<td class="px-lg py-md text-on-surface-variant">PayPal Account</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-error-container text-on-error-container border border-error">
+                                        FAILED
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 18, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-4421-QC</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</div>
+<span class="font-medium text-on-surface">Intro to Qiskit &amp; Quantum Algorithms</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$320.00</td>
+<td class="px-lg py-md text-on-surface-variant">Visa Ending ••44</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container-highest text-on-surface-variant border border-outline">
+                                        PENDING
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 15, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-1029-CV</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</div>
+<span class="font-medium text-on-surface">Computer Vision: Synthetic Data Generation</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$780.00</td>
+<td class="px-lg py-md text-on-surface-variant">Bank Transfer</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-fixed-dim">
+                                        PAID
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 10, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-code-sm text-code-sm text-primary font-semibold">#LMN-5520-RL</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+</div>
+<span class="font-medium text-on-surface">Reinforcement Learning for Robotics</span>
+</div>
+</td>
+<td class="px-lg py-md text-right font-semibold">$1,100.00</td>
+<td class="px-lg py-md text-on-surface-variant">Institutional Grant</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container-highest text-on-surface-variant border border-outline">
+                                        REFUNDED
+                                    </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant">Oct 05, 2024</td>
+<td class="px-lg py-md text-right">
+<button class="p-xs text-outline hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div><div class="hidden p-3xl flex flex-col items-center justify-center text-center bg-surface-container-lowest" id="billing-error-state">
+<div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error mb-lg">
+<span class="material-symbols-outlined text-3xl">cloud_off</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Connection Error</h3>
+<p class="text-on-surface-variant font-body-md max-w-md mb-xl">
+        We're having trouble loading your transaction history. This might be due to a temporary network issue or server maintenance.
+    </p>
+<div class="flex flex-col sm:flex-row gap-md">
+<button class="px-xl py-sm bg-primary text-on-primary rounded-xl font-bold btn-shadow hover:opacity-90 transition-all flex items-center gap-sm">
+<span class="material-symbols-outlined">refresh</span>
+            Retry Loading
+        </button>
+<a class="px-xl py-sm bg-surface border border-outline-muted text-on-surface rounded-xl font-bold hover:bg-surface-container transition-all flex items-center gap-sm" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+            Contact Support
+        </a>
+</div>
+</div>
+<!-- Table Footer/Pagination -->
+<div class="p-lg flex items-center justify-between bg-surface-container-low border-t border-outline-variant">
+<div class="text-sm text-on-surface-variant">
+                        Showing page 1 of 3
+                    </div>
+<div class="flex gap-sm">
+<button class="p-sm rounded-lg border border-outline-muted text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="px-md py-sm rounded-lg border border-primary bg-primary-container text-on-primary-container text-sm font-bold">1</button>
+<button class="px-md py-sm rounded-lg border border-outline-muted text-on-surface-variant text-sm hover:bg-surface-container transition-colors">2</button>
+<button class="px-md py-sm rounded-lg border border-outline-muted text-on-surface-variant text-sm hover:bg-surface-container transition-colors">3</button>
+<button class="p-sm rounded-lg border border-outline-muted text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contextual Insight (Bento Box Extension) -->
+<div class="mt-lg grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="glass-card border border-outline-muted rounded-xl p-lg flex flex-col justify-between">
+<div>
+<span class="text-label-md font-label-md text-primary uppercase tracking-widest">Yearly Spend</span>
+<div class="font-headline-md text-headline-md mt-xs italic">$4,880.00</div>
+</div>
+<div class="mt-md">
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 65%;"></div>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-sm">65% of allocated research budget utilized.</p>
+</div>
+</div>
+<div class="glass-card border border-outline-muted rounded-xl p-lg flex flex-col justify-between">
+<div>
+<span class="text-label-md font-label-md text-tertiary-accent uppercase tracking-widest">Active Grants</span>
+<div class="font-headline-md text-headline-md mt-xs italic">3 Institutional</div>
+</div>
+<div class="flex items-center gap-sm mt-md">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-primary border-2 border-surface"></div>
+<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface"></div>
+<div class="w-6 h-6 rounded-full bg-tertiary border-2 border-surface"></div>
+</div>
+<span class="text-[11px] text-on-surface-variant">Shared with 2 advisors</span>
+</div>
+</div>
+<div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-lg flex flex-col justify-between shadow-xl">
+<div class="flex justify-between items-start">
+<div>
+<span class="text-label-md font-label-md text-primary-fixed-dim uppercase tracking-widest">Quick Support</span>
+<h4 class="font-headline-sm text-headline-sm mt-xs">Payment Issue?</h4>
+</div>
+<span class="material-symbols-outlined text-primary-fixed-dim">support</span>
+</div>
+<button class="w-full mt-lg py-sm bg-surface-bright text-on-surface font-bold rounded-lg text-sm hover:bg-surface-container-high transition-all">
+                        Open Support Ticket
+                    </button>
+</div>
+</div>
+</section>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-outline-variant">
+<div class="mb-md md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface italic font-bold">LumiNa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">© 2024 LumiNa E-Learning Systems. All rights reserved.</p>
+</div>
+<div class="flex gap-lg flex-wrap justify-center">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</footer>
+</main>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                // Mock interaction for row selection
+                const isSelected = row.classList.contains('bg-surface-container');
+                document.querySelectorAll('tr').forEach(r => r.classList.remove('bg-surface-container'));
+                if(!isSelected) row.classList.add('bg-surface-container');
+            });
+        });
+
+        // Simple feedback for action buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.98)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

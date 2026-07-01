@@ -32,6 +32,7 @@ public class User {
     private String passwordHash;
 
     
+    @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
     @Convert(converter = RoleConverter.class)
