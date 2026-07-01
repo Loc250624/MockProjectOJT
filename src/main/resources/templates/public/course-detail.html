@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,8 +82,14 @@
             <div style="font-size:2rem; font-weight:800; color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + course.price}">$49.99</div>
             <p style="font-size:0.75rem; color:var(--lumina-danger); font-weight:600; margin-top:2px;">⏰ Special pricing available</p>
 
-            <!-- Login to Enroll button (since this is public view) -->
-            <a th:href="@{/auth/login}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-blue); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Login to Enroll</a>
+            <!-- Login to Enroll button (Anonymous) -->
+            <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-blue); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Login to Enroll</a>
+            
+            <!-- Enroll Now button (Student) -->
+            <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/checkout(courseId=${course.id})}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-success); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Enroll Now</a>
+            
+            <!-- Disabled button (Teacher/Admin) -->
+            <button sec:authorize="!isAnonymous() and !hasRole('STUDENT')" disabled class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-gray-400); color:white; border-radius:10px; font-weight:700; font-size:1rem; cursor:not-allowed; border:none; width:100%;">Students Only</button>
             
             <p style="font-size:0.75rem; color:var(--lumina-gray-400); text-align:center; margin-top:0.75rem;">30-Day Money-Back Guarantee</p>
             <hr style="border:none; border-top:1px solid var(--lumina-gray-200); margin:1.25rem 0;">

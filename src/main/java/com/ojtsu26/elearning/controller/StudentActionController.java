@@ -28,10 +28,7 @@ public class StudentActionController {
         return ResponseEntity.ok(Map.of("message", "Submit code assignment " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/checkout")
-    public ResponseEntity<?> checkout() {
-        return ResponseEntity.ok(Map.of("message", "Checkout placeholder - not yet implemented"));
-    }
+
 
     @PostMapping("/blogs/{id}/comments")
     public ResponseEntity<?> addComment(@PathVariable Long id) {

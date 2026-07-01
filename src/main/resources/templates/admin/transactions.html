@@ -12,7 +12,40 @@
         <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
         <main class="main-content">
             <h1>Transactions</h1>
-            <table class="table"><thead><tr><th>ID</th><th>User</th><th>Course</th><th>Amount</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody><tr><td>1</td><td>Student A</td><td>Java Course</td><td>$50</td><td>Payment</td><td>Success</td><td>2026-06-25</td></tr></tbody></table>
+            <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
+                <form th:action="@{/admin/transactions}" method="get" style="width: 300px;">
+                    <input type="text" name="keyword" th:value="${keyword}" placeholder="Search transactions..." style="width: 100%; padding: 0.375rem 0.75rem; font-size: 0.875rem; border: 1px solid #ced4da; border-radius: 0.25rem;">
+                </form>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Course</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Ref</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="txn : ${transactions}">
+                        <td th:text="${txn.id}">1</td>
+                        <td th:text="${txn.student != null ? txn.student.fullName + ' (' + txn.student.email + ')' : 'N/A'}">Student A</td>
+                        <td th:text="${txn.course != null ? txn.course.title : 'N/A'}">Java Course</td>
+                        <td th:text="${txn.amount} + ' VND'">2,500,000 VND</td>
+                        <td th:text="${txn.paymentMethod}">MoMo</td>
+                        <td th:text="${txn.transactionRef}">TXN123456</td>
+                        <td th:text="${txn.status}">SUCCESS</td>
+                        <td th:text="${#temporals.format(txn.createdAt, 'yyyy-MM-dd HH:mm')}">2026-06-25 12:00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transactions)}">
+                        <td colspan="8" style="text-align: center; color: var(--lumina-gray-500);">No transactions found.</td>
+                    </tr>
+                </tbody>
+            </table>
         </main>
     </div>
     <footer th:replace="~{fragments/layout :: footer}"></footer>

@@ -182,7 +182,7 @@
             <div style="font-size:2rem;font-weight:800;color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + course.price}">$199.00</div>
             <p style="font-size:0.75rem;color:var(--lumina-danger);font-weight:600;margin-top:2px;">⏰ Special pricing available</p>
 
-            <a th:href="@{/student/checkout}" class="btn-enroll" id="btn-enroll-now">Enroll Now →</a>
+            <a th:href="@{/student/checkout(courseId=${course.id})}" class="btn-enroll" id="btn-enroll-now">Enroll Now →</a>
             <button class="btn-try" id="btn-try-free">Try First Lesson Free</button>
 
             <p style="font-size:0.75rem;color:var(--lumina-gray-400);text-align:center;margin-top:0.75rem;">30-Day Money-Back Guarantee</p>

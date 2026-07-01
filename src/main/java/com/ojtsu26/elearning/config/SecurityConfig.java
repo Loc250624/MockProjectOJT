@@ -91,6 +91,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                         "/api/auth/**",
+                        "/api/payment/webhook",
                         "/auth/login",
                         "/auth/register",
                         "/oauth2/**",
@@ -107,7 +108,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/student/**", "/api/student/**").hasRole("STUDENT")
-                .requestMatchers("/teacher/**", "/api/teacher/**").hasRole("TEACHER")
+                .requestMatchers("/teacher/**", "/api/teacher/**", "/instructor/**").hasRole("TEACHER")
                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

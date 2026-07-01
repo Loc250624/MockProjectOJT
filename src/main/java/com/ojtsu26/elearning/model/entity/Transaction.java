@@ -52,4 +52,10 @@ public class Transaction {
     @JoinColumn(name = "course_id")
     @JsonBackReference("transaction-course")
     private Course course;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    @JsonBackReference("transaction-order")
+    private Order order;
 }
+

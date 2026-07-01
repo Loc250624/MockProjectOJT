@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ojtsu26.elearning.repository.TransactionRepository;
+import com.ojtsu26.elearning.model.entity.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -21,6 +28,7 @@ public class AdminViewController {
 
     private final CategoryService categoryService;
     private final CourseService courseService;
+    private final TransactionRepository transactionRepository;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
@@ -120,10 +128,34 @@ public class AdminViewController {
     public String comments() { return "admin/comments"; }
 
     @GetMapping("/payments")
-    public String payments() { return "admin/payments"; }
+    public String payments(@RequestParam(value = "page", defaultValue = "0") int page,
+                           @RequestParam(value = "size", defaultValue = "10") int size,
+                           @RequestParam(value = "keyword", required = false) String keyword,
+                           Model model) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Transaction> txnPage = transactionRepository.searchTransactions(keyword, pageable);
+
+        model.addAttribute("transactions", txnPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", txnPage.getTotalPages());
+        model.addAttribute("keyword", keyword);
+        return "admin/payments";
+    }
 
     @GetMapping("/transactions")
-    public String transactions() { return "admin/transactions"; }
+    public String transactions(@RequestParam(value = "page", defaultValue = "0") int page,
+                               @RequestParam(value = "size", defaultValue = "10") int size,
+                               @RequestParam(value = "keyword", required = false) String keyword,
+                               Model model) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Transaction> txnPage = transactionRepository.searchTransactions(keyword, pageable);
+
+        model.addAttribute("transactions", txnPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", txnPage.getTotalPages());
+        model.addAttribute("keyword", keyword);
+        return "admin/transactions";
+    }
 
     @GetMapping("/refunds")
     public String refunds() { return "admin/refunds"; }

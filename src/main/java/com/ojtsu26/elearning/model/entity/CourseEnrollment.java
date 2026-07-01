@@ -10,7 +10,9 @@ import com.ojtsu26.elearning.model.enums.*;
 import java.util.List;
 
 @Entity
-@Table(name = "Course_Enrollments")
+@Table(name = "Course_Enrollments", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"student_id", "course_id"})
+})
 @Getter
 @Setter
 @Builder

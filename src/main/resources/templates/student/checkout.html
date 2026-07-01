@@ -106,6 +106,7 @@
                 <p style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:1.75rem;">All transactions are secured with 256-bit SSL encryption. Choose your preferred academic billing path.</p>
 
                 <form th:action="@{/student/checkout}" method="post" id="payment-form">
+                    <input type="hidden" name="courseId" th:value="${courseId}">
 
                     <!-- MoMo -->
                     <label class="payment-method-card selected" id="label-momo">

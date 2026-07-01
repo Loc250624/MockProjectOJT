@@ -62,9 +62,9 @@
                 <div class="admin-table-container">
                     <div class="card-header" style="padding:1.5rem 1.5rem 0;">
                         <h2 class="card-title">Recent Transactions</h2>
-                        <div class="table-search" style="width:250px;">
-                            <input type="text" placeholder="Search Trans ID..." style="height:32px;padding:0.25rem 1rem 0.25rem 2rem;">
-                        </div>
+                        <form th:action="@{/admin/payments}" method="get" class="table-search" style="width:250px; position: relative;">
+                            <input type="text" name="keyword" th:value="${keyword}" placeholder="Search transactions..." style="height:32px;padding:0.25rem 1rem 0.25rem 2rem; width: 100%;">
+                        </form>
                     </div>
                     <div style="padding:1.5rem;overflow-x:auto;">
                         <table class="lumina-table">
@@ -78,26 +78,19 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8892-A</td>
-                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">Alex Johnson</div></td>
-                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$199.00</td>
-                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">Credit Card •••• 4242</span></td>
-                                    <td><span class="badge status-active badge-dot">Completed</span></td>
+                                <tr th:each="txn : ${transactions}">
+                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);" th:text="${txn.transactionRef}">TXN-8892-A</td>
+                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);" th:text="${txn.student != null ? txn.student.fullName : 'N/A'}">Alex Johnson</div></td>
+                                    <td style="font-weight:700;color:var(--lumina-gray-900);" th:text="${txn.amount} + ' VND'">$199.00</td>
+                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);" th:text="${txn.paymentMethod}">Credit Card</span></td>
+                                    <td>
+                                        <span class="badge badge-dot" 
+                                              th:classappend="${txn.status.name() == 'SUCCESS' ? 'status-active' : (txn.status.name() == 'PENDING' ? 'status-pending' : 'status-inactive')}"
+                                              th:text="${txn.status}">Completed</span>
+                                    </td>
                                 </tr>
-                                <tr>
-                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8893-B</td>
-                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">Maria Garcia</div></td>
-                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$89.00</td>
-                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">MoMo E-Wallet</span></td>
-                                    <td><span class="badge status-active badge-dot">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-family:var(--font-mono);font-size:0.8125rem;color:var(--lumina-gray-500);">TXN-8894-C</td>
-                                    <td><div style="font-weight:600;color:var(--lumina-gray-900);">David Kim</div></td>
-                                    <td style="font-weight:700;color:var(--lumina-gray-900);">$299.00</td>
-                                    <td><span style="font-size:0.8125rem;color:var(--lumina-gray-600);">VNPay</span></td>
-                                    <td><span class="badge status-pending badge-dot">Processing</span></td>
+                                <tr th:if="${#lists.isEmpty(transactions)}">
+                                    <td colspan="5" style="text-align: center; color: var(--lumina-gray-500);">No transactions found.</td>
                                 </tr>
                             </tbody>
                         </table>

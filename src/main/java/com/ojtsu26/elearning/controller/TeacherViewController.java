@@ -27,7 +27,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Optional;
 
 @Controller
-@RequestMapping("/teacher")
+@RequestMapping({"/teacher", "/instructor"})
 @RequiredArgsConstructor
 public class TeacherViewController {
 
