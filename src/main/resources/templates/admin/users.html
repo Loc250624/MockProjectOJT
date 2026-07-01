@@ -47,6 +47,7 @@
                             <option value="">All Statuses</option>
                             <option value="ACTIVE">Active</option>
                             <option value="BLOCKED">Blocked</option>
+                            <option value="DELETED">Deleted</option>
                         </select>
                         <select id="user-provider-filter" class="form-control" style="width:140px;height:36px;font-size:0.8125rem;">
                             <option value="">All Providers</option>
@@ -130,7 +131,7 @@
             <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Reset Password Link - Not available</button>
             <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Change Role - Not available</button>
             <button id="user-panel-status-action" class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Block User Account</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Delete User Data - Not available</button>
+            <button id="user-panel-delete-action" class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Soft-delete Account</button>
         </div>
     </div>
 </div>

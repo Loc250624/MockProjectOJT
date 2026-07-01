@@ -46,6 +46,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         User user;
         if (userOptional.isPresent()) {
             user = userOptional.get();
+            if (user.getStatus() == UserStatus.DELETED) {
+                SecurityContextHolder.clearContext();
+                log.warn("Deleted OAuth2 login attempt: {}", email);
+                response.sendRedirect("/auth/login?error=deleted");
+                return;
+            }
             if (user.getStatus() != UserStatus.ACTIVE) {
                 SecurityContextHolder.clearContext();
                 log.warn("Blocked OAuth2 login attempt: {}", email);
@@ -72,7 +78,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         if (user.getStatus() != UserStatus.ACTIVE) {
             SecurityContextHolder.clearContext();
             log.warn("Inactive OAuth2 login attempt: {}", email);
-            response.sendRedirect("/auth/login?error=blocked");
+            response.sendRedirect(user.getStatus() == UserStatus.DELETED
+                    ? "/auth/login?error=deleted"
+                    : "/auth/login?error=blocked");
             return;
         }
 

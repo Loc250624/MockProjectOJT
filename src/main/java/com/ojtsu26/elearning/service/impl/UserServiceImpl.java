@@ -110,6 +110,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId) {
         User user = getTargetUserForAdminAction(targetUserId, currentAdminId);
+        if (user.getStatus() == UserStatus.DELETED) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_DELETED);
+        }
         if (user.getStatus() == UserStatus.BLOCKED) {
             throw new BusinessException(ErrorCode.USER_ALREADY_BLOCKED);
         }
@@ -122,6 +125,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDTO unblockUser(Integer targetUserId, Integer currentAdminId) {
         User user = getTargetUserForAdminAction(targetUserId, currentAdminId);
+        if (user.getStatus() == UserStatus.DELETED) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_DELETED);
+        }
         if (user.getStatus() == UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.USER_NOT_BLOCKED);
         }
@@ -139,7 +145,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(Integer id) {
-        userRepository.deleteById(id);
+    @Transactional
+    public UserResponseDTO softDeleteUser(Integer targetUserId, Integer currentAdminId) {
+        if (targetUserId != null && targetUserId.equals(currentAdminId)) {
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_OWN_ACCOUNT);
+        }
+
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.DELETED) {
+            user.setStatus(UserStatus.DELETED);
+            user = userRepository.save(user);
+        }
+
+        return userMapper.toDto(user);
     }
 }

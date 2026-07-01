@@ -18,5 +18,5 @@ public interface UserService {
     UserResponseDTO update(Integer id, UserRequestDTO requestDTO);
     UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId);
     UserResponseDTO unblockUser(Integer targetUserId, Integer currentAdminId);
-    void delete(Integer id);
+    UserResponseDTO softDeleteUser(Integer targetUserId, Integer currentAdminId);
 }

@@ -93,8 +93,11 @@ public class AdminActionController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> softDeleteUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.softDeleteUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User account has been soft-deleted. Historical data remains preserved."));
     }
 
     @PatchMapping("/users/{id}/block")

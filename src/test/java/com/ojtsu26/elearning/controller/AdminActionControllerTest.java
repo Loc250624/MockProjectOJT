@@ -1,9 +1,21 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.entity.Blog;
+import com.ojtsu26.elearning.model.entity.Course;
+import com.ojtsu26.elearning.model.entity.CourseEnrollment;
+import com.ojtsu26.elearning.model.entity.Transaction;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.model.enums.BlogStatus;
+import com.ojtsu26.elearning.model.enums.CourseStatus;
+import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.model.enums.TransactionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
+import com.ojtsu26.elearning.repository.BlogRepository;
+import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
+import com.ojtsu26.elearning.repository.CourseRepository;
+import com.ojtsu26.elearning.repository.TransactionRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtUtils;
@@ -25,6 +37,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +48,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -60,6 +74,18 @@ class AdminActionControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
+
+    @Autowired
+    private CourseEnrollmentRepository courseEnrollmentRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private BlogRepository blogRepository;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -319,6 +345,197 @@ class AdminActionControllerTest {
         assertNull(response.getHeader(HttpHeaders.SET_COOKIE));
         assertEquals(AuthProvider.LOCAL, findByEmail("david.blocked@example.com").getAuthProvider());
         assertEquals(UserStatus.BLOCKED, findByEmail("david.blocked@example.com").getStatus());
+    }
+
+    @Test
+    void adminSoftDeletesActiveUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User account has been soft-deleted. Historical data remains preserved."))
+                .andExpect(jsonPath("$.data.id").value(target.getId()))
+                .andExpect(jsonPath("$.data.status").value("DELETED"));
+
+        assertEquals(UserStatus.DELETED, findByEmail("alice.student@example.com").getStatus());
+    }
+
+    @Test
+    void adminSoftDeletesBlockedUser() throws Exception {
+        User target = findByEmail("david.blocked@example.com");
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(target.getId()))
+                .andExpect(jsonPath("$.data.status").value("DELETED"));
+
+        assertEquals(UserStatus.DELETED, findByEmail("david.blocked@example.com").getStatus());
+    }
+
+    @Test
+    void adminCannotSoftDeleteSelf() throws Exception {
+        User admin = findByEmail("carla.admin@example.com");
+
+        mockMvc.perform(delete("/api/admin/users/{id}", admin.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Admin cannot soft-delete their own account"));
+
+        assertEquals(UserStatus.ACTIVE, findByEmail("carla.admin@example.com").getStatus());
+    }
+
+    @Test
+    void softDeleteMissingUserReturnsNotFound() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/{id}", 999_999)
+                        .with(adminPrincipal()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User does not exist"));
+    }
+
+    @Test
+    void repeatedSoftDeleteIsIdempotentAndKeepsUserRecord() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+        long countBefore = userRepository.count();
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DELETED"));
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DELETED"));
+
+        assertEquals(countBefore, userRepository.count());
+        assertEquals(UserStatus.DELETED, userRepository.findById(target.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
+    void softDeleteKeepsRelatedEnrollmentTransactionCourseAndBlog() throws Exception {
+        User student = findByEmail("alice.student@example.com");
+        User teacher = findByEmail("bob.teacher@example.com");
+        Course course = courseRepository.save(Course.builder()
+                .title("Soft Delete Safety")
+                .description("Related data must remain")
+                .price(BigDecimal.TEN)
+                .status(CourseStatus.APPROVED)
+                .instructor(teacher)
+                .build());
+        CourseEnrollment enrollment = courseEnrollmentRepository.save(CourseEnrollment.builder()
+                .student(student)
+                .course(course)
+                .progressPercentage(BigDecimal.valueOf(42))
+                .isCompleted(false)
+                .build());
+        Transaction transaction = transactionRepository.save(Transaction.builder()
+                .student(student)
+                .course(course)
+                .amount(BigDecimal.TEN)
+                .paymentMethod(PaymentMethod.VNPAY)
+                .transactionRef("soft-delete-retention-" + student.getId())
+                .status(TransactionStatus.SUCCESS)
+                .build());
+        Blog blog = blogRepository.save(Blog.builder()
+                .author(student)
+                .title("Retained Blog")
+                .content("This blog should remain after user soft-delete.")
+                .status(BlogStatus.APPROVED)
+                .build());
+
+        mockMvc.perform(delete("/api/admin/users/{id}", student.getId())
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DELETED"));
+
+        assertEquals(UserStatus.DELETED, userRepository.findById(student.getId()).orElseThrow().getStatus());
+        assertEquals(true, courseRepository.existsById(course.getId()));
+        assertEquals(true, courseEnrollmentRepository.existsById(enrollment.getId()));
+        assertEquals(true, transactionRepository.existsById(transaction.getId()));
+        assertEquals(true, blogRepository.existsById(blog.getId()));
+    }
+
+    @Test
+    void deletedUserCannotLoginLocally() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+        target.setStatus(UserStatus.DELETED);
+        userRepository.save(target);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("{\"email\":\"alice.student@example.com\",\"password\":\"secret-hash\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(cookie().doesNotExist("jwt_token"));
+    }
+
+    @Test
+    void deletedUserCannotUseOldJwt() throws Exception {
+        User student = findByEmail("alice.student@example.com");
+        String token = jwtUtils.generateTokenFromEmail(student.getEmail());
+        student.setStatus(UserStatus.DELETED);
+        userRepository.save(student);
+
+        mockMvc.perform(get("/api/student/dashboard")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deletedUserCannotLoginWithOAuth2() throws Exception {
+        User deleted = findByEmail("bob.teacher@example.com");
+        deleted.setStatus(UserStatus.DELETED);
+        userRepository.save(deleted);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        OAuth2User principal = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("ROLE_TEACHER")),
+                Map.of("email", deleted.getEmail(), "name", deleted.getFullName()),
+                "email");
+        OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
+                principal,
+                principal.getAuthorities(),
+                "google");
+
+        oAuth2LoginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+
+        assertEquals("/auth/login?error=deleted", response.getRedirectedUrl());
+        assertNull(response.getHeader(HttpHeaders.SET_COOKIE));
+        assertEquals(UserStatus.DELETED, findByEmail("bob.teacher@example.com").getStatus());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void filtersByDeletedStatus() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+        target.setStatus(UserStatus.DELETED);
+        userRepository.save(target);
+
+        mockMvc.perform(get("/api/admin/users").param("status", "DELETED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].status").value("DELETED"))
+                .andExpect(jsonPath("$.data.content[0].email").value("alice.student@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "STUDENT")
+    void studentCannotSoftDeleteUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "TEACHER")
+    void teacherCannotSoftDeleteUser() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId()))
+                .andExpect(status().isForbidden());
     }
 
     private User user(String fullName, String email, Role role, UserStatus status, AuthProvider authProvider) {

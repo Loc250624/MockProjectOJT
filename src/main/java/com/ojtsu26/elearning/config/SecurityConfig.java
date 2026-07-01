@@ -66,7 +66,8 @@ public class SecurityConfig {
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                if (encodedPassword == null) return false;
+                if (encodedPassword == null)
+                    return false;
                 // If it looks like a BCrypt hash, verify with BCrypt
                 if (encodedPassword.startsWith("$2a$")) {
                     return bcrypt.matches(rawPassword, encodedPassword);
@@ -80,45 +81,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .exceptionHandling(exception -> exception
-                    .authenticationEntryPoint(unauthorizedHandler)
-                    .accessDeniedHandler(accessDeniedHandler)
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(
-                        "/api/auth/**",
-                        "/auth/login",
-                        "/auth/register",
-                        "/oauth2/**",
-                        "/login/oauth2/**",
-                        "/error",
-                        "/",
-                        "/courses",
-                        "/courses/**",
-                        "/blogs",
-                        "/blogs/**",
-                        "/favicon.ico"
-                ).permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
-                .requestMatchers("/student/**", "/api/student/**").hasRole("STUDENT")
-                .requestMatchers("/teacher/**", "/api/teacher/**").hasRole("TEACHER")
-                .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .loginPage("/auth/login")
-                .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler((request, response, exception) -> {
-                    logOAuth2Failure(request.getRequestURI(), exception);
-                    response.sendRedirect("/auth/login?error=oauth2");
-                })
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(unauthorizedHandler)
+                        .accessDeniedHandler(accessDeniedHandler))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/auth/login", "/auth/register", "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/error",
+                                "/",
+                                "/courses",
+                                "/courses/**",
+                                "/blogs",
+                                "/blogs/**",
+                                "/favicon.ico")
+                        .permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                        .requestMatchers("/student/**", "/api/student/**").hasRole("STUDENT")
+                        .requestMatchers("/teacher/**", "/api/teacher/**").hasRole("TEACHER")
+                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/auth/login")
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            logOAuth2Failure(request.getRequestURI(), exception);
+                            response.sendRedirect("/auth/login?error=oauth2");
+                        }))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -136,8 +130,7 @@ public class SecurityConfig {
                 exception.getClass().getName(),
                 errorCode,
                 exception.getMessage(),
-                exception
-        );
+                exception);
     }
 
     @Bean
@@ -147,10 +140,10 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:3000",
-                "http://127.0.0.1:5173"
-        ));
+                "http://127.0.0.1:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        configuration
+                .setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

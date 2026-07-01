@@ -29,7 +29,8 @@ function initUserAdministration() {
         sortDir: 'desc',
         users: [],
         selectedUser: null,
-        pendingStatusUserId: null
+        pendingStatusUserId: null,
+        pendingDeleteUserId: null
     };
 
     var portal = document.querySelector('.lumina-portal');
@@ -55,7 +56,8 @@ function initUserAdministration() {
         panelAvatar: document.getElementById('user-panel-avatar'),
         panelCreatedAt: document.getElementById('user-panel-created-at'),
         panelProvider: document.getElementById('user-panel-provider'),
-        panelStatusAction: document.getElementById('user-panel-status-action')
+        panelStatusAction: document.getElementById('user-panel-status-action'),
+        panelDeleteAction: document.getElementById('user-panel-delete-action')
     };
 
     var debouncedLoadUsers = debounce(function() {
@@ -90,6 +92,13 @@ function initUserAdministration() {
             return;
         }
         changeSelectedUserStatus();
+    });
+
+    elements.panelDeleteAction.addEventListener('click', function() {
+        if (!state.selectedUser || state.pendingDeleteUserId) {
+            return;
+        }
+        softDeleteSelectedUser();
     });
 
     loadUsers();
@@ -217,6 +226,9 @@ function initUserAdministration() {
         if (user.status === 'BLOCKED') {
             elements.panelStatus.style.background = 'var(--lumina-danger-bg)';
             elements.panelStatus.style.color = 'var(--lumina-danger)';
+        } else if (user.status === 'DELETED') {
+            elements.panelStatus.style.background = 'var(--lumina-gray-200)';
+            elements.panelStatus.style.color = 'var(--lumina-gray-700)';
         } else {
             elements.panelStatus.removeAttribute('style');
         }
@@ -224,17 +236,21 @@ function initUserAdministration() {
         elements.panelProvider.textContent = user.authProvider || '--';
         renderPanelAvatar(user);
         renderStatusAction(user);
+        renderDeleteAction(user);
         elements.panel.classList.add('open');
     }
 
     function renderStatusAction(user) {
         var isSelfAdmin = Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId;
-        elements.panelStatusAction.disabled = isSelfAdmin || state.pendingStatusUserId === user.id;
+        var isDeleted = user.status === 'DELETED';
+        elements.panelStatusAction.disabled = isSelfAdmin || isDeleted || state.pendingStatusUserId === user.id;
         elements.panelStatusAction.style.color = user.status === 'BLOCKED' ? 'var(--lumina-blue)' : 'var(--lumina-danger)';
         elements.panelStatusAction.style.borderColor = user.status === 'BLOCKED' ? 'var(--lumina-blue-pale)' : 'var(--lumina-danger-bg)';
 
         if (isSelfAdmin) {
             elements.panelStatusAction.textContent = 'Cannot Modify Own Account';
+        } else if (isDeleted) {
+            elements.panelStatusAction.textContent = 'Status Locked for Deleted Account';
         } else if (state.pendingStatusUserId === user.id) {
             elements.panelStatusAction.textContent = 'Updating...';
         } else if (user.status === 'BLOCKED') {
@@ -244,8 +260,28 @@ function initUserAdministration() {
         }
     }
 
+    function renderDeleteAction(user) {
+        var isSelfAdmin = Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId;
+        var isDeleted = user.status === 'DELETED';
+        elements.panelDeleteAction.disabled = isSelfAdmin || isDeleted || state.pendingDeleteUserId === user.id;
+
+        if (isSelfAdmin) {
+            elements.panelDeleteAction.textContent = 'Cannot Soft-delete Own Account';
+        } else if (isDeleted) {
+            elements.panelDeleteAction.textContent = 'Already Deleted';
+        } else if (state.pendingDeleteUserId === user.id) {
+            elements.panelDeleteAction.textContent = 'Soft-deleting...';
+        } else {
+            elements.panelDeleteAction.textContent = 'Soft-delete Account';
+        }
+    }
+
     function changeSelectedUserStatus() {
         var user = state.selectedUser;
+        if (user.status === 'DELETED') {
+            setFeedback('Deleted accounts cannot be blocked or unblocked.', false);
+            return;
+        }
         var shouldUnblock = user.status === 'BLOCKED';
         var action = shouldUnblock ? 'unblock' : 'block';
         var confirmMessage = shouldUnblock
@@ -300,6 +336,69 @@ function initUserAdministration() {
                 state.pendingStatusUserId = null;
                 if (state.selectedUser) {
                     renderStatusAction(state.selectedUser);
+                    renderDeleteAction(state.selectedUser);
+                }
+            });
+    }
+
+    function softDeleteSelectedUser() {
+        var user = state.selectedUser;
+        var isSelfAdmin = Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId;
+        if (isSelfAdmin) {
+            setFeedback('You cannot soft-delete your own admin account.', false);
+            return;
+        }
+        if (user.status === 'DELETED') {
+            setFeedback('This account has already been soft-deleted.', false);
+            return;
+        }
+        if (!window.confirm('Soft-delete this account? The user will no longer be able to log in, but course history, payments, blogs, comments, and other historical data will be retained.')) {
+            return;
+        }
+
+        state.pendingDeleteUserId = user.id;
+        renderDeleteAction(user);
+        renderStatusAction(user);
+        setFeedback('', false);
+        setError('');
+
+        fetch('/api/admin/users/' + encodeURIComponent(user.id), {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return { message: 'Unable to soft-delete user account.' };
+                }).then(function(apiResponse) {
+                    if (!response.ok) {
+                        throw new Error(apiResponse.message || 'Unable to soft-delete user account.');
+                    }
+                    return apiResponse;
+                });
+            })
+            .then(function(apiResponse) {
+                var updatedUser = apiResponse.data;
+                state.users = state.users.map(function(item) {
+                    return item.id === updatedUser.id ? updatedUser : item;
+                });
+                state.selectedUser = updatedUser;
+                renderUsers(state.users);
+                openUserPanel(updatedUser);
+                setFeedback(apiResponse.message || 'User account has been soft-deleted. Historical data remains preserved.', true);
+            })
+            .catch(function(error) {
+                setFeedback(error.message || 'Unable to soft-delete user account.', false);
+                renderDeleteAction(user);
+                renderStatusAction(user);
+            })
+            .finally(function() {
+                state.pendingDeleteUserId = null;
+                if (state.selectedUser) {
+                    renderDeleteAction(state.selectedUser);
+                    renderStatusAction(state.selectedUser);
                 }
             });
     }
@@ -330,6 +429,9 @@ function initUserAdministration() {
         }
         if (status === 'BLOCKED') {
             return '<span class="badge" style="background:var(--lumina-danger-bg);color:var(--lumina-danger);">Blocked</span>';
+        }
+        if (status === 'DELETED') {
+            return '<span class="badge" style="background:var(--lumina-gray-200);color:var(--lumina-gray-700);">Deleted</span>';
         }
         return '<span class="badge">' + escapeHtml(status || '--') + '</span>';
     }
