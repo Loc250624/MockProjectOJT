@@ -39,18 +39,6 @@ public class AuthRestController {
         return ResponseEntity.ok(ApiResponse.success(authResponse, "Login successful"));
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("jwt_token", "")
-                .httpOnly(true)
-                .path("/")
-                .maxAge(Duration.ZERO)
-                .sameSite("Lax")
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok(ApiResponse.success(null, "Logout successful"));
-    }
-
     private void setJwtCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from("jwt_token", token)
                 .httpOnly(true)

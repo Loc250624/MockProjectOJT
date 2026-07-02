@@ -80,17 +80,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Logout Handler
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", async function(e) {
+    const logoutBtns = document.querySelectorAll(".logout-btn, #logoutBtn");
+    logoutBtns.forEach(btn => {
+        btn.addEventListener("click", function(e) {
             e.preventDefault();
-            try {
-                await fetch("/api/auth/logout", { method: "POST" });
-                window.location.href = "/auth/login";
-            } catch (error) {
-                console.error("Error logging out:", error);
-                window.location.href = "/auth/login";
-            }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/auth/logout';
+            document.body.appendChild(form);
+            form.submit();
         });
-    }
+    });
 });

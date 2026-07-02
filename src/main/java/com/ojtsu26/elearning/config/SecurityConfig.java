@@ -26,6 +26,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
+import java.time.Duration;
 
 import java.util.List;
 
@@ -119,6 +122,22 @@ public class SecurityConfig {
                     logOAuth2Failure(request.getRequestURI(), exception);
                     response.sendRedirect("/auth/login?error=oauth2");
                 })
+            )
+            .logout(logout -> logout
+                .logoutUrl("/auth/logout")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    ResponseCookie cookie = ResponseCookie.from("jwt_token", "")
+                            .httpOnly(true)
+                            .path("/")
+                            .maxAge(Duration.ZERO)
+                            .sameSite("Lax")
+                            .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                    response.sendRedirect("/");
+                })
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
