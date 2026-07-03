@@ -23,9 +23,11 @@ import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
 import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Controller
@@ -354,6 +356,8 @@ public class TeacherViewController {
                             search,
                             enrollmentStatus,
                             progressState,
+                            null,
+                            null,
                             sort,
                             direction,
                             page,
@@ -398,5 +402,47 @@ public class TeacherViewController {
     public String analytics() { return "teacher/analytics"; }
 
     @GetMapping("/reports/progress")
-    public String progressReport() { return "teacher/progress-report"; }
+    public String progressReport(@RequestParam(required = false) Integer courseId,
+                                 @RequestParam(required = false) Integer studentId,
+                                 @RequestParam(required = false) String search,
+                                 @RequestParam(required = false) String enrollmentStatus,
+                                 @RequestParam(required = false) String progressState,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lastActivityFrom,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lastActivityTo,
+                                 @RequestParam(required = false) String sort,
+                                 @RequestParam(required = false) String direction,
+                                 @RequestParam(required = false) Integer page,
+                                 @RequestParam(required = false) Integer size,
+                                 Model model,
+                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.getUser() != null) {
+            Integer instructorId = userDetails.getUser().getId();
+            model.addAttribute("courses", courseService.findByInstructorId(instructorId));
+            model.addAttribute("selectedCourseId", courseId);
+            model.addAttribute("selectedStudentId", studentId);
+            if (courseId != null) {
+                try {
+                    model.addAttribute("overview", teacherCourseStudentService.getProgressOverviewForCurrentTeacherCourse(courseId));
+                    model.addAttribute("studentPage", teacherCourseStudentService.findStudentsForCurrentTeacherCourse(
+                            courseId,
+                            search,
+                            enrollmentStatus,
+                            progressState,
+                            lastActivityFrom,
+                            lastActivityTo,
+                            sort,
+                            direction,
+                            page,
+                            size
+                    ));
+                    if (studentId != null) {
+                        model.addAttribute("studentDetail", teacherCourseStudentService.getStudentProgressDetailForCurrentTeacherCourse(courseId, studentId));
+                    }
+                } catch (RuntimeException e) {
+                    model.addAttribute("errorMessage", e.getMessage());
+                }
+            }
+        }
+        return "teacher/progress-report";
+    }
 }

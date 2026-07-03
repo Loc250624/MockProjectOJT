@@ -17,6 +17,8 @@ public class TeacherCourseStudentPageDTO {
     private String search;
     private String enrollmentStatus;
     private String progressState;
+    private String lastActivityFrom;
+    private String lastActivityTo;
     private String sort;
     private String direction;
     private boolean emailVisible;

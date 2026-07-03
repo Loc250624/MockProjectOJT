@@ -428,6 +428,130 @@
   font-size: 0.875rem;
 }
 
+.progress-report-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-kpi {
+  min-height: 104px;
+  padding: 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.report-kpi span {
+  display: block;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-kpi strong {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--lumina-gray-900);
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.progress-report-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-chart-panel {
+  padding: 1.25rem;
+}
+
+.report-distribution {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.report-bar-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 48px;
+  gap: 0.85rem;
+  align-items: center;
+  color: var(--lumina-gray-700);
+  font-size: 0.875rem;
+}
+
+.report-bar {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lumina-gray-100);
+}
+
+.report-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lumina-blue);
+}
+
+.report-definition-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1.25rem 0 0;
+}
+
+.report-definition-list div,
+.report-detail-summary div {
+  padding: 0.85rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: var(--lumina-gray-50);
+}
+
+.report-definition-list dt,
+.report-detail-summary span {
+  color: var(--lumina-gray-500);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-definition-list dd {
+  margin: 0.25rem 0 0;
+  color: var(--lumina-gray-700);
+  font-size: 0.82rem;
+}
+
+.report-inline-state {
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+
+.report-detail-panel {
+  margin-top: 1.5rem;
+}
+
+.report-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.report-detail-summary strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--lumina-gray-900);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
 .btn.disabled {
   pointer-events: none;
   opacity: 0.5;
@@ -440,6 +564,15 @@
 
   .filter-field-course {
     grid-column: span 2;
+  }
+
+  .progress-report-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .progress-report-layout,
+  .report-detail-summary {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -476,5 +609,17 @@
 
   .teacher-pagination {
     justify-content: space-between;
+  }
+
+  .progress-report-grid,
+  .progress-report-layout,
+  .report-definition-list,
+  .report-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .report-bar-row {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
   }
 }

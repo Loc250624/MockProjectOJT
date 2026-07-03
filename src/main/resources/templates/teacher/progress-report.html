@@ -1,21 +1,374 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Progress Report - Teacher - OJTSU26 E-Learning</title>
+    <title>Progress Report - Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Student Progress Report</h1>
-            <div class="form-container"><div class="form-group"><label>Select Course</label><select><option>Java Basics</option></select></div></div><table class="table"><thead><tr><th>Student</th><th>Progress %</th><th>Quiz Score</th><th>Status</th></tr></thead><tbody><tr><td>Student A</td><td>75%</td><td>90</td><td>In Progress</td></tr></tbody></table>
+
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Progress Report')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header teacher-students-header">
+                <div>
+                    <p class="teacher-breadcrumb">
+                        <a th:href="@{/teacher/courses}">Courses</a>
+                        <span>/</span>
+                        <span>Progress Report</span>
+                    </p>
+                    <h1 class="page-title">Course Progress Report</h1>
+                    <p class="page-subtitle">Read-only learning progress for students enrolled in your course.</p>
+                </div>
+                <div class="teacher-student-count" th:if="${overview != null}">
+                    <strong th:text="${overview.averageProgress + '%'}">0%</strong>
+                    <span>Average progress</span>
+                </div>
+            </div>
+
+            <div th:if="${errorMessage}" class="teacher-state teacher-state-error" role="alert">
+                <strong>Unable to load progress report.</strong>
+                <span th:text="${errorMessage}">Access denied.</span>
+            </div>
+
+            <section class="admin-table-container teacher-student-panel" aria-labelledby="report-filters-title">
+                <h2 id="report-filters-title" class="sr-only">Progress report filters</h2>
+                <form class="teacher-student-filters" method="get" th:action="@{/teacher/reports/progress}">
+                    <div class="filter-field filter-field-course">
+                        <label for="courseId">Course</label>
+                        <select id="courseId" name="courseId" onchange="this.form.submit()">
+                            <option value="" th:selected="${selectedCourseId == null}">Select a course</option>
+                            <option th:each="crs : ${courses}"
+                                    th:value="${crs.id}"
+                                    th:text="${crs.title}"
+                                    th:selected="${crs.id == selectedCourseId}">Course</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="search">Search</label>
+                        <input id="search" name="search" type="search" maxlength="100"
+                               placeholder="Name or email"
+                               th:value="${studentPage != null ? studentPage.search : ''}">
+                    </div>
+                    <div class="filter-field">
+                        <label for="enrollmentStatus">Enrollment</label>
+                        <select id="enrollmentStatus" name="enrollmentStatus">
+                            <option value="ALL" th:selected="${studentPage == null || studentPage.enrollmentStatus == 'ALL'}">All</option>
+                            <option value="ACTIVE" th:selected="${studentPage != null && studentPage.enrollmentStatus == 'ACTIVE'}">Active</option>
+                            <option value="COMPLETED" th:selected="${studentPage != null && studentPage.enrollmentStatus == 'COMPLETED'}">Completed</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="progressState">Progress</label>
+                        <select id="progressState" name="progressState">
+                            <option value="ALL" th:selected="${studentPage == null || studentPage.progressState == 'ALL'}">All</option>
+                            <option value="NOT_STARTED" th:selected="${studentPage != null && studentPage.progressState == 'NOT_STARTED'}">Not started</option>
+                            <option value="IN_PROGRESS" th:selected="${studentPage != null && studentPage.progressState == 'IN_PROGRESS'}">In progress</option>
+                            <option value="COMPLETED" th:selected="${studentPage != null && studentPage.progressState == 'COMPLETED'}">Completed</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="lastActivityFrom">Activity from</label>
+                        <input id="lastActivityFrom" name="lastActivityFrom" type="date"
+                               th:value="${studentPage != null ? studentPage.lastActivityFrom : ''}">
+                    </div>
+                    <div class="filter-field">
+                        <label for="lastActivityTo">Activity to</label>
+                        <input id="lastActivityTo" name="lastActivityTo" type="date"
+                               th:value="${studentPage != null ? studentPage.lastActivityTo : ''}">
+                    </div>
+                    <div class="filter-field">
+                        <label for="sort">Sort</label>
+                        <select id="sort" name="sort">
+                            <option value="enrolledAt" th:selected="${studentPage == null || studentPage.sort == 'enrolledAt'}">Enrollment date</option>
+                            <option value="name" th:selected="${studentPage != null && studentPage.sort == 'name'}">Student name</option>
+                            <option value="email" th:selected="${studentPage != null && studentPage.sort == 'email'}">Email</option>
+                            <option value="progress" th:selected="${studentPage != null && studentPage.sort == 'progress'}">Progress</option>
+                            <option value="status" th:selected="${studentPage != null && studentPage.sort == 'status'}">Status</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="direction">Order</label>
+                        <select id="direction" name="direction">
+                            <option value="desc" th:selected="${studentPage == null || studentPage.direction == 'desc'}">Descending</option>
+                            <option value="asc" th:selected="${studentPage != null && studentPage.direction == 'asc'}">Ascending</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="size" th:value="${studentPage != null ? studentPage.size : 10}">
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                    <a class="btn btn-secondary"
+                       th:if="${selectedCourseId != null}"
+                       th:href="@{/teacher/reports/progress(courseId=${selectedCourseId})}">Reset</a>
+                </form>
+            </section>
+
+            <div th:if="${selectedCourseId == null}" class="teacher-state">
+                <strong>Select a course</strong>
+                <span>Choose one of your courses to view learning-progress metrics.</span>
+            </div>
+
+            <section th:if="${overview != null}" class="progress-report-grid" aria-labelledby="overview-title">
+                <h2 id="overview-title" class="sr-only">Course progress overview</h2>
+                <article class="report-kpi">
+                    <span>Total students</span>
+                    <strong th:text="${overview.totalStudents}">0</strong>
+                </article>
+                <article class="report-kpi">
+                    <span>Not started</span>
+                    <strong th:text="${overview.notStartedStudents}">0</strong>
+                </article>
+                <article class="report-kpi">
+                    <span>In progress</span>
+                    <strong th:text="${overview.inProgressStudents}">0</strong>
+                </article>
+                <article class="report-kpi">
+                    <span>Completed</span>
+                    <strong th:text="${overview.completedStudents}">0</strong>
+                </article>
+                <article class="report-kpi">
+                    <span>Completion rate</span>
+                    <strong th:text="${overview.completionRate + '%'}">0%</strong>
+                </article>
+                <article class="report-kpi">
+                    <span>Required lessons</span>
+                    <strong th:text="${overview.totalRequiredLessons}">0</strong>
+                </article>
+            </section>
+
+            <section th:if="${overview != null}" class="progress-report-layout">
+                <article class="admin-table-container report-chart-panel" aria-labelledby="distribution-title">
+                    <div class="admin-table-toolbar">
+                        <div>
+                            <span id="distribution-title" class="teacher-table-title">Progress distribution</span>
+                        </div>
+                        <div class="teacher-page-meta"
+                             th:text="${overview.latestActivityAt == null ? 'No learning activity yet' : 'Latest activity ' + #temporals.format(overview.latestActivityAt, 'MMM dd, yyyy HH:mm')}">
+                            Latest activity
+                        </div>
+                    </div>
+                    <div class="report-distribution" role="img"
+                         th:attr="aria-label=${'Not started ' + overview.notStartedStudents + ', in progress ' + overview.inProgressStudents + ', completed ' + overview.completedStudents}">
+                        <div class="report-bar-row">
+                            <span>Not started</span>
+                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.notStartedStudents * 100 / overview.totalStudents)} + '%'"></i></div>
+                            <strong th:text="${overview.notStartedStudents}">0</strong>
+                        </div>
+                        <div class="report-bar-row">
+                            <span>In progress</span>
+                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.inProgressStudents * 100 / overview.totalStudents)} + '%'"></i></div>
+                            <strong th:text="${overview.inProgressStudents}">0</strong>
+                        </div>
+                        <div class="report-bar-row">
+                            <span>Completed</span>
+                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.completedStudents * 100 / overview.totalStudents)} + '%'"></i></div>
+                            <strong th:text="${overview.completedStudents}">0</strong>
+                        </div>
+                    </div>
+                    <dl class="report-definition-list">
+                        <div><dt>Not started</dt><dd>No stored course progress and not completed.</dd></div>
+                        <div><dt>In progress</dt><dd>Stored progress above 0% and not completed.</dd></div>
+                        <div><dt>Completed</dt><dd>Course enrollment is marked complete by the learning flow.</dd></div>
+                    </dl>
+                </article>
+
+                <article class="admin-table-container report-chart-panel" aria-labelledby="assessment-title">
+                    <div class="admin-table-toolbar">
+                        <span id="assessment-title" class="teacher-table-title">Assessment summary</span>
+                    </div>
+                    <div th:if="${overview.assessmentSummaryAvailable}" class="teacher-state report-inline-state">
+                        <strong th:text="${overview.assessmentLessons + ' assessment lessons'}">0 assessment lessons</strong>
+                        <span>Detail rows show passed assessments when submission data exists.</span>
+                    </div>
+                    <div th:unless="${overview.assessmentSummaryAvailable}" class="teacher-state report-inline-state">
+                        <strong>Assessment data unavailable</strong>
+                        <span>This course does not currently have assessment lessons to summarize.</span>
+                    </div>
+                </article>
+            </section>
+
+            <section th:if="${studentPage != null}" class="admin-table-container teacher-student-results" aria-live="polite">
+                <div class="admin-table-toolbar">
+                    <div>
+                        <span class="teacher-table-title">
+                            <span th:text="${studentPage.courseTitle}">Course</span>
+                            <span th:text="'(' + ${studentPage.totalElements} + ')'"></span>
+                        </span>
+                    </div>
+                    <div class="teacher-page-meta"
+                         th:text="${studentPage.totalPages == 0 ? 'No pages' : 'Page ' + (studentPage.page + 1) + ' of ' + studentPage.totalPages}">
+                        Page 1 of 1
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(studentPage.students)}" class="teacher-state">
+                    <strong th:text="${#strings.isEmpty(studentPage.search) && studentPage.enrollmentStatus == 'ALL' && studentPage.progressState == 'ALL' ? 'No enrolled students yet.' : 'No matching students.'}">No students.</strong>
+                    <span th:text="${#strings.isEmpty(studentPage.search) && studentPage.enrollmentStatus == 'ALL' && studentPage.progressState == 'ALL' ? 'Students will appear here after enrollment is activated.' : 'Adjust search or filters to broaden the result.'}">Empty</span>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(studentPage.students)}" class="teacher-student-table-wrap">
+                    <table class="data-table teacher-student-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Student</th>
+                                <th scope="col">Enrollment</th>
+                                <th scope="col">Progress</th>
+                                <th scope="col">Lessons</th>
+                                <th scope="col">Last Activity</th>
+                                <th scope="col">State</th>
+                                <th scope="col">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="student : ${studentPage.students}">
+                                <td>
+                                    <div class="student-identity">
+                                        <img th:if="${student.avatarUrl != null && !student.avatarUrl.isBlank()}"
+                                             th:src="${student.avatarUrl}"
+                                             th:alt="${student.studentName + ' avatar'}"
+                                             onerror="this.style.display='none'">
+                                        <span th:unless="${student.avatarUrl != null && !student.avatarUrl.isBlank()}"
+                                              class="student-avatar-fallback"
+                                              aria-hidden="true"
+                                              th:text="${#strings.substring(student.studentName, 0, 1)}">S</span>
+                                        <span>
+                                            <strong th:text="${student.studentName}">Student</strong>
+                                            <small th:if="${studentPage.emailVisible}" th:text="${student.studentEmail}">student@example.com</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${student.enrollmentStatus == 'COMPLETED' ? 'badge-success' : 'badge-info'}"
+                                          th:text="${student.enrollmentStatus == 'COMPLETED' ? 'Completed' : 'Active'}">Active</span>
+                                    <small class="muted-date"
+                                           th:text="${student.enrolledAt == null ? 'Date unavailable' : #temporals.format(student.enrolledAt, 'MMM dd, yyyy')}">Date</small>
+                                </td>
+                                <td>
+                                    <div class="student-progress">
+                                        <div class="student-progress-line">
+                                            <strong th:text="${student.progressPercentage + '%'}">0%</strong>
+                                            <span th:text="${student.progressState == 'NOT_STARTED' ? 'Not started' : (student.progressState == 'COMPLETED' ? 'Completed' : 'In progress')}">State</span>
+                                        </div>
+                                        <div class="student-progress-bar"
+                                             role="progressbar"
+                                             th:attr="aria-valuenow=${student.progressPercentage},aria-valuemin=0,aria-valuemax=100,aria-label=${student.studentName + ' course progress'}">
+                                            <span th:style="'width:' + ${student.progressPercentage} + '%'"></span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${student.completedLessons + ' / ' + student.totalLessons}">0 / 0</td>
+                                <td th:text="${student.lastActivityAt == null ? 'No activity yet' : #temporals.format(student.lastActivityAt, 'MMM dd, yyyy HH:mm')}">No activity</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${student.progressState == 'COMPLETED' ? 'badge-success' : (student.progressState == 'IN_PROGRESS' ? 'badge-warning' : 'badge-secondary')}"
+                                          th:text="${student.progressState == 'NOT_STARTED' ? 'Not started' : (student.progressState == 'COMPLETED' ? 'Completed' : 'In progress')}">State</span>
+                                </td>
+                                <td>
+                                    <a class="btn btn-secondary btn-sm"
+                                       th:href="@{/teacher/reports/progress(courseId=${studentPage.courseId},studentId=${student.studentId},search=${studentPage.search},enrollmentStatus=${studentPage.enrollmentStatus},progressState=${studentPage.progressState},lastActivityFrom=${studentPage.lastActivityFrom},lastActivityTo=${studentPage.lastActivityTo},sort=${studentPage.sort},direction=${studentPage.direction},size=${studentPage.size},page=${studentPage.page})}">View</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(studentPage.students)}" class="teacher-student-cards">
+                    <article th:each="student : ${studentPage.students}" class="teacher-student-card">
+                        <div class="student-identity">
+                            <span class="student-avatar-fallback" aria-hidden="true" th:text="${#strings.substring(student.studentName, 0, 1)}">S</span>
+                            <span>
+                                <strong th:text="${student.studentName}">Student</strong>
+                                <small th:if="${studentPage.emailVisible}" th:text="${student.studentEmail}">student@example.com</small>
+                            </span>
+                        </div>
+                        <div class="student-progress">
+                            <div class="student-progress-line">
+                                <strong th:text="${student.progressPercentage + '%'}">0%</strong>
+                                <span th:text="${student.completedLessons + ' of ' + student.totalLessons + ' lessons'}">Lessons</span>
+                            </div>
+                            <div class="student-progress-bar"
+                                 role="progressbar"
+                                 th:attr="aria-valuenow=${student.progressPercentage},aria-valuemin=0,aria-valuemax=100,aria-label=${student.studentName + ' course progress'}">
+                                <span th:style="'width:' + ${student.progressPercentage} + '%'"></span>
+                            </div>
+                        </div>
+                        <dl>
+                            <div><dt>Enrollment</dt><dd th:text="${student.enrollmentStatus == 'COMPLETED' ? 'Completed' : 'Active'}">Active</dd></div>
+                            <div><dt>Last activity</dt><dd th:text="${student.lastActivityAt == null ? 'No activity yet' : #temporals.format(student.lastActivityAt, 'MMM dd, yyyy HH:mm')}">No activity</dd></div>
+                            <div><dt>Progress state</dt><dd th:text="${student.progressState == 'NOT_STARTED' ? 'Not started' : (student.progressState == 'COMPLETED' ? 'Completed' : 'In progress')}">State</dd></div>
+                            <div><dt>Detail</dt><dd><a th:href="@{/teacher/reports/progress(courseId=${studentPage.courseId},studentId=${student.studentId},search=${studentPage.search},enrollmentStatus=${studentPage.enrollmentStatus},progressState=${studentPage.progressState},lastActivityFrom=${studentPage.lastActivityFrom},lastActivityTo=${studentPage.lastActivityTo},sort=${studentPage.sort},direction=${studentPage.direction},size=${studentPage.size},page=${studentPage.page})}">View report</a></dd></div>
+                        </dl>
+                    </article>
+                </div>
+
+                <nav th:if="${studentPage.totalPages > 1}" class="teacher-pagination" aria-label="Progress report pages">
+                    <a class="btn btn-secondary btn-sm"
+                       th:classappend="${studentPage.page == 0 ? ' disabled' : ''}"
+                       th:href="@{/teacher/reports/progress(courseId=${studentPage.courseId},search=${studentPage.search},enrollmentStatus=${studentPage.enrollmentStatus},progressState=${studentPage.progressState},lastActivityFrom=${studentPage.lastActivityFrom},lastActivityTo=${studentPage.lastActivityTo},sort=${studentPage.sort},direction=${studentPage.direction},size=${studentPage.size},page=${studentPage.page - 1})}">Previous</a>
+                    <span th:text="${'Page ' + (studentPage.page + 1) + ' of ' + studentPage.totalPages}">Page</span>
+                    <a class="btn btn-secondary btn-sm"
+                       th:classappend="${studentPage.page + 1 >= studentPage.totalPages ? ' disabled' : ''}"
+                       th:href="@{/teacher/reports/progress(courseId=${studentPage.courseId},search=${studentPage.search},enrollmentStatus=${studentPage.enrollmentStatus},progressState=${studentPage.progressState},lastActivityFrom=${studentPage.lastActivityFrom},lastActivityTo=${studentPage.lastActivityTo},sort=${studentPage.sort},direction=${studentPage.direction},size=${studentPage.size},page=${studentPage.page + 1})}">Next</a>
+                </nav>
+            </section>
+
+            <section th:if="${studentDetail != null}" class="admin-table-container report-detail-panel" aria-labelledby="student-detail-title">
+                <div class="admin-table-toolbar">
+                    <div>
+                        <span id="student-detail-title" class="teacher-table-title" th:text="${studentDetail.studentName + ' progress detail'}">Student progress detail</span>
+                        <div class="teacher-page-meta" th:text="${studentDetail.studentEmail}">student@example.com</div>
+                    </div>
+                    <a class="btn btn-secondary btn-sm"
+                       th:href="@{/teacher/reports/progress(courseId=${studentDetail.courseId})}">Close detail</a>
+                </div>
+                <div class="report-detail-summary">
+                    <div><span>Progress</span><strong th:text="${studentDetail.progressPercentage + '%'}">0%</strong></div>
+                    <div><span>Lessons</span><strong th:text="${studentDetail.completedLessons + ' / ' + studentDetail.totalLessons}">0 / 0</strong></div>
+                    <div><span>Last activity</span><strong th:text="${studentDetail.lastActivityAt == null ? 'No activity' : #temporals.format(studentDetail.lastActivityAt, 'MMM dd, yyyy HH:mm')}">No activity</strong></div>
+                    <div><span>Assessments</span><strong th:text="${studentDetail.assessmentSummaryAvailable ? studentDetail.passedAssessments + ' passed' : 'Unavailable'}">Unavailable</strong></div>
+                </div>
+                <div class="teacher-student-table-wrap">
+                    <table class="data-table teacher-student-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Lesson</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Last Accessed</th>
+                                <th scope="col">Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="lesson : ${studentDetail.lessons}">
+                                <td th:text="${lesson.title}">Lesson</td>
+                                <td th:text="${lesson.type == null ? 'Content' : lesson.type}">Content</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${lesson.completed ? 'badge-success' : 'badge-secondary'}"
+                                          th:text="${lesson.completed ? 'Completed' : 'Incomplete'}">Incomplete</span>
+                                </td>
+                                <td th:text="${lesson.lastAccessedAt == null ? 'Not accessed' : #temporals.format(lesson.lastAccessedAt, 'MMM dd, yyyy HH:mm')}">Not accessed</td>
+                                <td th:text="${lesson.completedAt == null ? 'Not completed' : #temporals.format(lesson.completedAt, 'MMM dd, yyyy HH:mm')}">Not completed</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

@@ -2,6 +2,7 @@ package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.LessonProgress;
 import com.ojtsu26.elearning.repository.projection.EnrollmentProgressSummaryProjection;
+import com.ojtsu26.elearning.repository.projection.LessonProgressDetailProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -47,4 +48,24 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
             """)
     List<EnrollmentProgressSummaryProjection> summarizeProgressForEnrollments(@Param("courseId") Integer courseId,
                                                                                @Param("enrollmentIds") List<Integer> enrollmentIds);
+
+    @Query("select max(p.lastAccessedAt) from LessonProgress p where p.lesson.course.id = :courseId and p.enrollment.course.id = :courseId")
+    Optional<java.time.LocalDateTime> findLatestActivityAtByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("""
+            select l.id as lessonId,
+                   l.title as title,
+                   l.type as type,
+                   l.orderIndex as orderIndex,
+                   coalesce(p.isCompleted, false) as completed,
+                   p.completedAt as completedAt,
+                   p.lastAccessedAt as lastAccessedAt,
+                   p.watchedSeconds as watchedSeconds
+            from Lesson l
+            left join LessonProgress p on p.lesson.id = l.id and p.enrollment.id = :enrollmentId
+            where l.course.id = :courseId
+            order by l.orderIndex asc, l.id asc
+            """)
+    List<LessonProgressDetailProjection> findCourseLessonProgressDetail(@Param("courseId") Integer courseId,
+                                                                         @Param("enrollmentId") Integer enrollmentId);
 }
