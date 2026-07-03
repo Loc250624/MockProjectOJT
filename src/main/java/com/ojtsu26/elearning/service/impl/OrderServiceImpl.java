@@ -47,9 +47,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Check duplicate pending order
-        boolean hasPending = !orderRepository.findByStudentIdAndCourseIdAndStatus(student.getId(), courseId, OrderStatus.PENDING).isEmpty();
-        if (hasPending) {
-            throw new IllegalStateException("You already have a pending order for this course");
+        List<Order> pendingOrders = orderRepository.findByStudentIdAndCourseIdAndStatus(student.getId(), courseId, OrderStatus.PENDING);
+        if (!pendingOrders.isEmpty()) {
+            return pendingOrders.get(0);
         }
 
         // Generate unique order code

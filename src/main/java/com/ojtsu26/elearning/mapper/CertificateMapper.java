@@ -9,8 +9,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CertificateMapper {
 
-    @Mapping(source = "student.id", target = "studentId")
+    @Mapping(source = "enrollment.id", target = "enrollmentId")
     @Mapping(source = "course.id", target = "courseId")
+    @Mapping(source = "studentNameSnapshot", target = "studentName")
+    @Mapping(source = "courseNameSnapshot", target = "courseName")
+    @Mapping(source = "teacherNameSnapshot", target = "teacherName")
+    @Mapping(target = "downloadUrl", expression = "java(\"/api/student/certificates/\" + entity.getId() + \"/download\")")
+    @Mapping(target = "verifyUrl", expression = "java(\"/certificates/verify/\" + entity.getVerificationCode())")
     CertificateResponseDTO toDto(Certificate entity);
 
     @Mapping(source = "studentId", target = "student.id")

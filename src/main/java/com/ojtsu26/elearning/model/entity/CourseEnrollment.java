@@ -12,6 +12,10 @@ import java.util.List;
 @Entity
 @Table(name = "Course_Enrollments", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"student_id", "course_id"})
+}, indexes = {
+    @Index(name = "idx_course_enrollments_course", columnList = "course_id"),
+    @Index(name = "idx_course_enrollments_student", columnList = "student_id"),
+    @Index(name = "idx_course_enrollments_course_enrolled", columnList = "course_id,enrolledAt")
 })
 @Getter
 @Setter
@@ -46,4 +50,8 @@ public class CourseEnrollment {
     @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("lessonprogress-enrollment")
     private List<LessonProgress> lessonprogresss;
+
+    @OneToOne(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("certificate-enrollment")
+    private Certificate certificate;
 }

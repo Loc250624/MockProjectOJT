@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.service.RoadmapService;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.CategoryService;
 import com.ojtsu26.elearning.service.LessonService;
+import com.ojtsu26.elearning.service.TeacherCourseStudentService;
 import com.ojtsu26.elearning.service.VideoService;
 import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
 import com.ojtsu26.elearning.dto.response.RoadmapResponseDTO;
@@ -38,6 +39,7 @@ public class TeacherViewController {
     private final LessonService lessonService;
     private final VideoService videoService;
     private final ProfileService profileService;
+    private final TeacherCourseStudentService teacherCourseStudentService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
@@ -331,7 +333,39 @@ public class TeacherViewController {
     }
 
     @GetMapping("/students")
-    public String students() { return "teacher/students"; }
+    public String students(@RequestParam(required = false) Integer courseId,
+                           @RequestParam(required = false) String search,
+                           @RequestParam(required = false) String enrollmentStatus,
+                           @RequestParam(required = false) String progressState,
+                           @RequestParam(required = false) String sort,
+                           @RequestParam(required = false) String direction,
+                           @RequestParam(required = false) Integer page,
+                           @RequestParam(required = false) Integer size,
+                           Model model,
+                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.getUser() != null) {
+            Integer instructorId = userDetails.getUser().getId();
+            model.addAttribute("courses", courseService.findByInstructorId(instructorId));
+            model.addAttribute("selectedCourseId", courseId);
+            if (courseId != null) {
+                try {
+                    model.addAttribute("studentPage", teacherCourseStudentService.findStudentsForCurrentTeacherCourse(
+                            courseId,
+                            search,
+                            enrollmentStatus,
+                            progressState,
+                            sort,
+                            direction,
+                            page,
+                            size
+                    ));
+                } catch (RuntimeException e) {
+                    model.addAttribute("errorMessage", e.getMessage());
+                }
+            }
+        }
+        return "teacher/students";
+    }
 
     @GetMapping("/quizzes")
     public String quizzes() { return "teacher/quizzes"; }

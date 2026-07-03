@@ -137,17 +137,21 @@ public class OrderServiceTest {
     }
 
     @Test
-    void createOrder_DuplicatePendingOrder_ThrowsException() {
+    void createOrder_DuplicatePendingOrder_ReturnsExistingPendingOrder() {
         // Arrange
+        Order existingOrder = Order.builder().id(77).status(OrderStatus.PENDING).build();
         when(courseRepository.findById(101)).thenReturn(Optional.of(course));
         when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
         when(orderRepository.findByStudentIdAndCourseIdAndStatus(1, 101, OrderStatus.PENDING))
-                .thenReturn(Collections.singletonList(new Order()));
+                .thenReturn(Collections.singletonList(existingOrder));
 
-        // Act & Assert
-        assertThrows(IllegalStateException.class, () -> 
-            orderService.createOrder(student, 101, PaymentMethod.MOMO)
-        );
+        // Act
+        Order order = orderService.createOrder(student, 101, PaymentMethod.MOMO);
+
+        // Assert
+        assertEquals(existingOrder, order);
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(transactionRepository, never()).save(any(Transaction.class));
     }
 
     @Test

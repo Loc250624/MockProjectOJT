@@ -1,75 +1,189 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning - Student - OJTSU26 E-Learning</title>
+    <title th:text="${learningCourse.courseTitle} + ' - Learning | LumiNa'">Learning | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
-<body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>Learning</h1>
+<body class="learning-player-page">
+<header class="learning-player-header">
+    <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
+        <span class="learning-brand-mark">L</span>
+        <span>LumiNa</span>
+    </a>
+    <nav class="learning-header-actions" aria-label="Learning navigation">
+        <a th:href="@{/student/courses/detail(id=${learningCourse.courseId})}" class="btn btn-outline">Back to course</a>
+        <a th:href="@{/student/my-courses}" class="btn btn-primary">My Courses</a>
+        <a th:href="@{/student/dashboard}" class="learning-avatar-link" aria-label="Student dashboard">
+            <span th:if="${#authentication?.principal?.user?.avatarUrl == null || #authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                  class="learning-avatar-fallback"
+                  th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : 'S'}">S</span>
+            <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                 th:src="${#authentication?.principal?.user?.avatarUrl}"
+                 alt="Student avatar"
+                 onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'learning-avatar-fallback', textContent:'S'}));">
+        </a>
+    </nav>
+</header>
 
-            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem;">
-                <!-- Course Sidebar -->
-                <div class="detail-card" style="padding: 1rem;">
-                    <h3 style="color: #3498db; margin-top: 0;">Course Lessons</h3>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
-                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 1. Introduction to Java
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
-                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 2. Variables &amp; Data Types
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
-                            <span class="badge badge-success" style="font-size: 0.7rem;">✓</span> 3. Control Flow
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; background: rgba(52,152,219,0.1); border-left: 3px solid #3498db; border-bottom: 1px solid #f0f0f0;">
-                            <strong>4. OOP Fundamentals</strong> <span class="badge badge-info" style="font-size: 0.7rem;">Current</span>
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999; border-bottom: 1px solid #f0f0f0;">
-                            5. Collections Framework
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999; border-bottom: 1px solid #f0f0f0;">
-                            6. Exception Handling
-                        </li>
-                        <li style="padding: 0.6rem 0.8rem; border-radius: 4px; cursor: pointer; color: #999;">
-                            7. File I/O
-                        </li>
-                    </ul>
-                </div>
+<main class="learning-shell">
+    <section class="learning-hero" aria-label="Course context">
+        <div>
+            <p class="learning-eyebrow">Course player</p>
+            <h1 th:text="${learningCourse.courseTitle}">Course title</h1>
+            <p th:text="${learningCourse.instructorName == null ? 'Learning workspace' : 'Instructor: ' + learningCourse.instructorName}">Instructor</p>
+        </div>
+        <div class="learning-progress-summary"
+             th:aria-label="${'Course progress ' + learningCourse.progressPercentage + ' percent'}">
+            <div class="learning-progress-meta">
+                <span th:text="${learningCourse.completedLessons} + ' of ' + ${learningCourse.totalLessons} + ' lessons'">0 of 0 lessons</span>
+                <strong th:text="${learningCourse.progressPercentage} + '%'">0%</strong>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" th:style="'width:' + ${learningCourse.progressPercentage} + '%;'"></div>
+            </div>
+        </div>
+    </section>
 
-                <!-- Main Content Area -->
-                <div>
-                    <div class="video-placeholder">
-                        ▶ Video Player - Lesson 4: OOP Fundamentals
-                    </div>
+    <details class="learning-mobile-curriculum">
+        <summary>Open curriculum</summary>
+        <div class="learning-lesson-list">
+            <a th:each="lesson : ${learningCourse.lessons}"
+               th:href="@{/student/learning(courseId=${learningCourse.courseId},lessonId=${lesson.id})}"
+               class="learning-lesson-link"
+               th:classappend="${lesson.current ? ' active' : ''}">
+                <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
+                <span>
+                    <strong th:text="${lesson.title}">Lesson title</strong>
+                    <small th:text="${lesson.completed ? 'Completed' : lesson.type}">VIDEO</small>
+                </span>
+            </a>
+        </div>
+    </details>
 
-                    <div class="detail-card">
-                        <h2 style="margin-top: 0;">Lesson 4: OOP Fundamentals</h2>
-                        <p>In this lesson, you will learn about the four pillars of Object-Oriented Programming: Encapsulation, Abstraction, Inheritance, and Polymorphism. We will explore each concept with practical examples and hands-on coding exercises.</p>
-                        <p>Topics covered:</p>
-                        <ul>
-                            <li>Classes and Objects</li>
-                            <li>Constructors and Methods</li>
-                            <li>Access Modifiers</li>
-                            <li>Inheritance and Interfaces</li>
-                        </ul>
-                    </div>
+    <div class="learning-layout">
+        <aside class="learning-curriculum" aria-label="Course curriculum">
+            <div class="learning-panel-head">
+                <span>Curriculum</span>
+                <small th:text="${#lists.size(learningCourse.lessons)} + ' lessons'">0 lessons</small>
+            </div>
+            <div class="learning-empty" th:if="${#lists.isEmpty(learningCourse.lessons)}">
+                <strong>No lessons yet</strong>
+                <span>This course has no published learning items.</span>
+            </div>
+            <div class="learning-lesson-list" th:unless="${#lists.isEmpty(learningCourse.lessons)}">
+                <a th:each="lesson : ${learningCourse.lessons}"
+                   th:href="@{/student/learning(courseId=${learningCourse.courseId},lessonId=${lesson.id})}"
+                   class="learning-lesson-link"
+                   th:classappend="${lesson.current ? ' active' : ''}"
+                   th:aria-current="${lesson.current ? 'page' : null}">
+                    <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
+                    <span>
+                        <strong th:text="${lesson.title}">Lesson title</strong>
+                        <small th:text="${lesson.completed ? 'Completed lesson' : lesson.type + ' lesson'}">VIDEO lesson</small>
+                    </span>
+                </a>
+            </div>
+        </aside>
 
-                    <div style="display: flex; gap: 1rem; justify-content: space-between; margin-top: 1rem;">
-                        <button class="btn btn-success">Mark Complete</button>
-                        <button class="btn btn-primary">Next Lesson →</button>
-                    </div>
-                </div>
+        <section class="learning-content" aria-label="Active lesson">
+            <div class="learning-empty" th:if="${learningCourse.activeLesson == null}">
+                <strong>No lesson available</strong>
+                <span>There is no lesson to open for this course yet.</span>
             </div>
 
-        </main>
+            <article th:if="${learningCourse.activeLesson != null}" class="learning-lesson-card">
+                <div class="learning-lesson-header">
+                    <div>
+                        <span class="learning-kicker" th:text="${learningCourse.activeLesson.type} + ' lesson'">VIDEO lesson</span>
+                        <h2 th:text="${learningCourse.activeLesson.orderIndex} + '. ' + ${learningCourse.activeLesson.title}">Lesson title</h2>
+                    </div>
+                    <span class="learning-status"
+                          id="lesson-status"
+                          th:classappend="${learningCourse.activeLesson.completed ? ' completed' : ''}"
+                          th:text="${learningCourse.activeLesson.completed ? 'Completed' : 'In progress'}">In progress</span>
+                </div>
+
+                <div class="learning-video-wrap" th:if="${learningCourse.activeLesson.videoUrl != null && !learningCourse.activeLesson.videoUrl.isBlank()}">
+                    <video controls preload="metadata" th:src="${learningCourse.activeLesson.videoUrl}" aria-label="Lesson video"
+                           th:data-course-id="${learningCourse.courseId}"
+                           th:data-lesson-id="${learningCourse.activeLesson.id}"
+                           th:data-watched-seconds="${learningCourse.activeLesson.watchedSeconds == null ? 0 : learningCourse.activeLesson.watchedSeconds}"
+                           data-learning-video="true">
+                        Your browser cannot play this video.
+                    </video>
+                    <p class="learning-help" id="video-progress-help"
+                       th:text="${learningCourse.activeLesson.watchedSeconds == null || learningCourse.activeLesson.watchedSeconds == 0 ? 'Video progress will save as you watch.' : 'Saved through ' + learningCourse.activeLesson.watchedSeconds + ' seconds.'}">
+                        Video progress will save as you watch.
+                    </p>
+                    <p class="learning-help">If the video does not load, try refreshing the page or contact support.</p>
+                </div>
+
+                <div class="learning-video-missing" th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'VIDEO' && (learningCourse.activeLesson.videoUrl == null || learningCourse.activeLesson.videoUrl.isBlank())}">
+                    <strong>Video unavailable</strong>
+                    <span>This lesson video is not available right now.</span>
+                </div>
+
+                <div class="learning-rich-text" th:if="${learningCourse.activeLesson.sanitizedContent != null && !learningCourse.activeLesson.sanitizedContent.isBlank()}" th:utext="${learningCourse.activeLesson.sanitizedContent}">
+                    Lesson content
+                </div>
+
+                <div class="learning-empty learning-empty-compact" th:if="${(learningCourse.activeLesson.sanitizedContent == null || learningCourse.activeLesson.sanitizedContent.isBlank()) && (learningCourse.activeLesson.videoUrl == null || learningCourse.activeLesson.videoUrl.isBlank())}">
+                    <strong>Lesson content missing</strong>
+                    <span>This lesson does not have video or text content yet.</span>
+                </div>
+
+                <section class="learning-resources" aria-labelledby="resources-heading">
+                    <div class="learning-panel-head">
+                        <span id="resources-heading">Resources</span>
+                        <small th:text="${#lists.size(learningCourse.activeLesson.resources)} + ' items'">0 items</small>
+                    </div>
+                    <div class="learning-empty learning-empty-compact" th:if="${#lists.isEmpty(learningCourse.activeLesson.resources)}">
+                        <strong>No resources</strong>
+                        <span>There are no downloadable materials for this lesson.</span>
+                    </div>
+                    <div class="learning-resource-list" th:unless="${#lists.isEmpty(learningCourse.activeLesson.resources)}">
+                        <div class="learning-resource" th:each="resource : ${learningCourse.activeLesson.resources}">
+                            <span th:text="${resource.name}">Resource</span>
+                            <a th:if="${resource.viewUrl != null}" th:href="${resource.viewUrl}" class="btn btn-outline">View</a>
+                            <a th:if="${resource.downloadable && resource.downloadUrl != null}" th:href="${resource.downloadUrl}" class="btn btn-primary">Download</a>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="learning-complete-actions"
+                     th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() != 'VIDEO' && learningCourse.activeLesson.type.name() != 'QUIZ'}">
+                    <button type="button"
+                            class="btn btn-outline"
+                            data-lesson-complete="true"
+                            th:data-course-id="${learningCourse.courseId}"
+                            th:data-lesson-id="${learningCourse.activeLesson.id}"
+                            th:disabled="${learningCourse.activeLesson.completed}">
+                        Mark complete
+                    </button>
+                    <span id="lesson-complete-message" class="learning-help"></span>
+                </div>
+
+                <nav class="learning-nav-actions" aria-label="Lesson navigation">
+                    <a class="btn btn-outline"
+                       th:classappend="${learningCourse.activeLesson.previousLessonId == null ? ' disabled' : ''}"
+                       th:href="${learningCourse.activeLesson.previousLessonId == null ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.previousLessonId}"
+                       th:aria-disabled="${learningCourse.activeLesson.previousLessonId == null}">Previous</a>
+                    <a class="btn btn-primary"
+                       th:classappend="${learningCourse.activeLesson.nextLessonId == null ? ' disabled' : ''}"
+                       th:href="${learningCourse.activeLesson.nextLessonId == null ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.nextLessonId}"
+                       th:aria-disabled="${learningCourse.activeLesson.nextLessonId == null}">Next lesson</a>
+                </nav>
+            </article>
+        </section>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+</main>
+
+<script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

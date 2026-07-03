@@ -182,7 +182,42 @@
             <div style="font-size:2rem;font-weight:800;color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + course.price}">$199.00</div>
             <p style="font-size:0.75rem;color:var(--lumina-danger);font-weight:600;margin-top:2px;">⏰ Special pricing available</p>
 
-            <a th:href="@{/student/checkout(courseId=${course.id})}" class="btn-enroll" id="btn-enroll-now">Enroll Now →</a>
+            <div id="course-enrollment-message"
+                 th:text="${enrollmentState.message}"
+                 style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-top:0.75rem;"></div>
+
+            <a th:if="${enrollmentState.action == 'CONTINUE_LEARNING'}"
+               th:href="@{/student/learning(courseId=${course.id})}"
+               class="btn-enroll"
+               id="btn-enroll-now"
+               data-enrollment-action="continue">Continue learning</a>
+
+            <button th:if="${enrollmentState.action == 'ENROLL_FREE'}"
+                    type="button"
+                    class="btn-enroll"
+                    id="btn-enroll-now"
+                    th:data-course-id="${course.id}"
+                    data-enrollment-action="free">Enroll for free</button>
+
+            <a th:if="${enrollmentState.action == 'BUY_COURSE'}"
+               th:href="@{/student/checkout(courseId=${course.id})}"
+               class="btn-enroll"
+               id="btn-enroll-now"
+               data-enrollment-action="buy">Buy course</a>
+
+            <button th:if="${enrollmentState.action == 'PAYMENT_PENDING'}"
+                    type="button"
+                    class="btn-enroll"
+                    id="btn-enroll-now"
+                    disabled
+                    data-enrollment-action="pending">Payment pending</button>
+
+            <button th:if="${enrollmentState.action == 'UNAVAILABLE'}"
+                    type="button"
+                    class="btn-enroll"
+                    id="btn-enroll-now"
+                    disabled
+                    data-enrollment-action="unavailable">Course unavailable</button>
             <button class="btn-try" id="btn-try-free">Try First Lesson Free</button>
 
             <p style="font-size:0.75rem;color:var(--lumina-gray-400);text-align:center;margin-top:0.75rem;">30-Day Money-Back Guarantee</p>

@@ -6,11 +6,13 @@ import com.ojtsu26.elearning.model.entity.Lesson;
 import com.ojtsu26.elearning.model.entity.Roadmap;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.LessonType;
+import com.ojtsu26.elearning.model.enums.NotificationType;
 import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.mapper.CourseMapper;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
+    private final NotificationService notificationService;
 
     // ----------------------------------------------------------------
     // Basic CRUD
@@ -213,7 +216,9 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(CourseStatus.PENDING_APPROVAL);
         course.setRejectReason(null);   // Clear any previous rejection reason
-        return courseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        notificationService.createCourseSubmittedForReviewNotification(saved);
+        return courseMapper.toDto(saved);
     }
 
     @Override
@@ -248,7 +253,9 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(CourseStatus.APPROVED);
         course.setRejectReason(null);
-        return courseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_APPROVED);
+        return courseMapper.toDto(saved);
     }
 
     @Override
@@ -265,7 +272,9 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(CourseStatus.DRAFT);
         course.setRejectReason(reason != null && !reason.isBlank() ? reason : "No reason provided.");
-        return courseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_REJECTED);
+        return courseMapper.toDto(saved);
     }
 
     @Override
@@ -278,7 +287,9 @@ public class CourseServiceImpl implements CourseService {
         }
 
         course.setStatus(CourseStatus.HIDDEN);
-        return courseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_HIDDEN);
+        return courseMapper.toDto(saved);
     }
 
     @Override
@@ -291,6 +302,8 @@ public class CourseServiceImpl implements CourseService {
         }
 
         course.setStatus(CourseStatus.APPROVED);
-        return courseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_UNHIDDEN);
+        return courseMapper.toDto(saved);
     }
 }

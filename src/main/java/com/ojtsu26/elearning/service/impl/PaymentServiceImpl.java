@@ -7,10 +7,11 @@ import com.ojtsu26.elearning.model.enums.OrderStatus;
 import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.model.enums.TransactionStatus;
 import com.ojtsu26.elearning.model.enums.RefundStatus;
-import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.OrderRepository;
 import com.ojtsu26.elearning.repository.TransactionRepository;
 import com.ojtsu26.elearning.repository.RefundTransactionRepository;
+import com.ojtsu26.elearning.service.CourseEnrollmentService;
+import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.PaymentProvider;
 import com.ojtsu26.elearning.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final List<PaymentProvider> providers;
     private final OrderRepository orderRepository;
     private final TransactionRepository transactionRepository;
-    private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final RefundTransactionRepository refundTransactionRepository;
+    private final CourseEnrollmentService courseEnrollmentService;
+    private final NotificationService notificationService;
 
     @Override
     public PaymentResponse initiatePayment(Order order) {
@@ -70,14 +72,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         String orderCode = params.get("orderId");
         String transId = params.get("transId");
-        String message = params.get("message");
-        Number resultCodeNum = null;
-        try {
-            resultCodeNum = Double.parseDouble(params.get("resultCode"));
-        } catch (Exception e) {
-            log.warn("Failed to parse resultCode from webhook", e);
+        String resultCodeValue = params.get("resultCode");
+        int resultCode = -1;
+        if (resultCodeValue != null && !resultCodeValue.isBlank()) {
+            try {
+                resultCode = Double.valueOf(resultCodeValue).intValue();
+            } catch (NumberFormatException e) {
+                log.warn("Failed to parse resultCode from webhook: {}", resultCodeValue);
+            }
         }
-        int resultCode = resultCodeNum != null ? resultCodeNum.intValue() : -1;
 
         // Fetch Order
         Order order = orderRepository.findByOrderCode(orderCode)
@@ -116,20 +119,9 @@ public class PaymentServiceImpl implements PaymentService {
                 transactionRepository.save(transaction);
             }
 
-            // 5. Enrollment creation (Inside transactional service)
-            User student = order.getUser();
-            if (!order.getItems().isEmpty()) {
-                Course course = order.getItems().get(0).getCourse();
-                if (!courseEnrollmentRepository.existsByStudentIdAndCourseId(student.getId(), course.getId())) {
-                    CourseEnrollment enrollment = CourseEnrollment.builder()
-                            .student(student)
-                            .course(course)
-                            .progressPercentage(java.math.BigDecimal.ZERO)
-                            .isCompleted(false)
-                            .build();
-                    courseEnrollmentRepository.save(enrollment);
-                    log.info("Enrollment created successfully for student {} and course {}", student.getEmail(), course.getTitle());
-                }
+            if (transaction != null) {
+                courseEnrollmentService.activateEnrollmentAfterVerifiedPayment(order, transaction);
+                log.info("Enrollment activation completed for verified order {}", order.getOrderCode());
             }
         } else {
             order.setStatus(OrderStatus.FAILED);
@@ -140,6 +132,7 @@ public class PaymentServiceImpl implements PaymentService {
                 transaction.setWebhookResponse(params.toString());
                 transactionRepository.save(transaction);
             }
+            notificationService.createPaymentFailedNotification(order);
         }
     }
 
