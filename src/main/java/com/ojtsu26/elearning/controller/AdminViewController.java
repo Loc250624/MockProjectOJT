@@ -2,6 +2,7 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.service.CategoryService;
 import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.service.ProfileService;
 import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
 import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
@@ -33,19 +34,18 @@ public class AdminViewController {
     private final CategoryService categoryService;
     private final CourseService courseService;
     private final TransactionRepository transactionRepository;
-    private final UserService userService;
-    private final ProfileOverviewService profileOverviewService;
+    private final ProfileService profileService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
 
     @GetMapping("/profile")
-    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        model.addAttribute("profile", userService.getCurrentProfile(currentUser.getUser().getId()));
-        model.addAttribute("adminOverview", profileOverviewService.getAdminOverview());
+    public String profile(Model model) {
+        model.addAttribute("profile", profileService.getCurrentProfile());
+        model.addAttribute("overview", profileService.getCurrentProfileOverview());
         model.addAttribute("profileRole", "admin");
         model.addAttribute("profilePortalName", "Admin Portal");
-        return "admin/profile";
+        return "student/profile";
     }
 
     @GetMapping("/users")

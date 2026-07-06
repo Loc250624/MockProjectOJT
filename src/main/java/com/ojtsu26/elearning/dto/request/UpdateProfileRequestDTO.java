@@ -16,7 +16,6 @@ public class UpdateProfileRequestDTO {
     @Email(message = "Email must be valid")
     @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
-
     @Size(max = 2048, message = "Avatar URL must not exceed 2048 characters")
     private String avatarUrl;
 }

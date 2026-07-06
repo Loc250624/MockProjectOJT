@@ -41,14 +41,15 @@ public class StudentViewController {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final PaymentService paymentService;
-    private final UserService userService;
+    private final ProfileService profileService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "student/dashboard"; }
 
     @GetMapping("/profile")
-    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        model.addAttribute("profile", userService.getCurrentProfile(currentUser.getUser().getId()));
+    public String profile(Model model) {
+        model.addAttribute("profile", profileService.getCurrentProfile());
+        model.addAttribute("overview", profileService.getCurrentProfileOverview());
         model.addAttribute("profileRole", "student");
         model.addAttribute("profilePortalName", "Student Portal");
         return "student/profile";

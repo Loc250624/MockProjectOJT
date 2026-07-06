@@ -1,8 +1,7 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.security.CustomUserDetails;
-import com.ojtsu26.elearning.service.ProfileOverviewService;
-import com.ojtsu26.elearning.service.UserService;
+import com.ojtsu26.elearning.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -26,7 +25,6 @@ import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Optional;
@@ -41,20 +39,18 @@ public class TeacherViewController {
     private final CategoryService categoryService;
     private final LessonService lessonService;
     private final VideoService videoService;
-    private final UserService userService;
-    private final ProfileOverviewService profileOverviewService;
+    private final ProfileService profileService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
 
     @GetMapping("/profile")
-    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        Integer currentUserId = currentUser.getUser().getId();
-        model.addAttribute("profile", userService.getCurrentProfile(currentUserId));
-        model.addAttribute("teacherOverview", profileOverviewService.getTeacherOverview(currentUserId));
+    public String profile(Model model) {
+        model.addAttribute("profile", profileService.getCurrentProfile());
+        model.addAttribute("overview", profileService.getCurrentProfileOverview());
         model.addAttribute("profileRole", "teacher");
         model.addAttribute("profilePortalName", "Teacher Portal");
-        return "teacher/profile";
+        return "student/profile";
     }
 
     @GetMapping("/courses")

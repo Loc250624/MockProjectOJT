@@ -18,7 +18,11 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "User does not exist"),
     USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists"),
     EMAIL_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Email already exists"),
-    OAUTH2_EMAIL_CANNOT_BE_CHANGED(400, HttpStatus.BAD_REQUEST, "OAuth2 account email is managed by the login provider");
+    OAUTH2_EMAIL_CANNOT_BE_CHANGED(400, HttpStatus.BAD_REQUEST, "OAuth2 account email is managed by the login provider"),
+    INVALID_AVATAR(400, HttpStatus.BAD_REQUEST, "Invalid avatar image"),
+    UNSUPPORTED_AVATAR_TYPE(415, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported avatar image type"),
+    AVATAR_TOO_LARGE(413, HttpStatus.PAYLOAD_TOO_LARGE, "Avatar image is too large"),
+    AVATAR_STORAGE_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store avatar image");
 
     private final int code;
     private final HttpStatus status;

@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CertificateRepository extends JpaRepository<Certificate, Integer> {
+    long countByStudentId(Integer studentId);
+    long countByCourseInstructorId(Integer instructorId);
 }
