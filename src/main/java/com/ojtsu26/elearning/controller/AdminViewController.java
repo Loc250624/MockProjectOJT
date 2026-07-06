@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.validation.BindingResult;
+import jakarta.validation.Valid;
 
 import com.ojtsu26.elearning.repository.TransactionRepository;
 import com.ojtsu26.elearning.model.entity.Transaction;
@@ -189,4 +193,113 @@ public class AdminViewController {
 
     @GetMapping("/system-settings")
     public String systemSettings() { return "admin/system-settings"; }
+
+    @PostMapping("/categories/create")
+    public String createCategory(@Valid @ModelAttribute("category") CategoryRequestDTO requestDTO, 
+                                 BindingResult bindingResult, 
+                                 RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.category", bindingResult);
+            redirectAttributes.addFlashAttribute("category", requestDTO);
+            return "redirect:/admin/categories/create";
+        }
+        try {
+            categoryService.create(requestDTO);
+            redirectAttributes.addFlashAttribute("successMessage", "Category created successfully!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("category", requestDTO);
+            return "redirect:/admin/categories/create";
+        }
+        return "redirect:/admin/categories";
+    }
+
+    @PostMapping("/categories/edit/{id}")
+    public String updateCategory(@PathVariable Integer id,
+                                 @Valid @ModelAttribute("category") CategoryRequestDTO requestDTO, 
+                                 BindingResult bindingResult, 
+                                 RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.category", bindingResult);
+            redirectAttributes.addFlashAttribute("category", requestDTO);
+            return "redirect:/admin/categories/edit/" + id;
+        }
+        try {
+            categoryService.update(id, requestDTO);
+            redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("category", requestDTO);
+            return "redirect:/admin/categories/edit/" + id;
+        }
+        return "redirect:/admin/categories";
+    }
+
+    @PostMapping("/categories/delete/{id}")
+    public String deleteCategory(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            categoryService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Category deleted successfully!");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/categories";
+    }
+
+    @PostMapping("/courses/approve/{id}")
+    public String approveCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            courseService.approveCourse(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Course approved and published successfully.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
+    }
+
+    @PostMapping("/courses/reject/{id}")
+    public String rejectCourse(@PathVariable Integer id,
+                               @RequestParam(required = false) String rejectReason,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            courseService.rejectCourse(id, rejectReason);
+            redirectAttributes.addFlashAttribute("successMessage", "Course rejected. The teacher will be notified.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
+    }
+
+    @PostMapping("/courses/hide/{id}")
+    public String hideCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            courseService.hideCourse(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Course is now hidden from public catalog.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/courses/approval?status=APPROVED";
+    }
+
+    @PostMapping("/courses/unhide/{id}")
+    public String unhideCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            courseService.unhideCourse(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Course is now visible in the public catalog.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/courses/approval?status=HIDDEN";
+    }
+
+    @PostMapping("/courses/delete/{id}")
+    public String deleteCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            courseService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Course deleted permanently.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/courses/approval";
+    }
 }

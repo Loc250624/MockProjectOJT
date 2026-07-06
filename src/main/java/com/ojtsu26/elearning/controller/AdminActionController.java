@@ -4,33 +4,36 @@ import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
 import com.ojtsu26.elearning.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.validation.BindingResult;
-import jakarta.validation.Valid;
-import com.ojtsu26.elearning.service.CategoryService;
-import com.ojtsu26.elearning.service.CourseService;
-import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
-import lombok.RequiredArgsConstructor;
+
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
-@Controller
-@RequestMapping("/admin")
+@RestController
+@RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminActionController {
 
-    private final CategoryService categoryService;
-    private final CourseService courseService;
+    private static final Set<String> ALLOWED_USER_SORT_FIELDS = Set.of(
+            "id", "fullName", "email", "role", "status", "authProvider", "createdAt"
+    );
+
     private final UserService userService;
     private final JwtCookieService jwtCookieService;
 
@@ -50,6 +53,57 @@ public class AdminActionController {
         return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Profile updated successfully"));
     }
 
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<Page<UserResponseDTO>>> searchUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String authProvider,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Role parsedRole = parseEnum(role, Role.class, "role");
+        UserStatus parsedStatus = parseEnum(status, UserStatus.class, "status");
+        AuthProvider parsedAuthProvider = parseEnum(authProvider, AuthProvider.class, "authProvider");
+        Pageable pageable = buildUserSearchPageable(page, size, sortBy, sortDir);
+
+        Page<UserResponseDTO> users = userService.searchUsers(keyword, parsedRole, parsedStatus, parsedAuthProvider, pageable);
+        return ResponseEntity.ok(ApiResponse.success(users));
+    }
+
+    private Pageable buildUserSearchPageable(int page, int size, String sortBy, String sortDir) {
+        if (page < 0) {
+            throw new IllegalArgumentException("page must not be less than 0");
+        }
+        if (size < 1) {
+            throw new IllegalArgumentException("size must be at least 1");
+        }
+        int normalizedSize = Math.min(size, 100);
+        if (!ALLOWED_USER_SORT_FIELDS.contains(sortBy)) {
+            throw new IllegalArgumentException("sortBy is not supported");
+        }
+        String normalizedSortDir = sortDir.toLowerCase(Locale.ROOT);
+        if (!normalizedSortDir.equals("asc") && !normalizedSortDir.equals("desc")) {
+            throw new IllegalArgumentException("sortDir must be asc or desc");
+        }
+
+        Sort.Direction direction = Sort.Direction.fromString(normalizedSortDir);
+        return PageRequest.of(page, normalizedSize, Sort.by(direction, sortBy));
+    }
+
+    private <E extends Enum<E>> E parseEnum(String value, Class<E> enumType, String parameterName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(parameterName + " is not valid");
+        }
+    }
+
     @PostMapping("/users")
     public ResponseEntity<?> createUser() {
         return ResponseEntity.ok(Map.of("message", "Create user placeholder - not yet implemented"));
@@ -61,131 +115,57 @@ public class AdminActionController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> softDeleteUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.softDeleteUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User account has been soft-deleted. Historical data remains preserved."));
     }
 
     @PatchMapping("/users/{id}/block")
-    public ResponseEntity<?> blockUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Block user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> blockUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.blockUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User blocked successfully"));
     }
 
     @PatchMapping("/users/{id}/unblock")
-    public ResponseEntity<?> unblockUser(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Unblock user " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> unblockUser(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.unblockUser(id, currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User unblocked successfully"));
     }
 
-    @PostMapping("/categories/create")
-    public String createCategory(@Valid @ModelAttribute("category") CategoryRequestDTO requestDTO, 
-                                 BindingResult bindingResult, 
-                                 RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.category", bindingResult);
-            redirectAttributes.addFlashAttribute("category", requestDTO);
-            return "redirect:/admin/categories/create";
-        }
-        try {
-            categoryService.create(requestDTO);
-            redirectAttributes.addFlashAttribute("successMessage", "Category created successfully!");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            redirectAttributes.addFlashAttribute("category", requestDTO);
-            return "redirect:/admin/categories/create";
-        }
-        return "redirect:/admin/categories";
+    @PostMapping("/categories")
+    public ResponseEntity<?> createCategory() {
+        return ResponseEntity.ok(Map.of("message", "Create category placeholder - not yet implemented"));
     }
 
-    @PostMapping("/categories/edit/{id}")
-    public String updateCategory(@PathVariable Integer id,
-                                 @Valid @ModelAttribute("category") CategoryRequestDTO requestDTO, 
-                                 BindingResult bindingResult, 
-                                 RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.category", bindingResult);
-            redirectAttributes.addFlashAttribute("category", requestDTO);
-            return "redirect:/admin/categories/edit/" + id;
-        }
-        try {
-            categoryService.update(id, requestDTO);
-            redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            redirectAttributes.addFlashAttribute("category", requestDTO);
-            return "redirect:/admin/categories/edit/" + id;
-        }
-        return "redirect:/admin/categories";
+    @PatchMapping("/categories/{id}")
+    public ResponseEntity<?> updateCategory(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Update category " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/categories/delete/{id}")
-    public String deleteCategory(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            categoryService.delete(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Category deleted successfully!");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/categories";
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Delete category " + id + " placeholder - not yet implemented"));
     }
 
-    // ----------------------------------------------------------------
-    // CRS-09: Admin Course Approval / Governance
-    // ----------------------------------------------------------------
-
-    @PostMapping("/courses/approve/{id}")
-    public String approveCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            courseService.approveCourse(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Course approved and published successfully.");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
+    @PatchMapping("/courses/{id}/approve")
+    public ResponseEntity<?> approveCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Approve course " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/courses/reject/{id}")
-    public String rejectCourse(@PathVariable Integer id,
-                               @org.springframework.web.bind.annotation.RequestParam(required = false) String rejectReason,
-                               RedirectAttributes redirectAttributes) {
-        try {
-            courseService.rejectCourse(id, rejectReason);
-            redirectAttributes.addFlashAttribute("successMessage", "Course rejected. The teacher will be notified.");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
+    @PatchMapping("/courses/{id}/hide")
+    public ResponseEntity<?> hideCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Hide course " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/courses/hide/{id}")
-    public String hideCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            courseService.hideCourse(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Course is now hidden from public catalog.");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/courses/approval?status=APPROVED";
-    }
-
-    @PostMapping("/courses/unhide/{id}")
-    public String unhideCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            courseService.unhideCourse(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Course is now visible in the public catalog.");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/courses/approval?status=HIDDEN";
-    }
-
-    @PostMapping("/courses/delete/{id}")
-    public String deleteCourse(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            courseService.delete(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Course deleted permanently.");
-        } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/admin/courses/approval";
+    @DeleteMapping("/courses/{id}")
+    public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Delete course " + id + " placeholder - not yet implemented"));
     }
 
     @PatchMapping("/blogs/{id}/approve")

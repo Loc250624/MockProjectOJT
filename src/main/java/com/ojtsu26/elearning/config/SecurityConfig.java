@@ -69,7 +69,8 @@ public class SecurityConfig {
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                if (encodedPassword == null) return false;
+                if (encodedPassword == null)
+                    return false;
                 // If it looks like a BCrypt hash, verify with BCrypt
                 if (encodedPassword.startsWith("$2a$")) {
                     return bcrypt.matches(rawPassword, encodedPassword);
@@ -160,8 +161,7 @@ public class SecurityConfig {
                 exception.getClass().getName(),
                 errorCode,
                 exception.getMessage(),
-                exception
-        );
+                exception);
     }
 
     @Bean
@@ -171,10 +171,10 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:3000",
-                "http://127.0.0.1:5173"
-        ));
+                "http://127.0.0.1:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        configuration
+                .setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

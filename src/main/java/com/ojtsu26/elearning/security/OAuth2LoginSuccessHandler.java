@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -45,6 +46,18 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         User user;
         if (userOptional.isPresent()) {
             user = userOptional.get();
+            if (user.getStatus() == UserStatus.DELETED) {
+                SecurityContextHolder.clearContext();
+                log.warn("Deleted OAuth2 login attempt: {}", email);
+                response.sendRedirect("/auth/login?error=deleted");
+                return;
+            }
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                SecurityContextHolder.clearContext();
+                log.warn("Blocked OAuth2 login attempt: {}", email);
+                response.sendRedirect("/auth/login?error=blocked");
+                return;
+            }
             // Automatically link accounts if they log in via OAuth2 but registered locally
             if (user.getAuthProvider() == AuthProvider.LOCAL) {
                 user.setAuthProvider(authProvider);
@@ -60,6 +73,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .build();
             userRepository.save(user);
             log.info("New user registered via OAuth2: {}", email);
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            SecurityContextHolder.clearContext();
+            log.warn("Inactive OAuth2 login attempt: {}", email);
+            response.sendRedirect(user.getStatus() == UserStatus.DELETED
+                    ? "/auth/login?error=deleted"
+                    : "/auth/login?error=blocked");
+            return;
         }
 
         String jwt = jwtUtils.generateTokenFromEmail(user.getEmail());

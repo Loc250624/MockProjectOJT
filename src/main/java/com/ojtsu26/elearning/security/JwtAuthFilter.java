@@ -38,6 +38,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String email = jwtUtils.getEmailFromJwtToken(jwt);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                if (!isUsableAccount(userDetails)) {
+                    SecurityContextHolder.clearContext();
+                    log.debug("JWT account rejected: method={}, uri={}, username={}",
+                            request.getMethod(), request.getRequestURI(), email);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -54,6 +62,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isUsableAccount(UserDetails userDetails) {
+        return userDetails.isEnabled()
+                && userDetails.isAccountNonLocked()
+                && userDetails.isAccountNonExpired()
+                && userDetails.isCredentialsNonExpired();
     }
 
     private String parseJwt(HttpServletRequest request) {

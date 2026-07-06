@@ -29,6 +29,7 @@ Thumbs.db
 !.env.example
 
 # Spring Boot local/secret configuration
+**/application.properties
 **/application.secret.properties
 **/application-secret.properties
 **/application-*.secret.properties

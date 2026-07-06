@@ -35,7 +35,12 @@ public enum ErrorCode {
     INVALID_AVATAR(400, HttpStatus.BAD_REQUEST, "Invalid avatar image"),
     UNSUPPORTED_AVATAR_TYPE(415, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported avatar image type"),
     AVATAR_TOO_LARGE(413, HttpStatus.PAYLOAD_TOO_LARGE, "Avatar image is too large"),
-    AVATAR_STORAGE_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store avatar image");
+    AVATAR_STORAGE_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store avatar image"),
+    CANNOT_MODIFY_OWN_ACCOUNT(400, HttpStatus.BAD_REQUEST, "Admin cannot modify their own account"),
+    CANNOT_DELETE_OWN_ACCOUNT(400, HttpStatus.BAD_REQUEST, "Admin cannot soft-delete their own account"),
+    USER_ALREADY_BLOCKED(409, HttpStatus.CONFLICT, "User is already blocked"),
+    USER_NOT_BLOCKED(409, HttpStatus.CONFLICT, "User is not blocked"),
+    USER_ALREADY_DELETED(409, HttpStatus.CONFLICT, "User account is already soft-deleted");
 
     private final int code;
     private final HttpStatus status;
