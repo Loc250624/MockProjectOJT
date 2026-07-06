@@ -188,11 +188,6 @@ public class AdminActionController {
         return ResponseEntity.ok(Map.of("message", "Delete comment " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/refunds")
-    public ResponseEntity<?> createRefund() {
-        return ResponseEntity.ok(Map.of("message", "Create refund placeholder - not yet implemented"));
-    }
-
     @PatchMapping("/system-settings")
     public ResponseEntity<?> updateSystemSettings() {
         return ResponseEntity.ok(Map.of("message", "Update system settings placeholder - not yet implemented"));
