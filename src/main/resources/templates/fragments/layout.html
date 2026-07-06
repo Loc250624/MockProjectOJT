@@ -191,6 +191,9 @@
         <a th:href="@{/teacher/analytics}" id="nav-teacher-analytics">
             <span class="nav-icon">📈</span> Analytics
         </a>
+        <a th:href="@{/teacher/reports/progress}" id="nav-teacher-progress-report">
+            <span class="nav-icon">📊</span> Progress Report
+        </a>
     </nav>
 
     <div class="sidebar-divider"></div>
@@ -240,9 +243,6 @@
         <a th:href="@{/public/courses}" id="nav-student-public-catalog">
             <span class="nav-icon">🌐</span> Public Catalog
         </a>
-        <a th:href="@{/student/profile}" id="nav-student-profile-learning">
-            <span class="nav-icon">👤</span> Profile
-        </a>
         <a th:href="@{/student/dashboard}" id="nav-student-assignments" style="display:none;">
             <span class="nav-icon">📋</span> Assignments
         </a>
@@ -284,10 +284,22 @@
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn" id="btn-topbar-notif">
-            🔔
-            <span class="badge-dot"></span>
+        <span class="badge badge-success badge-dot" style="font-size:0.75rem;"> System Healthy</span>
+        <button class="icon-btn notification-bell" id="btn-topbar-notif" type="button"
+                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+            <span aria-hidden="true">🔔</span>
+            <span class="notification-count" data-notification-count hidden>0</span>
         </button>
+        <div class="notification-popover" data-notification-popover hidden>
+            <div class="notification-popover-head">
+                <strong>Notifications</strong>
+                <button type="button" class="notification-mark-all" data-notification-mark-all>Mark all read</button>
+            </div>
+            <div class="notification-popover-list" data-notification-list>
+                <div class="notification-state">Loading...</div>
+            </div>
+            <a class="notification-view-all" href="/admin/dashboard">Open dashboard</a>
+        </div>
         <button class="icon-btn" id="btn-topbar-help">?</button>
         <a class="user-chip" th:href="@{/admin/profile}" style="text-decoration:none;">
             <div class="user-info">
@@ -302,6 +314,7 @@
                  onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/notifications.js}" defer></script>
 </div>
 
 <!-- ===== PORTAL TOPBAR (Teacher) ===== -->
@@ -318,10 +331,21 @@
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn" id="btn-teacher-notif">
-            🔔
-            <span class="badge-dot"></span>
+        <button class="icon-btn notification-bell" id="btn-teacher-notif" type="button"
+                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+            <span aria-hidden="true">🔔</span>
+            <span class="notification-count" data-notification-count hidden>0</span>
         </button>
+        <div class="notification-popover" data-notification-popover hidden>
+            <div class="notification-popover-head">
+                <strong>Notifications</strong>
+                <button type="button" class="notification-mark-all" data-notification-mark-all>Mark all read</button>
+            </div>
+            <div class="notification-popover-list" data-notification-list>
+                <div class="notification-state">Loading...</div>
+            </div>
+            <a class="notification-view-all" href="/teacher/dashboard">Open dashboard</a>
+        </div>
         <button class="icon-btn" id="btn-teacher-help">?</button>
         <a class="user-chip" th:href="@{/teacher/profile}" style="text-decoration:none;">
             <div class="user-info">
@@ -336,6 +360,7 @@
                  onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/notifications.js}" defer></script>
 </div>
 
 <!-- ===== PORTAL TOPBAR (Student) ===== -->
@@ -352,10 +377,21 @@
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn" id="btn-student-notif">
-            🔔
-            <span class="badge-dot"></span>
+        <button class="icon-btn notification-bell" id="btn-student-notif" type="button"
+                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+            <span aria-hidden="true">🔔</span>
+            <span class="notification-count" data-notification-count hidden>0</span>
         </button>
+        <div class="notification-popover" data-notification-popover hidden>
+            <div class="notification-popover-head">
+                <strong>Notifications</strong>
+                <button type="button" class="notification-mark-all" data-notification-mark-all>Mark all read</button>
+            </div>
+            <div class="notification-popover-list" data-notification-list>
+                <div class="notification-state">Loading...</div>
+            </div>
+            <a class="notification-view-all" href="/student/notifications">View all</a>
+        </div>
         <button class="icon-btn" id="btn-student-help">?</button>
         <a class="user-chip" th:href="@{/student/profile}" style="text-decoration:none;">
             <div class="user-info">
@@ -370,6 +406,7 @@
                  onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/notifications.js}" defer></script>
 </div>
 
 <!-- ===== FOOTER ===== -->

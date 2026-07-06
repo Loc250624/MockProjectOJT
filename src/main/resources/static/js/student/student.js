@@ -19,7 +19,230 @@ document.addEventListener('DOMContentLoaded', function() {
     initProfileTabs();
     initProfileEditor();
     initTeacherStudentFilters();
+    initCourseEnrollmentCta();
+    initLearningProgress();
+    initStudentCertificates();
 });
+
+function initCourseEnrollmentCta() {
+    var enrollButton = document.querySelector('[data-enrollment-action="free"]');
+    if (!enrollButton) {
+        return;
+    }
+
+    var courseId = enrollButton.dataset.courseId;
+    var message = document.getElementById('course-enrollment-message');
+    var originalText = enrollButton.textContent;
+
+    function setMessage(text, isError) {
+        if (!message) {
+            return;
+        }
+        message.textContent = text || '';
+        message.style.color = isError ? 'var(--lumina-danger)' : 'var(--lumina-success)';
+    }
+
+    function parseJsonResponse(response, fallbackMessage) {
+        return response.json()
+            .catch(function() {
+                return { message: fallbackMessage };
+            })
+            .then(function(body) {
+                if (!response.ok) {
+                    throw new Error(body.message || fallbackMessage);
+                }
+                return body;
+            });
+    }
+
+    function refreshState() {
+        return fetch('/student/courses/' + courseId + '/enrollment-state', {
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return parseJsonResponse(response, 'Unable to refresh enrollment state');
+        }).then(function(apiResponse) {
+            var state = apiResponse.data;
+            if (!state) {
+                return;
+            }
+            setMessage(state.message, false);
+            if (state.action === 'CONTINUE_LEARNING') {
+                var continueLink = document.createElement('a');
+                continueLink.href = '/student/learning?courseId=' + encodeURIComponent(courseId);
+                continueLink.className = enrollButton.className;
+                continueLink.id = enrollButton.id;
+                continueLink.textContent = 'Continue learning';
+                enrollButton.replaceWith(continueLink);
+            }
+        });
+    }
+
+    enrollButton.addEventListener('click', function() {
+        enrollButton.disabled = true;
+        enrollButton.textContent = 'Enrolling...';
+        setMessage('Confirming enrollment...', false);
+
+        fetch('/student/courses/' + courseId + '/enroll', {
+            method: 'POST',
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return parseJsonResponse(response, 'Unable to enroll in this course');
+        }).then(function(apiResponse) {
+            setMessage(apiResponse.message || 'Enrollment confirmed', false);
+            return refreshState();
+        }).catch(function(error) {
+            setMessage(error.message, true);
+            enrollButton.disabled = false;
+            enrollButton.textContent = originalText;
+        });
+    });
+}
+
+function initLearningProgress() {
+    var video = document.querySelector('[data-learning-video="true"]');
+    var completeButton = document.querySelector('[data-lesson-complete="true"]');
+
+    if (video) {
+        initVideoProgress(video);
+    }
+    if (completeButton) {
+        initLessonCompletion(completeButton);
+    }
+}
+
+function parseLearningJson(response, fallbackMessage) {
+    return response.json()
+        .catch(function() {
+            return { message: fallbackMessage };
+        })
+        .then(function(body) {
+            if (!response.ok) {
+                throw new Error(body.message || fallbackMessage);
+            }
+            return body;
+        });
+}
+
+function applyLearningProgress(progress) {
+    if (!progress) {
+        return;
+    }
+    var lessonStatus = document.getElementById('lesson-status');
+    if (lessonStatus && progress.completed) {
+        lessonStatus.textContent = 'Completed';
+        lessonStatus.classList.add('completed');
+    }
+
+    var help = document.getElementById('video-progress-help');
+    if (help && typeof progress.watchedSeconds === 'number') {
+        help.textContent = 'Saved through ' + progress.watchedSeconds + ' seconds.';
+    }
+
+    document.querySelectorAll('.learning-progress-summary .progress-bar-fill, .pc-progress .progress-bar-fill').forEach(function(fill) {
+        if (progress.progressPercentage != null) {
+            fill.style.width = progress.progressPercentage + '%';
+        }
+    });
+}
+
+function initVideoProgress(video) {
+    var courseId = video.dataset.courseId;
+    var lessonId = video.dataset.lessonId;
+    var highestLocal = Number(video.dataset.watchedSeconds || 0);
+    var lastSaved = highestLocal;
+    var saveTimer = null;
+    var saving = false;
+
+    if (highestLocal > 0) {
+        video.addEventListener('loadedmetadata', function() {
+            if (video.currentTime < highestLocal) {
+                video.currentTime = highestLocal;
+            }
+        }, { once: true });
+    }
+
+    function saveProgress(force) {
+        var current = Math.floor(video.currentTime || 0);
+        if (!Number.isFinite(current) || current < 0) {
+            return Promise.resolve();
+        }
+        highestLocal = Math.max(highestLocal, current);
+        if (!force && highestLocal - lastSaved < 15) {
+            return Promise.resolve();
+        }
+        if (saving) {
+            return Promise.resolve();
+        }
+        saving = true;
+        return fetch('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ watchedSeconds: highestLocal })
+        }).then(function(response) {
+            return parseLearningJson(response, 'Unable to save video progress');
+        }).then(function(apiResponse) {
+            lastSaved = Math.max(lastSaved, apiResponse.data && apiResponse.data.watchedSeconds || highestLocal);
+            applyLearningProgress(apiResponse.data);
+        }).catch(function(error) {
+            var help = document.getElementById('video-progress-help');
+            if (help) {
+                help.textContent = error.message;
+            }
+        }).finally(function() {
+            saving = false;
+        });
+    }
+
+    function scheduleSave() {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(function() {
+            saveProgress(false);
+        }, 1000);
+    }
+
+    video.addEventListener('timeupdate', scheduleSave);
+    video.addEventListener('pause', function() {
+        saveProgress(true);
+    });
+    video.addEventListener('seeked', function() {
+        saveProgress(false);
+    });
+    window.addEventListener('beforeunload', function() {
+        var current = Math.floor(video.currentTime || 0);
+        highestLocal = Math.max(highestLocal, current);
+        if (highestLocal > lastSaved && navigator.sendBeacon) {
+            var blob = new Blob([JSON.stringify({ watchedSeconds: highestLocal })], { type: 'application/json' });
+            navigator.sendBeacon('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', blob);
+        }
+    });
+}
+
+function initLessonCompletion(button) {
+    var message = document.getElementById('lesson-complete-message');
+    button.addEventListener('click', function() {
+        button.disabled = true;
+        if (message) {
+            message.textContent = 'Saving completion...';
+        }
+        fetch('/student/courses/' + encodeURIComponent(button.dataset.courseId) + '/lessons/' + encodeURIComponent(button.dataset.lessonId) + '/complete', {
+            method: 'POST',
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return parseLearningJson(response, 'Unable to complete this lesson');
+        }).then(function(apiResponse) {
+            applyLearningProgress(apiResponse.data);
+            if (message) {
+                message.textContent = 'Lesson completed.';
+            }
+        }).catch(function(error) {
+            button.disabled = false;
+            if (message) {
+                message.textContent = error.message;
+            }
+        });
+    });
+}
 
 function switchProfileTab(tabName) {
     var tabs = document.querySelectorAll('[data-profile-tab]');
@@ -344,4 +567,172 @@ function initTeacherStudentFilters() {
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
 }
->>>>>>> origin/feature/user-profile-update
+
+function initStudentCertificates() {
+    var page = document.getElementById('student-certificates-page');
+    if (!page) {
+        return;
+    }
+
+    var grid = document.getElementById('certificate-grid');
+    var tableBody = document.getElementById('certificate-history-body');
+    var loading = document.getElementById('certificate-loading');
+    var empty = document.getElementById('certificate-empty');
+    var total = document.getElementById('certificate-total');
+    var message = document.getElementById('certificate-message');
+    var historyCard = document.getElementById('certificate-history-card');
+
+    function setMessage(text, isError) {
+        if (!message) {
+            return;
+        }
+        message.textContent = text || '';
+        message.style.color = isError ? 'var(--lumina-danger)' : 'var(--lumina-gray-600)';
+    }
+
+    function parseJsonResponse(response, fallbackMessage) {
+        return response.json()
+            .catch(function() {
+                return { message: fallbackMessage };
+            })
+            .then(function(body) {
+                if (!response.ok) {
+                    throw new Error(body.message || fallbackMessage);
+                }
+                return body;
+            });
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return 'Not available';
+        }
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return 'Not available';
+        }
+        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+    }
+
+    function appendText(parent, tagName, className, text) {
+        var element = document.createElement(tagName);
+        if (className) {
+            element.className = className;
+        }
+        element.textContent = text || '';
+        parent.appendChild(element);
+        return element;
+    }
+
+    function renderCard(certificate) {
+        var card = document.createElement('div');
+        card.className = 'cert-card';
+        var inner = document.createElement('div');
+        inner.className = 'cert-card-inner';
+        card.appendChild(inner);
+
+        appendText(inner, 'div', 'cert-ribbon', certificate.status === 'ACTIVE' ? 'C' : 'R');
+        appendText(inner, 'div', null, 'Certificate of Completion').style.cssText = 'font-size:0.6875rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;';
+        appendText(inner, 'div', 'cert-course', certificate.courseName);
+        appendText(inner, 'div', 'cert-meta', 'Issued to ' + (certificate.studentName || 'Student') + ' on ' + formatDate(certificate.issuedAt));
+        appendText(inner, 'div', 'cert-meta', 'Teacher: ' + (certificate.teacherName || 'LumiNa Instructor'));
+
+        var codeBox = document.createElement('div');
+        codeBox.className = 'cert-id-box';
+        appendText(codeBox, 'span', 'cert-id-label', 'Verification Code');
+        appendText(codeBox, 'span', 'cert-id-value', certificate.verificationCode);
+        inner.appendChild(codeBox);
+
+        var actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:0.75rem;flex-wrap:wrap;';
+        var download = document.createElement('button');
+        download.type = 'button';
+        download.className = 'btn btn-primary btn-sm flex-1';
+        download.textContent = 'Download PDF';
+        download.addEventListener('click', function() {
+            downloadCertificate(certificate.id, download);
+        });
+        var verify = document.createElement('a');
+        verify.className = 'btn btn-secondary btn-sm flex-1';
+        verify.href = certificate.verifyUrl || ('/certificates/verify/' + encodeURIComponent(certificate.verificationCode));
+        verify.textContent = 'Verify';
+        actions.appendChild(download);
+        actions.appendChild(verify);
+        inner.appendChild(actions);
+        return card;
+    }
+
+    function renderRow(certificate) {
+        var row = document.createElement('tr');
+        appendText(row, 'td', null, certificate.courseName);
+        appendText(row, 'td', null, certificate.teacherName);
+        appendText(row, 'td', null, formatDate(certificate.issuedAt));
+        appendText(row, 'td', null, certificate.verificationCode).style.fontFamily = 'var(--font-mono)';
+        var statusCell = document.createElement('td');
+        appendText(statusCell, 'span', certificate.status === 'ACTIVE' ? 'badge badge-success badge-dot' : 'badge badge-danger badge-dot', certificate.status);
+        row.appendChild(statusCell);
+        var actionCell = document.createElement('td');
+        var link = document.createElement('a');
+        link.href = certificate.verifyUrl || ('/certificates/verify/' + encodeURIComponent(certificate.verificationCode));
+        link.textContent = 'View';
+        link.style.cssText = 'color:var(--lumina-blue);font-weight:600;font-size:0.8125rem;';
+        actionCell.appendChild(link);
+        row.appendChild(actionCell);
+        return row;
+    }
+
+    function renderCertificates(items, totalElements) {
+        grid.replaceChildren();
+        tableBody.replaceChildren();
+        total.textContent = String(totalElements || items.length);
+        empty.hidden = items.length > 0;
+        historyCard.hidden = items.length === 0;
+        items.forEach(function(certificate) {
+            grid.appendChild(renderCard(certificate));
+            tableBody.appendChild(renderRow(certificate));
+        });
+    }
+
+    function downloadCertificate(certificateId, button) {
+        var original = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Preparing...';
+        fetch('/api/student/certificates/' + encodeURIComponent(certificateId) + '/download', {
+            credentials: 'same-origin'
+        }).then(function(response) {
+            if (!response.ok) {
+                throw new Error('Unable to download this certificate.');
+            }
+            return response.blob();
+        }).then(function(blob) {
+            var url = URL.createObjectURL(blob);
+            var anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = 'lumina-certificate-' + certificateId + '.pdf';
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(url);
+        }).catch(function(error) {
+            setMessage(error.message, true);
+        }).finally(function() {
+            button.disabled = false;
+            button.textContent = original;
+        });
+    }
+
+    fetch('/api/student/certificates', {
+        credentials: 'same-origin'
+    }).then(function(response) {
+        return parseJsonResponse(response, 'Unable to load certificates');
+    }).then(function(apiResponse) {
+        var data = apiResponse.data || {};
+        renderCertificates(data.content || [], data.totalElements || 0);
+        setMessage('', false);
+    }).catch(function(error) {
+        setMessage(error.message, true);
+        empty.hidden = false;
+    }).finally(function() {
+        loading.hidden = true;
+    });
+}

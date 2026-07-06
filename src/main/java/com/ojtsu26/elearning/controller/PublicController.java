@@ -1,12 +1,18 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
+import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
 import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
+import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.CertificateService;
+import com.ojtsu26.elearning.service.CourseEnrollmentService;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.LessonService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +28,8 @@ public class PublicController {
     private final CourseService courseService;
     private final CategoryService categoryService;
     private final LessonService lessonService;
+    private final CourseEnrollmentService courseEnrollmentService;
+    private final CertificateService certificateService;
 
     @GetMapping("/")
     public String homePage() {
@@ -45,6 +53,7 @@ public class PublicController {
     @GetMapping({"/courses/detail", "/public/courses/detail"})
     public String courseDetailPage(@RequestParam(required = false) Integer id,
                                    Model model,
+                                   @AuthenticationPrincipal CustomUserDetails userDetails,
                                    RedirectAttributes redirectAttributes) {
         if (id == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Course ID is required.");
@@ -60,6 +69,10 @@ public class PublicController {
             List<LessonResponseDTO> lessons = lessonService.findByCourseId(id, null);
             model.addAttribute("course", course);
             model.addAttribute("lessons", lessons);
+            if (userDetails != null && userDetails.getUser().getRole() == Role.STUDENT) {
+                CourseEnrollmentStateResponseDTO enrollmentState = courseEnrollmentService.getCurrentStudentCourseState(id);
+                model.addAttribute("enrollmentState", enrollmentState);
+            }
             return "public/course-detail";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Course not found.");
@@ -75,5 +88,12 @@ public class PublicController {
     @GetMapping("/blogs/detail")
     public String blogDetailPage() {
         return "public/blog-detail";
+    }
+
+    @GetMapping("/certificates/verify/{verificationCode}")
+    public String verifyCertificate(@org.springframework.web.bind.annotation.PathVariable String verificationCode,
+                                    Model model) {
+        model.addAttribute("verification", certificateService.verifyByCode(verificationCode));
+        return "public/certificate-verification";
     }
 }

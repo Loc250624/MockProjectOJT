@@ -104,6 +104,14 @@
                                         class="btn btn-secondary btn-sm"
                                         th:id="'btn-videos-crs-' + ${crs.id}">Videos</a>
 
+                                     <a th:href="@{/teacher/students(courseId=${crs.id})}"
+                                        class="btn btn-secondary btn-sm"
+                                        th:id="'btn-students-crs-' + ${crs.id}">Students</a>
+
+                                     <a th:href="@{/teacher/reports/progress(courseId=${crs.id})}"
+                                        class="btn btn-secondary btn-sm"
+                                        th:id="'btn-progress-crs-' + ${crs.id}">Progress</a>
+
                                     <!-- Submit: only for DRAFT -->
                                     <form th:if="${crs.status.name() == 'DRAFT'}"
                                           th:action="@{'/teacher/courses/submit/' + ${crs.id}}" method="post" style="display:inline;"

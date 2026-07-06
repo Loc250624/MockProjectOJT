@@ -107,6 +107,8 @@ public class SecurityConfig {
                         "/blogs",
                         "/blogs/**",
                         "/public/blogs/**",
+                        "/certificates/verify/**",
+                        "/api/public/certificates/verify/**",
                         "/favicon.ico"
                 ).permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()

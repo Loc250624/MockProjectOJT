@@ -1,7 +1,10 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
+import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
 import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
+import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
+import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Order;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
@@ -41,10 +44,21 @@ public class StudentViewController {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final CourseEnrollmentService courseEnrollmentService;
     private final ProfileService profileService;
+    private final StudentLearningService studentLearningService;
 
     @GetMapping("/dashboard")
-    public String dashboard() { return "student/dashboard"; }
+    public String dashboard(Model model) {
+        List<com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO> courseCards =
+                studentLearningService.getCurrentStudentCourseCards();
+        long completed = courseCards.stream().filter(card -> Boolean.TRUE.equals(card.getCompleted())).count();
+        model.addAttribute("courseCards", courseCards.stream().limit(3).toList());
+        model.addAttribute("enrolledCourseCount", courseCards.size());
+        model.addAttribute("completedCourseCount", completed);
+        model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
+        return "student/dashboard";
+    }
 
     @GetMapping("/profile")
     public String profile(Model model) {
@@ -85,8 +99,10 @@ public class StudentViewController {
                 return "redirect:/student/courses";
             }
             List<LessonResponseDTO> lessons = lessonService.findByCourseId(id, null);
+            CourseEnrollmentStateResponseDTO enrollmentState = courseEnrollmentService.getCurrentStudentCourseState(id);
             model.addAttribute("course", course);
             model.addAttribute("lessons", lessons);
+            model.addAttribute("enrollmentState", enrollmentState);
             return "student/course-detail";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Course not found.");
@@ -96,14 +112,30 @@ public class StudentViewController {
 
     @GetMapping("/my-courses")
     public String myCourses(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<com.ojtsu26.elearning.model.entity.CourseEnrollment> enrollments = 
-                courseEnrollmentRepository.findByStudentId(userDetails.getUser().getId());
-        model.addAttribute("enrollments", enrollments);
+        model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
         return "student/my-courses";
     }
 
     @GetMapping("/learning")
-    public String learning() { return "student/learning"; }
+    public String learning(@RequestParam(required = false) Integer courseId,
+                           @RequestParam(required = false) Integer lessonId,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
+        if (courseId == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Course ID is required.");
+            return "redirect:/student/my-courses";
+        }
+        try {
+            StudentLearningCourseDTO learningCourse = studentLearningService.getLearningCourse(courseId, lessonId);
+            model.addAttribute("learningCourse", learningCourse);
+            model.addAttribute("courseId", courseId);
+            model.addAttribute("lessonId", learningCourse.getActiveLessonId());
+            return "student/learning";
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/student/courses/detail?id=" + courseId;
+        }
+    }
 
     @GetMapping("/lessons/view")
     public String lessonView() { return "student/lesson-view"; }

@@ -1,13 +1,15 @@
 package com.ojtsu26.elearning.service;
 
-import com.ojtsu26.elearning.dto.request.CertificateRequestDTO;
 import com.ojtsu26.elearning.dto.response.CertificateResponseDTO;
-import java.util.List;
+import com.ojtsu26.elearning.dto.response.CertificateVerificationDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CertificateService {
-    List<CertificateResponseDTO> findAll();
-    CertificateResponseDTO findById(Integer id);
-    CertificateResponseDTO create(CertificateRequestDTO requestDTO);
-    CertificateResponseDTO update(Integer id, CertificateRequestDTO requestDTO);
-    void delete(Integer id);
+    CertificateResponseDTO issueIfEligible(Integer enrollmentId, Integer currentStudentId);
+    CertificateResponseDTO issueAutomaticallyIfEligible(Integer enrollmentId);
+    Page<CertificateResponseDTO> getMyCertificates(Integer currentStudentId, Pageable pageable);
+    CertificateResponseDTO getMyCertificate(Integer certificateId, Integer currentStudentId);
+    byte[] generateCertificatePdf(Integer certificateId, Integer currentStudentId);
+    CertificateVerificationDTO verifyByCode(String verificationCode);
 }

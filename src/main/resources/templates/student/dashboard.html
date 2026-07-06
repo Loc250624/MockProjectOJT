@@ -33,19 +33,19 @@
                 <div class="stat-card">
                     <div class="stat-icon">📚</div>
                     <div class="stat-label">Enrolled Courses</div>
-                    <div class="stat-value">8</div>
+                    <div class="stat-value" th:text="${enrolledCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Total lifetime</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">✓</div>
                     <div class="stat-label">Completed</div>
-                    <div class="stat-value">3</div>
+                    <div class="stat-value" th:text="${completedCourseCount}">0</div>
                     <div class="stat-change stat-change-up">↑ 1 this month</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:var(--lumina-warning-bg);color:var(--lumina-warning);">⏳</div>
                     <div class="stat-label">In Progress</div>
-                    <div class="stat-value">5</div>
+                    <div class="stat-value" th:text="${inProgressCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Active learning</div>
                 </div>
                 <div class="stat-card">
@@ -64,7 +64,36 @@
                         <a th:href="@{/student/my-courses}" class="section-link">View All</a>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem;" th:unless="${#lists.isEmpty(courseCards)}">
+                        <div class="progress-card" th:each="course : ${courseCards}">
+                            <div class="pc-header">
+                                <div class="pc-icon" th:text="${course.completed ? '100%' : 'Go'}">Go</div>
+                                <div>
+                                    <div class="pc-title" th:text="${course.courseTitle}">Course title</div>
+                                    <div class="pc-instructor" th:text="${course.instructorName ?: 'Unknown instructor'}">Instructor</div>
+                                </div>
+                            </div>
+                            <div class="pc-progress">
+                                <div class="pc-progress-info">
+                                    <span class="lbl" th:text="${course.completedLessons} + ' of ' + ${course.totalLessons} + ' lessons'">0 of 0 lessons</span>
+                                    <span class="pct" th:text="${course.progressPercentage} + '%'">0%</span>
+                                </div>
+                                <div class="progress-bar-wrap" th:aria-label="${'Course progress ' + course.progressPercentage + ' percent'}">
+                                    <div class="progress-bar-fill" th:style="'width:' + ${course.progressPercentage} + '%;'"></div>
+                                </div>
+                            </div>
+                            <div class="pc-actions">
+                                <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary btn-sm btn-full">Continue Learning</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="student-empty-state" th:if="${#lists.isEmpty(courseCards)}">
+                        <h3>No active courses</h3>
+                        <p>Your enrolled courses will appear here after you join a course.</p>
+                        <a th:href="@{/student/courses}" class="btn btn-primary">Browse Catalog</a>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem;" th:if="${false}">
                         
                         <div class="progress-card">
                             <div class="pc-header">

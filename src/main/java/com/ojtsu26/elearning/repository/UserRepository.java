@@ -21,4 +21,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     long countByStatus(UserStatus status);
     long countByCreatedAtAfter(LocalDateTime dateTime);
     List<User> findTop5ByOrderByCreatedAtDesc();
+    List<User> findByRole(Role role);
 }

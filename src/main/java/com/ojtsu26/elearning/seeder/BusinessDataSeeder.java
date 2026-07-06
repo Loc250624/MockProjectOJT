@@ -69,12 +69,24 @@ public class BusinessDataSeeder {
 
         for (CourseEnrollment enrollment : completedEnrollments) {
             if (certificateCount >= targetCertificates) break;
+            if (enrollment.getStudent() == null || enrollment.getCourse() == null
+                    || certificateRepository.existsByEnrollmentId(enrollment.getId())) {
+                continue;
+            }
+            User instructor = enrollment.getCourse().getInstructor();
             
             Certificate certificate = Certificate.builder()
+                    .enrollment(enrollment)
                     .issueDate(SeederUtils.getRandomPastDate(10))
+                    .issuedAt(SeederUtils.getRandomPastDate(10))
                     .certificateUrl("https://example.com/certificates/" + UUID.randomUUID() + ".pdf")
                     .student(enrollment.getStudent())
                     .course(enrollment.getCourse())
+                    .studentNameSnapshot(enrollment.getStudent().getFullName())
+                    .courseNameSnapshot(enrollment.getCourse().getTitle())
+                    .teacherNameSnapshot(instructor == null ? "LumiNa Instructor" : instructor.getFullName())
+                    .verificationCode(UUID.randomUUID().toString().replace("-", "").toUpperCase())
+                    .status(CertificateStatus.ACTIVE)
                     .build();
             certificateRepository.save(certificate);
             certificateCount++;

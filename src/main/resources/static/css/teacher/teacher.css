@@ -156,3 +156,470 @@
 
 .b-upload-zone:hover { border-color: var(--lumina-blue); }
 .b-upload-icon { font-size: 2rem; color: var(--lumina-gray-400); margin-bottom: 0.5rem; }
+
+/* Teacher course students */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.teacher-students-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.teacher-breadcrumb {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0 0 0.35rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.teacher-breadcrumb a {
+  color: var(--lumina-blue);
+  text-decoration: none;
+}
+
+.teacher-student-count {
+  min-width: 130px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #fff;
+  text-align: right;
+}
+
+.teacher-student-count strong {
+  display: block;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--lumina-gray-900);
+}
+
+.teacher-student-count span,
+.teacher-page-meta,
+.muted-date {
+  display: block;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+}
+
+.teacher-student-panel {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.teacher-student-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(140px, 1fr)) auto auto;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.filter-field label {
+  color: var(--lumina-gray-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.filter-field input,
+.filter-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid var(--lumina-gray-300);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--lumina-gray-800);
+  font: inherit;
+}
+
+.teacher-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 2.5rem;
+  border: 1px dashed var(--lumina-gray-300);
+  border-radius: 8px;
+  background: #fff;
+  text-align: center;
+  color: var(--lumina-gray-500);
+}
+
+.teacher-state strong {
+  color: var(--lumina-gray-900);
+}
+
+.teacher-state-error {
+  margin-bottom: 1rem;
+  border-color: #fca5a5;
+  background: var(--lumina-danger-bg);
+  color: var(--lumina-danger);
+}
+
+.teacher-table-title {
+  font-weight: 700;
+  color: var(--lumina-gray-900);
+}
+
+.teacher-student-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.teacher-student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.teacher-student-table th,
+.teacher-student-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--lumina-gray-100);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.teacher-student-table th {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.student-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 210px;
+}
+
+.student-identity img,
+.student-avatar-fallback {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.student-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lumina-blue-pale);
+  color: var(--lumina-blue);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.student-identity strong,
+.student-identity small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.student-identity strong {
+  color: var(--lumina-gray-900);
+  font-size: 0.925rem;
+}
+
+.student-identity small {
+  margin-top: 0.15rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.78rem;
+}
+
+.student-progress {
+  min-width: 170px;
+}
+
+.student-progress-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+}
+
+.student-progress-line strong {
+  color: var(--lumina-gray-900);
+}
+
+.student-progress-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lumina-gray-100);
+}
+
+.student-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lumina-blue);
+}
+
+.teacher-student-cards {
+  display: none;
+  gap: 1rem;
+}
+
+.teacher-student-card {
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #fff;
+  padding: 1rem;
+}
+
+.teacher-student-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+.teacher-student-card dt {
+  color: var(--lumina-gray-500);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.teacher-student-card dd {
+  margin: 0.2rem 0 0;
+  color: var(--lumina-gray-900);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.teacher-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+}
+
+.teacher-pagination span {
+  color: var(--lumina-gray-600);
+  font-size: 0.875rem;
+}
+
+.progress-report-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-kpi {
+  min-height: 104px;
+  padding: 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.report-kpi span {
+  display: block;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-kpi strong {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--lumina-gray-900);
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.progress-report-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-chart-panel {
+  padding: 1.25rem;
+}
+
+.report-distribution {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.report-bar-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 48px;
+  gap: 0.85rem;
+  align-items: center;
+  color: var(--lumina-gray-700);
+  font-size: 0.875rem;
+}
+
+.report-bar {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lumina-gray-100);
+}
+
+.report-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lumina-blue);
+}
+
+.report-definition-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1.25rem 0 0;
+}
+
+.report-definition-list div,
+.report-detail-summary div {
+  padding: 0.85rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: var(--lumina-gray-50);
+}
+
+.report-definition-list dt,
+.report-detail-summary span {
+  color: var(--lumina-gray-500);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-definition-list dd {
+  margin: 0.25rem 0 0;
+  color: var(--lumina-gray-700);
+  font-size: 0.82rem;
+}
+
+.report-inline-state {
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+
+.report-detail-panel {
+  margin-top: 1.5rem;
+}
+
+.report-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.report-detail-summary strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--lumina-gray-900);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.btn.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+@media (max-width: 1180px) {
+  .teacher-student-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filter-field-course {
+    grid-column: span 2;
+  }
+
+  .progress-report-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .progress-report-layout,
+  .report-detail-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-students-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-student-count {
+    text-align: left;
+  }
+
+  .teacher-student-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-field-course {
+    grid-column: auto;
+  }
+
+  .teacher-student-table-wrap {
+    display: none;
+  }
+
+  .teacher-student-cards {
+    display: grid;
+    padding: 1rem;
+  }
+
+  .teacher-state {
+    padding: 1.5rem;
+  }
+
+  .teacher-pagination {
+    justify-content: space-between;
+  }
+
+  .progress-report-grid,
+  .progress-report-layout,
+  .report-definition-list,
+  .report-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .report-bar-row {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}

@@ -19,83 +19,21 @@
         <div th:replace="~{fragments/layout :: topbar-student('Notifications')}"></div>
         
         <main class="lumina-portal-main">
-            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
                 <div>
                     <h1 class="page-title">Notifications</h1>
                     <p class="page-subtitle">Stay updated on your academic progress and system announcements.</p>
                 </div>
-                <button class="btn btn-secondary btn-sm">Mark All as Read</button>
+                <div class="notification-center-actions">
+                    <button class="btn btn-secondary btn-sm" type="button" data-notification-center-mark-all>Mark all as read</button>
+                </div>
             </div>
 
-            <!-- Filter Tabs -->
-            <div class="filter-tabs" style="margin-bottom:2rem;">
-                <button class="filter-tab active">All</button>
-                <button class="filter-tab">Courses</button>
-                <button class="filter-tab">Assignments</button>
-                <button class="filter-tab">Community</button>
-                <button class="filter-tab">System</button>
-            </div>
-
-            <!-- Notification List -->
-            <div style="max-width:800px;">
-                
-                <div class="notif-item">
-                    <div class="notif-icon notif-icon-urgent">!</div>
-                    <div class="notif-body">
-                        <div style="display:flex;align-items:center;margin-bottom:4px;">
-                            <span class="notif-tag">ACTION REQUIRED</span>
-                            <span class="notif-time">2 hours ago</span>
-                        </div>
-                        <div class="notif-title"><strong>Midterm Assessment Deadline Approaching</strong></div>
-                        <div class="notif-desc">Your midterm for Systems Architecture is due in less than 48 hours. Please ensure you submit before Nov 15, 11:59 PM.</div>
-                    </div>
-                    <div class="notif-action">
-                        <button class="btn btn-outline btn-sm">Take Quiz</button>
-                    </div>
+            <div data-notification-center data-page-size="10">
+                <div class="notification-center-list" data-notification-center-list>
+                    <div class="notification-state">Loading notifications...</div>
                 </div>
-
-                <div class="notif-item">
-                    <div class="notif-icon notif-icon-grades">A+</div>
-                    <div class="notif-body">
-                        <div style="display:flex;align-items:center;margin-bottom:4px;">
-                            <span class="notif-tag grades">GRADE POSTED</span>
-                            <span class="notif-time">Yesterday, 4:30 PM</span>
-                        </div>
-                        <div class="notif-title"><strong>Grade Updated: UI Wireframes</strong></div>
-                        <div class="notif-desc">Prof. Sarah Jenkins has posted a grade for your "UI Wireframes" submission. You scored 95/100.</div>
-                    </div>
-                    <div class="notif-action">
-                        <button class="btn btn-secondary btn-sm">View Feedback</button>
-                    </div>
-                </div>
-
-                <div class="notif-item">
-                    <div class="notif-icon notif-icon-resource">📄</div>
-                    <div class="notif-body">
-                        <div style="display:flex;align-items:center;margin-bottom:4px;">
-                            <span class="notif-tag resource">NEW RESOURCE</span>
-                            <span class="notif-time">Nov 10, 2024</span>
-                        </div>
-                        <div class="notif-title"><strong>New Reading Material Added</strong></div>
-                        <div class="notif-desc">Dr. Michael Chen added "Distributed Systems Paper (2024)" to Module 4 of Systems Architecture.</div>
-                    </div>
-                    <div class="notif-action">
-                        <button class="btn btn-secondary btn-sm">Read Now</button>
-                    </div>
-                </div>
-
-                <div class="notif-item">
-                    <div class="notif-icon notif-icon-system">⚙</div>
-                    <div class="notif-body">
-                        <div style="display:flex;align-items:center;margin-bottom:4px;">
-                            <span class="notif-tag system">SYSTEM UPDATE</span>
-                            <span class="notif-time">Nov 01, 2024</span>
-                        </div>
-                        <div class="notif-title"><strong>Scheduled Maintenance Complete</strong></div>
-                        <div class="notif-desc">LumiNa Portal v2.4.0 has been deployed successfully. The video player now supports 2x playback speed.</div>
-                    </div>
-                </div>
-
+                <button class="btn btn-secondary btn-sm" type="button" data-notification-load-more hidden>Load more</button>
             </div>
 
         </main>

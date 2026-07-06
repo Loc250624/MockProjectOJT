@@ -33,10 +33,13 @@ public class PaymentServiceTest {
     private TransactionRepository transactionRepository;
 
     @Mock
-    private CourseEnrollmentRepository courseEnrollmentRepository;
+    private RefundTransactionRepository refundTransactionRepository;
 
     @Mock
-    private RefundTransactionRepository refundTransactionRepository;
+    private CourseEnrollmentService courseEnrollmentService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -70,6 +73,9 @@ public class PaymentServiceTest {
                 .order(order)
                 .transactionRef("MOMO_REF_1")
                 .status(TransactionStatus.PENDING)
+                .amount(new BigDecimal("2475000"))
+                .student(student)
+                .course(course)
                 .build();
                 
         lenient().when(paymentProvider.getMethod()).thenReturn(PaymentMethod.MOMO);
@@ -77,8 +83,9 @@ public class PaymentServiceTest {
                 Collections.singletonList(paymentProvider),
                 orderRepository,
                 transactionRepository,
-                courseEnrollmentRepository,
-                refundTransactionRepository
+                refundTransactionRepository,
+                courseEnrollmentService,
+                notificationService
         );
     }
 
@@ -107,8 +114,6 @@ public class PaymentServiceTest {
         when(paymentProvider.verifyWebhookSignature(params)).thenReturn(true);
         when(orderRepository.findByOrderCode("ORD123")).thenReturn(Optional.of(order));
         when(transactionRepository.findByOrderId(10)).thenReturn(Collections.singletonList(transaction));
-        when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
-
         // Act
         paymentService.processWebhook(PaymentMethod.MOMO, params);
 
@@ -119,7 +124,7 @@ public class PaymentServiceTest {
 
         verify(orderRepository).save(order);
         verify(transactionRepository).save(transaction);
-        verify(courseEnrollmentRepository).save(any(CourseEnrollment.class));
+        verify(courseEnrollmentService).activateEnrollmentAfterVerifiedPayment(order, transaction);
     }
 
     @Test
@@ -138,11 +143,11 @@ public class PaymentServiceTest {
         // Assert: no repository saves should happen
         verify(orderRepository, never()).save(any(Order.class));
         verify(transactionRepository, never()).save(any(Transaction.class));
-        verify(courseEnrollmentRepository, never()).save(any(CourseEnrollment.class));
+        verify(courseEnrollmentService, never()).activateEnrollmentAfterVerifiedPayment(any(Order.class), any(Transaction.class));
     }
 
     @Test
-    void processWebhook_DuplicateEnrollment_SkipEnrollmentSave() {
+    void processWebhook_DuplicateEnrollment_DelegatesToIdempotentEnrollmentService() {
         // Arrange
         Map<String, String> params = new HashMap<>();
         params.put("orderId", "ORD123");
@@ -152,8 +157,6 @@ public class PaymentServiceTest {
         when(paymentProvider.verifyWebhookSignature(params)).thenReturn(true);
         when(orderRepository.findByOrderCode("ORD123")).thenReturn(Optional.of(order));
         when(transactionRepository.findByOrderId(10)).thenReturn(Collections.singletonList(transaction));
-        when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(true);
-
         // Act
         paymentService.processWebhook(PaymentMethod.MOMO, params);
 
@@ -163,7 +166,7 @@ public class PaymentServiceTest {
         
         verify(orderRepository).save(order);
         verify(transactionRepository).save(transaction);
-        verify(courseEnrollmentRepository, never()).save(any(CourseEnrollment.class));
+        verify(courseEnrollmentService).activateEnrollmentAfterVerifiedPayment(order, transaction);
     }
 
     @Test
@@ -190,9 +193,8 @@ public class PaymentServiceTest {
         when(paymentProvider.verifyWebhookSignature(params)).thenReturn(true);
         when(orderRepository.findByOrderCode("ORD123")).thenReturn(Optional.of(order));
         when(transactionRepository.findByOrderId(10)).thenReturn(Collections.singletonList(transaction));
-        when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
-        
-        when(courseEnrollmentRepository.save(any(CourseEnrollment.class))).thenThrow(new RuntimeException("DB error"));
+        doThrow(new RuntimeException("DB error"))
+                .when(courseEnrollmentService).activateEnrollmentAfterVerifiedPayment(order, transaction);
 
         // Act & Assert
         assertThrows(RuntimeException.class, () ->

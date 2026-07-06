@@ -10,7 +10,12 @@ import com.ojtsu26.elearning.model.enums.*;
 import java.util.List;
 
 @Entity
-@Table(name = "Lesson_Progress")
+@Table(name = "Lesson_Progress", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"enrollment_id", "lesson_id"})
+}, indexes = {
+    @Index(name = "idx_lesson_progress_enrollment", columnList = "enrollment_id"),
+    @Index(name = "idx_lesson_progress_lesson", columnList = "lesson_id")
+})
 @Getter
 @Setter
 @Builder
@@ -27,6 +32,13 @@ public class LessonProgress {
 
     
     private java.time.LocalDateTime completedAt;
+
+    private java.time.LocalDateTime lastAccessedAt;
+
+    private Integer watchedSeconds;
+
+    @UpdateTimestamp
+    private java.time.LocalDateTime lastUpdatedAt;
 
     @ManyToOne
     @JoinColumn(name = "enrollment_id")
