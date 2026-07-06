@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/common/profile.css}">
+</head>
+<body>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('Profile')}"></div>
+
+        <main class="lumina-portal-main">
+            <div id="profile-page"
+                 class="profile-page"
+                 th:data-profile-endpoint="@{/admin/profile}"
+                 th:data-auth-provider="${profile.authProvider}"
+                 th:data-current-avatar-url="${profile.avatarUrl}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}">
+                <div class="grid-main-aside">
+                    <div>
+                        <div th:replace="~{fragments/profile :: header('Administrator')}"></div>
+
+                        <div class="stats-grid-4">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value" th:text="${adminOverview.totalUsers}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Active Users</div>
+                                <div class="stat-value text-success" th:text="${adminOverview.activeUsers}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Blocked Users</div>
+                                <div class="stat-value text-danger" th:text="${adminOverview.blockedUsers}">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Pending Course Approvals</div>
+                                <div class="stat-value text-warning" th:text="${adminOverview.pendingCourseApprovals}">0</div>
+                            </div>
+                        </div>
+
+                        <div th:replace="~{fragments/profile :: account-information('Administrative Account Information')}"></div>
+                    </div>
+
+                    <div>
+                        <div class="card card-padded profile-card">
+                            <h2 class="section-title">Administrative Quick Actions</h2>
+                            <div class="profile-actions-list">
+                                <a class="profile-action-link" th:href="@{/admin/users}">User Management <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/admin/courses/approval}">Course Approvals <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/admin/analytics}">Analytics <span>-></span></a>
+                                <a class="profile-action-link" th:href="@{/admin/system-settings}">System Settings <span>-></span></a>
+                            </div>
+                        </div>
+
+                        <div class="card card-padded profile-card">
+                            <h2 class="section-title">Security Notice</h2>
+                            <div class="profile-actions-list">
+                                <div class="profile-action-link">This account has administrative permissions.</div>
+                                <div class="profile-action-link">Do not share sign-in credentials.</div>
+                                <div class="profile-action-link">Role and status cannot be edited from Profile.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:replace="~{fragments/profile :: edit-modal}"></div>
+            </div>
+        </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
+    </div>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
+<script th:src="@{/js/common/profile.js}"></script>
+</body>
+</html>

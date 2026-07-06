@@ -16,7 +16,9 @@ public enum ErrorCode {
 
     // Business Errors
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "User does not exist"),
-    USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists");
+    USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists"),
+    EMAIL_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Email already exists"),
+    OAUTH2_EMAIL_CANNOT_BE_CHANGED(400, HttpStatus.BAD_REQUEST, "OAuth2 account email is managed by the login provider");
 
     private final int code;
     private final HttpStatus status;

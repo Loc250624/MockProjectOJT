@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="header(roleLabel)" class="card card-padded profile-card">
+    <div class="profile-header">
+        <img data-profile-avatar
+             th:src="${#strings.isEmpty(profile.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
+             th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+             alt="Avatar"
+             class="avatar profile-avatar">
+        <div class="profile-heading">
+            <h1 data-profile-field="fullName" class="page-title" th:text="${profile.fullName}">Profile name</h1>
+            <div data-profile-field="email" class="profile-email" th:text="${profile.email}">user@example.com</div>
+            <div class="profile-badges">
+                <span class="badge badge-primary" th:text="${roleLabel}">Role</span>
+                <span class="badge badge-success" th:text="${profile.status}">ACTIVE</span>
+                <span class="badge" th:text="${profile.authProvider}">LOCAL</span>
+            </div>
+            <div class="profile-meta">
+                Joined <span th:text="${#temporals.format(profile.createdAt, 'MMM dd, yyyy')}">Jan 01, 2024</span>
+            </div>
+        </div>
+        <button id="profile-edit-button" type="button" class="btn btn-secondary profile-edit-btn">Edit Profile</button>
+    </div>
+</div>
+
+<div th:fragment="edit-modal" id="profile-edit-modal" class="profile-modal" hidden>
+    <div class="profile-modal-backdrop" data-profile-close></div>
+    <div class="profile-modal-panel" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+        <form id="profile-edit-form" class="profile-form">
+            <div class="profile-modal-header">
+                <div>
+                    <h2 id="profile-edit-title" class="section-title">Edit Profile</h2>
+                    <p class="profile-form-help">Update your public account details.</p>
+                </div>
+                <button type="button" class="icon-btn" data-profile-close aria-label="Close">x</button>
+            </div>
+
+            <label class="profile-field">
+                <span>Full name</span>
+                <input id="profile-full-name-input" type="text" th:value="${profile.fullName}" maxlength="100" required>
+            </label>
+
+            <label class="profile-field">
+                <span>Email</span>
+                <input id="profile-email-input"
+                       type="email"
+                       th:value="${profile.email}"
+                       th:readonly="${profile.authProvider != T(com.ojtsu26.elearning.model.enums.AuthProvider).LOCAL}"
+                       maxlength="255"
+                       required>
+                <small th:if="${profile.authProvider != T(com.ojtsu26.elearning.model.enums.AuthProvider).LOCAL}">
+                    Email is managed by your login provider.
+                </small>
+            </label>
+
+            <label class="profile-field">
+                <span>Avatar URL</span>
+                <input id="profile-avatar-url-input"
+                       type="url"
+                       th:value="${profile.avatarUrl}"
+                       maxlength="2048"
+                       placeholder="https://example.com/avatar.png">
+            </label>
+
+            <div class="profile-preview-row">
+                <img data-profile-avatar-preview
+                     th:src="${#strings.isEmpty(profile.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
+                     th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                     alt="Avatar preview"
+                     class="avatar profile-preview-avatar">
+                <div id="profile-message" class="profile-message" role="status" aria-live="polite"></div>
+            </div>
+
+            <div class="profile-form-actions">
+                <button id="profile-save-button" type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-outline" data-profile-close>Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:fragment="account-information(title)" class="card card-padded profile-card">
+    <h2 class="section-title">[[${title}]]</h2>
+    <dl class="profile-info-list">
+        <div>
+            <dt>Full name</dt>
+            <dd data-profile-field="fullName" th:text="${profile.fullName}">Profile name</dd>
+        </div>
+        <div>
+            <dt>Email</dt>
+            <dd data-profile-field="email" th:text="${profile.email}">user@example.com</dd>
+        </div>
+        <div>
+            <dt>Role</dt>
+            <dd th:text="${profile.role}">ROLE</dd>
+        </div>
+        <div>
+            <dt>Authentication provider</dt>
+            <dd th:text="${profile.authProvider}">LOCAL</dd>
+        </div>
+        <div>
+            <dt>Account status</dt>
+            <dd th:text="${profile.status}">ACTIVE</dd>
+        </div>
+        <div>
+            <dt>Joined date</dt>
+            <dd th:text="${#temporals.format(profile.createdAt, 'MMM dd, yyyy HH:mm')}">Jan 01, 2024 00:00</dd>
+        </div>
+        <div>
+            <dt>Last updated date</dt>
+            <dd th:text="${profile.updatedAt == null ? 'Not updated yet' : #temporals.format(profile.updatedAt, 'MMM dd, yyyy HH:mm')}">Not updated yet</dd>
+        </div>
+    </dl>
+</div>
+
+</html>

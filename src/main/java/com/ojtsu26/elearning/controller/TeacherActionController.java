@@ -1,5 +1,17 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
+import com.ojtsu26.elearning.dto.response.UserResponseDTO;
+import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.security.JwtCookieService;
+import com.ojtsu26.elearning.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -12,7 +24,7 @@ import com.ojtsu26.elearning.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import java.util.Map;
-import org.springframework.http.ResponseEntity;
+import java.util.Objects;
 
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.LessonService;
@@ -32,6 +44,8 @@ public class TeacherActionController {
     private final CourseService courseService;
     private final LessonService lessonService;
     private final VideoService videoService;
+    private final UserService userService;
+    private final JwtCookieService jwtCookieService;
 
     @PostMapping("/courses/create")
     public String createCourse(@Valid @ModelAttribute("course") CourseRequestDTO requestDTO, 
@@ -56,6 +70,27 @@ public class TeacherActionController {
             return "redirect:/teacher/courses/create";
         }
         return "redirect:/teacher/courses";
+    }
+
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UpdateProfileRequestDTO request,
+            HttpServletResponse response) {
+        String previousEmail = currentUser.getUsername();
+        AuthProvider authProvider = currentUser.getUser().getAuthProvider();
+        UserResponseDTO updatedProfile = userService.updateCurrentProfile(currentUser.getUser().getId(), request);
+
+        if (authProvider == AuthProvider.LOCAL && !Objects.equals(previousEmail, updatedProfile.getEmail())) {
+            jwtCookieService.addJwtCookie(response, updatedProfile.getEmail());
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Profile updated successfully"));
+    }
+
+    @PostMapping("/courses")
+    public ResponseEntity<?> createCourse() {
+        return ResponseEntity.ok(Map.of("message", "Create course placeholder - not yet implemented"));
     }
 
     @PostMapping("/courses/edit/{id}")

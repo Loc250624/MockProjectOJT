@@ -5,7 +5,11 @@ import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
 import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
+import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.service.ProfileOverviewService;
+import com.ojtsu26.elearning.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,9 +33,20 @@ public class AdminViewController {
     private final CategoryService categoryService;
     private final CourseService courseService;
     private final TransactionRepository transactionRepository;
+    private final UserService userService;
+    private final ProfileOverviewService profileOverviewService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
+
+    @GetMapping("/profile")
+    public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
+        model.addAttribute("profile", userService.getCurrentProfile(currentUser.getUser().getId()));
+        model.addAttribute("adminOverview", profileOverviewService.getAdminOverview());
+        model.addAttribute("profileRole", "admin");
+        model.addAttribute("profilePortalName", "Admin Portal");
+        return "admin/profile";
+    }
 
     @GetMapping("/users")
     public String users() { return "admin/users"; }

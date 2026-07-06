@@ -129,6 +129,9 @@
         <a th:href="@{/admin/system-settings}" id="nav-admin-settings">
             <span class="nav-icon">⚙</span> Settings
         </a>
+        <a th:href="@{/admin/profile}" id="nav-admin-profile">
+            <span class="nav-icon">Profile</span>
+        </a>
     </nav>
 
     <div class="sidebar-divider"></div>
@@ -193,7 +196,10 @@
     <div class="sidebar-divider"></div>
 
     <div class="sidebar-support-links">
-        <a th:href="@{/teacher/settings}" id="nav-teacher-settings">
+        <a th:href="@{/teacher/profile}" id="nav-teacher-profile">
+            <span class="nav-icon">Profile</span>
+        </a>
+        <a th:href="@{/teacher/profile}" id="nav-teacher-settings" style="display:none;">
             <span class="nav-icon">⚙</span> Settings
         </a>
         <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
@@ -234,6 +240,12 @@
         <a th:href="@{/public/courses}" id="nav-student-public-catalog">
             <span class="nav-icon">🌐</span> Public Catalog
         </a>
+        <a th:href="@{/student/profile}" id="nav-student-profile">
+            <span class="nav-icon">👤</span> Profile
+        </a>
+        <a th:href="@{/student/dashboard}" id="nav-student-assignments" style="display:none;">
+            <span class="nav-icon">📋</span> Assignments
+        </a>
         <a th:href="@{/student/certificates}" id="nav-student-certificates">
             <span class="nav-icon">🏆</span> Certificates
         </a>
@@ -272,20 +284,23 @@
         </div>
     </div>
     <div class="topbar-right">
-        <span class="badge badge-success badge-dot" style="font-size:0.75rem;"> System Healthy</span>
         <button class="icon-btn" id="btn-topbar-notif">
             🔔
             <span class="badge-dot"></span>
         </button>
         <button class="icon-btn" id="btn-topbar-help">?</button>
-        <div class="user-chip">
+        <a class="user-chip" th:href="@{/admin/profile}" style="text-decoration:none;">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Admin'}">Admin</div>
-                <div class="user-role">Superuser</div>
+                <div class="user-name" data-profile-field="fullName"
+                     th:text="${profile?.fullName ?: (#authentication?.name ?: 'Administrator')}">Administrator</div>
+                <div class="user-role">Administrator</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;"
-                 th:text="${#authentication?.name != null ? #authentication.name.substring(0,1).toUpperCase() : 'A'}">A</div>
-        </div>
+            <img data-profile-avatar
+                 class="topbar-avatar"
+                 th:src="${profile != null and !#strings.isEmpty(profile.avatarUrl)} ? ${profile.avatarUrl} : @{/images/avatar-placeholder.png}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 alt="Admin avatar">
+        </a>
     </div>
 </div>
 
@@ -308,13 +323,18 @@
             <span class="badge-dot"></span>
         </button>
         <button class="icon-btn" id="btn-teacher-help">?</button>
-        <div class="user-chip">
+        <a class="user-chip" th:href="@{/teacher/profile}" style="text-decoration:none;">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Instructor'}">Instructor</div>
-                <div class="user-role">Senior Instructor</div>
+                <div class="user-name" data-profile-field="fullName"
+                     th:text="${profile?.fullName ?: (#authentication?.name ?: 'Teacher')}">Teacher</div>
+                <div class="user-role">Teacher</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">T</div>
-        </div>
+            <img data-profile-avatar
+                 class="topbar-avatar"
+                 th:src="${profile != null and !#strings.isEmpty(profile.avatarUrl)} ? ${profile.avatarUrl} : @{/images/avatar-placeholder.png}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 alt="Teacher avatar">
+        </a>
     </div>
 </div>
 
@@ -337,13 +357,18 @@
             <span class="badge-dot"></span>
         </button>
         <button class="icon-btn" id="btn-student-help">?</button>
-        <div class="user-chip">
+        <a class="user-chip" th:href="@{/student/profile}" style="text-decoration:none;">
             <div class="user-info">
-                <div class="user-name" th:text="${#authentication?.name ?: 'Student'}">Student</div>
-                <div class="user-role">Year 3 Student</div>
+                <div class="user-name" data-profile-field="fullName"
+                     th:text="${profile?.fullName ?: (#authentication?.name ?: 'Student')}">Student</div>
+                <div class="user-role">Student</div>
             </div>
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;">S</div>
-        </div>
+            <img data-profile-avatar
+                 class="topbar-avatar"
+                 th:src="${profile != null and !#strings.isEmpty(profile.avatarUrl)} ? ${profile.avatarUrl} : @{/images/avatar-placeholder.png}"
+                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
+                 alt="Student avatar">
+        </a>
     </div>
 </div>
 
