@@ -7,6 +7,7 @@ import com.ojtsu26.elearning.model.entity.*;
 import com.ojtsu26.elearning.model.enums.*;
 import com.ojtsu26.elearning.repository.*;
 import com.ojtsu26.elearning.dto.response.PaymentResponse;
+import com.ojtsu26.elearning.config.PaymentGatewayProperties;
 import com.ojtsu26.elearning.service.impl.PaymentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,9 @@ public class PaymentServiceTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private PaymentGatewayProperties properties;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -85,7 +89,8 @@ public class PaymentServiceTest {
                 transactionRepository,
                 refundTransactionRepository,
                 courseEnrollmentService,
-                notificationService
+                notificationService,
+                properties
         );
     }
 

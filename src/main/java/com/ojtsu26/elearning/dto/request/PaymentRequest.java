@@ -12,4 +12,5 @@ public class PaymentRequest {
     private String orderInfo;
     private String returnUrl;
     private String notifyUrl;
+    private String ipAddress;
 }

@@ -47,6 +47,7 @@ public class StudentViewController {
     private final CourseEnrollmentService courseEnrollmentService;
     private final ProfileService profileService;
     private final StudentLearningService studentLearningService;
+    private final CurrencyConversionService currencyConversionService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -73,13 +74,45 @@ public class StudentViewController {
     public String courses(@RequestParam(required = false) Integer categoryId,
                           @RequestParam(required = false) String keyword,
                           @RequestParam(required = false, defaultValue = "newest") String sortBy,
-                          Model model) {
-        List<CourseResponseDTO> courses = courseService.findApprovedCourses(categoryId, keyword, sortBy);
-        model.addAttribute("courses", courses);
+                          @RequestParam(value = "page", defaultValue = "0") int page,
+                          @RequestParam(value = "size", defaultValue = "6") int size,
+                          Model model,
+                          @org.springframework.security.core.annotation.AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null || userDetails.getUser().getStatus() != UserStatus.ACTIVE) {
+            return "redirect:/auth/login?error=blocked";
+        }
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CourseResponseDTO> coursePage = courseService.findApprovedCourses(categoryId, keyword, sortBy, pageable);
+        
+        Integer studentId = userDetails.getUser().getId();
+        
+        // Fetch student's enrollments and map to a set of course IDs
+        java.util.Set<Integer> enrolledCourseIds = courseEnrollmentRepository.findByStudentId(studentId).stream()
+                .filter(e -> e.getCourse() != null)
+                .map(e -> e.getCourse().getId())
+                .collect(java.util.stream.Collectors.toSet());
+                
+        // Fetch student's pending order course IDs in a single query
+        java.util.List<Integer> pendingCourseIds = orderRepository.findCourseIdsByStudentIdAndStatus(studentId, OrderStatus.PENDING);
+        
+        coursePage.getContent().forEach(c -> {
+            if (enrolledCourseIds.contains(c.getId())) {
+                c.setEnrollmentStatus("ENROLLED");
+            } else if (pendingCourseIds.contains(c.getId())) {
+                c.setEnrollmentStatus("PENDING");
+            } else {
+                c.setEnrollmentStatus("NOT_ENROLLED");
+            }
+        });
+        
+        model.addAttribute("courses", coursePage.getContent());
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", coursePage.getTotalPages());
         return "student/courses";
     }
 
@@ -112,6 +145,9 @@ public class StudentViewController {
 
     @GetMapping("/my-courses")
     public String myCourses(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null || userDetails.getUser().getStatus() != UserStatus.ACTIVE) {
+            return "redirect:/auth/login?error=blocked";
+        }
         model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
         return "student/my-courses";
     }
@@ -186,16 +222,12 @@ public class StudentViewController {
                 return "redirect:/student/courses/detail?id=" + courseId;
             }
 
-            // Check duplicate pending order
-            boolean hasPendingOrder = !orderRepository.findByStudentIdAndCourseIdAndStatus(studentId, courseId, OrderStatus.PENDING).isEmpty();
-            if (hasPendingOrder) {
-                redirectAttributes.addFlashAttribute("errorMessage", "You already have a pending order for this course. Please complete your payment.");
-                return "redirect:/student/courses/detail?id=" + courseId;
-            }
-
             BigDecimal price = course.getPrice() != null ? course.getPrice() : BigDecimal.ZERO;
             BigDecimal discount = BigDecimal.ZERO; // Default discount placeholder
             BigDecimal total = price.subtract(discount);
+            // Compute VND equivalent for display on checkout (MoMo payment amount)
+            BigDecimal vndAmount = currencyConversionService.convertUsdToVnd(total);
+            BigDecimal exchangeRate = currencyConversionService.getExchangeRate();
 
             model.addAttribute("cartEmpty", false);
             model.addAttribute("courseId", courseId);
@@ -205,6 +237,8 @@ public class StudentViewController {
             model.addAttribute("subtotal", price);
             model.addAttribute("discount", discount);
             model.addAttribute("total", total);
+            model.addAttribute("vndAmount", vndAmount);
+            model.addAttribute("exchangeRate", exchangeRate);
 
             return "student/checkout";
         } catch (Exception e) {
@@ -226,7 +260,8 @@ public class StudentViewController {
             if (response.isSuccess() && response.getPaymentUrl() != null) {
                 return "redirect:" + response.getPaymentUrl();
             } else {
-                redirectAttributes.addFlashAttribute("errorMessage", "Payment gateway error: " + response.getErrorMessage());
+                String errMsg = response.getErrorMessage() != null ? response.getErrorMessage() : "Unknown gateway error";
+                redirectAttributes.addFlashAttribute("errorMessage", "Payment gateway error: " + errMsg);
                 return "redirect:/student/checkout?courseId=" + courseId;
             }
         } catch (IllegalArgumentException e) {
@@ -236,7 +271,7 @@ public class StudentViewController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/student/checkout?courseId=" + courseId;
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred during order creation.");
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
             return "redirect:/student/checkout?courseId=" + courseId;
         }
     }
@@ -244,7 +279,44 @@ public class StudentViewController {
 
 
     @GetMapping("/payment-result")
-    public String paymentResult() { return "student/payment-result"; }
+    public String paymentResult(
+            @RequestParam java.util.Map<String, String> params,
+            Model model) {
+
+        String orderId = params.get("orderId");
+        String resultCode = params.get("resultCode");
+        String message = params.get("message");
+
+        // Support VNPAY query params mapping
+        if (params.containsKey("vnp_TxnRef")) {
+            orderId = params.get("vnp_TxnRef");
+            String vnpResponseCode = params.get("vnp_ResponseCode");
+            resultCode = "00".equals(vnpResponseCode) ? "0" : (vnpResponseCode != null ? vnpResponseCode : "99");
+            message = "0".equals(resultCode) ? "Payment successful!" : "Payment failed (code: " + vnpResponseCode + ")";
+        }
+
+        if (orderId == null) {
+            // No order context — just show generic page
+            model.addAttribute("paymentSuccess", false);
+            model.addAttribute("paymentMessage", "No payment information found.");
+            return "student/payment-result";
+        }
+
+        // MoMo and VNPAY mapped success code
+        boolean success = "0".equals(resultCode);
+        model.addAttribute("paymentSuccess", success);
+        model.addAttribute("orderId", orderId);
+        model.addAttribute("paymentMessage",
+                success ? "Payment successful! Your enrollment has been activated."
+                        : (message != null ? message : "Payment failed or was cancelled."));
+
+        if (success) {
+            // Redirect to My Courses after short delay via meta-refresh
+            model.addAttribute("redirectToMyCourses", true);
+        }
+
+        return "student/payment-result";
+    }
 
     @GetMapping("/payment-history")
     public String paymentHistory(@RequestParam(value = "page", defaultValue = "0") int page,

@@ -35,7 +35,7 @@
                         <td th:text="${txn.id}">1</td>
                         <td th:text="${txn.student != null ? txn.student.fullName + ' (' + txn.student.email + ')' : 'N/A'}">Student A</td>
                         <td th:text="${txn.course != null ? txn.course.title : 'N/A'}">Java Course</td>
-                        <td th:text="${txn.amount} + ' VND'">2,500,000 VND</td>
+                        <td th:text="${txn.amount != null ? #numbers.formatInteger(txn.amount, 0, 'COMMA') + ' VND' : 'N/A'}">2,500,000 VND</td>
                         <td th:text="${txn.paymentMethod}">MoMo</td>
                         <td th:text="${txn.transactionRef}">TXN123456</td>
                         <td th:text="${txn.status}">SUCCESS</td>

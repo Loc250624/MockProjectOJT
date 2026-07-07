@@ -20,13 +20,16 @@ public class PaymentGatewayProperties {
         private String accessKey;
         private String secretKey;
         private String endpoint;
+        private String returnUrl;
+        private String ipnUrl;
     }
 
     @Data
     public static class VnpayProperties {
-        private String partnerCode;
-        private String accessKey;
-        private String secretKey;
+        private String tmnCode;
+        private String hashSecret;
         private String endpoint;
+        private String returnUrl;
+        private String ipnUrl;
     }
 }

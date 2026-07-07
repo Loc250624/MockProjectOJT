@@ -27,7 +27,7 @@
                     <tr th:each="ord : ${orders}">
                         <td th:text="${ord.orderCode}">ORD123456</td>
                         <td th:text="${!#lists.isEmpty(ord.items) ? ord.items[0].courseName : 'N/A'}">Java Basics</td>
-                        <td th:text="'$' + ${ord.totalAmount}">$50.00</td>
+                        <td th:text="${ord.totalAmount != null ? '$' + #numbers.formatDecimal(ord.totalAmount, 1, 'COMMA', 2, 'POINT') : 'Free'}">$199.00</td>
                         <td th:text="${ord.paymentMethod}">MoMo</td>
                         <td th:text="${ord.status}">PENDING</td>
                         <td th:text="${#temporals.format(ord.createdAt, 'yyyy-MM-dd HH:mm')}">2026-06-25 15:30</td>

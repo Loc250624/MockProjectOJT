@@ -95,6 +95,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                         "/api/auth/**",
+                        "/api/payment/vnpay-ipn",
                         "/api/payment/webhook",
                         "/auth/login",
                         "/auth/register",

@@ -14,6 +14,8 @@ import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Sort;
@@ -72,6 +74,26 @@ public class CourseServiceImpl implements CourseService {
         return courseRepository.findApprovedCourses(categoryId, cleanKeyword, sort).stream()
                 .map(courseMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<CourseResponseDTO> findApprovedCourses(Integer categoryId, String keyword, String sortBy, Pageable pageable) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt"); // default newest
+        if ("price-low".equals(sortBy)) {
+            sort = Sort.by(Sort.Direction.ASC, "price");
+        } else if ("price-high".equals(sortBy)) {
+            sort = Sort.by(Sort.Direction.DESC, "price");
+        } else if ("title".equals(sortBy)) {
+            sort = Sort.by(Sort.Direction.ASC, "title");
+        }
+
+        Pageable resolvedPageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+        String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+        return courseRepository.findApprovedCourses(categoryId, cleanKeyword, resolvedPageable)
+                .map(courseMapper::toDto);
     }
 
     @Override

@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @Component
 @RequiredArgsConstructor
@@ -42,8 +43,36 @@ public class MoMoProvider implements PaymentProvider {
                     .build();
         }
 
+        // Invariant: Course.price is stored in VND and must not be converted during checkout.
+        BigDecimal amount = request.getAmount();
+        if (amount == null) {
+            log.error("MoMo payment initiation failed: amount is null");
+            return PaymentResponse.builder()
+                    .success(false)
+                    .errorMessage("Payment amount cannot be null.")
+                    .build();
+        }
+
+        // MoMo Sandbox amount validations
+        if (amount.compareTo(new BigDecimal("1000")) < 0 || amount.compareTo(new BigDecimal("50000000")) > 0) {
+            log.error("MoMo payment initiation rejected locally: amount {} is out of MoMo Sandbox range (1000 - 50,000,000 VND).", amount);
+            return PaymentResponse.builder()
+                    .success(false)
+                    .errorMessage("Transaction amount must be between 1,000 VND and 50,000,000 VND.")
+                    .build();
+        }
+
+        // Ensure no fractional part
+        if (amount.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) != 0) {
+            log.error("MoMo payment initiation rejected locally: amount {} contains a fractional part.", amount);
+            return PaymentResponse.builder()
+                    .success(false)
+                    .errorMessage("Transaction amount must be an integer VND value (no cents/fractions).")
+                    .build();
+        }
+
         String requestId = UUID.randomUUID().toString();
-        long amountLong = request.getAmount().longValue();
+        long amountLong = amount.longValueExact();
         String orderId = request.getOrderCode();
         String orderInfo = request.getOrderInfo();
         String redirectUrl = request.getReturnUrl();
@@ -60,7 +89,9 @@ public class MoMoProvider implements PaymentProvider {
 
         String signature;
         try {
+            log.info("MoMo RAW SIGNATURE: {}", rawSignature);
             signature = HmacUtils.hmacSha256(rawSignature, secretKey);
+            log.info("MoMo GENERATED SIGNATURE: {}", signature);
         } catch (Exception e) {
             log.error("Failed to sign MoMo request", e);
             return PaymentResponse.builder()
@@ -88,7 +119,17 @@ public class MoMoProvider implements PaymentProvider {
         factory.setReadTimeout(5000);
         RestTemplate restTemplate = new RestTemplate(factory);
         try {
-            log.info("Sending request to MoMo: orderId={}, amount={}", orderId, amountLong);
+            // Log final amount immediately before sending API request
+            log.info("Sending request to MoMo: orderId={}, final amount={}", orderId, amountLong);
+            
+            // Log generated JSON request sent to MoMo
+            try {
+                String jsonRequest = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(body);
+                log.info("MoMo Request JSON payload: {}", jsonRequest);
+            } catch (Exception jsonEx) {
+                log.warn("Failed to serialize MoMo request body to JSON for logging", jsonEx);
+            }
+
             ResponseEntity<Map> responseEntity = restTemplate.postForEntity(endpoint, body, Map.class);
             Map<String, Object> responseBody = responseEntity.getBody();
 

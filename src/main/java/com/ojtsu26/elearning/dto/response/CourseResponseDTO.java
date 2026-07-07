@@ -34,4 +34,6 @@ public class CourseResponseDTO {
     private Integer roadmapId;
 
     private String roadmapTitle;
+
+    private String enrollmentStatus;
 }

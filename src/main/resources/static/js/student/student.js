@@ -145,24 +145,134 @@ function applyLearningProgress(progress) {
     });
 }
 
-function initVideoProgress(video) {
-    var courseId = video.dataset.courseId;
-    var lessonId = video.dataset.lessonId;
-    var highestLocal = Number(video.dataset.watchedSeconds || 0);
-    var lastSaved = highestLocal;
-    var saveTimer = null;
-    var saving = false;
+function Html5PlayerWrapper(video, options) {
+    var self = this;
+    this.video = video;
 
-    if (highestLocal > 0) {
-        video.addEventListener('loadedmetadata', function() {
-            if (video.currentTime < highestLocal) {
-                video.currentTime = highestLocal;
+    if (options.onReady) {
+        if (video.readyState >= 1) {
+            options.onReady();
+        } else {
+            video.addEventListener('loadedmetadata', options.onReady, { once: true });
+        }
+    }
+    if (options.onPlay) video.addEventListener('play', options.onPlay);
+    if (options.onPause) video.addEventListener('pause', options.onPause);
+    if (options.onTimeUpdate) {
+        video.addEventListener('timeupdate', function() {
+            options.onTimeUpdate(video.currentTime);
+        });
+    }
+    if (options.onEnded) video.addEventListener('ended', options.onEnded);
+
+    this.seekTo = function(seconds) {
+        video.currentTime = seconds;
+    };
+    this.getCurrentTime = function() {
+        return video.currentTime;
+    };
+    this.getDuration = function() {
+        return video.duration;
+    };
+    this.destroy = function() {};
+}
+
+function YouTubePlayerWrapper(iframe, options) {
+    var self = this;
+    var player = null;
+    var progressInterval = null;
+
+    function startTracking() {
+        if (progressInterval) clearInterval(progressInterval);
+        progressInterval = setInterval(function() {
+            if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
+                options.onTimeUpdate(player.getCurrentTime());
             }
-        }, { once: true });
+        }, 1000);
     }
 
-    function saveProgress(force) {
-        var current = Math.floor(video.currentTime || 0);
+    function stopTracking() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+
+    function onPlayerReady(event) {
+        if (options.onReady) options.onReady();
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === 1) {
+            startTracking();
+            if (options.onPlay) options.onPlay();
+        } else {
+            stopTracking();
+            if (event.data === 2) {
+                if (options.onPause) options.onPause();
+            } else if (event.data === 0) {
+                if (options.onEnded) options.onEnded();
+            }
+        }
+    }
+
+    function createPlayer() {
+        if (!iframe.id) {
+            iframe.id = 'youtube-player-' + (iframe.dataset.lessonId || 'default');
+        }
+        player = new YT.Player(iframe.id, {
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        var oldCallback = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = function() {
+            if (oldCallback) oldCallback();
+            createPlayer();
+        };
+        if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+            var tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
+    } else {
+        createPlayer();
+    }
+
+    this.seekTo = function(seconds) {
+        if (player && typeof player.seekTo === 'function') {
+            player.seekTo(seconds, true);
+        }
+    };
+    this.getCurrentTime = function() {
+        return player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
+    };
+    this.getDuration = function() {
+        return player && typeof player.getDuration === 'function' ? player.getDuration() : 0;
+    };
+    this.destroy = function() {
+        stopTracking();
+        if (player && typeof player.destroy === 'function') {
+            player.destroy();
+        }
+    };
+}
+
+function initVideoProgress(element) {
+    var courseId = element.dataset.courseId;
+    var lessonId = element.dataset.lessonId;
+    var highestLocal = Number(element.dataset.watchedSeconds || 0);
+    var lastSaved = highestLocal;
+    var saving = false;
+    var playerWrapper = null;
+
+    function saveProgress(force, currentTime) {
+        var current = Math.floor(currentTime || 0);
         if (!Number.isFinite(current) || current < 0) {
             return Promise.resolve();
         }
@@ -194,26 +304,61 @@ function initVideoProgress(video) {
         });
     }
 
-    function scheduleSave() {
-        window.clearTimeout(saveTimer);
-        saveTimer = window.setTimeout(function() {
-            saveProgress(false);
-        }, 1000);
+    function onReady() {
+        if (highestLocal > 0) {
+            playerWrapper.seekTo(highestLocal);
+        }
     }
 
-    video.addEventListener('timeupdate', scheduleSave);
-    video.addEventListener('pause', function() {
-        saveProgress(true);
-    });
-    video.addEventListener('seeked', function() {
-        saveProgress(false);
-    });
+    function onPlay() {}
+
+    function onPause() {
+        if (playerWrapper) {
+            saveProgress(true, playerWrapper.getCurrentTime());
+        }
+    }
+
+    function onTimeUpdate(currentTime) {
+        if (currentTime > highestLocal + 3) {
+            playerWrapper.seekTo(highestLocal);
+            return;
+        }
+        saveProgress(false, currentTime);
+    }
+
+    function onEnded() {
+        if (playerWrapper) {
+            saveProgress(true, playerWrapper.getDuration());
+        }
+    }
+
+    var tagName = element.tagName.toLowerCase();
+    if (tagName === 'video') {
+        playerWrapper = new Html5PlayerWrapper(element, {
+            onReady: onReady,
+            onPlay: onPlay,
+            onPause: onPause,
+            onTimeUpdate: onTimeUpdate,
+            onEnded: onEnded
+        });
+    } else if (tagName === 'iframe') {
+        playerWrapper = new YouTubePlayerWrapper(element, {
+            onReady: onReady,
+            onPlay: onPlay,
+            onPause: onPause,
+            onTimeUpdate: onTimeUpdate,
+            onEnded: onEnded
+        });
+    }
+
     window.addEventListener('beforeunload', function() {
-        var current = Math.floor(video.currentTime || 0);
-        highestLocal = Math.max(highestLocal, current);
-        if (highestLocal > lastSaved && navigator.sendBeacon) {
-            var blob = new Blob([JSON.stringify({ watchedSeconds: highestLocal })], { type: 'application/json' });
-            navigator.sendBeacon('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', blob);
+        if (playerWrapper) {
+            var current = Math.floor(playerWrapper.getCurrentTime() || 0);
+            highestLocal = Math.max(highestLocal, current);
+            if (highestLocal > lastSaved && navigator.sendBeacon) {
+                var blob = new Blob([JSON.stringify({ watchedSeconds: highestLocal })], { type: 'application/json' });
+                navigator.sendBeacon('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', blob);
+            }
         }
     });
 }

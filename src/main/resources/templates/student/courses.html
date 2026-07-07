@@ -1,34 +1,49 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Browse Courses - Student - OJTSU26 E-Learning</title>
+    <title>Browse Courses — Student Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>Browse Courses</h1>
+
+<div class="lumina-portal">
+    
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+
+    <!-- Topbar & Main -->
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        
+        <div th:replace="~{fragments/layout :: topbar-student('Browse Catalog')}"></div>
+        
+        <main class="lumina-portal-main">
+            <div class="page-header">
+                <h1 class="page-title">Browse Courses</h1>
+                <p class="page-subtitle">Explore academic courses and self-paced programs.</p>
+            </div>
 
             <!-- Flash messages -->
-            <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
+            <div th:if="${errorMessage}" style="margin-bottom:1.5rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
 
             <!-- Unified Search & Filter Form for Student Portal -->
-            <form th:action="@{/student/courses}" method="get">
-                <div class="action-bar">
-                    <div class="search-bar" style="display: flex; flex: 1;">
-                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search courses...">
+            <form th:action="@{/student/courses}" method="get" style="margin-bottom: 2rem;">
+                <div class="action-bar" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                    <div class="search-bar" style="display: flex; flex: 1; min-width: 250px; gap: 0.5rem;">
+                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search courses..." class="form-control" style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <select name="categoryId" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; cursor:pointer;">
+                        <select name="categoryId" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; cursor:pointer;">
                             <option value="">All Categories</option>
                             <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}" th:selected="${cat.id == selectedCategoryId}"></option>
                         </select>
-                        <select name="sortBy" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; cursor:pointer;">
+                        <select name="sortBy" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; cursor:pointer;">
                             <option value="newest" th:selected="${sortBy == 'newest'}">Newest</option>
                             <option value="price-low" th:selected="${sortBy == 'price-low'}">Price: Low to High</option>
                             <option value="price-high" th:selected="${sortBy == 'price-high'}">Price: High to Low</option>
@@ -38,37 +53,60 @@
                 </div>
             </form>
 
-            <div class="course-grid" th:unless="${#lists.isEmpty(courses)}">
-                <div class="course-card" th:each="crs : ${courses}" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="course-grid" th:unless="${#lists.isEmpty(courses)}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                <div class="course-card" th:each="crs : ${courses}" style="display: flex; flex-direction: column; justify-content: space-between; background: white; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s;">
                     <div>
                         <!-- Thumbnail -->
-                        <div style="height: 140px; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position:relative;">
+                        <div style="height: 160px; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; position:relative; border: 1px solid #f1f5f9;">
                             <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" th:src="${crs.thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
-                            <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" style="font-size: 2.5rem;">📚</span>
+                            <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" style="font-size: 3rem;">📚</span>
                         </div>
-                        <h3 th:text="${crs.title}">Java Programming Masterclass</h3>
-                        <p><strong>Instructor:</strong> <span th:text="${crs.instructorName}">Tran Van B</span></p>
-                        <p><strong>Category:</strong> <span th:text="${crs.categoryName}">Programming</span></p>
-                        <p><strong>Price:</strong> <span th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + crs.price}">799,000 VND</span></p>
-                        <p style="color: #666; font-size: 0.9rem;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>
+                        <h3 th:text="${crs.title}" style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.4;">Java Programming Masterclass</h3>
+                        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;"><strong>Instructor:</strong> <span th:text="${crs.instructorName}" style="color: #334155; font-weight: 500;">Tran Van B</span></p>
+                        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;"><strong>Category:</strong> <span th:text="${crs.categoryName}" style="color: #334155; font-weight: 500;">Programming</span></p>
+                        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.75rem;"><strong>Price:</strong> <span th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}" style="color: var(--lumina-blue); font-weight: 700;">$199.00</span></p>
+                        <div style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span th:if="${crs.enrollmentStatus == 'ENROLLED'}" style="background-color: #22c55e; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Enrolled</span>
+                            <span th:if="${crs.enrollmentStatus == 'PENDING'}" style="background-color: #eab308; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Pending Payment</span>
+                            <span th:if="${crs.enrollmentStatus == 'NOT_ENROLLED'}" style="background-color: #64748b; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Not Enrolled</span>
+                        </div>
+                        <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>
                     </div>
-                    <div style="margin-top: 1rem;">
-                        <a th:href="@{/student/courses/detail(id=${crs.id})}" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none;">View Detail →</a>
+                    <div style="margin-top: 1.25rem;">
+                        <a th:href="@{/student/courses/detail(id=${crs.id})}" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none; border-radius: 6px;">View Detail →</a>
                     </div>
                 </div>
             </div>
 
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" aria-label="Catalog pages" style="margin-top: 2.5rem; display: flex; gap: 1rem; align-items: center; justify-content: center;">
+                <a class="btn btn-secondary btn-sm"
+                   th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+                   th:styleappend="${currentPage == 0 ? 'pointer-events: none; opacity: 0.5;' : ''}"
+                   th:href="@{/student/courses(categoryId=${selectedCategoryId},keyword=${keyword},sortBy=${sortBy},page=${currentPage - 1})}"
+                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">Previous</a>
+                <span th:text="${'Page ' + (currentPage + 1) + ' of ' + totalPages}" style="font-size: 0.9rem; font-weight: 600; color: #475569;">Page 1 of 1</span>
+                <a class="btn btn-secondary btn-sm"
+                   th:classappend="${currentPage + 1 >= totalPages ? 'disabled' : ''}"
+                   th:styleappend="${currentPage + 1 >= totalPages ? 'pointer-events: none; opacity: 0.5;' : ''}"
+                   th:href="@{/student/courses(categoryId=${selectedCategoryId},keyword=${keyword},sortBy=${sortBy},page=${currentPage + 1})}"
+                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">Next</a>
+            </nav>
+
             <!-- Empty state -->
-            <div th:if="${#lists.isEmpty(courses)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 8px; border: 1px solid #eee; margin-top:2rem;">
+            <div th:if="${#lists.isEmpty(courses)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid #eee; margin-top:2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
-                <h3>No Courses Found</h3>
-                <p style="color: #666; margin-top: 0.5rem;">We couldn't find any courses matching your search. Try resetting filters.</p>
-                <a th:href="@{/student/courses}" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none;">Reset Filters</a>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">No Courses Found</h3>
+                <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.875rem;">We couldn't find any courses matching your search. Try resetting filters.</p>
+                <a th:href="@{/student/courses}" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; border-radius: 6px;">Reset Filters</a>
             </div>
 
         </main>
+        
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+</div>
+
+<script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

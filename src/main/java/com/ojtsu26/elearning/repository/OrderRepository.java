@@ -14,16 +14,24 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"items"})
     Optional<Order> findByOrderCode(String orderCode);
 
     List<Order> findByStatusAndExpiredAtBefore(OrderStatus status, LocalDateTime dateTime);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"items"})
     @Query("SELECT o FROM Order o WHERE o.user.id = :studentId " +
            "AND EXISTS (SELECT oi FROM OrderItem oi WHERE oi.order.id = o.id AND oi.course.id = :courseId) " +
            "AND o.status = :status")
     List<Order> findByStudentIdAndCourseIdAndStatus(
             @Param("studentId") Integer studentId,
             @Param("courseId") Integer courseId,
+            @Param("status") OrderStatus status
+    );
+
+    @Query("SELECT oi.course.id FROM Order o JOIN o.items oi WHERE o.user.id = :studentId AND o.status = :status")
+    List<Integer> findCourseIdsByStudentIdAndStatus(
+            @Param("studentId") Integer studentId,
             @Param("status") OrderStatus status
     );
 

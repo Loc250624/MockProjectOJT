@@ -1,21 +1,130 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Result - Student - OJTSU26 E-Learning</title>
+    <title>Payment Result — Student Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
+    <!-- Auto-redirect to My Courses after 4 seconds on success -->
+    <th:block th:if="${redirectToMyCourses}">
+        <meta http-equiv="refresh" content="4;url=/student/my-courses">
+    </th:block>
+    <style>
+        .result-wrapper {
+            display: flex; align-items: center; justify-content: center;
+            flex: 1; padding: 3rem 2rem;
+        }
+        .result-card {
+            background: white; border-radius: 20px; padding: 3rem 2.5rem;
+            text-align: center; max-width: 480px; width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid var(--lumina-gray-100);
+        }
+        .result-icon {
+            font-size: 4rem; margin-bottom: 1.25rem; line-height: 1;
+        }
+        .result-title {
+            font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+        }
+        .result-title.success { color: #15803d; }
+        .result-title.failure { color: #dc2626; }
+        .result-message {
+            color: var(--lumina-gray-500); font-size: 0.9375rem;
+            line-height: 1.6; margin-bottom: 1.75rem;
+        }
+        .result-order {
+            font-size: 0.8125rem; color: var(--lumina-gray-400);
+            margin-bottom: 1.75rem; font-family: monospace;
+            background: var(--lumina-gray-50); padding: 0.5rem 0.75rem;
+            border-radius: 6px; display: inline-block;
+        }
+        .redirect-notice {
+            font-size: 0.8125rem; color: var(--lumina-gray-400);
+            margin-top: 1rem;
+        }
+        .redirect-notice .countdown {
+            font-weight: 700; color: var(--lumina-blue);
+        }
+        .action-buttons {
+            display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>Payment Result</h1>
-            <div class="result-card"><h2>Payment Successful!</h2><p>Transaction ID: 123456</p><a href="/student/my-courses" class="btn btn-primary">Back to My Courses</a></div>
+
+<div class="lumina-portal">
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+
+    <!-- Topbar & Main -->
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+
+        <div th:replace="~{fragments/layout :: topbar-student('Payment Result')}"></div>
+
+        <main class="lumina-portal-main" style="display:flex;align-items:center;justify-content:center;">
+            <div class="result-card">
+
+                <!-- Success State -->
+                <th:block th:if="${paymentSuccess}">
+                    <div class="result-icon">✅</div>
+                    <h1 class="result-title success">Payment Successful!</h1>
+                    <p class="result-message" th:text="${paymentMessage}">Your enrollment has been activated.</p>
+                    <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
+                    <div class="action-buttons">
+                        <a th:href="@{/student/my-courses}" class="btn btn-primary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
+                            🎓 Go to My Courses
+                        </a>
+                        <a th:href="@{/student/dashboard}" class="btn btn-secondary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
+                            Dashboard
+                        </a>
+                    </div>
+                    <p class="redirect-notice">
+                        Redirecting to My Courses in <span class="countdown" id="countdown">4</span>s...
+                    </p>
+                </th:block>
+
+                <!-- Failure / Cancelled State -->
+                <th:block th:unless="${paymentSuccess}">
+                    <div class="result-icon">❌</div>
+                    <h1 class="result-title failure">Payment Failed</h1>
+                    <p class="result-message" th:text="${paymentMessage}">Your payment was not completed.</p>
+                    <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
+                    <div class="action-buttons">
+                        <a th:href="@{/student/courses}" class="btn btn-primary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
+                            🔍 Browse Courses
+                        </a>
+                        <a th:href="@{/student/dashboard}" class="btn btn-secondary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
+                            Dashboard
+                        </a>
+                    </div>
+                </th:block>
+
+            </div>
         </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+</div>
+
+<script th:src="@{/js/student/student.js}"></script>
+<script th:if="${redirectToMyCourses}">
+    // Countdown and redirect
+    var seconds = 4;
+    var el = document.getElementById('countdown');
+    if (el) {
+        var interval = setInterval(function() {
+            seconds--;
+            el.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = '/student/my-courses';
+            }
+        }, 1000);
+    }
+</script>
 </body>
 </html>

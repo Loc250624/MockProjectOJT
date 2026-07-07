@@ -3,6 +3,8 @@ package com.ojtsu26.elearning.repository;
 import com.ojtsu26.elearning.model.entity.Course;
 
 import com.ojtsu26.elearning.model.enums.CourseStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,10 +20,25 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     List<Course> findByStatus(CourseStatus status);
     List<Course> findByInstructorIdAndStatus(Integer instructorId, CourseStatus status);
 
-    @Query("SELECT c FROM Course c WHERE c.status = com.ojtsu26.elearning.model.enums.CourseStatus.APPROVED " +
+    @Query("SELECT c FROM Course c " +
+           "LEFT JOIN FETCH c.instructor " +
+           "LEFT JOIN FETCH c.category " +
+           "WHERE c.status = com.ojtsu26.elearning.model.enums.CourseStatus.APPROVED " +
            "AND (:categoryId IS NULL OR c.category.id = :categoryId) " +
            "AND (:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Course> findApprovedCourses(@Param("categoryId") Integer categoryId, @Param("keyword") String keyword, Sort sort);
+
+    @Query(value = "SELECT c FROM Course c " +
+           "LEFT JOIN FETCH c.instructor " +
+           "LEFT JOIN FETCH c.category " +
+           "WHERE c.status = com.ojtsu26.elearning.model.enums.CourseStatus.APPROVED " +
+           "AND (:categoryId IS NULL OR c.category.id = :categoryId) " +
+           "AND (:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))",
+           countQuery = "SELECT count(c) FROM Course c " +
+           "WHERE c.status = com.ojtsu26.elearning.model.enums.CourseStatus.APPROVED " +
+           "AND (:categoryId IS NULL OR c.category.id = :categoryId) " +
+           "AND (:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Course> findApprovedCourses(@Param("categoryId") Integer categoryId, @Param("keyword") String keyword, Pageable pageable);
 
     long countByInstructorId(Integer instructorId);
     long countByInstructorIdAndStatus(Integer instructorId, CourseStatus status);

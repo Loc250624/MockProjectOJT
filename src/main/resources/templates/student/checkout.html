@@ -105,59 +105,21 @@
                 <h1 style="font-size:1.5rem;font-weight:800;color:var(--lumina-gray-900);margin-bottom:0.375rem;">Select Payment Method</h1>
                 <p style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:1.75rem;">All transactions are secured with 256-bit SSL encryption. Choose your preferred academic billing path.</p>
 
+                <!-- Error message from failed payment -->
+                <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
+
                 <form th:action="@{/student/checkout}" method="post" id="payment-form">
                     <input type="hidden" name="courseId" th:value="${courseId}">
 
-                    <!-- MoMo -->
-                    <label class="payment-method-card selected" id="label-momo">
-                        <input type="radio" name="pay" value="momo" checked onchange="selectPayMethod(this.closest('label'))">
+                    <!-- VNPAY -->
+                    <label class="payment-method-card selected" id="label-vnpay">
+                        <input type="radio" name="pay" value="vnpay" checked onchange="selectPayMethod(this.closest('label'))">
                         <div>
-                            <div class="pay-name">MoMo E-Wallet <span class="rec-badge">Recommended</span></div>
-                            <div class="pay-desc">Instant activation and exclusive academic cashback.</div>
-                        </div>
-                        <div class="pay-logo">💜</div>
-                    </label>
-
-                    <!-- VNPay -->
-                    <label class="payment-method-card" id="label-vnpay">
-                        <input type="radio" name="pay" value="vnpay" onchange="selectPayMethod(this.closest('label'))">
-                        <div>
-                            <div class="pay-name">VNPay QR / Banking</div>
-                            <div class="pay-desc">Pay via QR code or local bank transfer.</div>
-                        </div>
-                        <div class="pay-logo">🏦</div>
-                    </label>
-
-                    <!-- Credit Card -->
-                    <label class="payment-method-card" id="label-card">
-                        <input type="radio" name="pay" value="card" onchange="selectPayMethod(this.closest('label')); document.getElementById('card-fields').classList.toggle('show', this.checked)">
-                        <div>
-                            <div class="pay-name">Credit or Debit Card</div>
-                            <div class="pay-desc">Visa, Mastercard, and JCB accepted worldwide.</div>
+                            <div class="pay-name">VNPAY Gateway <span class="rec-badge" style="background:#005baa;color:white;">Sandbox</span></div>
+                            <div class="pay-desc">Pay securely via VNPAY gateway using test ATM cards — instant enrollment activation.</div>
                         </div>
                         <div class="pay-logo">💳</div>
                     </label>
-
-                    <!-- Card fields sub-form -->
-                    <div class="card-fields" id="card-fields">
-                        <div class="form-group">
-                            <label class="form-label">CARD NUMBER</label>
-                            <div class="input-group">
-                                <span class="input-icon">💳</span>
-                                <input type="text" name="cardNumber" class="form-control" placeholder="•••• •••• •••• ••••" maxlength="19">
-                            </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="form-group">
-                                <label class="form-label">EXPIRY</label>
-                                <input type="text" name="cardExpiry" class="form-control" placeholder="MM / YY" maxlength="5">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">CVV</label>
-                                <input type="text" name="cardCvv" class="form-control" placeholder="•••" maxlength="4">
-                            </div>
-                        </div>
-                    </div>
 
                 </form>
 
@@ -182,17 +144,17 @@
                         <div class="name" th:text="${courseName ?: 'Advanced Machine Learning: Neural Architecture'}">Advanced Machine Learning: Neural Architecture</div>
                         <div class="meta">Specialization Track • 12 Modules</div>
                     </div>
-                    <div class="price" th:text="'$' + ${coursePrice ?: '199.00'}">$199.00</div>
+                    <div class="price" th:text="${coursePrice != null ? '$' + #numbers.formatDecimal(coursePrice, 1, 'COMMA', 2, 'POINT') : 'Free'}">$199.00</div>
                 </div>
 
                 <!-- Line items -->
                 <div class="line-row">
-                    <span class="key">Subtotal</span>
-                    <span class="val" th:text="'$' + ${subtotal ?: '199.00'}">$199.00</span>
+                    <span class="key">Subtotal (USD)</span>
+                    <span class="val" th:text="${subtotal != null ? '$' + #numbers.formatDecimal(subtotal, 1, 'COMMA', 2, 'POINT') : 'Free'}">$199.00</span>
                 </div>
                 <div class="line-row">
-                    <span class="key">Academic Discount (LMN20)</span>
-                    <span class="val discount" th:text="'-$' + ${discount ?: '39.80'}">-$39.80</span>
+                    <span class="key">Academic Discount</span>
+                    <span class="val discount" th:text="${discount != null && discount.signum() > 0 ? '-$' + #numbers.formatDecimal(discount, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</span>
                 </div>
                 <div class="line-row">
                     <span class="key">Processing Fee</span>
@@ -204,7 +166,15 @@
                         <div class="total-label">Total</div>
                         <div class="tax-note">Inc. all local taxes</div>
                     </div>
-                    <div class="total-amount" th:text="'$' + ${total ?: '159.20'}">$159.20</div>
+                    <div class="total-amount" th:text="${total != null ? '$' + #numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT') : 'Free'}">$199.00</div>
+                </div>
+
+                <!-- VNPAY VND equivalent -->
+                <div th:if="${vndAmount != null}" style="background:linear-gradient(135deg,#005baa 0%,#0088cc 100%);color:white;border-radius:10px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.875rem;">
+                    <div style="font-weight:600;margin-bottom:2px;">💳 VNPAY Payment Amount</div>
+                    <div style="font-size:1.125rem;font-weight:800;" th:text="${#numbers.formatInteger(vndAmount, 0, 'COMMA') + ' VND'}">2,475,000 VND</div>
+                    <div style="font-size:0.75rem;opacity:0.85;margin-top:2px;"
+                         th:text="${'Exchange rate: $1 = ' + #numbers.formatInteger(exchangeRate, 0, 'COMMA') + ' VND'}">Exchange rate: $1 = 25,000 VND</div>
                 </div>
 
                 <button type="submit" form="payment-form" class="continue-btn" id="btn-continue-payment">

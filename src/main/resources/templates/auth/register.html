@@ -71,14 +71,14 @@
                                class="form-control"
                                placeholder="••••••••"
                                required autocomplete="new-password"
-                               minlength="8">
+                               minlength="6">
                     </div>
                     <div class="password-strength-bar">
                         <div class="password-strength-fill" id="strength-fill"></div>
                     </div>
                     <div class="strength-labels">
                         <span>Security Level</span>
-                        <span>Min. 8 chars</span>
+                        <span>Min. 6 chars</span>
                     </div>
                 </div>
 
@@ -140,7 +140,7 @@
         pw.addEventListener('input', function() {
             const val = pw.value;
             let score = 0;
-            if(val.length >= 8) score++;
+            if(val.length >= 6) score++;
             if(/[A-Z]/.test(val)) score++;
             if(/[0-9]/.test(val)) score++;
             if(/[^A-Za-z0-9]/.test(val)) score++;

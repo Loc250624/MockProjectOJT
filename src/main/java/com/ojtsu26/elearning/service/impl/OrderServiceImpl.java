@@ -3,6 +3,7 @@ package com.ojtsu26.elearning.service.impl;
 import com.ojtsu26.elearning.model.entity.*;
 import com.ojtsu26.elearning.model.enums.*;
 import com.ojtsu26.elearning.repository.*;
+import com.ojtsu26.elearning.service.CurrencyConversionService;
 import com.ojtsu26.elearning.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ public class OrderServiceImpl implements OrderService {
     private final CourseRepository courseRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final TransactionRepository transactionRepository;
-    private final com.ojtsu26.elearning.config.PaymentGatewayProperties paymentGatewayProperties;
+    private final CurrencyConversionService currencyConversionService;
 
     @Override
     @Transactional
@@ -46,28 +47,39 @@ public class OrderServiceImpl implements OrderService {
             throw new IllegalStateException("You are already enrolled in this course");
         }
 
-        // Check duplicate pending order
+        // Check duplicate pending order — reuse it but update payment method and extend expiry
         List<Order> pendingOrders = orderRepository.findByStudentIdAndCourseIdAndStatus(student.getId(), courseId, OrderStatus.PENDING);
         if (!pendingOrders.isEmpty()) {
-            return pendingOrders.get(0);
+            Order existing = pendingOrders.get(0);
+            existing.setPaymentMethod(paymentMethod);
+            existing.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+            Order savedExisting = orderRepository.save(existing);
+            if (savedExisting.getItems() != null) {
+                savedExisting.getItems().size(); // Force initialization
+            }
+            return savedExisting;
         }
 
         // Generate unique order code
         String orderCode = "ORD" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
 
+        // Invariant: Course.price is stored in USD.
+        // paidAmount is the VND equivalent sent to payment gateways (e.g. MoMo).
+        // Conversion: paidAmount = totalAmount(USD) × exchangeRate(VND/USD), rounded to integer VND.
         BigDecimal price = course.getPrice() != null ? course.getPrice() : BigDecimal.ZERO;
-        BigDecimal exchangeRate = paymentGatewayProperties.getExchangeRate() != null 
-                ? paymentGatewayProperties.getExchangeRate() 
-                : new BigDecimal("25000");
-        BigDecimal paidAmount = price.multiply(exchangeRate);
+        BigDecimal exchangeRate = currencyConversionService.getExchangeRate();
+        BigDecimal paidAmount = currencyConversionService.convertUsdToVnd(price);
+
+        log.info("Creating order: courseId={}, priceUSD={}, exchangeRate={}, paidAmountVND={}",
+                courseId, price, exchangeRate, paidAmount);
 
         Order order = Order.builder()
                 .orderCode(orderCode)
                 .user(student)
-                .totalAmount(price)
+                .totalAmount(price)       // stored in USD (business currency)
                 .currency("USD")
                 .exchangeRate(exchangeRate)
-                .paidAmount(paidAmount)
+                .paidAmount(paidAmount)   // stored in VND (gateway settlement currency)
                 .status(OrderStatus.PENDING)
                 .paymentMethod(paymentMethod)
                 .createdAt(LocalDateTime.now())
@@ -79,13 +91,13 @@ public class OrderServiceImpl implements OrderService {
                 .order(order)
                 .course(course)
                 .courseName(course.getTitle())
-                .unitPrice(price)
+                .unitPrice(price)         // unit price in USD
                 .build();
 
         order.getItems().add(item);
         Order savedOrder = orderRepository.save(order);
 
-        // Create initial transaction record
+        // Create initial transaction record (amount in VND — what the gateway actually charges)
         Transaction transaction = Transaction.builder()
                 .amount(paidAmount)
                 .paymentMethod(paymentMethod)
@@ -99,6 +111,9 @@ public class OrderServiceImpl implements OrderService {
 
         transactionRepository.save(transaction);
 
+        if (savedOrder.getItems() != null) {
+            savedOrder.getItems().size(); // Force initialization
+        }
         return savedOrder;
     }
 

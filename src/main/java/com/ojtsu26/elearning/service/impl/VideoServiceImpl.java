@@ -8,6 +8,7 @@ import com.ojtsu26.elearning.mapper.VideoMapper;
 import com.ojtsu26.elearning.repository.LessonRepository;
 import com.ojtsu26.elearning.repository.VideoRepository;
 import com.ojtsu26.elearning.service.VideoService;
+import com.ojtsu26.elearning.common.VideoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,6 +95,9 @@ public class VideoServiceImpl implements VideoService {
 
     @Override
     public VideoResponseDTO create(VideoRequestDTO requestDTO, Integer instructorId) {
+        // Validate video URL format
+        VideoUtils.validateVideoUrl(requestDTO.getVideoUrl());
+
         // 1. Validate lesson exists and instructor owns it
         Lesson lesson = resolveLesson(requestDTO.getLessonId(), instructorId);
 
@@ -115,6 +119,9 @@ public class VideoServiceImpl implements VideoService {
 
     @Override
     public VideoResponseDTO update(Integer id, VideoRequestDTO requestDTO, Integer instructorId) {
+        // Validate video URL format
+        VideoUtils.validateVideoUrl(requestDTO.getVideoUrl());
+
         // 1. Resolve existing video with ownership check
         Video existing = resolveVideo(id, instructorId);
 

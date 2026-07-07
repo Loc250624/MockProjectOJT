@@ -34,7 +34,7 @@ public class Transaction {
     @Convert(converter = TransactionStatusConverter.class)
     private TransactionStatus status;
 
-    
+    @Column(columnDefinition = "TEXT")
     private String webhookResponse;
 
     @CreationTimestamp

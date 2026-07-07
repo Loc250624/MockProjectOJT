@@ -16,6 +16,7 @@ public class StudentLearningLessonDTO {
     private Integer orderIndex;
     private String sanitizedContent;
     private String videoUrl;
+    private String embedUrl;
     private Integer videoDurationSeconds;
     private Integer watchedSeconds;
     private Integer previousLessonId;

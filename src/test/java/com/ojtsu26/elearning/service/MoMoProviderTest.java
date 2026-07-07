@@ -63,4 +63,61 @@ public class MoMoProviderTest {
         assertFalse(response.isSuccess());
         assertTrue(response.getErrorMessage().contains("credentials are not configured"));
     }
+
+    @Test
+    void initiatePayment_AmountTooLow_ReturnsError() {
+        // Arrange
+        PaymentRequest request = PaymentRequest.builder()
+                .orderCode("ORD123")
+                .amount(new BigDecimal("999")) // Below minimum of 1000 VND
+                .orderInfo("Test course")
+                .returnUrl("http://return")
+                .notifyUrl("http://notify")
+                .build();
+
+        // Act
+        PaymentResponse response = moMoProvider.initiatePayment(request);
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Transaction amount must be between 1,000 VND and 50,000,000 VND.", response.getErrorMessage());
+    }
+
+    @Test
+    void initiatePayment_AmountTooHigh_ReturnsError() {
+        // Arrange
+        PaymentRequest request = PaymentRequest.builder()
+                .orderCode("ORD123")
+                .amount(new BigDecimal("50000001")) // Above maximum of 50000000 VND
+                .orderInfo("Test course")
+                .returnUrl("http://return")
+                .notifyUrl("http://notify")
+                .build();
+
+        // Act
+        PaymentResponse response = moMoProvider.initiatePayment(request);
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Transaction amount must be between 1,000 VND and 50,000,000 VND.", response.getErrorMessage());
+    }
+
+    @Test
+    void initiatePayment_AmountHasFraction_ReturnsError() {
+        // Arrange
+        PaymentRequest request = PaymentRequest.builder()
+                .orderCode("ORD123")
+                .amount(new BigDecimal("25000.50")) // Contains fractional part
+                .orderInfo("Test course")
+                .returnUrl("http://return")
+                .notifyUrl("http://notify")
+                .build();
+
+        // Act
+        PaymentResponse response = moMoProvider.initiatePayment(request);
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Transaction amount must be an integer VND value (no cents/fractions).", response.getErrorMessage());
+    }
 }

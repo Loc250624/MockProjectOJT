@@ -3,7 +3,6 @@ package com.ojtsu26.elearning.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.ojtsu26.elearning.config.PaymentGatewayProperties;
 import com.ojtsu26.elearning.model.entity.*;
 import com.ojtsu26.elearning.model.enums.*;
 import com.ojtsu26.elearning.repository.*;
@@ -34,14 +33,22 @@ public class OrderServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
+    // CurrencyConversionService replaces the old PaymentGatewayProperties direct injection
     @Mock
-    private PaymentGatewayProperties paymentGatewayProperties;
+    private CurrencyConversionService currencyConversionService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
 
     private User student;
     private Course course;
+
+    // Exchange rate: 1 USD = 25,000 VND
+    private static final BigDecimal EXCHANGE_RATE = new BigDecimal("25000");
+    // Course price in USD
+    private static final BigDecimal PRICE_USD = new BigDecimal("99.00");
+    // Expected paidAmount in VND: 99.00 × 25000 = 2,475,000
+    private static final BigDecimal PAID_AMOUNT_VND = new BigDecimal("2475000");
 
     @BeforeEach
     void setUp() {
@@ -54,11 +61,13 @@ public class OrderServiceTest {
         course = Course.builder()
                 .id(101)
                 .title("Test Course")
-                .price(new BigDecimal("99.00"))
+                .price(PRICE_USD)
                 .status(CourseStatus.APPROVED)
                 .build();
 
-        lenient().when(paymentGatewayProperties.getExchangeRate()).thenReturn(new BigDecimal("25000"));
+        // Stub currency conversion: 99.00 USD → 2,475,000 VND
+        lenient().when(currencyConversionService.convertUsdToVnd(PRICE_USD)).thenReturn(PAID_AMOUNT_VND);
+        lenient().when(currencyConversionService.getExchangeRate()).thenReturn(EXCHANGE_RATE);
     }
 
     @Test
@@ -68,7 +77,8 @@ public class OrderServiceTest {
         when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
         when(orderRepository.findByStudentIdAndCourseIdAndStatus(1, 101, OrderStatus.PENDING))
                 .thenReturn(Collections.emptyList());
-        
+        when(currencyConversionService.convertUsdToVnd(PRICE_USD)).thenReturn(PAID_AMOUNT_VND);
+        when(currencyConversionService.getExchangeRate()).thenReturn(EXCHANGE_RATE);
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -77,14 +87,57 @@ public class OrderServiceTest {
         // Assert
         assertNotNull(order);
         assertEquals(student, order.getUser());
-        assertEquals(new BigDecimal("99.00"), order.getTotalAmount());
+        // totalAmount stored in USD (business currency)
+        assertEquals(PRICE_USD, order.getTotalAmount());
         assertEquals("USD", order.getCurrency());
+        assertEquals(EXCHANGE_RATE, order.getExchangeRate());
+        // paidAmount stored in VND (gateway settlement currency) = 99.00 × 25000 = 2,475,000
+        assertEquals(PAID_AMOUNT_VND, order.getPaidAmount());
         assertEquals(OrderStatus.PENDING, order.getStatus());
         assertEquals(PaymentMethod.MOMO, order.getPaymentMethod());
         assertFalse(order.getItems().isEmpty());
         assertEquals("Test Course", order.getItems().get(0).getCourseName());
+        // Unit price in USD
+        assertEquals(PRICE_USD, order.getItems().get(0).getUnitPrice());
         assertTrue(order.getOrderCode().startsWith("ORD"));
+
+        verify(orderRepository).save(any(Order.class));
+        verify(transactionRepository).save(any(Transaction.class));
+    }
+
+    @Test
+    void createOrder_DecimalPrice_Success() {
+        // Arrange
+        BigDecimal decimalPrice = new BigDecimal("99.99");
+        BigDecimal expectedPaidAmount = new BigDecimal("2499750"); // 99.99 * 25000 = 2499750
         
+        course.setPrice(decimalPrice);
+        
+        when(courseRepository.findById(101)).thenReturn(Optional.of(course));
+        when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
+        when(orderRepository.findByStudentIdAndCourseIdAndStatus(1, 101, OrderStatus.PENDING))
+                .thenReturn(Collections.emptyList());
+        when(currencyConversionService.convertUsdToVnd(decimalPrice)).thenReturn(expectedPaidAmount);
+        when(currencyConversionService.getExchangeRate()).thenReturn(EXCHANGE_RATE);
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Order order = orderService.createOrder(student, 101, PaymentMethod.MOMO);
+
+        // Assert
+        assertNotNull(order);
+        assertEquals(student, order.getUser());
+        assertEquals(decimalPrice, order.getTotalAmount()); // Stored in USD
+        assertEquals("USD", order.getCurrency());
+        assertEquals(EXCHANGE_RATE, order.getExchangeRate());
+        assertEquals(expectedPaidAmount, order.getPaidAmount()); // Stored in VND
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+        assertEquals(PaymentMethod.MOMO, order.getPaymentMethod());
+        assertFalse(order.getItems().isEmpty());
+        assertEquals("Test Course", order.getItems().get(0).getCourseName());
+        assertEquals(decimalPrice, order.getItems().get(0).getUnitPrice());
+        assertTrue(order.getOrderCode().startsWith("ORD"));
+
         verify(orderRepository).save(any(Order.class));
         verify(transactionRepository).save(any(Transaction.class));
     }
@@ -144,13 +197,15 @@ public class OrderServiceTest {
         when(courseEnrollmentRepository.existsByStudentIdAndCourseId(1, 101)).thenReturn(false);
         when(orderRepository.findByStudentIdAndCourseIdAndStatus(1, 101, OrderStatus.PENDING))
                 .thenReturn(Collections.singletonList(existingOrder));
+        // The reuse path now updates payment method + expiry and saves the existing order
+        when(orderRepository.save(existingOrder)).thenReturn(existingOrder);
 
         // Act
         Order order = orderService.createOrder(student, 101, PaymentMethod.MOMO);
 
-        // Assert
+        // Assert — same order returned, save called once to persist updates, no new transaction
         assertEquals(existingOrder, order);
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderRepository, times(1)).save(existingOrder);
         verify(transactionRepository, never()).save(any(Transaction.class));
     }
 

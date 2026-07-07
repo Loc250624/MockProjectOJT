@@ -110,11 +110,26 @@
                 </div>
 
                 <div class="learning-video-wrap" th:if="${learningCourse.activeLesson.videoUrl != null && !learningCourse.activeLesson.videoUrl.isBlank()}">
-                    <video controls preload="metadata" th:src="${learningCourse.activeLesson.videoUrl}" aria-label="Lesson video"
+                    <!-- Embedded Iframe Video Player (YouTube, etc.) -->
+                    <iframe th:if="${learningCourse.activeLesson.embedUrl != null && !learningCourse.activeLesson.embedUrl.isBlank()}"
+                            th:src="${learningCourse.activeLesson.embedUrl}"
+                            aria-label="Lesson video"
+                            th:data-course-id="${learningCourse.courseId}"
+                            th:data-lesson-id="${learningCourse.activeLesson.id}"
+                            th:data-watched-seconds="${learningCourse.activeLesson.watchedSeconds == null ? 0 : learningCourse.activeLesson.watchedSeconds}"
+                            data-learning-video="true"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                    </iframe>
+
+                    <!-- HTML5 Native Video Player (Direct MP4, etc.) -->
+                    <video th:unless="${learningCourse.activeLesson.embedUrl != null && !learningCourse.activeLesson.embedUrl.isBlank()}"
+                           controls preload="metadata" aria-label="Lesson video"
                            th:data-course-id="${learningCourse.courseId}"
                            th:data-lesson-id="${learningCourse.activeLesson.id}"
                            th:data-watched-seconds="${learningCourse.activeLesson.watchedSeconds == null ? 0 : learningCourse.activeLesson.watchedSeconds}"
                            data-learning-video="true">
+                        <source th:src="${learningCourse.activeLesson.videoUrl}" type="video/mp4">
                         Your browser cannot play this video.
                     </video>
                     <p class="learning-help" id="video-progress-help"

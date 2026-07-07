@@ -148,7 +148,9 @@ public class CoreDataSeeder {
             Course course = Course.builder()
                     .title(SeederUtils.getRandomCourseTitle() + " " + (i + 1))
                     .description(SeederUtils.getRandomDescription())
-                    .price(new BigDecimal(SeederUtils.getRandomInt(10, 200)))
+                    // Course prices are stored in USD. Range: $100 – $999.
+                    // Picks from a realistic set of USD course price points.
+                    .price(new BigDecimal(new int[]{100, 149, 199, 249, 299, 399, 499, 599, 699, 799, 899, 999}[SeederUtils.getRandomInt(0, 11)]))
                     .status(status)
                     .instructor(SeederUtils.getRandomElement(teachers))
                     .category(category)

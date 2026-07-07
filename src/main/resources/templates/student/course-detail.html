@@ -179,7 +179,7 @@
     <!-- ===== Right: Enrollment Card ===== -->
     <div>
         <div class="enroll-card">
-            <div style="font-size:2rem;font-weight:800;color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + course.price}">$199.00</div>
+            <div style="font-size:2rem;font-weight:800;color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(course.price, 1, 'COMMA', 2, 'POINT')}">$199.00</div>
             <p style="font-size:0.75rem;color:var(--lumina-danger);font-weight:600;margin-top:2px;">⏰ Special pricing available</p>
 
             <div id="course-enrollment-message"

@@ -75,6 +75,11 @@ public class TeacherViewController {
         return "teacher/course-form";
     }
 
+    @GetMapping("/course-form")
+    public String courseFormRedirect() {
+        return "redirect:/teacher/courses/create";
+    }
+
     @GetMapping("/courses/edit/{id}")
     public String courseEdit(@PathVariable Integer id, Model model, @AuthenticationPrincipal CustomUserDetails userDetails, RedirectAttributes redirectAttributes) {
         try {

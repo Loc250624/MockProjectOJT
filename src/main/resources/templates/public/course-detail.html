@@ -79,7 +79,7 @@
     <!-- Right Column: Enrollment Widget -->
     <div>
         <div style="background:white; border-radius:14px; border:1px solid var(--lumina-gray-200); padding:1.5rem; box-shadow:var(--shadow-md); position:sticky; top:20px;">
-            <div style="font-size:2rem; font-weight:800; color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + course.price}">$49.99</div>
+            <div style="font-size:2rem; font-weight:800; color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(course.price, 1, 'COMMA', 2, 'POINT')}">$199.00</div>
             <p style="font-size:0.75rem; color:var(--lumina-danger); font-weight:600; margin-top:2px;">⏰ Special pricing available</p>
 
             <!-- Login to Enroll button (Anonymous) -->

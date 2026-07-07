@@ -140,6 +140,28 @@ class StudentLearningServiceTest {
     }
 
     @Test
+    void enrolledStudentCanViewYouTubeLessonAndEmbedUrlIsMapped() {
+        stubAccess();
+        Lesson youtubeLesson = Lesson.builder()
+                .id(103)
+                .course(course)
+                .title("YouTube Lesson")
+                .type(LessonType.VIDEO)
+                .orderIndex(3)
+                .content("<p>Watch this on YouTube.</p>")
+                .video(Video.builder().videoUrl("https://www.youtube.com/watch?v=qz0aGYrrIhU").durationSeconds(90).build())
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, youtubeLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 103)).thenReturn(Optional.empty());
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StudentLearningLessonDTO response = service.openLesson(10, 103);
+
+        assertEquals("https://www.youtube.com/watch?v=qz0aGYrrIhU", response.getVideoUrl());
+        assertEquals("https://www.youtube.com/embed/qz0aGYrrIhU?enablejsapi=1", response.getEmbedUrl());
+    }
+
+    @Test
     void studentWithoutEnrollmentIsRejected() {
         when(currentUserService.getCurrentUser()).thenReturn(student);
         when(courseRepository.findById(10)).thenReturn(Optional.of(course));

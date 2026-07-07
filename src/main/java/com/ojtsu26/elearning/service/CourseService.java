@@ -3,6 +3,8 @@ package com.ojtsu26.elearning.service;
 import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface CourseService {
@@ -10,6 +12,7 @@ public interface CourseService {
     List<CourseResponseDTO> findByInstructorId(Integer instructorId);
     List<CourseResponseDTO> findByStatus(CourseStatus status);
     List<CourseResponseDTO> findApprovedCourses(Integer categoryId, String keyword, String sortBy);
+    Page<CourseResponseDTO> findApprovedCourses(Integer categoryId, String keyword, String sortBy, Pageable pageable);
     CourseResponseDTO findById(Integer id);
     CourseResponseDTO create(CourseRequestDTO requestDTO);
     CourseResponseDTO update(Integer id, CourseRequestDTO requestDTO);

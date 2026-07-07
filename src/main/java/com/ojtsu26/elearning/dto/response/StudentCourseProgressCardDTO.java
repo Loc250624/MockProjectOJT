@@ -15,6 +15,7 @@ public class StudentCourseProgressCardDTO {
     private String thumbnailUrl;
     private LocalDateTime enrolledAt;
     private Integer resumeLessonId;
+    private String lastAccessedLessonTitle;
     private Integer completedLessons;
     private Integer totalLessons;
     private BigDecimal progressPercentage;
