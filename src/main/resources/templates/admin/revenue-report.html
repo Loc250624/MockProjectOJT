@@ -1,21 +1,106 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revenue Report - Admin - OJTSU26 E-Learning</title>
+    <title>Revenue Report - Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('admin')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
-        <main class="main-content">
-            <h1>Revenue Report</h1>
-            <div class="stats-grid"><div class="stat-card"><h3>Total Revenue</h3><div class="value">$1200</div></div><div class="stat-card"><h3>This Month</h3><div class="value">$400</div></div><div class="stat-card"><h3>This Year</h3><div class="value">$1200</div></div></div><div class="chart-placeholder">Revenue Over Time</div>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('Revenue Report')}"></div>
+
+        <main class="lumina-portal-main">
+            <div class="page-header admin-analytics-header">
+                <div>
+                    <h1 class="page-title">Revenue Report</h1>
+                    <p class="page-subtitle">Paid order revenue grouped by day, month, or year.</p>
+                </div>
+                <form id="adminRevenueAnalyticsFilters" class="admin-analytics-filter-row">
+                    <label><span>From</span><input name="from" type="date"></label>
+                    <label><span>To</span><input name="to" type="date"></label>
+                    <label>
+                        <span>Group</span>
+                        <select name="groupBy">
+                            <option value="day">Day</option>
+                            <option value="month">Month</option>
+                            <option value="year">Year</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                    <button class="btn btn-secondary" type="button" data-reset-revenue>Reset</button>
+                </form>
+            </div>
+
+            <div id="adminRevenueError" class="alert-banner alert-error" hidden>
+                <span class="alert-icon">!</span>
+                <span data-error-message>Unable to load revenue report.</span>
+            </div>
+            <div id="adminRevenueLoading" class="page-loader admin-inline-loader">
+                <span class="spinner"></span>
+                <span>Loading revenue report...</span>
+            </div>
+
+            <section id="adminRevenueContent" hidden>
+                <div class="stats-grid-3">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Revenue</div>
+                        <div class="stat-value" data-revenue-total>$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Paid Orders</div>
+                        <div class="stat-value" data-revenue-orders>0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Period</div>
+                        <div class="admin-method-text" data-revenue-period></div>
+                    </div>
+                </div>
+
+                <div id="adminRevenueEmpty" class="empty-state" hidden>
+                    <div class="empty-state-title">No paid revenue found.</div>
+                    <div class="empty-state-desc">Pending, failed, cancelled, expired, and refunded orders are excluded.</div>
+                </div>
+
+                <section class="card card-padded">
+                    <div class="card-header">
+                        <h2 class="card-title">Revenue Trend</h2>
+                        <span class="text-muted text-sm">Paid orders only</span>
+                    </div>
+                    <div id="adminRevenueChart" class="admin-analytics-chart admin-analytics-chart-tall"></div>
+                </section>
+
+                <section class="admin-table-container admin-analytics-table-card">
+                    <div class="admin-table-toolbar">
+                        <strong>Revenue Details</strong>
+                    </div>
+                    <div class="admin-responsive-table">
+                        <table class="lumina-table">
+                            <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Revenue</th>
+                                <th>Paid Orders</th>
+                            </tr>
+                            </thead>
+                            <tbody id="adminRevenueTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
         </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/admin/admin.js}"></script>
+</div>
+<script th:src="@{/js/admin/admin.js}"></script>
+<script th:src="@{/js/admin/analytics.js}"></script>
 </body>
 </html>

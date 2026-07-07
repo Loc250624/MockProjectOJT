@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.LessonProgress;
+import com.ojtsu26.elearning.repository.projection.AdminStudentEventProjection;
 import com.ojtsu26.elearning.repository.projection.EnrollmentProgressSummaryProjection;
 import com.ojtsu26.elearning.repository.projection.LessonProgressDetailProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,6 +52,26 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
 
     @Query("select max(p.lastAccessedAt) from LessonProgress p where p.lesson.course.id = :courseId and p.enrollment.course.id = :courseId")
     Optional<java.time.LocalDateTime> findLatestActivityAtByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("""
+            select count(distinct p.enrollment.student.id)
+            from LessonProgress p
+            where coalesce(p.lastAccessedAt, p.lastUpdatedAt) >= :from
+              and coalesce(p.lastAccessedAt, p.lastUpdatedAt) < :to
+            """)
+    long countActiveStudentsForAnalytics(@Param("from") java.time.LocalDateTime from,
+                                         @Param("to") java.time.LocalDateTime to);
+
+    @Query("""
+            select p.enrollment.student.id as studentId,
+                   coalesce(p.lastAccessedAt, p.lastUpdatedAt) as occurredAt
+            from LessonProgress p
+            where coalesce(p.lastAccessedAt, p.lastUpdatedAt) >= :from
+              and coalesce(p.lastAccessedAt, p.lastUpdatedAt) < :to
+            order by coalesce(p.lastAccessedAt, p.lastUpdatedAt) asc, p.enrollment.student.id asc
+            """)
+    List<AdminStudentEventProjection> findActiveStudentEventsForAnalytics(@Param("from") java.time.LocalDateTime from,
+                                                                          @Param("to") java.time.LocalDateTime to);
 
     @Query("""
             select l.id as lessonId,

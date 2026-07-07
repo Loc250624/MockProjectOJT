@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
+import com.ojtsu26.elearning.repository.projection.TeacherEnrollmentCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -101,5 +102,46 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from CourseEnrollment e join fetch e.student join fetch e.course c left join fetch c.instructor where e.id = :enrollmentId")
     Optional<CourseEnrollment> findByIdForCertificateIssue(Integer enrollmentId);
-}
 
+    @Query("""
+            select count(e)
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+              and e.enrolledAt >= :from
+              and e.enrolledAt < :to
+              and (:courseId is null or e.course.id = :courseId)
+            """)
+    long countTeacherEnrollmentsForAnalytics(@Param("teacherId") Integer teacherId,
+                                             @Param("from") LocalDateTime from,
+                                             @Param("to") LocalDateTime to,
+                                             @Param("courseId") Integer courseId);
+
+    @Query("""
+            select count(distinct e.student.id)
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+              and e.enrolledAt >= :from
+              and e.enrolledAt < :to
+              and (:courseId is null or e.course.id = :courseId)
+            """)
+    long countTeacherStudentsForAnalytics(@Param("teacherId") Integer teacherId,
+                                          @Param("from") LocalDateTime from,
+                                          @Param("to") LocalDateTime to,
+                                          @Param("courseId") Integer courseId);
+
+    @Query("""
+            select e.course.id as courseId,
+                   count(e) as enrollmentCount,
+                   count(distinct e.student.id) as studentCount
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+              and e.enrolledAt >= :from
+              and e.enrolledAt < :to
+              and (:courseId is null or e.course.id = :courseId)
+            group by e.course.id
+            """)
+    List<TeacherEnrollmentCountProjection> countTeacherEnrollmentsByCourseForAnalytics(@Param("teacherId") Integer teacherId,
+                                                                                       @Param("from") LocalDateTime from,
+                                                                                       @Param("to") LocalDateTime to,
+                                                                                       @Param("courseId") Integer courseId);
+}

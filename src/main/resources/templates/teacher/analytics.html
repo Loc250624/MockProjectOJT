@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Analytics — Teacher Portal | LumiNa</title>
+    <title>Revenue Analytics - Teacher Portal | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
@@ -17,147 +17,141 @@
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
         <div th:replace="~{fragments/layout :: topbar-teacher('Analytics')}"></div>
-        
-        <main class="lumina-portal-main">
-            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header teacher-students-header">
                 <div>
-                    <h1 class="page-title">Analytics & Insights</h1>
-                    <p class="page-subtitle">Detailed performance metrics across all your published courses.</p>
-                </div>
-                <div style="display:flex;gap:0.75rem;">
-                    <select class="form-control" style="width:160px;height:40px;">
-                        <option>Last 30 Days</option>
-                        <option>Last 90 Days</option>
-                        <option>This Year</option>
-                        <option>All Time</option>
-                    </select>
-                    <button class="btn btn-secondary">Export CSV</button>
+                    <p class="teacher-breadcrumb">
+                        <a th:href="@{/teacher/dashboard}">Dashboard</a>
+                        <span>/</span>
+                        <span>Analytics</span>
+                    </p>
+                    <h1 class="page-title">Revenue Analytics</h1>
+                    <p class="page-subtitle">Track paid course revenue, order volume, and enrollments for your courses.</p>
                 </div>
             </div>
 
-            <div class="stats-grid-3">
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-label">Total Active Students</div>
-                    <div class="stat-value">1,482</div>
-                    <div class="stat-change stat-change-up">↑ 12% vs previous period</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">📈</div>
-                    <div class="stat-label">Avg. Completion Rate</div>
-                    <div class="stat-value">78.4%</div>
-                    <div class="stat-change stat-change-up">↑ 2.1% vs previous period</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">💰</div>
-                    <div class="stat-label">Total Revenue</div>
-                    <div class="stat-value">$42.8k</div>
-                    <div class="stat-change stat-change-up">↑ 8.4% vs previous period</div>
-                </div>
+            <section class="admin-table-container teacher-analytics-filters" aria-labelledby="analytics-filters-title">
+                <h2 id="analytics-filters-title" class="sr-only">Revenue filters</h2>
+                <form id="teacherAnalyticsFilters" class="teacher-student-filters analytics-filter-grid">
+                    <div class="filter-field">
+                        <label for="fromDate">From</label>
+                        <input id="fromDate" name="from" type="date">
+                    </div>
+                    <div class="filter-field">
+                        <label for="toDate">To</label>
+                        <input id="toDate" name="to" type="date">
+                    </div>
+                    <div class="filter-field">
+                        <label for="groupBy">Group by</label>
+                        <select id="groupBy" name="groupBy">
+                            <option value="day">Day</option>
+                            <option value="month">Month</option>
+                            <option value="year">Year</option>
+                        </select>
+                    </div>
+                    <div class="filter-field filter-field-course">
+                        <label for="courseId">Course</label>
+                        <select id="courseId" name="courseId">
+                            <option value="">All courses</option>
+                            <option th:each="course : ${courses}"
+                                    th:value="${course.id}"
+                                    th:text="${course.title}">Course</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                    <button class="btn btn-secondary" type="button" id="resetAnalyticsFilters">Reset</button>
+                </form>
+            </section>
+
+            <div id="analyticsError" class="teacher-state teacher-state-error" role="alert" hidden>
+                <strong>Unable to load revenue analytics.</strong>
+                <span data-error-message>Please try again.</span>
             </div>
 
-            <!-- Charts Row 1 -->
-            <div class="grid-2-col" style="margin-bottom:2rem;">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Enrollment Trends</div>
+            <div id="analyticsLoading" class="teacher-state" aria-live="polite">
+                <strong>Loading analytics</strong>
+                <span>Collecting paid orders and enrollments for the selected period.</span>
+            </div>
+
+            <section id="analyticsContent" hidden>
+                <div class="progress-report-grid analytics-kpi-grid">
+                    <div class="report-kpi">
+                        <span>Total revenue</span>
+                        <strong data-total-revenue>$0.00</strong>
                     </div>
-                    <div class="chart-area">
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:30%;"></div><div class="chart-bar-lbl">Mon</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:45%;"></div><div class="chart-bar-lbl">Tue</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:20%;"></div><div class="chart-bar-lbl">Wed</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:60%;"></div><div class="chart-bar-lbl">Thu</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:85%;"></div><div class="chart-bar-lbl">Fri</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:40%;"></div><div class="chart-bar-lbl">Sat</div></div>
-                        <div class="chart-bar-wrap"><div class="chart-bar" style="height:50%;"></div><div class="chart-bar-lbl">Sun</div></div>
+                    <div class="report-kpi">
+                        <span>Paid orders</span>
+                        <strong data-paid-orders>0</strong>
+                    </div>
+                    <div class="report-kpi">
+                        <span>Enrollments</span>
+                        <strong data-enrollments>0</strong>
+                    </div>
+                    <div class="report-kpi">
+                        <span>Students</span>
+                        <strong data-students>0</strong>
+                    </div>
+                    <div class="report-kpi analytics-best-course">
+                        <span>Best-selling course</span>
+                        <strong data-best-course>None yet</strong>
                     </div>
                 </div>
-                
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">Course Popularity</div>
-                    </div>
-                    <div class="donut-chart-wrap" style="margin-top:1rem;">
-                        <div class="donut-hole">
-                            <div class="donut-val">3</div>
-                            <div class="donut-lbl">Active Courses</div>
+
+                <div id="analyticsEmpty" class="teacher-state" hidden>
+                    <strong>No paid revenue found.</strong>
+                    <span>Try a wider date range or select a different course.</span>
+                </div>
+
+                <div class="progress-report-layout analytics-layout">
+                    <section class="card report-chart-panel analytics-chart-panel" aria-labelledby="revenue-trend-title">
+                        <div class="card-header">
+                            <h2 id="revenue-trend-title" class="card-title">Revenue Trend</h2>
+                            <span class="teacher-page-meta" data-period-label></span>
                         </div>
-                    </div>
-                    <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:2rem;">
-                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:var(--lumina-blue);"></span> Adv. Quantum</div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:#6366f1;"></span> Logic Theory</div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--lumina-gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:#0ea5e9;"></span> Neural Arch.</div>
-                    </div>
-                </div>
-            </div>
+                        <div id="revenueTrendChart" class="analytics-chart" aria-label="Revenue trend chart"></div>
+                    </section>
 
-            <!-- Top Performing Students Table -->
-            <div class="card">
-                <div class="card-header" style="padding:1.5rem 1.5rem 0;">
-                    <h2 class="card-title">Top Performing Students</h2>
+                    <section class="card report-chart-panel" aria-labelledby="revenue-breakdown-title">
+                        <div class="card-header">
+                            <h2 id="revenue-breakdown-title" class="card-title">Course Snapshot</h2>
+                        </div>
+                        <div id="courseSnapshot" class="analytics-course-snapshot"></div>
+                    </section>
                 </div>
-                <div style="padding:1.5rem;overflow-x:auto;">
-                    <table class="lumina-table">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Course</th>
-                                <th style="width:200px;">Engagement Level</th>
-                                <th>Avg Grade</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <div style="width:32px;height:32px;border-radius:50%;background:var(--lumina-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">AJ</div>
-                                        <div>
-                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Alex Johnson</div>
-                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">alex.j@edu.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>Advanced Quantum Mechanics</td>
-                                <td>
-                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:96%;background:var(--lumina-success);"></div></div>
-                                    <div style="font-size:0.6875rem;color:var(--lumina-success);text-align:right;margin-top:4px;">High (96%)</div>
-                                </td>
-                                <td><span style="font-weight:700;color:var(--lumina-gray-900);">94.5%</span></td>
-                                <td><span class="badge status-active badge-dot">Active</span></td>
-                                <td><button class="btn btn-outline btn-sm">Message</button></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                                        <div style="width:32px;height:32px;border-radius:50%;background:#8b5cf6;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">SC</div>
-                                        <div>
-                                            <div style="font-weight:600;color:var(--lumina-gray-900);">Sarah Connor</div>
-                                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);">s.connor@edu.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>Logic Theory Fundamentals</td>
-                                <td>
-                                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:91%;background:var(--lumina-success);"></div></div>
-                                    <div style="font-size:0.6875rem;color:var(--lumina-success);text-align:right;margin-top:4px;">High (91%)</div>
-                                </td>
-                                <td><span style="font-weight:700;color:var(--lumina-gray-900);">92.0%</span></td>
-                                <td><span class="badge status-active badge-dot">Active</span></td>
-                                <td><button class="btn btn-outline btn-sm">Message</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
+                <section class="admin-table-container teacher-student-results" aria-labelledby="revenue-by-course-title">
+                    <div class="admin-table-toolbar">
+                        <div>
+                            <h2 id="revenue-by-course-title" class="teacher-table-title">Revenue by Course</h2>
+                        </div>
+                        <div class="teacher-page-meta" data-course-count>0 courses</div>
+                    </div>
+                    <div class="teacher-student-table-wrap">
+                        <table class="data-table teacher-student-table analytics-course-table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Course</th>
+                                <th scope="col">Revenue</th>
+                                <th scope="col">Paid orders</th>
+                                <th scope="col">Units sold</th>
+                                <th scope="col">Enrollments</th>
+                                <th scope="col">Students</th>
+                            </tr>
+                            </thead>
+                            <tbody id="revenueByCourseBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="revenueByCourseCards" class="teacher-student-cards analytics-course-cards"></div>
+                </section>
+            </section>
         </main>
-        
+
         <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>
 
 <script th:src="@{/js/teacher/teacher.js}"></script>
+<script th:src="@{/js/teacher/analytics.js}"></script>
 </body>
 </html>

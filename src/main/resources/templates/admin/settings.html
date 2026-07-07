@@ -1,21 +1,47 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Admin - OJTSU26 E-Learning</title>
+    <title>System Settings - Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('admin')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
-        <main class="main-content">
-            <h1>Settings</h1>
-            <form class="form-container"><div class="form-group"><label>Site Name</label><input type="text" value="OJTSU26 E-Learning"></div><div class="form-group"><label>Contact Email</label><input type="email" value="contact@ojt.com"></div><button class="btn btn-primary">Save</button></form>
+<div class="lumina-portal admin-settings-page">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('System Settings')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <section class="content-section">
+                <div class="page-header admin-settings-header">
+                    <div>
+                        <h1 class="page-title">System Settings</h1>
+                        <p class="page-subtitle">Manage safe platform defaults and operational flags.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="settings-save-all" disabled>Save Changes</button>
+                </div>
+
+                <div class="admin-settings-message" id="settings-message" role="status" hidden></div>
+                <div class="admin-inline-loader" id="settings-loading">Loading settings...</div>
+                <div class="empty-state" id="settings-empty" hidden>No settings are available.</div>
+                <div class="error-state" id="settings-error" hidden></div>
+
+                <form class="admin-settings-form" id="admin-settings-form" hidden>
+                    <div id="settings-groups" class="admin-settings-groups"></div>
+                </form>
+            </section>
         </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/admin/admin.js}"></script>
+</div>
+<script th:src="@{/js/admin/admin.js}"></script>
+<script th:src="@{/js/admin/settings.js}"></script>
 </body>
 </html>

@@ -401,7 +401,12 @@ public class TeacherViewController {
     public String blogSubmissions() { return "teacher/blog-submissions"; }
 
     @GetMapping("/analytics")
-    public String analytics() { return "teacher/analytics"; }
+    public String analytics(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.getUser() != null) {
+            model.addAttribute("courses", courseService.findByInstructorId(userDetails.getUser().getId()));
+        }
+        return "teacher/analytics";
+    }
 
     @GetMapping("/reports/progress")
     public String progressReport(@RequestParam(required = false) Integer courseId,
