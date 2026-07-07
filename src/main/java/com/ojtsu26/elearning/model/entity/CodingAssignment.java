@@ -34,6 +34,12 @@ public class CodingAssignment {
     
     private Integer timeLimitMs;
 
+    private java.math.BigDecimal maxScore;
+
+    private java.time.LocalDateTime dueDate;
+
+    private String status;
+
     @OneToOne
     @JoinColumn(name = "lesson_id")
     @JsonBackReference("codingassignment-lesson")
@@ -42,4 +48,10 @@ public class CodingAssignment {
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("testcase-assignment")
     private List<Testcase> testcases;
+
+    @CreationTimestamp
+    private java.time.LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private java.time.LocalDateTime updatedAt;
 }

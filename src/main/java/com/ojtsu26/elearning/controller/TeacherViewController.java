@@ -15,6 +15,7 @@ import com.ojtsu26.elearning.service.CategoryService;
 import com.ojtsu26.elearning.service.LessonService;
 import com.ojtsu26.elearning.service.TeacherCourseStudentService;
 import com.ojtsu26.elearning.service.VideoService;
+import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
 import com.ojtsu26.elearning.dto.response.RoadmapResponseDTO;
 import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
@@ -44,6 +45,7 @@ public class TeacherViewController {
     private final VideoService videoService;
     private final ProfileService profileService;
     private final TeacherCourseStudentService teacherCourseStudentService;
+    private final AssessmentService assessmentService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
@@ -376,6 +378,13 @@ public class TeacherViewController {
     @GetMapping("/quizzes")
     public String quizzes() { return "teacher/quizzes"; }
 
+    @GetMapping("/courses/{courseId}/assessments/quizzes")
+    public String courseQuizzes(@PathVariable Integer courseId, Model model) {
+        model.addAttribute("courseId", courseId);
+        model.addAttribute("quizzes", assessmentService.getTeacherCourseQuizzes(courseId));
+        return "teacher/quizzes";
+    }
+
     @GetMapping("/quizzes/create")
     public String quizCreate() { return "teacher/quiz-form"; }
 
@@ -385,11 +394,25 @@ public class TeacherViewController {
     @GetMapping("/testcases")
     public String testcases() { return "teacher/testcases"; }
 
+    @GetMapping("/assignments/{assignmentId}/testcases")
+    public String assignmentTestcases(@PathVariable Integer assignmentId, Model model) {
+        model.addAttribute("assignmentId", assignmentId);
+        model.addAttribute("testcases", assessmentService.getTeacherTestcases(assignmentId));
+        return "teacher/testcases";
+    }
+
     @GetMapping("/assignments")
     public String assignments() { return "teacher/assignments"; }
 
     @GetMapping("/grading")
     public String grading() { return "teacher/grading"; }
+
+    @GetMapping("/assignments/{assignmentId}/submissions")
+    public String assignmentSubmissions(@PathVariable Integer assignmentId, Model model) {
+        model.addAttribute("assignmentId", assignmentId);
+        model.addAttribute("submissions", assessmentService.getTeacherAssignmentSubmissions(assignmentId));
+        return "teacher/grading";
+    }
 
     @GetMapping("/blogs")
     public String blogs() { return "teacher/blogs"; }

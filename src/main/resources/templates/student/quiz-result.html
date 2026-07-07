@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Result</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('student')}"></header>
+<main class="assessment-shell single">
+    <section class="assessment-panel">
+        <div class="assessment-heading">
+            <div>
+                <p class="eyebrow">Quiz result</p>
+                <h1 th:text="${attempt.quiz.title}">Quiz</h1>
+            </div>
+            <strong class="score-pill" th:text="${attempt.score} + '%'">0%</strong>
+        </div>
+        <div class="assessment-list">
+            <div class="result-row" th:each="question : ${attempt.quiz.questions}">
+                <span th:text="${question.content}">Question</span>
+                <small th:text="'Selected: ' + ${question.selectedOptionIds}">Selected</small>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

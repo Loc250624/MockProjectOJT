@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Integer> {
@@ -32,4 +34,14 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
 
     @Query("select count(distinct s.lesson.id) from Submission s where s.student.id = :studentId and s.lesson.course.id = :courseId and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ or s.lesson.quiz is not null or s.lesson.codingassignment is not null)")
     long countSubmittedAssessmentLessons(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
+
+    List<Submission> findByStudentIdOrderBySubmittedAtDesc(Integer studentId);
+
+    Optional<Submission> findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(Integer assignmentId, Integer studentId);
+
+    @Query("select s from Submission s join fetch s.assignment a join fetch a.lesson l join fetch l.course c left join fetch c.instructor where s.id = :submissionId")
+    Optional<Submission> findByIdWithAssignmentCourse(@Param("submissionId") Integer submissionId);
+
+    @Query("select s from Submission s join fetch s.student join fetch s.assignment a join fetch a.lesson l where a.id = :assignmentId order by s.submittedAt desc")
+    List<Submission> findByAssignmentIdWithStudent(@Param("assignmentId") Integer assignmentId);
 }

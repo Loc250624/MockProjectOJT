@@ -31,11 +31,21 @@ public class Submission {
     
     private String submittedContent;
 
+    private String codeLanguage;
+
+    @Column(columnDefinition = "TEXT")
+    private String codeContent;
+
+    private String filePath;
+
     
     private String teacherFeedback;
 
     @CreationTimestamp
     private java.time.LocalDateTime submittedAt;
+
+    @UpdateTimestamp
+    private java.time.LocalDateTime updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "student_id")
@@ -46,4 +56,14 @@ public class Submission {
     @JoinColumn(name = "lesson_id")
     @JsonBackReference("submission-lesson")
     private Lesson lesson;
+
+    @ManyToOne
+    @JoinColumn(name = "assignment_id")
+    private CodingAssignment assignment;
+
+    @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CodeJudgeResult> judgeResults;
+
+    @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GradeFeedback> gradeFeedbacks;
 }

@@ -25,15 +25,38 @@ public class Quiz {
     
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private Integer durationMinutes;
+
+    private Integer maxAttempts;
+
+    @Convert(converter = QuizStatusConverter.class)
+    private QuizStatus status;
+
     
     private java.math.BigDecimal passingScore;
+
+    @CreationTimestamp
+    private java.time.LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private java.time.LocalDateTime updatedAt;
 
     @OneToOne
     @JoinColumn(name = "lesson_id")
     @JsonBackReference("quiz-lesson")
     private Lesson lesson;
 
+    @ManyToOne
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("question-quiz")
     private List<Question> questions;
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizAttempt> attempts;
 }

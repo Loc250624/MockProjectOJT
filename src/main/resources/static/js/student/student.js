@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initCourseEnrollmentCta();
     initLearningProgress();
     initStudentCertificates();
+    initAssessmentQuiz();
+    initAssessmentSubmission();
 });
 
 function initCourseEnrollmentCta() {
@@ -241,6 +243,217 @@ function initLessonCompletion(button) {
                 message.textContent = error.message;
             }
         });
+    });
+}
+
+function assessmentJson(response, fallbackMessage) {
+    return response.json().catch(function() {
+        return { message: fallbackMessage };
+    }).then(function(body) {
+        if (!response.ok) {
+            throw new Error(body.message || fallbackMessage);
+        }
+        return body;
+    });
+}
+
+function setAssessmentMessage(element, text, type) {
+    if (!element) {
+        return;
+    }
+    element.textContent = text || '';
+    element.classList.remove('error', 'success');
+    if (type) {
+        element.classList.add(type);
+    }
+}
+
+function initAssessmentQuiz() {
+    var page = document.querySelector('.assessment-page[data-quiz-id]');
+    if (!page || !page.dataset.quizId) {
+        return;
+    }
+    var quizId = page.dataset.quizId;
+    var message = document.getElementById('quiz-message');
+    var saveState = document.getElementById('quiz-save-state');
+    var questions = Array.prototype.slice.call(document.querySelectorAll('.quiz-question'));
+    var navButtons = Array.prototype.slice.call(document.querySelectorAll('.q-nav-btn'));
+    if (!questions.length) {
+        return;
+    }
+    var current = 0;
+    var attemptId = null;
+
+    function showQuestion(index) {
+        current = Math.max(0, Math.min(index, questions.length - 1));
+        questions.forEach(function(question, questionIndex) {
+            question.classList.toggle('active', questionIndex === current);
+        });
+        navButtons.forEach(function(button, buttonIndex) {
+            button.classList.toggle('active', buttonIndex === current);
+        });
+    }
+
+    function collectAnswers() {
+        return questions.map(function(question) {
+            return {
+                questionId: Number(question.dataset.questionId),
+                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked')).map(function(input) {
+                    return Number(input.value);
+                })
+            };
+        });
+    }
+
+    function markAnswered() {
+        questions.forEach(function(question, index) {
+            if (navButtons[index]) {
+                navButtons[index].classList.toggle('answered', question.querySelectorAll('input:checked').length > 0);
+            }
+        });
+    }
+
+    function ensureAttempt() {
+        if (attemptId) {
+            return Promise.resolve(attemptId);
+        }
+        setAssessmentMessage(saveState, 'Starting...', null);
+        return fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
+            method: 'POST',
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return assessmentJson(response, 'Unable to start quiz');
+        }).then(function(body) {
+            attemptId = body.data.id;
+            setAssessmentMessage(saveState, 'Draft active', null);
+            return attemptId;
+        });
+    }
+
+    function saveDraft() {
+        return ensureAttempt().then(function(id) {
+            return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/draft', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ answers: collectAnswers() })
+            });
+        }).then(function(response) {
+            return assessmentJson(response, 'Unable to save draft');
+        }).then(function() {
+            setAssessmentMessage(message, 'Draft saved.', 'success');
+            setAssessmentMessage(saveState, 'Saved', null);
+        }).catch(function(error) {
+            setAssessmentMessage(message, error.message, 'error');
+        });
+    }
+
+    navButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            showQuestion(Number(button.dataset.questionIndex));
+        });
+    });
+    document.querySelectorAll('.quiz-option input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            markAnswered();
+            input.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(function(option) {
+                option.classList.toggle('selected', option.querySelector('input:checked') !== null);
+            });
+        });
+    });
+    var previous = document.getElementById('previous-question-btn');
+    if (previous) {
+        previous.addEventListener('click', function() { showQuestion(current - 1); });
+    }
+    var next = document.getElementById('next-question-btn');
+    if (next) {
+        next.addEventListener('click', function() { showQuestion(current + 1); });
+    }
+    var save = document.getElementById('save-quiz-btn');
+    if (save) {
+        save.addEventListener('click', saveDraft);
+    }
+    var submit = document.getElementById('submit-quiz-btn');
+    if (submit) {
+        submit.addEventListener('click', function() {
+            if (!window.confirm('Submit this quiz attempt? You cannot edit it after submission.')) {
+                return;
+            }
+            ensureAttempt().then(function(id) {
+                submit.disabled = true;
+                return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ answers: collectAnswers() })
+                });
+            }).then(function(response) {
+                return assessmentJson(response, 'Unable to submit quiz');
+            }).then(function(body) {
+                window.location.href = '/student/quizzes/' + encodeURIComponent(body.data.id) + '/result';
+            }).catch(function(error) {
+                submit.disabled = false;
+                setAssessmentMessage(message, error.message, 'error');
+            });
+        });
+    }
+    markAnswered();
+    showQuestion(0);
+    ensureAttempt().catch(function(error) {
+        setAssessmentMessage(message, error.message, 'error');
+    });
+}
+
+function initAssessmentSubmission() {
+    var form = document.getElementById('assignment-submit-form');
+    if (!form) {
+        return;
+    }
+    var page = document.querySelector('.assessment-page[data-assignment-id]');
+    var assignmentId = page && page.dataset.assignmentId;
+    var message = document.getElementById('assignment-message');
+    var draftButton = document.getElementById('save-assignment-draft');
+
+    function payload() {
+        return {
+            contentText: form.elements.contentText.value.trim(),
+            codeLanguage: form.elements.codeLanguage.value.trim(),
+            codeContent: form.elements.codeContent.value.trim(),
+            filePath: form.elements.filePath.value.trim()
+        };
+    }
+
+    function send(kind) {
+        var body = payload();
+        if (kind === 'submit' && !body.contentText && !body.codeContent && !body.filePath) {
+            setAssessmentMessage(message, 'Please provide text, code, or a file path before submitting.', 'error');
+            return Promise.resolve();
+        }
+        return fetch('/api/student/assignments/' + encodeURIComponent(assignmentId) + '/submissions/' + kind, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+        }).then(function(response) {
+            return assessmentJson(response, 'Unable to save submission');
+        }).then(function(apiResponse) {
+            setAssessmentMessage(message, apiResponse.message, 'success');
+            if (kind === 'submit' && apiResponse.data && apiResponse.data.id) {
+                window.location.href = '/student/submissions/' + encodeURIComponent(apiResponse.data.id) + '/result';
+            }
+        }).catch(function(error) {
+            setAssessmentMessage(message, error.message, 'error');
+        });
+    }
+
+    if (draftButton) {
+        draftButton.addEventListener('click', function() { send('draft'); });
+    }
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        if (window.confirm('Submit this assignment?')) {
+            send('submit');
+        }
     });
 }
 
