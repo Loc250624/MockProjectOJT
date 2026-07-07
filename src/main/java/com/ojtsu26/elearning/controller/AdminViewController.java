@@ -1,10 +1,13 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.BlogCommentService;
+import com.ojtsu26.elearning.service.BlogPostService;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.ProfileService;
 import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
 import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
+import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.ProfileOverviewService;
@@ -39,6 +42,8 @@ public class AdminViewController {
     private final CourseService courseService;
     private final TransactionRepository transactionRepository;
     private final ProfileService profileService;
+    private final BlogPostService blogPostService;
+    private final BlogCommentService blogCommentService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
@@ -135,16 +140,108 @@ public class AdminViewController {
     }
 
     @GetMapping("/blogs")
-    public String blogs() { return "admin/blogs"; }
+    public String blogs(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        model.addAttribute("blogs", blogPostService.findAllForAdmin(currentUser(userDetails)));
+        return "admin/blogs";
+    }
 
     @GetMapping("/blogs/detail")
     public String blogDetail() { return "admin/blog-detail"; }
 
     @GetMapping("/blogs/moderation")
-    public String blogModeration() { return "admin/blog-moderation"; }
+    public String blogModeration(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        model.addAttribute("blogs", blogPostService.findPendingReviewForAdmin(currentUser(userDetails)));
+        return "admin/blog-moderation";
+    }
+
+    @PostMapping("/blogs/approve/{id}")
+    public String approveBlog(@PathVariable Integer id,
+                              @AuthenticationPrincipal CustomUserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            blogPostService.approve(id, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog approved and published successfully.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/blogs/moderation";
+    }
+
+    @PostMapping("/blogs/reject/{id}")
+    public String rejectBlog(@PathVariable Integer id,
+                             @RequestParam(required = false) String rejectionReason,
+                             @AuthenticationPrincipal CustomUserDetails userDetails,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            blogPostService.reject(id, rejectionReason, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog rejected with feedback.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/blogs/moderation";
+    }
+
+    @PostMapping("/blogs/hide/{id}")
+    public String hideBlog(@PathVariable Integer id,
+                           @RequestParam(required = false) String reason,
+                           @AuthenticationPrincipal CustomUserDetails userDetails,
+                           RedirectAttributes redirectAttributes) {
+        try {
+            blogPostService.hide(id, reason, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog hidden from public pages.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/blogs";
+    }
+
+    @PostMapping("/blogs/archive/{id}")
+    public String archiveBlog(@PathVariable Integer id,
+                              @RequestParam(required = false) String reason,
+                              @AuthenticationPrincipal CustomUserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            blogPostService.archive(id, reason, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog archived.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/blogs";
+    }
 
     @GetMapping("/comments")
-    public String comments() { return "admin/comments"; }
+    public String comments(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        model.addAttribute("comments", blogCommentService.findAllForAdmin(currentUser(userDetails)));
+        return "admin/comments";
+    }
+
+    @PostMapping("/comments/hide/{id}")
+    public String hideComment(@PathVariable Integer id,
+                              @RequestParam(required = false) String reason,
+                              @AuthenticationPrincipal CustomUserDetails userDetails,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            blogCommentService.hide(id, reason, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Comment hidden from public pages.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/comments";
+    }
+
+    @PostMapping("/comments/delete/{id}")
+    public String deleteComment(@PathVariable Integer id,
+                                @RequestParam(required = false) String reason,
+                                @AuthenticationPrincipal CustomUserDetails userDetails,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            blogCommentService.delete(id, reason, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Comment deleted from public pages.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/comments";
+    }
 
     @GetMapping("/payments")
     public String payments(@RequestParam(value = "page", defaultValue = "0") int page,
@@ -301,5 +398,9 @@ public class AdminViewController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/courses/approval";
+    }
+
+    private User currentUser(CustomUserDetails userDetails) {
+        return userDetails == null ? null : userDetails.getUser();
     }
 }

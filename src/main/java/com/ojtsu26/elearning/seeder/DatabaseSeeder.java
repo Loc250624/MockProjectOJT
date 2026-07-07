@@ -30,8 +30,6 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final SubmissionRepository submissionRepository;
     private final TransactionRepository transactionRepository;
     private final CertificateRepository certificateRepository;
-    private final BlogRepository blogRepository;
-    private final CommentRepository commentRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -56,8 +54,6 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("Submissions inserted: " + submissionRepository.count());
         System.out.println("Transactions inserted: " + transactionRepository.count());
         System.out.println("Certificates inserted: " + certificateRepository.count());
-        System.out.println("Blogs inserted: " + blogRepository.count());
-        System.out.println("Comments inserted: " + commentRepository.count());
         System.out.println();
         System.out.println("Demo data generated successfully.");
     }

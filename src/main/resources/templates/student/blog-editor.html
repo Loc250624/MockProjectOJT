@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog Editor - Teacher Portal | LumiNa</title>
+    <title>Blog Editor - Student Portal | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
-    <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
 <body>
 <div class="lumina-portal">
-    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
-        <div th:replace="~{fragments/layout :: topbar-teacher('Blog Editor')}"></div>
+        <div th:replace="~{fragments/layout :: topbar-student('Blog Editor')}"></div>
 
         <main class="lumina-portal-main" style="flex:1;">
             <div class="page-header" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-                <a th:href="@{/teacher/blogs}" class="btn btn-secondary btn-sm">Back</a>
+                <a th:href="@{/student/blogs}" class="btn btn-secondary btn-sm">Back</a>
                 <div>
                     <h1 class="page-title" th:text="${editMode == true} ? 'Edit Rejected Blog' : 'Write Blog Draft'">Write Blog Draft</h1>
                     <p class="page-subtitle" th:text="${editMode == true} ? 'Update the rejected post, then submit it again from My Blogs.' : 'Save a draft first, then submit it from My Blogs when it is ready.'">Save a draft first, then submit it from My Blogs when it is ready.</p>
@@ -36,7 +36,7 @@
 
             <div style="max-width:900px;">
                 <div class="admin-table-container" style="padding:2.5rem;">
-                    <form th:action="${editMode == true} ? @{'/teacher/blogs/' + ${blogId} + '/edit'} : @{/teacher/blogs}" th:object="${blogPost}" method="post" data-loading-form>
+                    <form th:action="${editMode == true} ? @{'/student/blogs/' + ${blogId} + '/edit'} : @{/student/blogs}" th:object="${blogPost}" method="post" data-loading-form>
                         <div style="margin-bottom:1.5rem;">
                             <label for="blog-title" style="display:block;font-size:0.8125rem;font-weight:600;color:var(--lumina-gray-700);margin-bottom:0.5rem;">Title <span style="color:var(--lumina-danger);">*</span></label>
                             <input id="blog-title" type="text" th:field="*{title}" maxlength="180" placeholder="Give your blog a clear title"
@@ -52,7 +52,7 @@
                         </div>
 
                         <div style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:1.5rem;border-top:1px solid var(--lumina-gray-200);">
-                            <a th:href="@{/teacher/blogs}" class="btn btn-secondary">Cancel</a>
+                            <a th:href="@{/student/blogs}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary" th:text="${editMode == true} ? 'Save Changes' : 'Save Draft'">Save Draft</button>
                         </div>
                     </form>
@@ -64,7 +64,7 @@
     </div>
 </div>
 
-<script th:src="@{/js/teacher/teacher.js}"></script>
+<script th:src="@{/js/student/student.js}"></script>
 <script>
 document.querySelectorAll('[data-loading-form]').forEach(function (form) {
     form.addEventListener('submit', function () {

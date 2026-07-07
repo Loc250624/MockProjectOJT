@@ -2,10 +2,13 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
+import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
+import com.ojtsu26.elearning.dto.response.BlogPostResponseDTO;
 import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Order;
+import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
 import com.ojtsu26.elearning.model.enums.PaymentMethod;
@@ -47,6 +50,7 @@ public class StudentViewController {
     private final CourseEnrollmentService courseEnrollmentService;
     private final ProfileService profileService;
     private final StudentLearningService studentLearningService;
+    private final BlogPostService blogPostService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -261,8 +265,46 @@ public class StudentViewController {
     }
 
     @GetMapping("/blogs")
-    public String blogs() { return "student/blogs"; }
+    public String blogs(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        model.addAttribute("blogs", blogPostService.findMine(currentUser(userDetails)));
+        return "student/blogs";
+    }
+
+    @GetMapping("/blogs/editor")
+    public String blogEditor(Model model) {
+        if (!model.containsAttribute("blogPost")) {
+            model.addAttribute("blogPost", new BlogPostRequestDTO());
+        }
+        return "student/blog-editor";
+    }
+
+    @GetMapping("/blogs/editor/{id}")
+    public String editRejectedBlog(@org.springframework.web.bind.annotation.PathVariable Integer id,
+                                   Model model,
+                                   @AuthenticationPrincipal CustomUserDetails userDetails,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            BlogPostResponseDTO blog = blogPostService.findEditableRejectedByAuthor(id, currentUser(userDetails));
+            if (!model.containsAttribute("blogPost")) {
+                BlogPostRequestDTO requestDTO = new BlogPostRequestDTO();
+                requestDTO.setTitle(blog.getTitle());
+                requestDTO.setContent(blog.getContent());
+                model.addAttribute("blogPost", requestDTO);
+            }
+            model.addAttribute("editMode", true);
+            model.addAttribute("blogId", id);
+            model.addAttribute("rejectionReason", blog.getRejectionReason());
+            return "student/blog-editor";
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/student/blogs";
+        }
+    }
 
     @GetMapping("/blogs/detail")
     public String blogDetail() { return "student/blog-detail"; }
+
+    private User currentUser(CustomUserDetails userDetails) {
+        return userDetails == null ? null : userDetails.getUser();
+    }
 }

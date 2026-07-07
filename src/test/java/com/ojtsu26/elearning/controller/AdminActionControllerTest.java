@@ -1,18 +1,18 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.model.entity.User;
-import com.ojtsu26.elearning.model.entity.Blog;
+import com.ojtsu26.elearning.model.entity.BlogPost;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
 import com.ojtsu26.elearning.model.entity.Transaction;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
-import com.ojtsu26.elearning.model.enums.BlogStatus;
+import com.ojtsu26.elearning.model.enums.BlogPostStatus;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.TransactionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
-import com.ojtsu26.elearning.repository.BlogRepository;
+import com.ojtsu26.elearning.repository.BlogPostRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.TransactionRepository;
@@ -85,7 +85,7 @@ class AdminActionControllerTest {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private BlogRepository blogRepository;
+    private BlogPostRepository blogPostRepository;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -95,6 +95,7 @@ class AdminActionControllerTest {
 
     @BeforeEach
     void setUp() {
+        blogPostRepository.deleteAll();
         userRepository.deleteAll();
         userRepository.save(user("Alice Student", "alice.student@example.com", Role.STUDENT, UserStatus.ACTIVE, AuthProvider.LOCAL));
         userRepository.save(user("Bob Teacher", "bob.teacher@example.com", Role.TEACHER, UserStatus.ACTIVE, AuthProvider.GOOGLE));
@@ -414,7 +415,7 @@ class AdminActionControllerTest {
     }
 
     @Test
-    void softDeleteKeepsRelatedEnrollmentTransactionCourseAndBlog() throws Exception {
+    void softDeleteKeepsRelatedEnrollmentTransactionCourseAndBlogPost() throws Exception {
         User student = findByEmail("alice.student@example.com");
         User teacher = findByEmail("bob.teacher@example.com");
         Course course = courseRepository.save(Course.builder()
@@ -438,11 +439,11 @@ class AdminActionControllerTest {
                 .transactionRef("soft-delete-retention-" + student.getId())
                 .status(TransactionStatus.SUCCESS)
                 .build());
-        Blog blog = blogRepository.save(Blog.builder()
+        BlogPost blogPost = blogPostRepository.save(BlogPost.builder()
                 .author(student)
                 .title("Retained Blog")
                 .content("This blog should remain after user soft-delete.")
-                .status(BlogStatus.APPROVED)
+                .status(BlogPostStatus.PUBLISHED)
                 .build());
 
         mockMvc.perform(delete("/api/admin/users/{id}", student.getId())
@@ -454,7 +455,7 @@ class AdminActionControllerTest {
         assertEquals(true, courseRepository.existsById(course.getId()));
         assertEquals(true, courseEnrollmentRepository.existsById(enrollment.getId()));
         assertEquals(true, transactionRepository.existsById(transaction.getId()));
-        assertEquals(true, blogRepository.existsById(blog.getId()));
+        assertEquals(true, blogPostRepository.existsById(blogPost.getId()));
     }
 
     @Test
