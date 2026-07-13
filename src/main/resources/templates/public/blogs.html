@@ -3,53 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blogs - OJTSU26 E-Learning</title>
+    <title>Blogs - LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/public/public.css}">
 </head>
 <body>
 
-<!-- Header -->
-<header th:replace="~{fragments/layout :: header('public')}"></header>
+<header th:replace="~{fragments/layout :: header('blogs')}"></header>
 
-<main class="main-content-full">
-
-    <h1 class="section-title">Blog Articles</h1>
-
-    <!-- Search Bar -->
-    <div class="search-bar">
-        <input type="text" placeholder="Search blog posts...">
-        <button type="button">Search</button>
-    </div>
-
-    <!-- Blog List -->
-    <div class="blog-list">
-        <div class="blog-card">
-            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Getting Started with Spring Boot 3</a></h3>
-            <p class="blog-meta">By John Doe | June 15, 2026</p>
-            <p>Learn how to set up your first Spring Boot 3.x project from scratch and explore the new features in this latest release.</p>
+<main class="public-section">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+        <div>
+            <div class="section-eyebrow">Community Writing</div>
+            <h1 class="section-heading">Published Blogs</h1>
+            <p class="section-lead">Read approved articles from LumiNa learners and instructors.</p>
         </div>
-        <div class="blog-card">
-            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Top 10 Tips for Effective Online Learning</a></h3>
-            <p class="blog-meta">By Jane Smith | June 10, 2026</p>
-            <p>Maximize your online learning experience with these proven strategies used by top-performing students worldwide.</p>
-        </div>
-        <div class="blog-card">
-            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">Understanding REST API Design Principles</a></h3>
-            <p class="blog-meta">By Mike Johnson | June 5, 2026</p>
-            <p>A deep dive into RESTful API design best practices, including naming conventions, versioning, and error handling.</p>
-        </div>
-        <div class="blog-card">
-            <h3><a th:href="@{/public/blog-detail}" style="color: #2563eb; text-decoration: none;">The Future of AI in Education</a></h3>
-            <p class="blog-meta">By Sarah Lee | May 28, 2026</p>
-            <p>Explore how artificial intelligence is transforming the education landscape and what it means for learners and educators.</p>
+        <div style="font-size:0.875rem;color:var(--lumina-gray-500);">
+            <span th:text="${#lists.size(blogs)}">0</span> published posts
         </div>
     </div>
 
+    <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
+
+    <form th:action="@{/blogs}" method="get" class="catalog-search-row" data-loading-form>
+        <div class="search-wrap">
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">Search</span>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="Search published blogs...">
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    <div data-loading-message hidden style="margin-bottom:1rem;color:var(--lumina-gray-500);font-size:0.875rem;">Loading blogs...</div>
+
+    <div th:if="${#lists.isEmpty(blogs)}"
+         style="background:white;border:1px solid var(--lumina-gray-200);border-radius:8px;padding:3rem;text-align:center;color:var(--lumina-gray-500);">
+        No published blogs are available yet.
+    </div>
+
+    <div th:unless="${#lists.isEmpty(blogs)}"
+         style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
+        <article th:each="blog : ${blogs}"
+                 class="public-course-card"
+                 style="padding:1.5rem;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;margin-bottom:0.75rem;"
+                 th:text="${blog.publishedAt == null ? 'Published' : #temporals.format(blog.publishedAt, 'dd MMM yyyy')}">Published</div>
+            <h2 style="font-size:1.125rem;line-height:1.35;margin-bottom:0.5rem;">
+                <a th:href="@{'/blogs/' + ${blog.id}}" th:text="${blog.title}" style="color:var(--lumina-gray-900);text-decoration:none;">Blog title</a>
+            </h2>
+            <p style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-bottom:1rem;">
+                By <strong th:text="${blog.authorName ?: 'LumiNa Author'}">Author</strong>
+            </p>
+            <p style="font-size:0.875rem;color:var(--lumina-gray-600);line-height:1.7;margin-bottom:1.25rem;"
+               th:text="${#strings.abbreviate(blog.content, 180)}">Preview</p>
+            <a th:href="@{'/blogs/' + ${blog.id}}" class="btn btn-secondary btn-sm">Read</a>
+        </article>
+    </div>
 </main>
 
-<!-- Footer -->
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script th:src="@{/js/public/public.js}"></script>
+<script>
+    document.querySelectorAll('[data-loading-form]').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            var loading = document.querySelector('[data-loading-message]');
+            if (loading) loading.hidden = false;
+        });
+    });
+</script>
 </body>
 </html>

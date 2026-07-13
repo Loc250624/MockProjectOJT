@@ -3,12 +3,15 @@ package com.ojtsu26.elearning.controller;
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
+import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
 import com.ojtsu26.elearning.service.UserService;
+import com.ojtsu26.elearning.service.BlogCommentService;
+import com.ojtsu26.elearning.service.BlogPostService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,8 @@ public class AdminActionController {
 
     private final UserService userService;
     private final JwtCookieService jwtCookieService;
+    private final BlogPostService blogPostService;
+    private final BlogCommentService blogCommentService;
 
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
@@ -169,27 +174,85 @@ public class AdminActionController {
     }
 
     @PatchMapping("/blogs/{id}/approve")
-    public ResponseEntity<?> approveBlog(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Approve blog " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<?> approveBlog(@PathVariable Integer id,
+                                         @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogPostService.approve(id, currentUser(currentAdmin)),
+                "Blog approved and published successfully"
+        ));
     }
 
     @PatchMapping("/blogs/{id}/reject")
-    public ResponseEntity<?> rejectBlog(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Reject blog " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<?> rejectBlog(@PathVariable Integer id,
+                                        @RequestBody Map<String, String> request,
+                                        @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogPostService.reject(id, request == null ? null : request.get("rejectionReason"), currentUser(currentAdmin)),
+                "Blog rejected with feedback"
+        ));
+    }
+
+    @PatchMapping("/blogs/{id}/hide")
+    public ResponseEntity<?> hideBlog(@PathVariable Integer id,
+                                      @RequestBody(required = false) Map<String, String> request,
+                                      @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogPostService.hide(id, request == null ? null : request.get("reason"), currentUser(currentAdmin)),
+                "Blog hidden from public pages"
+        ));
+    }
+
+    @PatchMapping("/blogs/{id}/archive")
+    public ResponseEntity<?> archiveBlog(@PathVariable Integer id,
+                                         @RequestBody(required = false) Map<String, String> request,
+                                         @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogPostService.archive(id, request == null ? null : request.get("reason"), currentUser(currentAdmin)),
+                "Blog archived"
+        ));
     }
 
     @DeleteMapping("/blogs/{id}")
-    public ResponseEntity<?> deleteBlog(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete blog " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<?> deleteBlog(@PathVariable Integer id,
+                                        @RequestBody(required = false) Map<String, String> request,
+                                        @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogPostService.archive(id, request == null ? null : request.get("reason"), currentUser(currentAdmin)),
+                "Blog archived"
+        ));
+    }
+
+    @GetMapping("/comments")
+    public ResponseEntity<?> comments(@AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(blogCommentService.findAllForAdmin(currentUser(currentAdmin))));
+    }
+
+    @PatchMapping("/comments/{id}/hide")
+    public ResponseEntity<?> hideComment(@PathVariable Integer id,
+                                         @RequestBody(required = false) Map<String, String> request,
+                                         @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogCommentService.hide(id, request == null ? null : request.get("reason"), currentUser(currentAdmin)),
+                "Comment hidden from public pages"
+        ));
     }
 
     @DeleteMapping("/comments/{id}")
-    public ResponseEntity<?> deleteComment(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete comment " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<?> deleteComment(@PathVariable Integer id,
+                                           @RequestBody(required = false) Map<String, String> request,
+                                           @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        return ResponseEntity.ok(ApiResponse.success(
+                blogCommentService.delete(id, request == null ? null : request.get("reason"), currentUser(currentAdmin)),
+                "Comment deleted from public pages"
+        ));
     }
 
     @PatchMapping("/system-settings")
     public ResponseEntity<?> updateSystemSettings() {
         return ResponseEntity.ok(Map.of("message", "Update system settings placeholder - not yet implemented"));
+    }
+
+    private User currentUser(CustomUserDetails userDetails) {
+        return userDetails == null ? null : userDetails.getUser();
     }
 }

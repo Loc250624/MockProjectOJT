@@ -1,38 +1,44 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
+import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
+import com.ojtsu26.elearning.dto.request.LessonRequestDTO;
+import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
+import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
+import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
+import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
+import com.ojtsu26.elearning.service.BlogPostService;
+import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.service.LessonService;
+import com.ojtsu26.elearning.service.RoadmapService;
 import com.ojtsu26.elearning.service.UserService;
+import com.ojtsu26.elearning.service.VideoService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.validation.BindingResult;
-import jakarta.validation.Valid;
-import com.ojtsu26.elearning.service.RoadmapService;
-import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
-import com.ojtsu26.elearning.model.entity.User;
-import com.ojtsu26.elearning.security.CustomUserDetails;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.Map;
 import java.util.Objects;
-
-import com.ojtsu26.elearning.service.CourseService;
-import com.ojtsu26.elearning.service.LessonService;
-import com.ojtsu26.elearning.service.VideoService;
-import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
-import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
-import com.ojtsu26.elearning.dto.request.LessonRequestDTO;
-import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
 import java.util.List;
 
 @Controller
@@ -46,6 +52,7 @@ public class TeacherActionController {
     private final VideoService videoService;
     private final UserService userService;
     private final JwtCookieService jwtCookieService;
+    private final BlogPostService blogPostService;
 
     @PostMapping("/courses/create")
     public String createCourse(@Valid @ModelAttribute("course") CourseRequestDTO requestDTO, 
@@ -302,13 +309,51 @@ public class TeacherActionController {
     }
 
     @PostMapping("/blogs")
-    public ResponseEntity<?> createBlog() {
-        return ResponseEntity.ok(Map.of("message", "Create blog placeholder - not yet implemented"));
+    public String createBlog(@Valid @ModelAttribute("blogPost") BlogPostRequestDTO requestDTO,
+                             BindingResult bindingResult,
+                             @AuthenticationPrincipal CustomUserDetails userDetails,
+                             RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.blogPost", bindingResult);
+            redirectAttributes.addFlashAttribute("blogPost", requestDTO);
+            return "redirect:/teacher/blogs/editor";
+        }
+        try {
+            blogPostService.createDraft(requestDTO, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog draft saved successfully.");
+            return "redirect:/teacher/blogs";
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("blogPost", requestDTO);
+            return "redirect:/teacher/blogs/editor";
+        }
     }
 
     @PatchMapping("/blogs/{id}")
     public ResponseEntity<?> updateBlog(@PathVariable Long id) {
         return ResponseEntity.ok(Map.of("message", "Update blog " + id + " placeholder - not yet implemented"));
+    }
+
+    @PostMapping("/blogs/{id}/edit")
+    public String updateRejectedBlog(@PathVariable Integer id,
+                                     @Valid @ModelAttribute("blogPost") BlogPostRequestDTO requestDTO,
+                                     BindingResult bindingResult,
+                                     @AuthenticationPrincipal CustomUserDetails userDetails,
+                                     RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.blogPost", bindingResult);
+            redirectAttributes.addFlashAttribute("blogPost", requestDTO);
+            return "redirect:/teacher/blogs/editor/" + id;
+        }
+        try {
+            blogPostService.updateRejected(id, requestDTO, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Rejected blog updated. Submit it again when ready.");
+            return "redirect:/teacher/blogs";
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("blogPost", requestDTO);
+            return "redirect:/teacher/blogs/editor/" + id;
+        }
     }
 
     @DeleteMapping("/blogs/{id}")
@@ -317,8 +362,16 @@ public class TeacherActionController {
     }
 
     @PostMapping("/blogs/{id}/submit")
-    public ResponseEntity<?> submitBlog(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Submit blog " + id + " for review placeholder - not yet implemented"));
+    public String submitBlog(@PathVariable Integer id,
+                             @AuthenticationPrincipal CustomUserDetails userDetails,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            blogPostService.submitForReview(id, currentUser(userDetails));
+            redirectAttributes.addFlashAttribute("successMessage", "Blog submitted for review.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/teacher/blogs";
     }
 
     @PostMapping("/lessons/create")
@@ -483,5 +536,9 @@ public class TeacherActionController {
         String redirect = "redirect:/teacher/videos?lessonId=" + lessonId;
         if (courseId != null) redirect += "&courseId=" + courseId;
         return redirect;
+    }
+
+    private User currentUser(CustomUserDetails userDetails) {
+        return userDetails == null ? null : userDetails.getUser();
     }
 }

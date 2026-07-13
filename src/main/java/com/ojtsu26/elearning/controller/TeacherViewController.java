@@ -1,34 +1,37 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
+import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
+import com.ojtsu26.elearning.dto.request.LessonRequestDTO;
+import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
+import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
+import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
+import com.ojtsu26.elearning.dto.response.BlogPostResponseDTO;
+import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
+import com.ojtsu26.elearning.dto.response.RoadmapResponseDTO;
+import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
+import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.service.BlogPostService;
+import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.service.LessonService;
 import com.ojtsu26.elearning.service.ProfileService;
+import com.ojtsu26.elearning.service.RoadmapService;
+import com.ojtsu26.elearning.service.TeacherCourseStudentService;
+import com.ojtsu26.elearning.service.VideoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import com.ojtsu26.elearning.service.RoadmapService;
-import com.ojtsu26.elearning.service.CourseService;
-import com.ojtsu26.elearning.service.CategoryService;
-import com.ojtsu26.elearning.service.LessonService;
-import com.ojtsu26.elearning.service.TeacherCourseStudentService;
-import com.ojtsu26.elearning.service.VideoService;
-import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
-import com.ojtsu26.elearning.dto.response.RoadmapResponseDTO;
-import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
-import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
-import com.ojtsu26.elearning.dto.request.LessonRequestDTO;
-import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
-import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
-import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
-import com.ojtsu26.elearning.model.enums.LessonType;
-import com.ojtsu26.elearning.security.CustomUserDetails;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -44,6 +47,7 @@ public class TeacherViewController {
     private final VideoService videoService;
     private final ProfileService profileService;
     private final TeacherCourseStudentService teacherCourseStudentService;
+    private final BlogPostService blogPostService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
@@ -397,10 +401,41 @@ public class TeacherViewController {
     public String grading() { return "teacher/grading"; }
 
     @GetMapping("/blogs")
-    public String blogs() { return "teacher/blogs"; }
+    public String blogs(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        model.addAttribute("blogs", blogPostService.findMine(currentUser(userDetails)));
+        return "teacher/blogs";
+    }
 
     @GetMapping("/blogs/editor")
-    public String blogEditor() { return "teacher/blog-editor"; }
+    public String blogEditor(Model model) {
+        if (!model.containsAttribute("blogPost")) {
+            model.addAttribute("blogPost", new BlogPostRequestDTO());
+        }
+        return "teacher/blog-editor";
+    }
+
+    @GetMapping("/blogs/editor/{id}")
+    public String editRejectedBlog(@PathVariable Integer id,
+                                   Model model,
+                                   @AuthenticationPrincipal CustomUserDetails userDetails,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            BlogPostResponseDTO blog = blogPostService.findEditableRejectedByAuthor(id, currentUser(userDetails));
+            if (!model.containsAttribute("blogPost")) {
+                BlogPostRequestDTO requestDTO = new BlogPostRequestDTO();
+                requestDTO.setTitle(blog.getTitle());
+                requestDTO.setContent(blog.getContent());
+                model.addAttribute("blogPost", requestDTO);
+            }
+            model.addAttribute("editMode", true);
+            model.addAttribute("blogId", id);
+            model.addAttribute("rejectionReason", blog.getRejectionReason());
+            return "teacher/blog-editor";
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/teacher/blogs";
+        }
+    }
 
     @GetMapping("/blogs/submissions")
     public String blogSubmissions() { return "teacher/blog-submissions"; }
@@ -456,5 +491,9 @@ public class TeacherViewController {
             }
         }
         return "teacher/progress-report";
+    }
+
+    private User currentUser(CustomUserDetails userDetails) {
+        return userDetails == null ? null : userDetails.getUser();
     }
 }

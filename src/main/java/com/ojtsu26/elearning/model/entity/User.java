@@ -22,16 +22,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    
     private String fullName;
 
     @Column(unique = true)
     private String email;
 
-    
     private String passwordHash;
 
-    
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
@@ -74,11 +71,4 @@ public class User {
     @JsonManagedReference("transaction-student")
     private List<Transaction> transactions;
 
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("blog-author")
-    private List<Blog> blogs;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("comment-user")
-    private List<Comment> comments;
 }

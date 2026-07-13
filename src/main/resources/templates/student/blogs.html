@@ -1,21 +1,110 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blogs - Student - OJTSU26 E-Learning</title>
+    <title>My Blogs - Student Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>Blogs</h1>
-            <div class="search-bar"><input type="text"><button>Search</button></div><div class="course-grid"><div class="course-card"><h3>Learning Java</h3><p>By Student A</p><a href="/student/blogs/detail">Read More</a></div></div>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-student('My Blogs')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;">
+                <div>
+                    <h1 class="page-title">My Blogs</h1>
+                    <p class="page-subtitle">Keep learning notes as drafts and submit your best posts for review.</p>
+                </div>
+                <a th:href="@{/student/blogs/editor}" class="btn btn-primary">Write New Blog</a>
+            </div>
+
+            <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
+            <div data-loading-message hidden style="margin-bottom:1rem;color:var(--lumina-gray-500);font-size:0.875rem;">Submitting blog...</div>
+
+            <div class="admin-table-container" style="overflow-x:auto;">
+                <div class="admin-table-toolbar">
+                    <div>
+                        <span style="font-weight:600;font-size:0.875rem;color:var(--lumina-gray-800);">
+                            Blog Drafts
+                            <span th:text="'(' + ${#lists.size(blogs)} + ')'" style="color:var(--lumina-gray-500);font-weight:400;"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <table class="data-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                    <tr>
+                        <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;border-bottom:1px solid var(--lumina-gray-200);">Title</th>
+                        <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;border-bottom:1px solid var(--lumina-gray-200);">Status</th>
+                        <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;border-bottom:1px solid var(--lumina-gray-200);">Updated</th>
+                        <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;border-bottom:1px solid var(--lumina-gray-200);">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="blog : ${blogs}" style="border-bottom:1px solid var(--lumina-gray-100);">
+                        <td style="padding:1rem 1.5rem;">
+                            <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);" th:text="${blog.title}">Blog title</div>
+                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${#strings.abbreviate(blog.content, 120)}">Preview</div>
+                        </td>
+                        <td style="padding:1rem 1.5rem;">
+                            <span class="badge"
+                                  th:classappend="${blog.status.name() == 'PUBLISHED' ? 'badge-success' : (blog.status.name() == 'PENDING_REVIEW' ? 'badge-warning' : (blog.status.name() == 'REJECTED' ? 'badge-danger' : 'badge-secondary'))}"
+                                  th:text="${blog.status.name() == 'PENDING_REVIEW' ? 'Pending Review' : blog.status.name()}">Draft</span>
+                            <div th:if="${blog.status.name() == 'REJECTED' && blog.rejectionReason != null && !blog.rejectionReason.isBlank()}"
+                                 style="margin-top:0.4rem;padding:0.4rem 0.6rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:0.75rem;color:#dc2626;">
+                                <strong>Reason:</strong> <span th:text="${blog.rejectionReason}"></span>
+                            </div>
+                        </td>
+                        <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-600);"
+                            th:text="${blog.updatedAt == null ? 'Not saved yet' : #temporals.format(blog.updatedAt, 'dd/MM/yyyy HH:mm')}">Date</td>
+                        <td style="padding:1rem 1.5rem;">
+                            <form th:if="${blog.status.name() == 'DRAFT' || blog.status.name() == 'REJECTED'}"
+                                  th:action="@{'/student/blogs/' + ${blog.id} + '/submit'}"
+                                  method="post"
+                                  data-loading-form
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Submit this blog for review?');">
+                                <button type="submit" class="btn btn-primary btn-sm">Submit for Review</button>
+                            </form>
+                            <a th:if="${blog.status.name() == 'REJECTED'}"
+                               th:href="@{'/student/blogs/editor/' + ${blog.id}}"
+                               class="btn btn-secondary btn-sm"
+                               style="margin-left:0.5rem;">Edit</a>
+                            <span th:if="${blog.status.name() == 'PENDING_REVIEW'}" style="font-size:0.8125rem;color:var(--lumina-gray-500);">Waiting for admin review</span>
+                            <span th:if="${blog.status.name() == 'PUBLISHED'}" style="font-size:0.8125rem;color:var(--lumina-success);">Published</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(blogs)}">
+                        <td colspan="4" style="padding:3rem;text-align:center;color:var(--lumina-gray-500);">
+                            No blog drafts yet. <a th:href="@{/student/blogs/editor}" style="color:var(--lumina-blue);font-weight:600;">Write your first blog</a>.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+</div>
+
+<script th:src="@{/js/student/student.js}"></script>
+<script>
+document.querySelectorAll('[data-loading-form]').forEach(function (form) {
+    form.addEventListener('submit', function () {
+        var loading = document.querySelector('[data-loading-message]');
+        if (loading) loading.hidden = false;
+    });
+});
+</script>
 </body>
 </html>
