@@ -31,6 +31,10 @@ public class Testcase {
     
     private Boolean isHidden;
 
+    private java.math.BigDecimal points;
+
+    private Integer displayOrder;
+
     @ManyToOne
     @JoinColumn(name = "assignment_id")
     @JsonBackReference("testcase-assignment")

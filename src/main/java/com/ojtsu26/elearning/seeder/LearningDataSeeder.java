@@ -48,6 +48,11 @@ public class LearningDataSeeder {
             Quiz quiz = Quiz.builder()
                     .lesson(lesson)
                     .title("Quiz: " + lesson.getTitle())
+                    .description("Auto-generated assessment quiz for " + lesson.getTitle())
+                    .durationMinutes(30)
+                    .maxAttempts(2)
+                    .status(QuizStatus.PUBLISHED)
+                    .createdBy(lesson.getCourse() == null ? null : lesson.getCourse().getInstructor())
                     .passingScore(new BigDecimal("70.00"))
                     .build();
             quiz = quizRepository.save(quiz);
@@ -58,8 +63,11 @@ public class LearningDataSeeder {
                 Question question = Question.builder()
                         .quiz(quiz)
                         .questionText("Question " + (i + 1) + " for " + lesson.getTitle())
-                        .optionsJson("[\"A\", \"B\", \"C\", \"D\"]")
-                        .correctAnswer("A")
+                        .optionsJson("[{\"content\":\"A\",\"correct\":true},{\"content\":\"B\",\"correct\":false},{\"content\":\"C\",\"correct\":false},{\"content\":\"D\",\"correct\":false}]")
+                        .correctAnswer("0")
+                        .questionType(QuestionType.SINGLE_CHOICE)
+                        .points(BigDecimal.ONE)
+                        .displayOrder(i + 1)
                         .build();
                 questionRepository.save(question);
                 questionCount++;
@@ -81,6 +89,8 @@ public class LearningDataSeeder {
                     .starterCode("public class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}")
                     .allowedLanguages("Java, Python")
                     .timeLimitMs(2000)
+                    .maxScore(new BigDecimal("100.00"))
+                    .status("PUBLISHED")
                     .build();
             assignment = codingAssignmentRepository.save(assignment);
             assignmentCount++;
@@ -92,6 +102,8 @@ public class LearningDataSeeder {
                         .inputData("input " + (i + 1))
                         .expectedOutput("output " + (i + 1))
                         .isHidden(SeederUtils.getRandomBoolean())
+                        .points(BigDecimal.ONE)
+                        .displayOrder(i + 1)
                         .build();
                 testcaseRepository.save(testcase);
             }
@@ -183,12 +195,16 @@ public class LearningDataSeeder {
             for (Lesson lesson : assignableLessons) {
                 if (submissionCount >= targetSubmissions) break;
                 if (SeederUtils.getRandomBoolean()) { // 50% chance they submitted it
+                    CodingAssignment assignment = lesson.getCodingassignment();
                     Submission submission = Submission.builder()
                             .student(enrollment.getStudent())
                             .lesson(lesson)
+                            .assignment(assignment)
                             .score(new BigDecimal(SeederUtils.getRandomInt(0, 100)))
                             .status(SeederUtils.getRandomElement(statuses))
                             .submittedContent("My solution code or quiz answers")
+                            .codeLanguage(assignment == null ? null : "Java")
+                            .codeContent(assignment == null ? null : "public class Main { public static void main(String[] args) { System.out.println(\"output 1\"); } }")
                             .teacherFeedback("Good job!")
                             .submittedAt(SeederUtils.getRandomPastDate(15))
                             .build();

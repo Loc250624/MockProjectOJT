@@ -23,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +53,7 @@ public class StudentViewController {
     private final StudentLearningService studentLearningService;
     private final CurrencyConversionService currencyConversionService;
     private final BlogPostService blogPostService;
+    private final AssessmentService assessmentService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -183,11 +185,40 @@ public class StudentViewController {
     @GetMapping("/quiz")
     public String quiz() { return "student/quiz"; }
 
+    @GetMapping("/courses/{courseId}/quizzes/{quizId}/take")
+    public String takeQuiz(@PathVariable Integer courseId,
+                           @PathVariable Integer quizId,
+                           Model model) {
+        model.addAttribute("quiz", assessmentService.getStudentQuiz(courseId, quizId));
+        return "student/quiz";
+    }
+
     @GetMapping("/code-assignment")
     public String codeAssignment() { return "student/code-assignment"; }
 
+    @GetMapping("/assignments/{assignmentId}/submit")
+    public String submitAssignment(@PathVariable Integer assignmentId, Model model) {
+        model.addAttribute("submission", assessmentService.getAssignmentForSubmission(assignmentId));
+        return "student/code-assignment";
+    }
+
     @GetMapping("/results")
-    public String results() { return "student/results"; }
+    public String results(Model model) {
+        model.addAttribute("results", assessmentService.getStudentResults());
+        return "student/results";
+    }
+
+    @GetMapping("/quizzes/{attemptId}/result")
+    public String quizResult(@PathVariable Integer attemptId, Model model) {
+        model.addAttribute("attempt", assessmentService.getStudentQuizResult(attemptId));
+        return "student/quiz-result";
+    }
+
+    @GetMapping("/submissions/{submissionId}/result")
+    public String submissionResult(@PathVariable Integer submissionId, Model model) {
+        model.addAttribute("submission", assessmentService.getStudentSubmissionResult(submissionId));
+        return "student/submission-result";
+    }
 
     @GetMapping("/certificates")
     public String certificates() { return "student/certificates"; }

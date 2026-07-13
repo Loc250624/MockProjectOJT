@@ -45,4 +45,14 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
     Optional<Submission> findOwnedLessonSubmission(@Param("submissionId") Integer submissionId,
                                                    @Param("studentId") Integer studentId,
                                                    @Param("lessonId") Integer lessonId);
+
+    List<Submission> findByStudentIdOrderBySubmittedAtDesc(Integer studentId);
+
+    Optional<Submission> findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(Integer assignmentId, Integer studentId);
+
+    @Query("select s from Submission s join fetch s.assignment a join fetch a.lesson l join fetch l.course c left join fetch c.instructor where s.id = :submissionId")
+    Optional<Submission> findByIdWithAssignmentCourse(@Param("submissionId") Integer submissionId);
+
+    @Query("select s from Submission s join fetch s.student join fetch s.assignment a join fetch a.lesson l where a.id = :assignmentId order by s.submittedAt desc")
+    List<Submission> findByAssignmentIdWithStudent(@Param("assignmentId") Integer assignmentId);
 }

@@ -29,6 +29,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -48,6 +49,7 @@ public class TeacherViewController {
     private final ProfileService profileService;
     private final TeacherCourseStudentService teacherCourseStudentService;
     private final BlogPostService blogPostService;
+    private final AssessmentService assessmentService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "teacher/dashboard"; }
@@ -385,6 +387,13 @@ public class TeacherViewController {
     @GetMapping("/quizzes")
     public String quizzes() { return "teacher/quizzes"; }
 
+    @GetMapping("/courses/{courseId}/assessments/quizzes")
+    public String courseQuizzes(@PathVariable Integer courseId, Model model) {
+        model.addAttribute("courseId", courseId);
+        model.addAttribute("quizzes", assessmentService.getTeacherCourseQuizzes(courseId));
+        return "teacher/quizzes";
+    }
+
     @GetMapping("/quizzes/create")
     public String quizCreate() { return "teacher/quiz-form"; }
 
@@ -394,11 +403,25 @@ public class TeacherViewController {
     @GetMapping("/testcases")
     public String testcases() { return "teacher/testcases"; }
 
+    @GetMapping("/assignments/{assignmentId}/testcases")
+    public String assignmentTestcases(@PathVariable Integer assignmentId, Model model) {
+        model.addAttribute("assignmentId", assignmentId);
+        model.addAttribute("testcases", assessmentService.getTeacherTestcases(assignmentId));
+        return "teacher/testcases";
+    }
+
     @GetMapping("/assignments")
     public String assignments() { return "teacher/assignments"; }
 
     @GetMapping("/grading")
     public String grading() { return "teacher/grading"; }
+
+    @GetMapping("/assignments/{assignmentId}/submissions")
+    public String assignmentSubmissions(@PathVariable Integer assignmentId, Model model) {
+        model.addAttribute("assignmentId", assignmentId);
+        model.addAttribute("submissions", assessmentService.getTeacherAssignmentSubmissions(assignmentId));
+        return "teacher/grading";
+    }
 
     @GetMapping("/blogs")
     public String blogs(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {

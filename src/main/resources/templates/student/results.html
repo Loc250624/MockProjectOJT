@@ -1,21 +1,40 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Results - Student - OJTSU26 E-Learning</title>
+    <title>Assessment Results</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('student')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
-        <main class="main-content">
-            <h1>My Results</h1>
-            <table class="table"><thead><tr><th>Course</th><th>Assessment</th><th>Type</th><th>Score</th><th>Status</th></tr></thead><tbody><tr><td>Java Basics</td><td>Quiz 1</td><td>Quiz</td><td>90</td><td>Passed</td></tr></tbody></table>
-        </main>
-    </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/student/student.js}"></script>
+<header th:replace="~{fragments/layout :: header('student')}"></header>
+<div class="layout-container">
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+    <main class="main-content assessment-content">
+        <h1>Assessment Results</h1>
+        <section class="assessment-panel">
+            <h2>Quizzes</h2>
+            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.quizAttempts)}">No quiz results yet.</div>
+            <div class="assessment-list" th:unless="${results == null || #lists.isEmpty(results.quizAttempts)}">
+                <a class="result-row" th:each="attempt : ${results.quizAttempts}" th:href="@{/student/quizzes/{id}/result(id=${attempt.id})}">
+                    <span th:text="${attempt.quiz.title}">Quiz</span>
+                    <strong th:text="${attempt.score != null ? attempt.score + '%' : attempt.status}">Score</strong>
+                </a>
+            </div>
+        </section>
+        <section class="assessment-panel">
+            <h2>Assignments</h2>
+            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.submissions)}">No assignment submissions yet.</div>
+            <div class="assessment-list" th:unless="${results == null || #lists.isEmpty(results.submissions)}">
+                <a class="result-row" th:each="submission : ${results.submissions}" th:href="@{/student/submissions/{id}/result(id=${submission.id})}">
+                    <span th:text="${submission.assignmentTitle}">Assignment</span>
+                    <strong th:text="${submission.score != null ? submission.score + '%' : submission.status}">Status</strong>
+                </a>
+            </div>
+        </section>
+    </main>
+</div>
+<script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

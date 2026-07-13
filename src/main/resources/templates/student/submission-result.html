@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submission Result</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('student')}"></header>
+<main class="assessment-shell single">
+    <section class="assessment-panel">
+        <div class="assessment-heading">
+            <div>
+                <p class="eyebrow">Submission result</p>
+                <h1 th:text="${submission.assignmentTitle}">Assignment</h1>
+            </div>
+            <strong class="score-pill" th:text="${submission.score != null ? submission.score + '%' : submission.status}">Status</strong>
+        </div>
+        <p th:text="${submission.feedback != null ? submission.feedback : 'No teacher feedback yet.'}">Feedback</p>
+        <pre th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge log</pre>
+    </section>
+</main>
+</body>
+</html>

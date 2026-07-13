@@ -745,3 +745,140 @@
     gap: 0.45rem;
   }
 }
+/* Assessment management */
+.assessment-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.assessment-panel,
+.assessment-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.assessment-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.assessment-heading.inline {
+  align-items: center;
+}
+
+.assessment-heading h1,
+.assessment-heading h2,
+.assessment-heading h3 {
+  margin: 0;
+}
+
+.assessment-heading p,
+.eyebrow {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.assessment-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.assessment-form.compact {
+  margin-top: 0.75rem;
+}
+
+.assessment-form input,
+.assessment-form textarea,
+.assessment-form select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.7rem;
+  font: inherit;
+}
+
+.assessment-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.assessment-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.assessment-list.small {
+  margin-top: 0.75rem;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: #ffffff;
+}
+
+.assessment-message {
+  min-height: 1.25rem;
+  color: #475569;
+}
+
+.assessment-message.error {
+  color: #dc2626;
+}
+
+.assessment-message.success {
+  color: #16a34a;
+}
+
+.assessment-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assessment-checkbox input {
+  width: auto;
+}
+
+.empty-state {
+  padding: 1.5rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  text-align: center;
+}
+
+pre {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+@media (max-width: 900px) {
+  .assessment-heading,
+  .assessment-heading.inline {
+    flex-direction: column;
+  }
+  .assessment-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
