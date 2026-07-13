@@ -81,7 +81,7 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
             return unavailableQuiz(courseId, lessonId, "This quiz is not configured yet.");
         }
 
-        List<Question> questions = questionRepository.findByQuizIdOrderByIdAsc(quiz.getId());
+        List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
         if (questions.isEmpty()) {
             return unavailableQuiz(courseId, lessonId, "This quiz has no questions yet.");
         }
@@ -208,7 +208,7 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     }
 
     private List<Question> requireQuizQuestions(Quiz quiz) {
-        List<Question> questions = questionRepository.findByQuizIdOrderByIdAsc(quiz.getId());
+        List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
         if (questions.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "This quiz has no questions yet.");
         }

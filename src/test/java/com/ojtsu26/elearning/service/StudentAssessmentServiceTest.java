@@ -125,7 +125,7 @@ class StudentAssessmentServiceTest {
                 .submittedContent("{\"type\":\"QUIZ\",\"state\":\"DRAFT\",\"answers\":{\"401\":\"A\"}}")
                 .build();
         when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
-        when(questionRepository.findByQuizIdOrderByIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
         when(submissionRepository.findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(1, 201, SubmissionStatus.PENDING_REVIEW))
                 .thenReturn(Optional.of(pending));
 
@@ -155,7 +155,7 @@ class StudentAssessmentServiceTest {
         stubAccessible(quizLesson);
         Submission pending = Submission.builder().id(501).student(student).lesson(quizLesson).status(SubmissionStatus.PENDING_REVIEW).build();
         when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
-        when(questionRepository.findByQuizIdOrderByIdAsc(301)).thenReturn(List.of(questionOne));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne));
         when(submissionRepository.findOwnedLessonSubmission(501, 1, 201)).thenReturn(Optional.of(pending));
 
         StudentQuizSubmissionRequestDTO request = quizRequest(501, Map.of(999, "A"));
@@ -171,7 +171,7 @@ class StudentAssessmentServiceTest {
         CourseEnrollment enrollment = CourseEnrollment.builder().id(20).student(student).course(course).build();
         LessonProgress progress = LessonProgress.builder().enrollment(enrollment).lesson(quizLesson).isCompleted(false).build();
         when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
-        when(questionRepository.findByQuizIdOrderByIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
         when(submissionRepository.findOwnedLessonSubmission(501, 1, 201)).thenReturn(Optional.of(pending));
         when(submissionRepository.save(any(Submission.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(enrollmentRepository.findByStudentIdAndCourseIdForUpdate(1, 10)).thenReturn(Optional.of(enrollment));

@@ -13,6 +13,7 @@ import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
+import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.BlogPostService;
 import com.ojtsu26.elearning.service.CategoryService;
 import com.ojtsu26.elearning.service.CourseService;
