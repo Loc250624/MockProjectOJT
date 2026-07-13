@@ -183,16 +183,19 @@ public class AdminViewController {
     public String analytics() { return "admin/analytics"; }
 
     @GetMapping("/statistics/students")
-    public String studentStatistics() { return "admin/student-statistics"; }
+    public String studentStatistics() { return "admin/analytics"; }
 
     @GetMapping("/reports/revenue")
     public String revenueReport() { return "admin/revenue-report"; }
+
+    @GetMapping("/analytics/revenue")
+    public String analyticsRevenueReport() { return "admin/revenue-report"; }
 
     @GetMapping("/settings")
     public String settings() { return "admin/settings"; }
 
     @GetMapping("/system-settings")
-    public String systemSettings() { return "admin/system-settings"; }
+    public String systemSettings() { return "admin/settings"; }
 
     @PostMapping("/categories/create")
     public String createCategory(@Valid @ModelAttribute("category") CategoryRequestDTO requestDTO, 

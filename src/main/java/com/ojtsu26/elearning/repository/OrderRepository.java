@@ -19,6 +19,12 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> findByStatusAndExpiredAtBefore(OrderStatus status, LocalDateTime dateTime);
 
+    long countByStatus(OrderStatus status);
+
+    long countByStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(OrderStatus status,
+                                                                       LocalDateTime from,
+                                                                       LocalDateTime to);
+
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"items"})
     @Query("SELECT o FROM Order o WHERE o.user.id = :studentId " +
            "AND EXISTS (SELECT oi FROM OrderItem oi WHERE oi.order.id = o.id AND oi.course.id = :courseId) " +
