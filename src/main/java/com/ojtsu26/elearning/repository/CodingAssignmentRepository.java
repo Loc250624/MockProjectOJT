@@ -4,6 +4,9 @@ import com.ojtsu26.elearning.model.entity.CodingAssignment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface CodingAssignmentRepository extends JpaRepository<CodingAssignment, Integer> {
+    Optional<CodingAssignment> findByLessonId(Integer lessonId);
 }

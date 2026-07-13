@@ -25,10 +25,14 @@ public class CodingAssignment {
     
     private String title;
 
-    
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String problemStatement;
 
-    
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String starterCode;
+
     private String allowedLanguages;
 
     

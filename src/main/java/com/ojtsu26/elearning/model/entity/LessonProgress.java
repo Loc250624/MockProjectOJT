@@ -37,6 +37,12 @@ public class LessonProgress {
 
     private Integer watchedSeconds;
 
+    private Integer lastPositionSeconds;
+
+    private Integer maxReachedSeconds;
+
+    private Integer durationSeconds;
+
     @UpdateTimestamp
     private java.time.LocalDateTime lastUpdatedAt;
 

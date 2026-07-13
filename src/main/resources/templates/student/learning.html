@@ -41,9 +41,12 @@
         <div class="learning-progress-summary"
              th:aria-label="${'Course progress ' + learningCourse.progressPercentage + ' percent'}">
             <div class="learning-progress-meta">
-                <span th:text="${learningCourse.completedLessons} + ' of ' + ${learningCourse.totalLessons} + ' lessons'">0 of 0 lessons</span>
-                <strong th:text="${learningCourse.progressPercentage} + '%'">0%</strong>
+                <span id="course-progress-count" th:text="${learningCourse.completedLessons} + ' of ' + ${learningCourse.totalLessons} + ' lessons'">0 of 0 lessons</span>
+                <strong id="course-progress-percent" th:text="${learningCourse.progressPercentage} + '%'">0%</strong>
             </div>
+            <div class="learning-progress-state"
+                 id="course-status"
+                 th:text="${learningCourse.courseStatus == 'COMPLETED' ? 'Completed' : (learningCourse.courseStatus == 'IN_PROGRESS' ? 'In Progress' : 'Not Started')}">Not Started</div>
             <div class="progress-bar-wrap">
                 <div class="progress-bar-fill" th:style="'width:' + ${learningCourse.progressPercentage} + '%;'"></div>
             </div>
@@ -54,13 +57,15 @@
         <summary>Open curriculum</summary>
         <div class="learning-lesson-list">
             <a th:each="lesson : ${learningCourse.lessons}"
-               th:href="@{/student/learning(courseId=${learningCourse.courseId},lessonId=${lesson.id})}"
+               th:href="${lesson.locked ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + lesson.id}"
                class="learning-lesson-link"
-               th:classappend="${lesson.current ? ' active' : ''}">
+               th:classappend="${(lesson.current ? ' active' : '') + (lesson.locked ? ' locked' : '')}"
+               th:aria-disabled="${lesson.locked}"
+               th:title="${lesson.lockReason}">
                 <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
                 <span>
                     <strong th:text="${lesson.title}">Lesson title</strong>
-                    <small th:text="${lesson.completed ? 'Completed' : lesson.type}">VIDEO</small>
+                    <small th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed' : lesson.type)}">VIDEO</small>
                 </span>
             </a>
         </div>
@@ -78,14 +83,16 @@
             </div>
             <div class="learning-lesson-list" th:unless="${#lists.isEmpty(learningCourse.lessons)}">
                 <a th:each="lesson : ${learningCourse.lessons}"
-                   th:href="@{/student/learning(courseId=${learningCourse.courseId},lessonId=${lesson.id})}"
+                   th:href="${lesson.locked ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + lesson.id}"
                    class="learning-lesson-link"
-                   th:classappend="${lesson.current ? ' active' : ''}"
-                   th:aria-current="${lesson.current ? 'page' : null}">
+                   th:classappend="${(lesson.current ? ' active' : '') + (lesson.locked ? ' locked' : '')}"
+                   th:aria-current="${lesson.current ? 'page' : null}"
+                   th:aria-disabled="${lesson.locked}"
+                   th:title="${lesson.lockReason}">
                     <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
                     <span>
                         <strong th:text="${lesson.title}">Lesson title</strong>
-                        <small th:text="${lesson.completed ? 'Completed lesson' : lesson.type + ' lesson'}">VIDEO lesson</small>
+                        <small th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed lesson' : lesson.type + ' lesson')}">VIDEO lesson</small>
                     </span>
                 </a>
             </div>
@@ -109,7 +116,7 @@
                           th:text="${learningCourse.activeLesson.completed ? 'Completed' : 'In progress'}">In progress</span>
                 </div>
 
-                <div class="learning-video-wrap" th:if="${learningCourse.activeLesson.videoUrl != null && !learningCourse.activeLesson.videoUrl.isBlank()}">
+                <div class="learning-video-wrap" th:if="${learningCourse.activeLesson.videoPlayable}">
                     <!-- Embedded Iframe Video Player (YouTube, etc.) -->
                     <iframe th:if="${learningCourse.activeLesson.embedUrl != null && !learningCourse.activeLesson.embedUrl.isBlank()}"
                             th:src="${learningCourse.activeLesson.embedUrl}"
@@ -117,6 +124,9 @@
                             th:data-course-id="${learningCourse.courseId}"
                             th:data-lesson-id="${learningCourse.activeLesson.id}"
                             th:data-watched-seconds="${learningCourse.activeLesson.watchedSeconds == null ? 0 : learningCourse.activeLesson.watchedSeconds}"
+                            th:data-last-position-seconds="${learningCourse.activeLesson.lastPositionSeconds == null ? 0 : learningCourse.activeLesson.lastPositionSeconds}"
+                            th:data-max-reached-seconds="${learningCourse.activeLesson.maxReachedSeconds == null ? 0 : learningCourse.activeLesson.maxReachedSeconds}"
+                            th:data-duration-seconds="${learningCourse.activeLesson.videoDurationSeconds == null ? 0 : learningCourse.activeLesson.videoDurationSeconds}"
                             data-learning-video="true"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
@@ -128,20 +138,23 @@
                            th:data-course-id="${learningCourse.courseId}"
                            th:data-lesson-id="${learningCourse.activeLesson.id}"
                            th:data-watched-seconds="${learningCourse.activeLesson.watchedSeconds == null ? 0 : learningCourse.activeLesson.watchedSeconds}"
+                           th:data-last-position-seconds="${learningCourse.activeLesson.lastPositionSeconds == null ? 0 : learningCourse.activeLesson.lastPositionSeconds}"
+                           th:data-max-reached-seconds="${learningCourse.activeLesson.maxReachedSeconds == null ? 0 : learningCourse.activeLesson.maxReachedSeconds}"
+                           th:data-duration-seconds="${learningCourse.activeLesson.videoDurationSeconds == null ? 0 : learningCourse.activeLesson.videoDurationSeconds}"
                            data-learning-video="true">
                         <source th:src="${learningCourse.activeLesson.videoUrl}" type="video/mp4">
                         Your browser cannot play this video.
                     </video>
                     <p class="learning-help" id="video-progress-help"
-                       th:text="${learningCourse.activeLesson.watchedSeconds == null || learningCourse.activeLesson.watchedSeconds == 0 ? 'Video progress will save as you watch.' : 'Saved through ' + learningCourse.activeLesson.watchedSeconds + ' seconds.'}">
+                       th:text="${learningCourse.activeLesson.lastPositionSeconds == null || learningCourse.activeLesson.lastPositionSeconds == 0 ? 'Video progress will save as you watch.' : 'Resume position ' + learningCourse.activeLesson.lastPositionSeconds + ' seconds.'}">
                         Video progress will save as you watch.
                     </p>
-                    <p class="learning-help">If the video does not load, try refreshing the page or contact support.</p>
+                    <p class="learning-help" id="video-media-error" hidden></p>
                 </div>
 
-                <div class="learning-video-missing" th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'VIDEO' && (learningCourse.activeLesson.videoUrl == null || learningCourse.activeLesson.videoUrl.isBlank())}">
+                <div class="learning-video-missing" th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'VIDEO' && !learningCourse.activeLesson.videoPlayable}">
                     <strong>Video unavailable</strong>
-                    <span>This lesson video is not available right now.</span>
+                    <span th:text="${learningCourse.activeLesson.videoUnavailableReason == null ? 'This lesson video is not available right now.' : learningCourse.activeLesson.videoUnavailableReason}">This lesson video is not available right now.</span>
                 </div>
 
                 <div class="learning-rich-text" th:if="${learningCourse.activeLesson.sanitizedContent != null && !learningCourse.activeLesson.sanitizedContent.isBlank()}" th:utext="${learningCourse.activeLesson.sanitizedContent}">
@@ -152,6 +165,74 @@
                     <strong>Lesson content missing</strong>
                     <span>This lesson does not have video or text content yet.</span>
                 </div>
+
+                <section class="learning-assessment"
+                         th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'QUIZ'}"
+                         data-quiz-panel="true"
+                         th:data-course-id="${learningCourse.courseId}"
+                         th:data-lesson-id="${learningCourse.activeLesson.id}">
+                    <div class="learning-panel-head">
+                        <span>Quiz</span>
+                        <small id="quiz-state-label">Loading</small>
+                    </div>
+                    <div id="quiz-loading" class="learning-empty learning-empty-compact">
+                        <strong>Loading quiz</strong>
+                        <span>Preparing your attempt.</span>
+                    </div>
+                    <div id="quiz-unavailable" class="learning-empty learning-empty-compact" hidden>
+                        <strong>Quiz unavailable</strong>
+                        <span></span>
+                    </div>
+                    <form id="quiz-form" class="learning-assessment-form" hidden>
+                        <div id="quiz-questions" class="learning-question-list"></div>
+                        <div class="learning-assessment-actions">
+                            <button type="button" class="btn btn-outline" id="quiz-save-button">Save draft</button>
+                            <button type="submit" class="btn btn-primary" id="quiz-submit-button">Submit quiz</button>
+                            <span id="quiz-message" class="learning-help"></span>
+                        </div>
+                    </form>
+                    <div id="quiz-result" class="learning-empty learning-empty-compact" hidden>
+                        <strong>Quiz submitted</strong>
+                        <span></span>
+                    </div>
+                </section>
+
+                <section class="learning-assessment"
+                         th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'CODING'}"
+                         data-code-panel="true"
+                         th:data-course-id="${learningCourse.courseId}"
+                         th:data-lesson-id="${learningCourse.activeLesson.id}">
+                    <div class="learning-panel-head">
+                        <span>Coding exercise</span>
+                        <small id="code-state-label">Loading</small>
+                    </div>
+                    <div id="code-loading" class="learning-empty learning-empty-compact">
+                        <strong>Loading exercise</strong>
+                        <span>Preparing your workspace.</span>
+                    </div>
+                    <div id="code-unavailable" class="learning-empty learning-empty-compact" hidden>
+                        <strong>Exercise unavailable</strong>
+                        <span></span>
+                    </div>
+                    <form id="code-form" class="learning-assessment-form" hidden>
+                        <div class="learning-code-meta">
+                            <label>
+                                <span>Language</span>
+                                <select id="code-language"></select>
+                            </label>
+                            <span id="code-time-limit" class="learning-help"></span>
+                        </div>
+                        <div class="learning-code-problem" id="code-problem"></div>
+                        <div id="code-examples" class="learning-code-examples"></div>
+                        <label class="learning-code-editor-label" for="code-editor">Code</label>
+                        <textarea id="code-editor" class="learning-code-editor" spellcheck="false"></textarea>
+                        <div class="learning-assessment-actions">
+                            <button type="button" class="btn btn-outline" id="code-save-button">Save draft</button>
+                            <button type="submit" class="btn btn-primary" id="code-submit-button">Submit for review</button>
+                            <span id="code-message" class="learning-help"></span>
+                        </div>
+                    </form>
+                </section>
 
                 <section class="learning-resources" aria-labelledby="resources-heading">
                     <div class="learning-panel-head">
@@ -172,7 +253,7 @@
                 </section>
 
                 <div class="learning-complete-actions"
-                     th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() != 'VIDEO' && learningCourse.activeLesson.type.name() != 'QUIZ'}">
+                     th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() != 'VIDEO' && learningCourse.activeLesson.type.name() != 'QUIZ' && learningCourse.activeLesson.type.name() != 'CODING'}">
                     <button type="button"
                             class="btn btn-outline"
                             data-lesson-complete="true"
@@ -190,9 +271,13 @@
                        th:href="${learningCourse.activeLesson.previousLessonId == null ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.previousLessonId}"
                        th:aria-disabled="${learningCourse.activeLesson.previousLessonId == null}">Previous</a>
                     <a class="btn btn-primary"
-                       th:classappend="${learningCourse.activeLesson.nextLessonId == null ? ' disabled' : ''}"
-                       th:href="${learningCourse.activeLesson.nextLessonId == null ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.nextLessonId}"
-                       th:aria-disabled="${learningCourse.activeLesson.nextLessonId == null}">Next lesson</a>
+                       id="next-lesson-link"
+                       th:data-course-id="${learningCourse.courseId}"
+                       th:data-next-lesson-id="${learningCourse.activeLesson.nextLessonId}"
+                       th:classappend="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true ? ' disabled' : ''}"
+                       th:href="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.nextLessonId}"
+                       th:aria-disabled="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true}"
+                       th:title="${learningCourse.activeLesson.nextLessonLockReason}">Next lesson</a>
                 </nav>
             </article>
         </section>

@@ -42,12 +42,9 @@ public class LearningDataSeeder {
                 .filter(l -> l.getType() == LessonType.QUIZ).collect(Collectors.toList());
         
         int quizCount = 0;
-        int targetQuizzes = 50; // between 40-60
         int questionCount = 0;
         
         for (Lesson lesson : quizLessons) {
-            if (quizCount >= targetQuizzes) break;
-            
             Quiz quiz = Quiz.builder()
                     .lesson(lesson)
                     .title("Quiz: " + lesson.getTitle())
@@ -76,15 +73,12 @@ public class LearningDataSeeder {
                 .filter(l -> l.getType() == LessonType.CODING).collect(Collectors.toList());
 
         int assignmentCount = 0;
-        int targetAssignments = 25; // between 20-30
-        
         for (Lesson lesson : codingLessons) {
-            if (assignmentCount >= targetAssignments) break;
-            
             CodingAssignment assignment = CodingAssignment.builder()
                     .lesson(lesson)
                     .title("Coding: " + lesson.getTitle())
                     .problemStatement("Solve the following problem using Java.")
+                    .starterCode("public class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}")
                     .allowedLanguages("Java, Python")
                     .timeLimitMs(2000)
                     .build();

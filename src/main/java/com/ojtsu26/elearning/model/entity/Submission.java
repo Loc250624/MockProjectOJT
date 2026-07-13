@@ -28,7 +28,8 @@ public class Submission {
     @Convert(converter = SubmissionStatusConverter.class)
     private SubmissionStatus status;
 
-    
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String submittedContent;
 
     

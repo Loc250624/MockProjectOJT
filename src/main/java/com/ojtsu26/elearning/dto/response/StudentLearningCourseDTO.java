@@ -19,6 +19,7 @@ public class StudentLearningCourseDTO {
     private Integer totalLessons;
     private BigDecimal progressPercentage;
     private Boolean completed;
+    private String courseStatus;
     private StudentLearningLessonDTO activeLesson;
     private List<StudentLearningLessonSummaryDTO> lessons;
     private List<StudentLearningResourceDTO> courseResources;

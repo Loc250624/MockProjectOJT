@@ -16,8 +16,18 @@ public class LearningProgressDTO {
     private Integer totalLessons;
     private BigDecimal progressPercentage;
     private Boolean completed;
+    private Boolean lessonCompleted;
+    private Boolean courseCompleted;
+    private String courseStatus;
+    private BigDecimal lessonProgressPercentage;
     private Integer watchedSeconds;
+    private Integer lastPositionSeconds;
+    private Integer maxReachedSeconds;
     private Integer videoDurationSeconds;
+    private Integer durationSeconds;
+    private Integer nextLessonId;
+    private Boolean nextLessonAccessible;
+    private String nextLessonLockReason;
     private LocalDateTime completedAt;
     private LocalDateTime lastAccessedAt;
 }

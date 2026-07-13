@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.service.impl;
 
+import com.ojtsu26.elearning.dto.request.VideoProgressRequestDTO;
 import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
@@ -48,7 +49,6 @@ import java.util.stream.Collectors;
 public class StudentLearningServiceImpl implements StudentLearningService {
 
     private static final int VIDEO_COMPLETION_THRESHOLD_PERCENT = 90;
-    private static final int MAX_VIDEO_ADVANCE_SECONDS = 45;
     private static final int MAX_REASONABLE_VIDEO_SECONDS = 24 * 60 * 60;
     private static final Pattern SCRIPT_OR_STYLE_BLOCK = Pattern.compile("(?is)<\\s*(script|style)[^>]*>.*?<\\s*/\\s*\\1\\s*>");
     private static final Pattern EVENT_HANDLER_ATTRIBUTE = Pattern.compile("(?i)\\s+on[a-z]+\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)");
@@ -85,6 +85,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .totalLessons(courseProgress.totalLessons())
                 .progressPercentage(courseProgress.percentage())
                 .completed(courseProgress.completed())
+                .courseStatus(courseStatus(courseProgress))
                 .activeLesson(activeLesson)
                 .lessons(toLessonSummaries(context.enrollment(), lessons, activeLessonId))
                 .courseResources(Collections.emptyList())
@@ -100,26 +101,29 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     @Override
     @Transactional
-    public LearningProgressDTO recordVideoProgress(Integer courseId, Integer lessonId, Integer watchedSeconds) {
+    public LearningProgressDTO recordVideoProgress(Integer courseId, Integer lessonId, VideoProgressRequestDTO request) {
         AccessContext context = requireAccess(courseId);
         List<Lesson> lessons = orderedLessons(courseId);
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
+        assertLessonAccessible(context.enrollment(), lessons, lesson);
         if (lesson.getType() != LessonType.VIDEO || lesson.getVideo() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Only video lessons accept playback progress.");
         }
-        int validWatchedSeconds = validateWatchedSeconds(watchedSeconds);
+        VideoProgressInput input = validateVideoProgressRequest(request, lesson.getVideo().getDurationSeconds());
         LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
-        int previous = valueOrZero(progress.getWatchedSeconds());
-        int cappedByRequestOrder = Math.max(previous, validWatchedSeconds);
-        int normalized = normalizeVideoPosition(cappedByRequestOrder, previous, lesson.getVideo().getDurationSeconds());
-        progress.setWatchedSeconds(Math.max(previous, normalized));
+        int previousMax = maxStoredReachedSeconds(progress);
+        int maxReached = Math.max(previousMax, input.maxReachedSeconds());
+        progress.setLastPositionSeconds(input.currentTimeSeconds());
+        progress.setMaxReachedSeconds(maxReached);
+        progress.setWatchedSeconds(maxReached);
+        progress.setDurationSeconds(input.durationSeconds());
         progress.setLastAccessedAt(LocalDateTime.now());
-        if (!Boolean.TRUE.equals(progress.getIsCompleted()) && isVideoComplete(progress, lesson)) {
+        if (!Boolean.TRUE.equals(progress.getIsCompleted()) && isVideoComplete(progress, lesson, input.eventType())) {
             markCompleted(progress);
         }
         lessonProgressRepository.save(progress);
         CourseProgressSnapshot snapshot = calculateAndStoreCourseProgress(context.enrollment(), lessons);
-        return toProgressDto(context, lesson, progress, snapshot);
+        return toProgressDto(context, lessons, lesson, progress, snapshot);
     }
 
     @Override
@@ -128,10 +132,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         AccessContext context = requireAccess(courseId);
         List<Lesson> lessons = orderedLessons(courseId);
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
+        assertLessonAccessible(context.enrollment(), lessons, lesson);
         if (lesson.getType() == LessonType.VIDEO) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Video lessons complete from recorded playback progress.");
         }
-        if (lesson.getType() == LessonType.QUIZ || lesson.getQuiz() != null || lesson.getCodingassignment() != null) {
+        if (lesson.getType() == LessonType.QUIZ || lesson.getType() == LessonType.CODING
+                || lesson.getQuiz() != null || lesson.getCodingassignment() != null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Assessment lessons must be completed through assessment results.");
         }
         LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
@@ -139,7 +145,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         markCompleted(progress);
         lessonProgressRepository.save(progress);
         CourseProgressSnapshot snapshot = calculateAndStoreCourseProgress(context.enrollment(), lessons);
-        return toProgressDto(context, lesson, progress, snapshot);
+        return toProgressDto(context, lessons, lesson, progress, snapshot);
     }
 
     @Override
@@ -226,59 +232,36 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private List<Lesson> orderedLessons(Integer courseId) {
         return lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(courseId).stream()
-                .sorted(Comparator.comparing(Lesson::getOrderIndex, Comparator.nullsLast(Integer::compareTo))
-                        .thenComparing(Lesson::getId))
+                .sorted(Comparator.comparing(Lesson::getOrderIndex, Comparator.nullsLast(Integer::compareTo)))
                 .toList();
     }
 
     private Integer resolveActiveLessonId(CourseEnrollment enrollment, List<Lesson> lessons, Integer requestedLessonId) {
-        if (lessons.isEmpty()) {
-            return null;
-        }
-        if (requestedLessonId != null) {
-            boolean requestedBelongsToCourse = lessons.stream().anyMatch(lesson -> Objects.equals(lesson.getId(), requestedLessonId));
-            if (!requestedBelongsToCourse) {
-                throw new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available in this course.");
-            }
-            return requestedLessonId;
-        }
-        return lessonProgressRepository
-                .findTopByEnrollmentIdAndLastAccessedAtIsNotNullOrderByLastAccessedAtDesc(enrollment.getId())
-                .map(LessonProgress::getLesson)
-                .filter(Objects::nonNull)
-                .map(Lesson::getId)
-                .filter(lastLessonId -> lessons.stream().anyMatch(lesson -> Objects.equals(lesson.getId(), lastLessonId)))
-                .orElseGet(() -> lessons.stream()
-                        .filter(lesson -> {
-                            LessonProgress progress = lessonProgressRepository
-                                    .findByEnrollmentIdAndLessonId(enrollment.getId(), lesson.getId())
-                                    .orElse(null);
-                            return progress == null || !Boolean.TRUE.equals(progress.getIsCompleted());
-                        })
-                        .map(Lesson::getId)
-                        .findFirst()
-                        .orElse(lessons.get(0).getId()));
+        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
+        return resolveActiveLessonId(enrollment, lessons, requestedLessonId, progresses);
     }
 
     private Integer resolveActiveLessonId(CourseEnrollment enrollment, List<Lesson> lessons, Integer requestedLessonId, List<LessonProgress> progresses) {
         if (lessons.isEmpty()) {
             return null;
         }
+        Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, progresses);
         if (requestedLessonId != null) {
-            boolean requestedBelongsToCourse = lessons.stream().anyMatch(lesson -> Objects.equals(lesson.getId(), requestedLessonId));
-            if (!requestedBelongsToCourse) {
-                throw new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available in this course.");
-            }
+            Lesson requestedLesson = requireLessonInCourse(lessons, requestedLessonId);
+            assertLessonAccessible(accessByLesson.get(requestedLesson.getId()));
             return requestedLessonId;
         }
-        
+
         Optional<LessonProgress> lastAccessed = progresses.stream()
                 .filter(p -> p.getLastAccessedAt() != null && p.getLesson() != null)
                 .max(Comparator.comparing(LessonProgress::getLastAccessedAt));
                 
         if (lastAccessed.isPresent()) {
             Lesson lastLesson = lastAccessed.get().getLesson();
-            if (lessons.stream().anyMatch(l -> Objects.equals(l.getId(), lastLesson.getId()))) {
+            LessonAccessState state = accessByLesson.get(lastLesson.getId());
+            if (lessons.stream().anyMatch(l -> Objects.equals(l.getId(), lastLesson.getId()))
+                    && state != null
+                    && state.accessible()) {
                 return lastLesson.getId();
             }
         }
@@ -288,32 +271,42 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .map(p -> p.getLesson().getId())
                 .collect(Collectors.toSet());
                 
-        return lessons.stream()
+        return requiredLessons(lessons).stream()
+                .filter(lesson -> {
+                    LessonAccessState state = accessByLesson.get(lesson.getId());
+                    return state != null && state.accessible();
+                })
                 .filter(lesson -> !completedLessonIds.contains(lesson.getId()))
                 .map(Lesson::getId)
                 .findFirst()
-                .orElse(lessons.get(0).getId());
+                .orElseGet(() -> lessons.stream()
+                        .filter(lesson -> {
+                            LessonAccessState state = accessByLesson.get(lesson.getId());
+                            return state != null && state.accessible();
+                        })
+                        .map(Lesson::getId)
+                        .findFirst()
+                        .orElse(lessons.get(0).getId()));
     }
 
     private StudentLearningLessonDTO openLessonInternal(AccessContext context, List<Lesson> lessons, Integer lessonId) {
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
+        List<LessonProgress> existingProgresses = lessonProgressRepository.findByEnrollmentId(context.enrollment().getId());
+        Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, existingProgresses);
+        assertLessonAccessible(accessByLesson.get(lesson.getId()));
         LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
         progress.setLastAccessedAt(LocalDateTime.now());
         lessonProgressRepository.save(progress);
         CourseProgressSnapshot snapshot = calculateAndStoreCourseProgress(context.enrollment(), lessons);
 
-        Integer previousLessonId = null;
-        Integer nextLessonId = null;
-        for (int i = 0; i < lessons.size(); i++) {
-            if (Objects.equals(lessons.get(i).getId(), lesson.getId())) {
-                previousLessonId = i > 0 ? lessons.get(i - 1).getId() : null;
-                nextLessonId = i < lessons.size() - 1 ? lessons.get(i + 1).getId() : null;
-                break;
-            }
-        }
+        Lesson previousLesson = previousRequiredLesson(lessons, lesson);
+        Lesson nextLesson = nextRequiredLesson(lessons, lesson);
+        LessonAccessState activeAccess = accessByLesson.get(lesson.getId());
+        LessonAccessState nextAccess = nextLesson == null ? null : accessByLesson.get(nextLesson.getId());
 
         String rawVideoUrl = lesson.getVideo() == null ? null : lesson.getVideo().getVideoUrl();
-        String embedUrl = VideoUtils.generateEmbedUrl(rawVideoUrl);
+        VideoUtils.VideoSourceInfo videoSource = VideoUtils.classifyVideoSource(rawVideoUrl);
+        String embedUrl = videoSource.playable() ? VideoUtils.generateEmbedUrl(rawVideoUrl) : null;
 
         return StudentLearningLessonDTO.builder()
                 .id(lesson.getId())
@@ -324,10 +317,21 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .sanitizedContent(sanitizeRichText(lesson.getContent()))
                 .videoUrl(rawVideoUrl)
                 .embedUrl(embedUrl)
+                .videoSourceType(videoSource.type().name())
+                .videoPlayable(videoSource.playable())
+                .videoUnavailableReason(videoSource.message())
                 .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())
-                .watchedSeconds(valueOrZero(progress.getWatchedSeconds()))
-                .previousLessonId(previousLessonId)
-                .nextLessonId(nextLessonId)
+                .watchedSeconds(maxStoredReachedSeconds(progress))
+                .lastPositionSeconds(lastStoredPositionSeconds(progress))
+                .maxReachedSeconds(maxStoredReachedSeconds(progress))
+                .previousLessonId(previousLesson == null ? null : previousLesson.getId())
+                .nextLessonId(nextLesson == null ? null : nextLesson.getId())
+                .nextLessonAccessible(nextAccess == null ? null : nextAccess.accessible())
+                .nextLessonLockReason(nextAccess == null ? null : nextAccess.lockReason())
+                .required(activeAccess == null ? false : activeAccess.required())
+                .accessible(activeAccess == null ? true : activeAccess.accessible())
+                .locked(activeAccess != null && activeAccess.locked())
+                .lockReason(activeAccess == null ? null : activeAccess.lockReason())
                 .completed(Boolean.TRUE.equals(progress.getIsCompleted()))
                 .courseProgress(toCourseOnlyProgressDto(context, snapshot))
                 .resources(Collections.emptyList())
@@ -335,13 +339,16 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     }
 
     private List<StudentLearningLessonSummaryDTO> toLessonSummaries(CourseEnrollment enrollment, List<Lesson> lessons, Integer activeLessonId) {
-        Map<Integer, LessonProgress> progressByLesson = lessonProgressRepository.findByEnrollmentId(enrollment.getId()).stream()
+        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
+        Map<Integer, LessonProgress> progressByLesson = progresses.stream()
                 .filter(progress -> progress.getLesson() != null)
                 .collect(Collectors.toMap(progress -> progress.getLesson().getId(), Function.identity(), (left, right) -> right));
+        Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, progresses);
 
         return lessons.stream()
                 .map(lesson -> {
                     LessonProgress progress = progressByLesson.get(lesson.getId());
+                    LessonAccessState access = accessByLesson.get(lesson.getId());
                     return StudentLearningLessonSummaryDTO.builder()
                             .id(lesson.getId())
                             .title(lesson.getTitle())
@@ -349,7 +356,11 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                             .orderIndex(lesson.getOrderIndex())
                             .completed(progress != null && Boolean.TRUE.equals(progress.getIsCompleted()))
                             .current(Objects.equals(lesson.getId(), activeLessonId))
-                            .watchedSeconds(progress == null ? 0 : valueOrZero(progress.getWatchedSeconds()))
+                            .required(access == null ? false : access.required())
+                            .accessible(access == null ? true : access.accessible())
+                            .locked(access != null && access.locked())
+                            .lockReason(access == null ? null : access.lockReason())
+                            .watchedSeconds(progress == null ? 0 : maxStoredReachedSeconds(progress))
                             .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())
                             .build();
                 })
@@ -384,6 +395,79 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available in this course."));
     }
 
+    private void assertLessonAccessible(CourseEnrollment enrollment, List<Lesson> lessons, Lesson lesson) {
+        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
+        assertLessonAccessible(lessonAccessStates(lessons, progresses).get(lesson.getId()));
+    }
+
+    private void assertLessonAccessible(LessonAccessState state) {
+        if (state != null && !state.accessible()) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, state.lockReason());
+        }
+    }
+
+    private Map<Integer, LessonAccessState> lessonAccessStates(List<Lesson> lessons, List<LessonProgress> progresses) {
+        Set<Integer> requiredLessonIds = requiredLessons(lessons).stream()
+                .map(Lesson::getId)
+                .collect(Collectors.toSet());
+        Set<Integer> completedLessonIds = progresses.stream()
+                .filter(progress -> progress.getLesson() != null && Boolean.TRUE.equals(progress.getIsCompleted()))
+                .map(progress -> progress.getLesson().getId())
+                .collect(Collectors.toSet());
+
+        return lessons.stream()
+                .collect(Collectors.toMap(
+                        Lesson::getId,
+                        lesson -> {
+                            Lesson previousRequired = previousRequiredLesson(lessons, lesson);
+                            boolean accessible = previousRequired == null || completedLessonIds.contains(previousRequired.getId());
+                            return new LessonAccessState(
+                                    requiredLessonIds.contains(lesson.getId()),
+                                    accessible,
+                                    !accessible,
+                                    accessible ? null : lockedLessonReason(previousRequired)
+                            );
+                        },
+                        (left, right) -> right
+                ));
+    }
+
+    private String lockedLessonReason(Lesson previousRequired) {
+        String title = previousRequired == null || previousRequired.getTitle() == null
+                ? "the previous required lesson"
+                : "\"" + previousRequired.getTitle() + "\"";
+        return "Complete " + title + " to unlock this lesson.";
+    }
+
+    private Lesson previousRequiredLesson(List<Lesson> lessons, Lesson lesson) {
+        int lessonIndex = indexOfLesson(lessons, lesson);
+        Lesson previous = null;
+        for (Lesson candidate : requiredLessons(lessons)) {
+            int candidateIndex = indexOfLesson(lessons, candidate);
+            if (candidateIndex >= 0 && candidateIndex < lessonIndex) {
+                previous = candidate;
+            }
+        }
+        return previous;
+    }
+
+    private Lesson nextRequiredLesson(List<Lesson> lessons, Lesson lesson) {
+        int lessonIndex = indexOfLesson(lessons, lesson);
+        return requiredLessons(lessons).stream()
+                .filter(candidate -> indexOfLesson(lessons, candidate) > lessonIndex)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int indexOfLesson(List<Lesson> lessons, Lesson lesson) {
+        for (int i = 0; i < lessons.size(); i++) {
+            if (Objects.equals(lessons.get(i).getId(), lesson.getId())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private LessonProgress findOrCreateProgressForUpdate(CourseEnrollment enrollment, Lesson lesson) {
         return lessonProgressRepository
                 .findByEnrollmentIdAndLessonIdForUpdate(enrollment.getId(), lesson.getId())
@@ -392,33 +476,56 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                         .lesson(lesson)
                         .isCompleted(false)
                         .watchedSeconds(0)
+                        .lastPositionSeconds(0)
+                        .maxReachedSeconds(0)
                         .build());
     }
 
-    private int validateWatchedSeconds(Integer watchedSeconds) {
-        if (watchedSeconds == null || watchedSeconds < 0 || watchedSeconds > MAX_REASONABLE_VIDEO_SECONDS) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Invalid watched position.");
+    private VideoProgressInput validateVideoProgressRequest(VideoProgressRequestDTO request, Integer storedDurationSeconds) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Video progress is required.");
         }
-        return watchedSeconds;
+
+        int current = firstNonNull(request.getCurrentTimeSeconds(), request.getWatchedSeconds(), 0);
+        int requestedMax = firstNonNull(request.getMaxReachedSeconds(), request.getWatchedSeconds(), current);
+        int maxReached = Math.max(current, requestedMax);
+        int duration = firstNonNull(request.getDurationSeconds(), storedDurationSeconds, 0);
+
+        validateVideoSeconds(current, "Invalid video position.");
+        validateVideoSeconds(maxReached, "Invalid watched position.");
+        if (duration < 0 || duration > MAX_REASONABLE_VIDEO_SECONDS) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Invalid video duration.");
+        }
+        if (duration > 0 && (current > duration || maxReached > duration)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Video progress cannot exceed the lesson duration.");
+        }
+
+        String eventType = request.getEventType() == null ? "TIME_UPDATE" : request.getEventType().trim().toUpperCase();
+        Set<String> allowedEvents = Set.of("TIME_UPDATE", "PAUSE", "SEEKED", "ENDED", "UNLOAD");
+        if (!allowedEvents.contains(eventType)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Unsupported video progress event.");
+        }
+
+        return new VideoProgressInput(current, maxReached, duration, eventType);
     }
 
-    private int normalizeVideoPosition(int requested, int previous, Integer durationSeconds) {
-        int normalized = requested;
-        if (durationSeconds != null && durationSeconds > 0) {
-            normalized = Math.min(normalized, durationSeconds);
+    private void validateVideoSeconds(int seconds, String message) {
+        if (seconds < 0 || seconds > MAX_REASONABLE_VIDEO_SECONDS) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, message);
         }
-        if (normalized > previous + MAX_VIDEO_ADVANCE_SECONDS) {
-            normalized = previous + MAX_VIDEO_ADVANCE_SECONDS;
-        }
-        return normalized;
     }
 
-    private boolean isVideoComplete(LessonProgress progress, Lesson lesson) {
-        Integer durationSeconds = lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds();
+    private boolean isVideoComplete(LessonProgress progress, Lesson lesson, String eventType) {
+        if ("ENDED".equals(eventType)) {
+            return true;
+        }
+        Integer durationSeconds = progress.getDurationSeconds() != null && progress.getDurationSeconds() > 0
+                ? progress.getDurationSeconds()
+                : lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds();
         if (durationSeconds == null || durationSeconds <= 0) {
             return false;
         }
-        return valueOrZero(progress.getWatchedSeconds()) * 100 >= durationSeconds * VIDEO_COMPLETION_THRESHOLD_PERCENT;
+        return maxStoredReachedSeconds(progress) * 100 >= durationSeconds * VIDEO_COMPLETION_THRESHOLD_PERCENT;
     }
 
     private void markCompleted(LessonProgress progress) {
@@ -462,7 +569,8 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 // Certificate issuance can be retried through the idempotent claim endpoint.
             }
         }
-        return new CourseProgressSnapshot(completed, total, percentage, completedCourse);
+        boolean startedCourse = progressByLesson.values().stream().anyMatch(this::hasStartedProgress);
+        return new CourseProgressSnapshot(completed, total, percentage, completedCourse, startedCourse);
     }
 
     private CourseProgressSnapshot calculateAndStoreCourseProgress(CourseEnrollment enrollment, List<Lesson> lessons, List<LessonProgress> progresses) {
@@ -499,16 +607,27 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 // Certificate issuance can be retried through the idempotent claim endpoint.
             }
         }
-        return new CourseProgressSnapshot(completed, total, percentage, completedCourse);
+        boolean startedCourse = progressByLesson.values().stream().anyMatch(this::hasStartedProgress);
+        return new CourseProgressSnapshot(completed, total, percentage, completedCourse, startedCourse);
     }
 
     private List<Lesson> requiredLessons(List<Lesson> lessons) {
         return lessons.stream()
-                .filter(lesson -> lesson.getType() != LessonType.QUIZ && lesson.getQuiz() == null && lesson.getCodingassignment() == null)
+                .filter(this::isRequiredContentLesson)
                 .toList();
     }
 
-    private LearningProgressDTO toProgressDto(AccessContext context, Lesson lesson, LessonProgress progress, CourseProgressSnapshot snapshot) {
+    private boolean isRequiredContentLesson(Lesson lesson) {
+        return (lesson.getType() == null || lesson.getType() == LessonType.VIDEO)
+                && lesson.getQuiz() == null
+                && lesson.getCodingassignment() == null;
+    }
+
+    private LearningProgressDTO toProgressDto(AccessContext context, List<Lesson> lessons, Lesson lesson, LessonProgress progress, CourseProgressSnapshot snapshot) {
+        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(context.enrollment().getId());
+        Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, progresses);
+        Lesson nextLesson = nextRequiredLesson(lessons, lesson);
+        LessonAccessState nextAccess = nextLesson == null ? null : accessByLesson.get(nextLesson.getId());
         return LearningProgressDTO.builder()
                 .courseId(context.course().getId())
                 .lessonId(lesson.getId())
@@ -517,8 +636,18 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .totalLessons(snapshot.totalLessons())
                 .progressPercentage(snapshot.percentage())
                 .completed(Boolean.TRUE.equals(progress.getIsCompleted()))
-                .watchedSeconds(valueOrZero(progress.getWatchedSeconds()))
+                .lessonCompleted(Boolean.TRUE.equals(progress.getIsCompleted()))
+                .courseCompleted(snapshot.completed())
+                .courseStatus(courseStatus(snapshot))
+                .lessonProgressPercentage(videoLessonProgressPercentage(progress, lesson))
+                .watchedSeconds(maxStoredReachedSeconds(progress))
+                .lastPositionSeconds(lastStoredPositionSeconds(progress))
+                .maxReachedSeconds(maxStoredReachedSeconds(progress))
                 .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())
+                .durationSeconds(progress.getDurationSeconds() == null ? lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds() : progress.getDurationSeconds())
+                .nextLessonId(nextLesson == null ? null : nextLesson.getId())
+                .nextLessonAccessible(nextAccess == null ? null : nextAccess.accessible())
+                .nextLessonLockReason(nextAccess == null ? null : nextAccess.lockReason())
                 .completedAt(progress.getCompletedAt())
                 .lastAccessedAt(progress.getLastAccessedAt())
                 .build();
@@ -532,7 +661,68 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .totalLessons(snapshot.totalLessons())
                 .progressPercentage(snapshot.percentage())
                 .completed(snapshot.completed())
+                .courseCompleted(snapshot.completed())
+                .courseStatus(courseStatus(snapshot))
                 .build();
+    }
+
+    private BigDecimal videoLessonProgressPercentage(LessonProgress progress, Lesson lesson) {
+        Integer durationSeconds = progress.getDurationSeconds() == null || progress.getDurationSeconds() <= 0
+                ? lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds()
+                : progress.getDurationSeconds();
+        if (durationSeconds == null || durationSeconds <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal percentage = BigDecimal.valueOf(maxStoredReachedSeconds(progress))
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(durationSeconds), 2, RoundingMode.HALF_UP);
+        return percentage.compareTo(BigDecimal.valueOf(100)) > 0 ? BigDecimal.valueOf(100) : percentage;
+    }
+
+    private String courseStatus(CourseProgressSnapshot snapshot) {
+        if (snapshot.completed()) {
+            return "COMPLETED";
+        }
+        if (snapshot.started() || snapshot.percentage().compareTo(BigDecimal.ZERO) > 0) {
+            return "IN_PROGRESS";
+        }
+        return "NOT_STARTED";
+    }
+
+    private boolean hasStartedProgress(LessonProgress progress) {
+        return progress != null
+                && (progress.getLastAccessedAt() != null
+                || Boolean.TRUE.equals(progress.getIsCompleted())
+                || maxStoredReachedSeconds(progress) > 0
+                || valueOrZero(progress.getLastPositionSeconds()) > 0);
+    }
+
+    private int maxStoredReachedSeconds(LessonProgress progress) {
+        return Math.max(valueOrZero(progress.getMaxReachedSeconds()), valueOrZero(progress.getWatchedSeconds()));
+    }
+
+    private int lastStoredPositionSeconds(LessonProgress progress) {
+        return progress.getLastPositionSeconds() == null ? maxStoredReachedSeconds(progress) : progress.getLastPositionSeconds();
+    }
+
+    private int firstNonNull(Integer first, Integer second, int fallback) {
+        if (first != null) {
+            return first;
+        }
+        if (second != null) {
+            return second;
+        }
+        return fallback;
+    }
+
+    private int firstNonNull(Integer first, Integer second, Integer fallback) {
+        if (first != null) {
+            return first;
+        }
+        if (second != null) {
+            return second;
+        }
+        return fallback == null ? 0 : fallback;
     }
 
     private int valueOrZero(Integer value) {
@@ -542,6 +732,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     private record AccessContext(User student, Course course, CourseEnrollment enrollment) {
     }
 
-    private record CourseProgressSnapshot(int completedLessons, int totalLessons, BigDecimal percentage, boolean completed) {
+    private record CourseProgressSnapshot(int completedLessons, int totalLessons, BigDecimal percentage, boolean completed, boolean started) {
+    }
+
+    private record VideoProgressInput(int currentTimeSeconds, int maxReachedSeconds, int durationSeconds, String eventType) {
+    }
+
+    private record LessonAccessState(boolean required, boolean accessible, boolean locked, String lockReason) {
     }
 }

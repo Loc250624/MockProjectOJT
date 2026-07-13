@@ -46,4 +46,16 @@ class VideoUtilsTest {
         RuntimeException ex2 = assertThrows(RuntimeException.class, () -> VideoUtils.validateVideoUrl("https://www.youtube.com/watch?v=invalid"));
         assertEquals("Invalid YouTube URL. Unable to extract Video ID.", ex2.getMessage());
     }
+
+    @Test
+    void classifyVideoSourceIdentifiesSupportedAndUnavailableStates() {
+        assertEquals(VideoUtils.VideoSourceType.MISSING, VideoUtils.classifyVideoSource(" ").type());
+        assertEquals(VideoUtils.VideoSourceType.YOUTUBE, VideoUtils.classifyVideoSource("https://youtu.be/qz0aGYrrIhU").type());
+        assertEquals(VideoUtils.VideoSourceType.DIRECT_MEDIA, VideoUtils.classifyVideoSource("https://cdn.example.com/video.mp4?token=demo").type());
+        assertEquals(VideoUtils.VideoSourceType.LOCAL_UPLOAD, VideoUtils.classifyVideoSource("/uploads/lessons/video.webm").type());
+        assertEquals(VideoUtils.VideoSourceType.MALFORMED, VideoUtils.classifyVideoSource("ftp://example.com/video.mp4").type());
+        assertEquals(VideoUtils.VideoSourceType.MALFORMED, VideoUtils.classifyVideoSource("https://www.youtube.com/watch?v=short").type());
+        assertEquals(VideoUtils.VideoSourceType.UNSUPPORTED_PROVIDER, VideoUtils.classifyVideoSource("https://vimeo.com/123456").type());
+        assertFalse(VideoUtils.classifyVideoSource("https://vimeo.com/123456").playable());
+    }
 }

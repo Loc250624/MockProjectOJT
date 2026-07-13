@@ -108,6 +108,7 @@ function initLearningProgress() {
     if (completeButton) {
         initLessonCompletion(completeButton);
     }
+    initStudentAssessmentPanels();
 }
 
 function parseLearningJson(response, fallbackMessage) {
@@ -133,8 +134,27 @@ function applyLearningProgress(progress) {
         lessonStatus.classList.add('completed');
     }
 
+    var courseStatus = document.getElementById('course-status');
+    if (courseStatus && progress.courseStatus) {
+        courseStatus.textContent = progress.courseStatus === 'COMPLETED' ? 'Completed'
+            : progress.courseStatus === 'IN_PROGRESS' ? 'In Progress'
+            : 'Not Started';
+    }
+
+    var courseCount = document.getElementById('course-progress-count');
+    if (courseCount && progress.completedLessons != null && progress.totalLessons != null) {
+        courseCount.textContent = progress.completedLessons + ' of ' + progress.totalLessons + ' lessons';
+    }
+
+    var coursePercent = document.getElementById('course-progress-percent');
+    if (coursePercent && progress.progressPercentage != null) {
+        coursePercent.textContent = progress.progressPercentage + '%';
+    }
+
     var help = document.getElementById('video-progress-help');
-    if (help && typeof progress.watchedSeconds === 'number') {
+    if (help && typeof progress.lastPositionSeconds === 'number') {
+        help.textContent = 'Saved at ' + progress.lastPositionSeconds + ' seconds.';
+    } else if (help && typeof progress.watchedSeconds === 'number') {
         help.textContent = 'Saved through ' + progress.watchedSeconds + ' seconds.';
     }
 
@@ -143,6 +163,25 @@ function applyLearningProgress(progress) {
             fill.style.width = progress.progressPercentage + '%';
         }
     });
+
+    var nextLink = document.getElementById('next-lesson-link');
+    if (nextLink && progress.nextLessonId != null) {
+        nextLink.dataset.nextLessonId = progress.nextLessonId;
+        if (progress.nextLessonAccessible) {
+            nextLink.classList.remove('disabled');
+            nextLink.setAttribute('aria-disabled', 'false');
+            nextLink.removeAttribute('title');
+            nextLink.href = '/student/learning?courseId=' + encodeURIComponent(nextLink.dataset.courseId) +
+                '&lessonId=' + encodeURIComponent(progress.nextLessonId);
+        } else {
+            nextLink.classList.add('disabled');
+            nextLink.setAttribute('aria-disabled', 'true');
+            nextLink.href = '#';
+            if (progress.nextLessonLockReason) {
+                nextLink.title = progress.nextLessonLockReason;
+            }
+        }
+    }
 }
 
 function Html5PlayerWrapper(video, options) {
@@ -164,6 +203,16 @@ function Html5PlayerWrapper(video, options) {
         });
     }
     if (options.onEnded) video.addEventListener('ended', options.onEnded);
+    if (options.onSeeked) {
+        video.addEventListener('seeked', function() {
+            options.onSeeked(video.currentTime);
+        });
+    }
+    if (options.onError) {
+        video.addEventListener('error', function() {
+            options.onError();
+        });
+    }
 
     this.seekTo = function(seconds) {
         video.currentTime = seconds;
@@ -266,33 +315,79 @@ function YouTubePlayerWrapper(iframe, options) {
 function initVideoProgress(element) {
     var courseId = element.dataset.courseId;
     var lessonId = element.dataset.lessonId;
-    var highestLocal = Number(element.dataset.watchedSeconds || 0);
-    var lastSaved = highestLocal;
+    var highestLocal = Number(element.dataset.maxReachedSeconds || element.dataset.watchedSeconds || 0);
+    var resumePosition = Number(element.dataset.lastPositionSeconds || highestLocal || 0);
+    var knownDuration = Number(element.dataset.durationSeconds || 0);
+    var lastSavedPosition = resumePosition;
+    var lastSavedMax = highestLocal;
+    var lastSentAt = 0;
     var saving = false;
     var playerWrapper = null;
 
-    function saveProgress(force, currentTime) {
+    function finiteSeconds(value) {
+        var numberValue = Number(value || 0);
+        if (!Number.isFinite(numberValue) || numberValue < 0) {
+            return 0;
+        }
+        return Math.floor(numberValue);
+    }
+
+    function currentDuration() {
+        if (!playerWrapper) {
+            return knownDuration;
+        }
+        var duration = finiteSeconds(playerWrapper.getDuration());
+        if (duration > 0) {
+            knownDuration = duration;
+        }
+        return knownDuration;
+    }
+
+    function buildProgressPayload(currentTime, eventType) {
+        var current = finiteSeconds(currentTime);
+        var duration = currentDuration();
+        if (duration > 0 && current > duration) {
+            current = duration;
+        }
+        highestLocal = Math.max(highestLocal, current);
+        if (duration > 0 && highestLocal > duration) {
+            highestLocal = duration;
+        }
+        return {
+            watchedSeconds: highestLocal,
+            currentTimeSeconds: current,
+            maxReachedSeconds: highestLocal,
+            durationSeconds: duration,
+            eventType: eventType || 'TIME_UPDATE'
+        };
+    }
+
+    function saveProgress(force, currentTime, eventType) {
         var current = Math.floor(currentTime || 0);
         if (!Number.isFinite(current) || current < 0) {
             return Promise.resolve();
         }
-        highestLocal = Math.max(highestLocal, current);
-        if (!force && highestLocal - lastSaved < 15) {
+        var now = Date.now();
+        var payload = buildProgressPayload(current, eventType);
+        if (!force && now - lastSentAt < 10000 && payload.maxReachedSeconds - lastSavedMax < 10) {
             return Promise.resolve();
         }
         if (saving) {
             return Promise.resolve();
         }
         saving = true;
+        lastSentAt = now;
         return fetch('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-            body: JSON.stringify({ watchedSeconds: highestLocal })
+            body: JSON.stringify(payload)
         }).then(function(response) {
             return parseLearningJson(response, 'Unable to save video progress');
         }).then(function(apiResponse) {
-            lastSaved = Math.max(lastSaved, apiResponse.data && apiResponse.data.watchedSeconds || highestLocal);
+            var data = apiResponse.data || {};
+            lastSavedPosition = typeof data.lastPositionSeconds === 'number' ? data.lastPositionSeconds : payload.currentTimeSeconds;
+            lastSavedMax = Math.max(lastSavedMax, data.maxReachedSeconds || data.watchedSeconds || payload.maxReachedSeconds);
             applyLearningProgress(apiResponse.data);
         }).catch(function(error) {
             var help = document.getElementById('video-progress-help');
@@ -305,8 +400,8 @@ function initVideoProgress(element) {
     }
 
     function onReady() {
-        if (highestLocal > 0) {
-            playerWrapper.seekTo(highestLocal);
+        if (resumePosition > 0) {
+            playerWrapper.seekTo(resumePosition);
         }
     }
 
@@ -314,21 +409,29 @@ function initVideoProgress(element) {
 
     function onPause() {
         if (playerWrapper) {
-            saveProgress(true, playerWrapper.getCurrentTime());
+            saveProgress(true, playerWrapper.getCurrentTime(), 'PAUSE');
         }
     }
 
     function onTimeUpdate(currentTime) {
-        if (currentTime > highestLocal + 3) {
-            playerWrapper.seekTo(highestLocal);
-            return;
-        }
-        saveProgress(false, currentTime);
+        saveProgress(false, currentTime, 'TIME_UPDATE');
+    }
+
+    function onSeeked(currentTime) {
+        saveProgress(true, currentTime, 'SEEKED');
     }
 
     function onEnded() {
         if (playerWrapper) {
-            saveProgress(true, playerWrapper.getDuration());
+            saveProgress(true, playerWrapper.getDuration(), 'ENDED');
+        }
+    }
+
+    function onError() {
+        var errorMessage = document.getElementById('video-media-error');
+        if (errorMessage) {
+            errorMessage.hidden = false;
+            errorMessage.textContent = 'This video cannot be loaded right now. Please try again later or contact support.';
         }
     }
 
@@ -339,7 +442,9 @@ function initVideoProgress(element) {
             onPlay: onPlay,
             onPause: onPause,
             onTimeUpdate: onTimeUpdate,
-            onEnded: onEnded
+            onEnded: onEnded,
+            onSeeked: onSeeked,
+            onError: onError
         });
     } else if (tagName === 'iframe') {
         playerWrapper = new YouTubePlayerWrapper(element, {
@@ -354,9 +459,9 @@ function initVideoProgress(element) {
     window.addEventListener('beforeunload', function() {
         if (playerWrapper) {
             var current = Math.floor(playerWrapper.getCurrentTime() || 0);
-            highestLocal = Math.max(highestLocal, current);
-            if (highestLocal > lastSaved && navigator.sendBeacon) {
-                var blob = new Blob([JSON.stringify({ watchedSeconds: highestLocal })], { type: 'application/json' });
+            var payload = buildProgressPayload(current, 'UNLOAD');
+            if ((payload.maxReachedSeconds > lastSavedMax || payload.currentTimeSeconds !== lastSavedPosition) && navigator.sendBeacon) {
+                var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
                 navigator.sendBeacon('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', blob);
             }
         }
@@ -387,6 +492,341 @@ function initLessonCompletion(button) {
             }
         });
     });
+}
+
+function initStudentAssessmentPanels() {
+    var quizPanel = document.querySelector('[data-quiz-panel="true"]');
+    var codePanel = document.querySelector('[data-code-panel="true"]');
+    if (quizPanel) {
+        initQuizPanel(quizPanel);
+    }
+    if (codePanel) {
+        initCodePanel(codePanel);
+    }
+}
+
+function createTextElement(tagName, className, text) {
+    var element = document.createElement(tagName);
+    if (className) {
+        element.className = className;
+    }
+    element.textContent = text || '';
+    return element;
+}
+
+function setPanelMessage(elementId, text, isError) {
+    var element = document.getElementById(elementId);
+    if (!element) {
+        return;
+    }
+    element.textContent = text || '';
+    element.style.color = isError ? 'var(--lumina-danger)' : 'var(--lumina-gray-500)';
+}
+
+function initQuizPanel(panel) {
+    var courseId = panel.dataset.courseId;
+    var lessonId = panel.dataset.lessonId;
+    var form = document.getElementById('quiz-form');
+    var loading = document.getElementById('quiz-loading');
+    var unavailable = document.getElementById('quiz-unavailable');
+    var questionsWrap = document.getElementById('quiz-questions');
+    var saveButton = document.getElementById('quiz-save-button');
+    var submitButton = document.getElementById('quiz-submit-button');
+    var result = document.getElementById('quiz-result');
+    var stateLabel = document.getElementById('quiz-state-label');
+    var attempt = null;
+
+    function endpoint(action) {
+        return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/quiz' + (action || '');
+    }
+
+    function parseOptions(question) {
+        try {
+            var parsed = JSON.parse(question.optionsJson || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function selectedAnswers() {
+        var answers = {};
+        if (!attempt || !attempt.questions) {
+            return answers;
+        }
+        attempt.questions.forEach(function(question) {
+            var selector = '[name="quiz-question-' + question.id + '"]:checked';
+            var checked = questionsWrap.querySelector(selector);
+            if (checked) {
+                answers[question.id] = checked.value;
+            }
+        });
+        return answers;
+    }
+
+    function renderResult(data) {
+        form.hidden = true;
+        result.hidden = false;
+        var score = data.score == null ? 'Not scored' : data.score + '%';
+        var status = data.passed ? 'Passed' : 'Not passed';
+        result.querySelector('span').textContent = status + '. Score: ' + score + '.';
+        if (stateLabel) {
+            stateLabel.textContent = data.status || 'Submitted';
+        }
+        if (data.passed) {
+            var lessonStatus = document.getElementById('lesson-status');
+            if (lessonStatus) {
+                lessonStatus.textContent = 'Completed';
+                lessonStatus.classList.add('completed');
+            }
+        }
+    }
+
+    function renderQuiz(data) {
+        attempt = data;
+        loading.hidden = true;
+        if (data.unavailable) {
+            unavailable.hidden = false;
+            unavailable.querySelector('span').textContent = data.unavailableMessage || 'This quiz is not available right now.';
+            if (stateLabel) {
+                stateLabel.textContent = 'Unavailable';
+            }
+            return;
+        }
+        if (data.submitted) {
+            renderResult(data);
+            return;
+        }
+
+        questionsWrap.replaceChildren();
+        (data.questions || []).forEach(function(question, index) {
+            var block = document.createElement('fieldset');
+            block.className = 'learning-question';
+            block.appendChild(createTextElement('legend', null, (index + 1) + '. ' + (question.questionText || 'Question')));
+            var options = parseOptions(question);
+            if (!options.length) {
+                block.appendChild(createTextElement('p', 'learning-help', 'No options are configured for this question.'));
+            }
+            options.forEach(function(option) {
+                var label = document.createElement('label');
+                label.className = 'learning-answer-option';
+                var input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'quiz-question-' + question.id;
+                input.value = String(option);
+                if (data.answers && data.answers[question.id] === String(option)) {
+                    input.checked = true;
+                }
+                label.appendChild(input);
+                label.appendChild(createTextElement('span', null, String(option)));
+                block.appendChild(label);
+            });
+            questionsWrap.appendChild(block);
+        });
+        form.hidden = false;
+        if (stateLabel) {
+            stateLabel.textContent = 'Draft';
+        }
+    }
+
+    function sendQuiz(action, message) {
+        if (!attempt || !attempt.attemptId) {
+            return Promise.resolve();
+        }
+        setPanelMessage('quiz-message', message, false);
+        var payload = {
+            attemptId: attempt.attemptId,
+            answers: selectedAnswers()
+        };
+        return fetch(endpoint(action), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+        }).then(function(response) {
+            return parseLearningJson(response, 'Unable to update quiz attempt');
+        }).then(function(apiResponse) {
+            attempt = apiResponse.data;
+            setPanelMessage('quiz-message', action === '/submit' ? 'Quiz submitted.' : 'Draft saved.', false);
+            if (attempt.submitted) {
+                renderResult(attempt);
+            }
+        });
+    }
+
+    fetch(endpoint(''), { credentials: 'same-origin' })
+        .then(function(response) {
+            return parseLearningJson(response, 'Unable to load quiz');
+        })
+        .then(function(apiResponse) {
+            renderQuiz(apiResponse.data || {});
+        })
+        .catch(function(error) {
+            loading.hidden = true;
+            unavailable.hidden = false;
+            unavailable.querySelector('span').textContent = error.message;
+            if (stateLabel) stateLabel.textContent = 'Unavailable';
+        });
+
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            saveButton.disabled = true;
+            sendQuiz('/save', 'Saving draft...')
+                .catch(function(error) {
+                    setPanelMessage('quiz-message', error.message, true);
+                })
+                .finally(function() {
+                    saveButton.disabled = false;
+                });
+        });
+    }
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitButton.disabled = true;
+            sendQuiz('/submit', 'Submitting quiz...')
+                .catch(function(error) {
+                    setPanelMessage('quiz-message', error.message, true);
+                })
+                .finally(function() {
+                    submitButton.disabled = false;
+                });
+        });
+    }
+}
+
+function initCodePanel(panel) {
+    var courseId = panel.dataset.courseId;
+    var lessonId = panel.dataset.lessonId;
+    var form = document.getElementById('code-form');
+    var loading = document.getElementById('code-loading');
+    var unavailable = document.getElementById('code-unavailable');
+    var languageSelect = document.getElementById('code-language');
+    var editor = document.getElementById('code-editor');
+    var problem = document.getElementById('code-problem');
+    var examples = document.getElementById('code-examples');
+    var timeLimit = document.getElementById('code-time-limit');
+    var saveButton = document.getElementById('code-save-button');
+    var submitButton = document.getElementById('code-submit-button');
+    var stateLabel = document.getElementById('code-state-label');
+    var assignment = null;
+
+    function endpoint(action) {
+        return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/coding-assignment' + (action || '');
+    }
+
+    function renderAssignment(data) {
+        assignment = data;
+        loading.hidden = true;
+        if (data.unavailable) {
+            unavailable.hidden = false;
+            unavailable.querySelector('span').textContent = data.unavailableMessage || 'This exercise is not available right now.';
+            if (stateLabel) stateLabel.textContent = 'Unavailable';
+            return;
+        }
+
+        languageSelect.replaceChildren();
+        (data.allowedLanguages || []).forEach(function(language) {
+            var option = document.createElement('option');
+            option.value = language;
+            option.textContent = language;
+            languageSelect.appendChild(option);
+        });
+        if (data.submittedLanguage) {
+            languageSelect.value = data.submittedLanguage;
+        }
+        problem.textContent = data.problemStatement || 'No instructions are configured for this exercise.';
+        editor.value = data.submittedCode || data.starterCode || '';
+        timeLimit.textContent = data.timeLimitMs ? 'Time limit: ' + data.timeLimitMs + ' ms' : '';
+        examples.replaceChildren();
+        (data.examples || []).forEach(function(example, index) {
+            var item = document.createElement('div');
+            item.className = 'learning-code-example';
+            item.appendChild(createTextElement('strong', null, 'Example ' + (index + 1)));
+            item.appendChild(createTextElement('pre', null, example.inputData || ''));
+            examples.appendChild(item);
+        });
+        if (data.submitted) {
+            editor.readOnly = true;
+            languageSelect.disabled = true;
+            saveButton.disabled = true;
+            submitButton.disabled = true;
+            setPanelMessage('code-message', data.status === 'PENDING_REVIEW' ? 'Submitted for review.' : 'Submission reviewed.', false);
+        } else {
+            editor.readOnly = false;
+            languageSelect.disabled = false;
+            saveButton.disabled = false;
+            submitButton.disabled = false;
+        }
+        if (stateLabel) {
+            stateLabel.textContent = data.status || data.submissionState || 'Draft';
+        }
+        form.hidden = false;
+    }
+
+    function codePayload() {
+        return {
+            submissionId: assignment ? assignment.submissionId : null,
+            language: languageSelect.value,
+            code: editor.value
+        };
+    }
+
+    function sendCode(action, message) {
+        setPanelMessage('code-message', message, false);
+        return fetch(endpoint(action), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(codePayload())
+        }).then(function(response) {
+            return parseLearningJson(response, 'Unable to update code submission');
+        }).then(function(apiResponse) {
+            assignment = apiResponse.data;
+            renderAssignment(assignment);
+            setPanelMessage('code-message', action === '/submit' ? 'Submitted for review.' : 'Draft saved.', false);
+        });
+    }
+
+    fetch(endpoint(''), { credentials: 'same-origin' })
+        .then(function(response) {
+            return parseLearningJson(response, 'Unable to load coding exercise');
+        })
+        .then(function(apiResponse) {
+            renderAssignment(apiResponse.data || {});
+        })
+        .catch(function(error) {
+            loading.hidden = true;
+            unavailable.hidden = false;
+            unavailable.querySelector('span').textContent = error.message;
+            if (stateLabel) stateLabel.textContent = 'Unavailable';
+        });
+
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            saveButton.disabled = true;
+            sendCode('/save', 'Saving draft...')
+                .catch(function(error) {
+                    setPanelMessage('code-message', error.message, true);
+                })
+                .finally(function() {
+                    if (!assignment || !assignment.submitted) {
+                        saveButton.disabled = false;
+                    }
+                });
+        });
+    }
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitButton.disabled = true;
+            sendCode('/submit', 'Submitting code...')
+                .catch(function(error) {
+                    setPanelMessage('code-message', error.message, true);
+                    submitButton.disabled = false;
+                });
+        });
+    }
 }
 
 function switchProfileTab(tabName) {

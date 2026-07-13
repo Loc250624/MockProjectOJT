@@ -13,6 +13,10 @@ public class StudentLearningLessonSummaryDTO {
     private Integer orderIndex;
     private Boolean completed;
     private Boolean current;
+    private Boolean required;
+    private Boolean accessible;
+    private Boolean locked;
+    private String lockReason;
     private Integer watchedSeconds;
     private Integer videoDurationSeconds;
 }

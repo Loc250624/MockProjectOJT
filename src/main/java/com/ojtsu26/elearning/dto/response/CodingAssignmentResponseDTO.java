@@ -11,6 +11,8 @@ public class CodingAssignmentResponseDTO {
 
     private String problemStatement;
 
+    private String starterCode;
+
     private String allowedLanguages;
 
     private Integer timeLimitMs;

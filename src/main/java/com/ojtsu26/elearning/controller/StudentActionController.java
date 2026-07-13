@@ -2,6 +2,9 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
+import com.ojtsu26.elearning.dto.request.StudentCodeSubmissionRequestDTO;
+import com.ojtsu26.elearning.dto.request.StudentQuizSubmissionRequestDTO;
+import com.ojtsu26.elearning.dto.response.StudentCodingAssignmentDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.security.CustomUserDetails;
@@ -17,7 +20,9 @@ import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
 import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningLessonDTO;
+import com.ojtsu26.elearning.dto.response.StudentQuizAttemptDTO;
 import com.ojtsu26.elearning.service.CourseEnrollmentService;
+import com.ojtsu26.elearning.service.StudentAssessmentService;
 import com.ojtsu26.elearning.service.StudentLearningService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,6 +48,7 @@ public class StudentActionController {
     private final JwtCookieService jwtCookieService;
     private final CourseEnrollmentService courseEnrollmentService;
     private final StudentLearningService studentLearningService;
+    private final StudentAssessmentService studentAssessmentService;
 
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
@@ -177,7 +183,7 @@ public class StudentActionController {
                                                                           @PathVariable Integer lessonId,
                                                                           @Valid @RequestBody VideoProgressRequestDTO request) {
         return ResponseEntity.ok(ApiResponse.success(
-                studentLearningService.recordVideoProgress(courseId, lessonId, request.getWatchedSeconds())
+                studentLearningService.recordVideoProgress(courseId, lessonId, request)
         ));
     }
 
@@ -187,14 +193,54 @@ public class StudentActionController {
         return ResponseEntity.ok(ApiResponse.success(studentLearningService.completeLesson(courseId, lessonId)));
     }
 
+    @GetMapping("/courses/{courseId}/lessons/{lessonId}/quiz")
+    public ResponseEntity<ApiResponse<StudentQuizAttemptDTO>> quiz(@PathVariable Integer courseId,
+                                                                   @PathVariable Integer lessonId) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.getOrStartQuiz(courseId, lessonId)));
+    }
+
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/quiz/save")
+    public ResponseEntity<ApiResponse<StudentQuizAttemptDTO>> saveQuiz(@PathVariable Integer courseId,
+                                                                       @PathVariable Integer lessonId,
+                                                                       @Valid @RequestBody StudentQuizSubmissionRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.saveQuizDraft(courseId, lessonId, request)));
+    }
+
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/quiz/submit")
+    public ResponseEntity<ApiResponse<StudentQuizAttemptDTO>> submitQuiz(@PathVariable Integer courseId,
+                                                                         @PathVariable Integer lessonId,
+                                                                         @Valid @RequestBody StudentQuizSubmissionRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.submitQuiz(courseId, lessonId, request)));
+    }
+
+    @GetMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment")
+    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> codingAssignment(@PathVariable Integer courseId,
+                                                                                    @PathVariable Integer lessonId) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.getCodingAssignment(courseId, lessonId)));
+    }
+
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/save")
+    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> saveCode(@PathVariable Integer courseId,
+                                                                            @PathVariable Integer lessonId,
+                                                                            @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.saveCodeDraft(courseId, lessonId, request)));
+    }
+
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/submit")
+    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> submitCode(@PathVariable Integer courseId,
+                                                                              @PathVariable Integer lessonId,
+                                                                              @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.submitCode(courseId, lessonId, request)));
+    }
+
     @PostMapping("/quiz/{id}/submit")
     public ResponseEntity<?> submitQuiz(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Submit quiz " + id + " placeholder - not yet implemented"));
+        return ResponseEntity.badRequest().body(Map.of("message", "Use the course lesson quiz endpoint to submit an attempt."));
     }
 
     @PostMapping("/code-assignment/{id}/submit")
     public ResponseEntity<?> submitCodeAssignment(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Submit code assignment " + id + " placeholder - not yet implemented"));
+        return ResponseEntity.badRequest().body(Map.of("message", "Use the course lesson coding endpoint to submit code."));
     }
 
 

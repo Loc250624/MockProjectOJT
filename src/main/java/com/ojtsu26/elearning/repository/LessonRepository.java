@@ -13,16 +13,16 @@ import java.util.Optional;
 public interface LessonRepository extends JpaRepository<Lesson, Integer> {
     List<Lesson> findByCourseIdOrderByOrderIndexAsc(Integer courseId);
 
-    @Query("select l from Lesson l left join fetch l.video where l.course.id = :courseId order by l.orderIndex asc, l.id asc")
+    @Query("select l from Lesson l left join fetch l.video where l.course.id = :courseId order by l.orderIndex asc")
     List<Lesson> findByCourseIdWithVideoOrderByOrderIndexAsc(@Param("courseId") Integer courseId);
 
     @Query("select l from Lesson l left join fetch l.video where l.id = :lessonId and l.course.id = :courseId")
     Optional<Lesson> findByIdAndCourseIdWithVideo(@Param("lessonId") Integer lessonId, @Param("courseId") Integer courseId);
 
-    @Query("select count(l) from Lesson l where l.course.id = :courseId and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.QUIZ) and l.quiz is null and l.codingassignment is null")
+    @Query("select count(l) from Lesson l where l.course.id = :courseId and (l.type is null or l.type = com.ojtsu26.elearning.model.enums.LessonType.VIDEO) and l.quiz is null and l.codingassignment is null")
     long countRequiredContentLessons(@Param("courseId") Integer courseId);
 
-    @Query("select count(distinct l.id) from Lesson l join LessonProgress p on p.lesson.id = l.id where l.course.id = :courseId and p.enrollment.id = :enrollmentId and p.isCompleted = true and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.QUIZ) and l.quiz is null and l.codingassignment is null")
+    @Query("select count(distinct l.id) from Lesson l join LessonProgress p on p.lesson.id = l.id where l.course.id = :courseId and p.enrollment.id = :enrollmentId and p.isCompleted = true and (l.type is null or l.type = com.ojtsu26.elearning.model.enums.LessonType.VIDEO) and l.quiz is null and l.codingassignment is null")
     long countCompletedRequiredContentLessons(@Param("courseId") Integer courseId, @Param("enrollmentId") Integer enrollmentId);
 
     @Query("select count(l) from Lesson l where l.course.id = :courseId and (l.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ or l.quiz is not null or l.codingassignment is not null)")

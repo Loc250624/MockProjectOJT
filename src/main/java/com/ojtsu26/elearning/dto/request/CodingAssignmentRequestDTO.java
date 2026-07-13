@@ -11,6 +11,8 @@ public class CodingAssignmentRequestDTO {
     @jakarta.validation.constraints.NotBlank
     private String problemStatement;
 
+    private String starterCode;
+
     @jakarta.validation.constraints.NotBlank
     private String allowedLanguages;
 
