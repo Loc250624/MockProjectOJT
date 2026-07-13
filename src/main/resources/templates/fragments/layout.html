@@ -18,8 +18,7 @@
     <nav>
         <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Dashboard</a>
         <a th:href="@{/public/courses}" th:classappend="${role == 'courses'} ? 'active' : ''">Courses</a>
-        <a th:href="@{/blogs}">Resources</a>
-        <a href="#">Schedule</a>
+        <a th:href="@{/blogs}">Blog</a>
     </nav>
 
     <div class="header-actions">
@@ -27,41 +26,48 @@
             <span style="color:var(--lumina-gray-400);font-size:0.9rem;">🔍</span>
             <input type="text" placeholder="Find a course...">
         </div>
-        
+
         <!-- Anonymous Users -->
         <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
         <a sec:authorize="isAnonymous()" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
 
         <!-- Authenticated Users (Avatar only) -->
-        <div sec:authorize="isAuthenticated()" class="user-avatar-container" style="display: flex; align-items: center; justify-content: center; margin-left: 1rem;">
+        <div sec:authorize="isAuthenticated()" class="user-avatar-container"
+            style="display: flex; align-items: center; justify-content: center; margin-left: 1rem;">
             <!-- Student Avatar -->
-            <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/dashboard}" class="header-avatar-link" style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     th:src="${#authentication?.principal?.user?.avatarUrl}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--lumina-blue);" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; background: var(--lumina-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                     th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'S')}">S</div>
+            <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/dashboard}" class="header-avatar-link"
+                style="text-decoration: none;">
+                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    th:src="${#authentication?.principal?.user?.avatarUrl}"
+                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--lumina-blue);" />
+                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    style="width: 36px; height: 36px; border-radius: 50%; background: var(--lumina-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
+                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'S')}">
+                    S</div>
             </a>
 
             <!-- Teacher/Instructor Avatar -->
-            <a sec:authorize="hasRole('TEACHER')" th:href="@{/teacher/dashboard}" class="header-avatar-link" style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     th:src="${#authentication?.principal?.user?.avatarUrl}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #8b5cf6;" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; background: #8b5cf6; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                     th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'T')}">T</div>
+            <a sec:authorize="hasRole('TEACHER')" th:href="@{/teacher/dashboard}" class="header-avatar-link"
+                style="text-decoration: none;">
+                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    th:src="${#authentication?.principal?.user?.avatarUrl}"
+                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #8b5cf6;" />
+                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    style="width: 36px; height: 36px; border-radius: 50%; background: #8b5cf6; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
+                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'T')}">
+                    T</div>
             </a>
 
             <!-- Admin Avatar -->
-            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="header-avatar-link" style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     th:src="${#authentication?.principal?.user?.avatarUrl}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444;" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}" 
-                     style="width: 36px; height: 36px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                     th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'A')}">A</div>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="header-avatar-link"
+                style="text-decoration: none;">
+                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    th:src="${#authentication?.principal?.user?.avatarUrl}"
+                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444;" />
+                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
+                    style="width: 36px; height: 36px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
+                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'A')}">
+                    A</div>
             </a>
         </div>
     </div>
@@ -70,7 +76,8 @@
 <!-- ===== ADMIN SIDEBAR ===== -->
 <aside th:fragment="sidebar-admin" class="lumina-sidebar">
     <div class="sidebar-brand">
-        <a th:href="@{/}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}"
+            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
             <div class="sidebar-logo">
                 <div class="logo-icon">🎓</div>
             </div>
@@ -146,7 +153,8 @@
 <!-- ===== TEACHER SIDEBAR ===== -->
 <aside th:fragment="sidebar-teacher" class="lumina-sidebar">
     <div class="sidebar-brand">
-        <a th:href="@{/}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}"
+            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
             <div class="sidebar-logo">
                 <div class="logo-icon">🎓</div>
             </div>
@@ -214,7 +222,8 @@
 <!-- ===== STUDENT SIDEBAR ===== -->
 <aside th:fragment="sidebar-student" class="lumina-sidebar">
     <div class="sidebar-brand">
-        <a th:href="@{/}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}"
+            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
             <div class="sidebar-logo">
                 <div class="logo-icon">🎓</div>
             </div>
@@ -285,8 +294,8 @@
     </div>
     <div class="topbar-right">
         <span class="badge badge-success badge-dot" style="font-size:0.75rem;"> System Healthy</span>
-        <button class="icon-btn notification-bell" id="btn-topbar-notif" type="button"
-                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+        <button class="icon-btn notification-bell" id="btn-topbar-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false">
             <span aria-hidden="true">🔔</span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
@@ -307,11 +316,10 @@
                 <div class="user-role" th:text="${profile?.role ?: 'ADMIN'}">ADMIN</div>
             </div>
             <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
-                 data-profile-avatar="true"
-                 alt="Admin avatar"
-                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
+                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
+                alt="Admin avatar"
+                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
@@ -331,8 +339,8 @@
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn notification-bell" id="btn-teacher-notif" type="button"
-                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+        <button class="icon-btn notification-bell" id="btn-teacher-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false">
             <span aria-hidden="true">🔔</span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
@@ -349,15 +357,15 @@
         <button class="icon-btn" id="btn-teacher-help">?</button>
         <a class="user-chip" th:href="@{/teacher/profile}" style="text-decoration:none;">
             <div class="user-info">
-                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Instructor'}">Instructor</div>
+                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Instructor'}">
+                    Instructor</div>
                 <div class="user-role" th:text="${profile?.role ?: 'TEACHER'}">TEACHER</div>
             </div>
             <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
-                 data-profile-avatar="true"
-                 alt="Teacher avatar"
-                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
+                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
+                alt="Teacher avatar"
+                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
@@ -377,8 +385,8 @@
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn notification-bell" id="btn-student-notif" type="button"
-                data-notification-bell="true" aria-label="Open notifications" aria-expanded="false">
+        <button class="icon-btn notification-bell" id="btn-student-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false">
             <span aria-hidden="true">🔔</span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
@@ -395,15 +403,15 @@
         <button class="icon-btn" id="btn-student-help">?</button>
         <a class="user-chip" th:href="@{/student/profile}" style="text-decoration:none;">
             <div class="user-info">
-                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Student'}">Student</div>
+                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Student'}">Student
+                </div>
                 <div class="user-role" th:text="${profile?.role ?: 'STUDENT'}">STUDENT</div>
             </div>
             <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                 th:data-placeholder-src="@{/images/avatar-placeholder.png}"
-                 data-profile-avatar="true"
-                 alt="Student avatar"
-                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
+                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
+                alt="Student avatar"
+                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
+                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
