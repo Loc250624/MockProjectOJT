@@ -59,26 +59,10 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new PasswordEncoder() {
-            private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-
-            @Override
-            public String encode(CharSequence rawPassword) {
-                return bcrypt.encode(rawPassword);
-            }
-
-            @Override
-            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                if (encodedPassword == null)
-                    return false;
-                // If it looks like a BCrypt hash, verify with BCrypt
-                if (encodedPassword.startsWith("$2a$")) {
-                    return bcrypt.matches(rawPassword, encodedPassword);
-                }
-                // Fallback for old SQL plain-text passwords
-                return encodedPassword.equals(rawPassword.toString());
-            }
-        };
+        // Standard BCryptPasswordEncoder (strength 10).
+        // All existing plain-text passwords are migrated to BCrypt by
+        // PasswordMigrationRunner at application startup.
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
