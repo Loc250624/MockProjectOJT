@@ -23,9 +23,11 @@
         /* Enrollment card */
         .enroll-card { background: white; border-radius: 14px; border: 1px solid var(--lumina-gray-200); padding: 1.5rem; box-shadow: var(--shadow-md); position: sticky; top: 80px; }
         .enroll-card .price-display { font-size: 2rem; font-weight: 800; color: var(--lumina-gray-900); }
-        .enroll-card .btn-enroll { width: 100%; padding: 0.875rem; background: var(--lumina-blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
+        .enroll-card .btn-enroll { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 3rem; padding: 0.875rem; background: var(--lumina-blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
         .enroll-card .btn-enroll:hover { background: var(--lumina-blue-light); }
-        .enroll-card .btn-try { width: 100%; padding: 0.75rem; background: transparent; color: var(--lumina-blue); border: 1.5px solid var(--lumina-blue); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.2s; }
+        .enroll-card .btn-enroll:disabled { background: var(--lumina-gray-400); cursor: not-allowed; }
+        .enroll-card .btn-enroll:disabled:hover { background: var(--lumina-gray-400); }
+        .enroll-card .btn-try { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 2.75rem; padding: 0.75rem; background: transparent; color: var(--lumina-blue); border: 1.5px solid var(--lumina-blue); border-radius: 10px; font-size: 0.9rem; font-weight: 600; line-height: 1.2; text-align: center; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.2s; }
         .enroll-card .btn-try:hover { background: var(--lumina-blue-pale); }
         .enroll-card .includes-list { list-style: none; margin-top: 1rem; }
         .enroll-card .includes-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--lumina-gray-600); padding: 0.35rem 0; }

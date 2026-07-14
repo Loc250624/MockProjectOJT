@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -249,7 +250,8 @@ public class AdminActionController {
 
     @PatchMapping("/system-settings")
     public ResponseEntity<?> updateSystemSettings() {
-        return ResponseEntity.ok(Map.of("message", "Update system settings placeholder - not yet implemented"));
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(ApiResponse.error(HttpStatus.GONE.value(), "Use /api/admin/settings for whitelisted system settings."));
     }
 
     private User currentUser(CustomUserDetails userDetails) {

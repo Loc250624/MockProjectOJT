@@ -15,7 +15,7 @@ import com.ojtsu26.elearning.repository.LessonProgressRepository;
 import com.ojtsu26.elearning.repository.OrderItemRepository;
 import com.ojtsu26.elearning.repository.OrderRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
-import com.ojtsu26.elearning.repository.projection.AdminRevenueEventProjection;
+import com.ojtsu26.elearning.repository.projection.AdminRevenueBucketProjection;
 import com.ojtsu26.elearning.repository.projection.AdminStudentEventProjection;
 import com.ojtsu26.elearning.service.AdminAnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -42,7 +43,10 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     private static final String GROUP_DAY = "day";
     private static final String GROUP_MONTH = "month";
     private static final String GROUP_YEAR = "year";
-    private static final String ACTIVE_STUDENT_METHOD = "Lesson progress activity using LessonProgress.lastAccessedAt with lastUpdatedAt fallback";
+    private static final ZoneId ANALYTICS_ZONE = ZoneId.systemDefault();
+    private static final String ACTIVE_STUDENT_METHOD = "Users with role STUDENT who have lesson progress activity in the selected date range, using LessonProgress.lastAccessedAt with lastUpdatedAt fallback. Dates are interpreted in the application time zone.";
+    private static final String REVENUE_RECOGNITION_METHOD = "Gross order-item revenue from orders with status PAID, recognized by Order.createdAt in the application time zone. Refunded orders are excluded by status.";
+    private static final String REVENUE_CURRENCY = "USD";
 
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
@@ -67,9 +71,10 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                 .totalCourses(courseRepository.count())
                 .totalEnrollments(enrollmentRepository.count())
                 .paidOrderCount(orderRepository.countByStatus(OrderStatus.PAID))
+                .currency(REVENUE_CURRENCY)
                 .totalRevenue(money(orderItemRepository.sumPaidRevenue(OrderStatus.PAID)))
                 .newStudents(userRepository.countByRoleAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Role.STUDENT, fromDateTime, toDateTime))
-                .activeStudents(lessonProgressRepository.countActiveStudentsForAnalytics(fromDateTime, toDateTime))
+                .activeStudents(lessonProgressRepository.countActiveStudentsForAnalytics(fromDateTime, toDateTime, Role.STUDENT))
                 .activeStudentMethod(ACTIVE_STUDENT_METHOD)
                 .build();
     }
@@ -82,13 +87,14 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
         LocalDateTime fromDateTime = filter.from().atStartOfDay();
         LocalDateTime toDateTime = filter.to().plusDays(1).atStartOfDay();
         List<AdminStudentEventProjection> newStudentEvents = userRepository.findNewStudentEvents(Role.STUDENT, fromDateTime, toDateTime);
-        List<AdminStudentEventProjection> activeStudentEvents = lessonProgressRepository.findActiveStudentEventsForAnalytics(fromDateTime, toDateTime);
+        List<AdminStudentEventProjection> activeStudentEvents = lessonProgressRepository.findActiveStudentEventsForAnalytics(fromDateTime, toDateTime, Role.STUDENT);
 
         List<AdminStudentAnalyticsPointDTO> trend = buildStudentTrend(filter, cleanGroupBy, newStudentEvents, activeStudentEvents);
 
         return AdminStudentAnalyticsDTO.builder()
                 .from(filter.from())
                 .to(filter.to())
+                .timeZone(ANALYTICS_ZONE.getId())
                 .groupBy(cleanGroupBy)
                 .newStudents(countDistinctStudents(newStudentEvents))
                 .activeStudents(countDistinctStudents(activeStudentEvents))
@@ -104,37 +110,76 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
         String cleanGroupBy = normalizeGroupBy(groupBy);
         LocalDateTime fromDateTime = filter.from().atStartOfDay();
         LocalDateTime toDateTime = filter.to().plusDays(1).atStartOfDay();
-        List<AdminRevenueEventProjection> events = orderItemRepository.findPaidRevenueEvents(OrderStatus.PAID, fromDateTime, toDateTime);
+        List<AdminRevenueTrendPointDTO> trend = buildRevenueTrend(filter, cleanGroupBy,
+                findRevenueBuckets(cleanGroupBy, fromDateTime, toDateTime));
 
         return AdminRevenueAnalyticsDTO.builder()
                 .from(filter.from())
                 .to(filter.to())
+                .timeZone(ANALYTICS_ZONE.getId())
                 .groupBy(cleanGroupBy)
-                .totalRevenue(money(orderItemRepository.sumPaidRevenueForPeriod(OrderStatus.PAID, fromDateTime, toDateTime)))
-                .paidOrderCount(orderRepository.countByStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(OrderStatus.PAID, fromDateTime, toDateTime))
-                .trend(buildRevenueTrend(filter, cleanGroupBy, events))
+                .revenueRecognitionMethod(REVENUE_RECOGNITION_METHOD)
+                .currency(REVENUE_CURRENCY)
+                .totalRevenue(sumTrendRevenue(trend))
+                .paidOrderCount(sumTrendPaidOrders(trend))
+                .trend(trend)
                 .build();
+    }
+
+    private List<AdminRevenueBucketProjection> findRevenueBuckets(String groupBy,
+                                                                  LocalDateTime fromDateTime,
+                                                                  LocalDateTime toDateTime) {
+        return switch (groupBy) {
+            case GROUP_MONTH -> orderItemRepository.findPaidRevenueBucketsByMonth(OrderStatus.PAID, fromDateTime, toDateTime);
+            case GROUP_YEAR -> orderItemRepository.findPaidRevenueBucketsByYear(OrderStatus.PAID, fromDateTime, toDateTime);
+            default -> orderItemRepository.findPaidRevenueBucketsByDay(OrderStatus.PAID, fromDateTime, toDateTime);
+        };
     }
 
     private List<AdminRevenueTrendPointDTO> buildRevenueTrend(DateFilter filter,
                                                               String groupBy,
-                                                              List<AdminRevenueEventProjection> events) {
-        Map<String, RevenueBucket> buckets = new LinkedHashMap<>();
-        initializeRevenueBuckets(filter, groupBy, buckets);
-        events.forEach(event -> {
-            String key = trendKey(event.getCreatedAt().toLocalDate(), groupBy);
-            RevenueBucket bucket = buckets.computeIfAbsent(key, ignored -> new RevenueBucket());
-            bucket.revenue = bucket.revenue.add(event.getRevenue() == null ? BigDecimal.ZERO : event.getRevenue());
-            bucket.orderIds.add(event.getOrderId());
+                                                              List<AdminRevenueBucketProjection> aggregates) {
+        Map<String, AdminRevenueTrendPointDTO> buckets = new LinkedHashMap<>();
+        initializeBucketKeys(filter, groupBy).forEach(key -> buckets.put(key, AdminRevenueTrendPointDTO.builder()
+                .period(key)
+                .revenue(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP))
+                .paidOrderCount(0)
+                .build()));
+        aggregates.forEach(bucket -> {
+            String key = revenueBucketKey(bucket, groupBy);
+            buckets.put(key, AdminRevenueTrendPointDTO.builder()
+                    .period(key)
+                    .revenue(money(bucket.getRevenue()))
+                    .paidOrderCount(bucket.getPaidOrderCount() == null ? 0L : bucket.getPaidOrderCount())
+                    .build());
         });
 
-        return buckets.entrySet().stream()
-                .map(entry -> AdminRevenueTrendPointDTO.builder()
-                        .period(entry.getKey())
-                        .revenue(money(entry.getValue().revenue))
-                        .paidOrderCount(entry.getValue().orderIds.size())
-                        .build())
-                .toList();
+        return List.copyOf(buckets.values());
+    }
+
+    private String revenueBucketKey(AdminRevenueBucketProjection bucket, String groupBy) {
+        int year = bucket.getBucketYear() == null ? 0 : bucket.getBucketYear();
+        if (GROUP_YEAR.equals(groupBy)) {
+            return String.valueOf(year);
+        }
+        int month = bucket.getBucketMonth() == null ? 1 : bucket.getBucketMonth();
+        if (GROUP_MONTH.equals(groupBy)) {
+            return YearMonth.of(year, month).toString();
+        }
+        int day = bucket.getBucketDay() == null ? 1 : bucket.getBucketDay();
+        return LocalDate.of(year, month, day).toString();
+    }
+
+    private BigDecimal sumTrendRevenue(List<AdminRevenueTrendPointDTO> trend) {
+        return money(trend.stream()
+                .map(AdminRevenueTrendPointDTO::getRevenue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+
+    private long sumTrendPaidOrders(List<AdminRevenueTrendPointDTO> trend) {
+        return trend.stream()
+                .mapToLong(AdminRevenueTrendPointDTO::getPaidOrderCount)
+                .sum();
     }
 
     private List<AdminStudentAnalyticsPointDTO> buildStudentTrend(DateFilter filter,
@@ -159,10 +204,6 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                         .activeStudents(entry.getValue().activeStudentIds.size())
                         .build())
                 .toList();
-    }
-
-    private void initializeRevenueBuckets(DateFilter filter, String groupBy, Map<String, RevenueBucket> buckets) {
-        initializeBucketKeys(filter, groupBy).forEach(key -> buckets.put(key, new RevenueBucket()));
     }
 
     private void initializeStudentBuckets(DateFilter filter, String groupBy, Map<String, StudentBucket> buckets) {
@@ -210,7 +251,7 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     }
 
     private DateFilter normalizeDateFilter(LocalDate from, LocalDate to) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ANALYTICS_ZONE);
         LocalDate cleanTo = to == null ? today : to;
         LocalDate cleanFrom = from == null ? cleanTo.minusDays(29) : from;
         if (cleanFrom.isAfter(cleanTo)) {
@@ -235,11 +276,6 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     }
 
     private record DateFilter(LocalDate from, LocalDate to) {
-    }
-
-    private static class RevenueBucket {
-        private BigDecimal revenue = BigDecimal.ZERO;
-        private final Set<Integer> orderIds = new HashSet<>();
     }
 
     private static class StudentBucket {

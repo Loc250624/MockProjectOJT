@@ -11,7 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-<div class="lumina-portal">
+<div class="lumina-portal admin-analytics-page admin-students-analytics-page">
     <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
@@ -49,17 +49,26 @@
             </div>
 
             <section id="adminStudentsContent" hidden>
-                <div class="stats-grid-3">
+                <div class="stats-grid-4">
                     <div class="stat-card">
                         <div class="stat-label">New Students</div>
                         <div class="stat-value" data-students-new>0</div>
+                        <div class="stat-unit">students</div>
+                        <div class="stat-change stat-change-neutral">Role STUDENT by account creation date</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Active Students</div>
                         <div class="stat-value" data-students-active>0</div>
+                        <div class="stat-unit">students</div>
+                        <div class="stat-change stat-change-neutral">Distinct students with lesson progress activity</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Activity Source</div>
+                        <div class="stat-label">Viewed Range</div>
+                        <div class="admin-method-text" data-students-period>Selected period</div>
+                        <div class="stat-change stat-change-neutral" data-students-timezone></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Definition</div>
                         <div class="admin-method-text" data-students-method>Lesson progress activity</div>
                     </div>
                 </div>
@@ -72,7 +81,12 @@
                 <section class="card card-padded">
                     <div class="card-header">
                         <h2 class="card-title">Student Trend</h2>
-                        <span class="text-muted text-sm" data-students-period></span>
+                        <span class="text-muted text-sm" data-students-chart-period></span>
+                    </div>
+                    <div class="admin-chart-meta" aria-hidden="true">
+                        <span><i class="admin-chart-key admin-chart-key-primary"></i>New students</span>
+                        <span><i class="admin-chart-key admin-chart-key-secondary"></i>Active students</span>
+                        <span class="admin-chart-axis">X-axis: period</span>
                     </div>
                     <div id="adminStudentsChart" class="admin-analytics-chart admin-analytics-chart-tall"></div>
                 </section>

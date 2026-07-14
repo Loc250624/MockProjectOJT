@@ -20,11 +20,17 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.util.List;
+
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -58,19 +64,63 @@ class AdminSettingsControllerTest {
     }
 
     @Test
+    void anonymousCannotAccessSettingsPage() throws Exception {
+        for (String path : List.of("/admin/settings", "/admin/system-settings")) {
+            mockMvc.perform(get(path))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/auth/login"));
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminCanAccessSettingsPage() throws Exception {
+        for (String path : List.of("/admin/settings", "/admin/system-settings")) {
+            mockMvc.perform(get(path))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "TEACHER")
+    void teacherCannotAccessSettingsPage() throws Exception {
+        for (String path : List.of("/admin/settings", "/admin/system-settings")) {
+            mockMvc.perform(get(path))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/"));
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "STUDENT")
+    void studentCannotAccessSettingsPage() throws Exception {
+        for (String path : List.of("/admin/settings", "/admin/system-settings")) {
+            mockMvc.perform(get(path))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/"));
+        }
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     void adminCanReadSettingsAndDefaultsAreSeeded() throws Exception {
         mockMvc.perform(get("/api/admin/settings"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(6))
                 .andExpect(jsonPath("$.data[*].key", hasItem("site.name")))
-                .andExpect(jsonPath("$.data[*].key", hasItem("commerce.currency")));
+                .andExpect(jsonPath("$.data[*].key", hasItem("commerce.currency")))
+                .andExpect(jsonPath("$.data[*].key", not(hasItem("payment.gateway.vnpay.secretKey"))))
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.currency')].type").value(hasItem("ENUM")))
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.currency')].options").isNotEmpty())
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.teacherCommissionRate')].minValue").value(hasItem("0")))
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.teacherCommissionRate')].maxValue").value(hasItem("1")));
     }
 
     @Test
     void adminCanUpdateEditableSetting() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.name")
                         .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"OJTSU26 Learning Hub\"}"))
                 .andExpect(status().isOk())
@@ -83,6 +133,7 @@ class AdminSettingsControllerTest {
     void invalidTypeValueIsRejected() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.maintenanceMode")
                         .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"sometimes\"}"))
                 .andExpect(status().isBadRequest())
@@ -90,7 +141,7 @@ class AdminSettingsControllerTest {
     }
 
     @Test
-    void nonEditableSettingIsRejected() throws Exception {
+    void keyOutsideWhitelistIsRejected() throws Exception {
         systemSettingRepository.save(SystemSetting.builder()
                 .key("system.buildVersion")
                 .value("1.0.0")
@@ -102,10 +153,163 @@ class AdminSettingsControllerTest {
 
         mockMvc.perform(put("/api/admin/settings/system.buildVersion")
                         .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"2.0.0\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("System setting is not editable: system.buildVersion"));
+                .andExpect(jsonPath("$.message").value("System setting key is not whitelisted: system.buildVersion"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void missingWhitelistedKeyFallsBackToDefault() throws Exception {
+        mockMvc.perform(get("/api/admin/settings"))
+                .andExpect(status().isOk());
+
+        SystemSetting currency = systemSettingRepository.findByKey("commerce.currency").orElseThrow();
+        systemSettingRepository.delete(currency);
+
+        mockMvc.perform(get("/api/admin/settings"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.currency')].value").value(hasItem("VND")));
+    }
+
+    @Test
+    void decimalOutsideRangeIsRejected() throws Exception {
+        mockMvc.perform(put("/api/admin/settings/commerce.teacherCommissionRate")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"1.25\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("commerce.teacherCommissionRate must be at most 1"));
+    }
+
+    @Test
+    void enumOutsideOptionsIsRejected() throws Exception {
+        mockMvc.perform(put("/api/admin/settings/commerce.currency")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"EUR\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("commerce.currency must be one of: VND, USD"));
+    }
+
+    @Test
+    void bulkUpdateOnlyAcceptsWhitelistedKeys() throws Exception {
+        mockMvc.perform(post("/api/admin/settings/bulk")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"values\":{\"site.name\":\"Safe Name\",\"payment.gateway.secret\":\"dont-store\"}}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("System setting key is not whitelisted: payment.gateway.secret"));
+    }
+
+    @Test
+    void bulkValidUpdateUpdatesAuditMetadata() throws Exception {
+        mockMvc.perform(post("/api/admin/settings/bulk")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"values\":{\"site.supportEmail\":\"HELP@LUMINA.EDU.VN\",\"commerce.currency\":\"USD\"}}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.key == 'site.supportEmail')].value").value(hasItem("help@lumina.edu.vn")))
+                .andExpect(jsonPath("$.data[?(@.key == 'site.supportEmail')].updatedById").value(hasItem(admin().getId())))
+                .andExpect(jsonPath("$.data[?(@.key == 'commerce.currency')].value").value(hasItem("USD")));
+    }
+
+    @Test
+    void updateWithoutSettingsRequestVerificationHeaderIsRejected() throws Exception {
+        mockMvc.perform(put("/api/admin/settings/site.name")
+                        .with(adminPrincipal())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"No Header\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void bulkUpdateWithoutSettingsRequestVerificationHeaderIsRejected() throws Exception {
+        mockMvc.perform(post("/api/admin/settings/bulk")
+                        .with(adminPrincipal())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"values\":{\"site.name\":\"No Header\"}}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "TEACHER")
+    void teacherCannotModifySettings() throws Exception {
+        mockMvc.perform(put("/api/admin/settings/site.name")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"Teacher Change\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void settingStringRejectsScriptValueAndOverlongValue() throws Exception {
+        mockMvc.perform(put("/api/admin/settings/site.name")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"<script>alert(1)</script>\"}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(put("/api/admin/settings/site.name")
+                        .with(adminPrincipal())
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"value\":\"" + "A".repeat(121) + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("site.name must be 120 characters or fewer"));
+    }
+
+    @Test
+    void settingsJsonResponseDoesNotExposeSecretValues() throws Exception {
+        systemSettingRepository.save(SystemSetting.builder()
+                .key("payment.gateway.momo.secretKey")
+                .value("super-secret-value")
+                .type(SystemSettingType.STRING)
+                .category("Payment")
+                .description("Payment secret")
+                .editable(true)
+                .build());
+
+        mockMvc.perform(get("/api/admin/settings")
+                        .with(adminPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].key", not(hasItem("payment.gateway.momo.secretKey"))))
+                .andExpect(jsonPath("$.data[*].value", not(hasItem("super-secret-value"))));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void sensitiveDatabaseSettingIsNotExposedBecauseItIsNotWhitelisted() throws Exception {
+        systemSettingRepository.save(SystemSetting.builder()
+                .key("payment.gateway.vnpay.secretKey")
+                .value("plain-secret")
+                .type(SystemSettingType.STRING)
+                .category("Payment")
+                .description("Payment secret")
+                .editable(true)
+                .build());
+
+        mockMvc.perform(get("/api/admin/settings"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].key", not(hasItem("payment.gateway.vnpay.secretKey"))))
+                .andExpect(jsonPath("$.data[*].value", not(hasItem("plain-secret"))));
+    }
+
+    @Test
+    void legacySystemSettingsPlaceholderNoLongerReturnsSuccessfulUpdate() throws Exception {
+        mockMvc.perform(patch("/api/admin/system-settings")
+                        .with(adminPrincipal())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"anything\":\"value\"}"))
+                .andExpect(status().isGone())
+                .andExpect(jsonPath("$.message").value("Use /api/admin/settings for whitelisted system settings."));
     }
 
     @Test

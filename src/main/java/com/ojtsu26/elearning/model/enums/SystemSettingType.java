@@ -5,5 +5,7 @@ public enum SystemSettingType {
     BOOLEAN,
     INTEGER,
     DECIMAL,
-    EMAIL
+    EMAIL,
+    URL,
+    ENUM
 }

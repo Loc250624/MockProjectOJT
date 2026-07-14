@@ -10,10 +10,25 @@ function highlightCurrentAdminNav() {
     var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
     sidebarLinks.forEach(function(link) {
         var linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
-        if (linkPath === currentPath) {
+        if (isActiveAdminPath(linkPath, currentPath)) {
             link.classList.add('active');
         }
     });
+}
+
+function isActiveAdminPath(linkPath, currentPath) {
+    if (linkPath === currentPath) {
+        return true;
+    }
+    if (linkPath === '/admin/analytics') {
+        return currentPath === '/admin/statistics/students'
+            || currentPath === '/admin/analytics/revenue'
+            || currentPath === '/admin/reports/revenue';
+    }
+    if (linkPath === '/admin/settings') {
+        return currentPath === '/admin/system-settings';
+    }
+    return false;
 }
 
 function initUserAdministration() {

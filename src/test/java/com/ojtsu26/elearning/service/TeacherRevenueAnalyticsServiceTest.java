@@ -75,6 +75,7 @@ class TeacherRevenueAnalyticsServiceTest {
         when(orderItemRepository.sumTeacherRevenue(7, OrderStatus.PAID, from, to, 101))
                 .thenReturn(new BigDecimal("149.995"));
         when(orderItemRepository.countTeacherPaidOrders(7, OrderStatus.PAID, from, to, 101)).thenReturn(2L);
+        when(orderItemRepository.countTeacherPaidStudents(7, OrderStatus.PAID, from, to, 101)).thenReturn(2L);
         when(enrollmentRepository.countTeacherEnrollmentsForAnalytics(7, from, to, 101)).thenReturn(3L);
         when(enrollmentRepository.countTeacherStudentsForAnalytics(7, from, to, 101)).thenReturn(3L);
         when(orderItemRepository.findTeacherRevenueEvents(7, OrderStatus.PAID, from, to, 101))
@@ -96,7 +97,9 @@ class TeacherRevenueAnalyticsServiceTest {
         );
 
         assertEquals(new BigDecimal("150.00"), response.getTotalRevenue());
+        assertEquals("USD", response.getCurrency());
         assertEquals(2, response.getPaidOrderCount());
+        assertEquals(2, response.getPaidStudentCount());
         assertEquals(3, response.getEnrollmentCount());
         assertEquals("Spring Revenue", response.getBestSellingCourse().getCourseTitle());
         assertEquals(new BigDecimal("150.00"), response.getTrend().get(2).getRevenue());
@@ -116,6 +119,7 @@ class TeacherRevenueAnalyticsServiceTest {
         ));
 
         verify(orderItemRepository, never()).sumTeacherRevenue(any(), any(), any(), any(), any());
+        verify(orderItemRepository, never()).countTeacherPaidStudents(any(), any(), any(), any(), any());
         verify(orderItemRepository, never()).findTeacherRevenueEvents(any(), any(), any(), any(), any());
     }
 

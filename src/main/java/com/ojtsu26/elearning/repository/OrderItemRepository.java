@@ -2,7 +2,7 @@ package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.OrderItem;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
-import com.ojtsu26.elearning.repository.projection.AdminRevenueEventProjection;
+import com.ojtsu26.elearning.repository.projection.AdminRevenueBucketProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueEventProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,19 +38,58 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
                                        @Param("to") LocalDateTime to);
 
     @Query("""
-            select o.id as orderId,
-                   o.createdAt as createdAt,
-                   oi.unitPrice as revenue
+            select year(o.createdAt) as bucketYear,
+                   month(o.createdAt) as bucketMonth,
+                   day(o.createdAt) as bucketDay,
+                   coalesce(sum(oi.unitPrice), 0) as revenue,
+                   count(distinct o.id) as paidOrderCount
             from OrderItem oi
             join oi.order o
             where o.status = :paidStatus
               and o.createdAt >= :from
               and o.createdAt < :to
-            order by o.createdAt asc, o.id asc
+            group by year(o.createdAt), month(o.createdAt), day(o.createdAt)
+            order by year(o.createdAt) asc, month(o.createdAt) asc, day(o.createdAt) asc
             """)
-    List<AdminRevenueEventProjection> findPaidRevenueEvents(@Param("paidStatus") OrderStatus paidStatus,
-                                                            @Param("from") LocalDateTime from,
-                                                            @Param("to") LocalDateTime to);
+    List<AdminRevenueBucketProjection> findPaidRevenueBucketsByDay(@Param("paidStatus") OrderStatus paidStatus,
+                                                                    @Param("from") LocalDateTime from,
+                                                                    @Param("to") LocalDateTime to);
+
+    @Query("""
+            select year(o.createdAt) as bucketYear,
+                   month(o.createdAt) as bucketMonth,
+                   null as bucketDay,
+                   coalesce(sum(oi.unitPrice), 0) as revenue,
+                   count(distinct o.id) as paidOrderCount
+            from OrderItem oi
+            join oi.order o
+            where o.status = :paidStatus
+              and o.createdAt >= :from
+              and o.createdAt < :to
+            group by year(o.createdAt), month(o.createdAt)
+            order by year(o.createdAt) asc, month(o.createdAt) asc
+            """)
+    List<AdminRevenueBucketProjection> findPaidRevenueBucketsByMonth(@Param("paidStatus") OrderStatus paidStatus,
+                                                                      @Param("from") LocalDateTime from,
+                                                                      @Param("to") LocalDateTime to);
+
+    @Query("""
+            select year(o.createdAt) as bucketYear,
+                   null as bucketMonth,
+                   null as bucketDay,
+                   coalesce(sum(oi.unitPrice), 0) as revenue,
+                   count(distinct o.id) as paidOrderCount
+            from OrderItem oi
+            join oi.order o
+            where o.status = :paidStatus
+              and o.createdAt >= :from
+              and o.createdAt < :to
+            group by year(o.createdAt)
+            order by year(o.createdAt) asc
+            """)
+    List<AdminRevenueBucketProjection> findPaidRevenueBucketsByYear(@Param("paidStatus") OrderStatus paidStatus,
+                                                                     @Param("from") LocalDateTime from,
+                                                                     @Param("to") LocalDateTime to);
 
     @Query("""
             select coalesce(sum(oi.unitPrice), 0)
@@ -85,6 +124,23 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
                                 @Param("from") LocalDateTime from,
                                 @Param("to") LocalDateTime to,
                                 @Param("courseId") Integer courseId);
+
+    @Query("""
+            select count(distinct o.user.id)
+            from OrderItem oi
+            join oi.order o
+            join oi.course c
+            where c.instructor.id = :teacherId
+              and o.status = :paidStatus
+              and o.createdAt >= :from
+              and o.createdAt < :to
+              and (:courseId is null or c.id = :courseId)
+            """)
+    long countTeacherPaidStudents(@Param("teacherId") Integer teacherId,
+                                  @Param("paidStatus") OrderStatus paidStatus,
+                                  @Param("from") LocalDateTime from,
+                                  @Param("to") LocalDateTime to,
+                                  @Param("courseId") Integer courseId);
 
     @Query("""
             select o.id as orderId,

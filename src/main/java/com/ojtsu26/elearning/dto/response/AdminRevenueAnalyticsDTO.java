@@ -16,7 +16,10 @@ import java.util.List;
 public class AdminRevenueAnalyticsDTO {
     private LocalDate from;
     private LocalDate to;
+    private String timeZone;
     private String groupBy;
+    private String revenueRecognitionMethod;
+    private String currency;
     private BigDecimal totalRevenue;
     private long paidOrderCount;
     private List<AdminRevenueTrendPointDTO> trend;

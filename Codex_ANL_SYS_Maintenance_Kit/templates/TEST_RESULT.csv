@@ -1,6 +1,0 @@
-Test ID,Feature,Role,Precondition,Steps,Expected,Actual,Status,Evidence,Root Cause,Fixed Commit
-ANL01-01,ANL-01,Teacher,,,,,,,,
-ANL02-01,ANL-02,Admin,,,,,,,,
-ANL03-01,ANL-03,Admin,,,,,,,,
-ANL04-01,ANL-04,Admin,,,,,,,,
-SYS01-01,SYS-01,Admin,,,,,,,,

@@ -459,6 +459,15 @@
   line-height: 1.1;
 }
 
+.report-kpi small {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .progress-report-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
@@ -558,8 +567,16 @@
 }
 
 /* Teacher revenue analytics */
+.teacher-analytics-page [hidden] {
+  display: none !important;
+}
+
 .teacher-analytics-filters {
   padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-widget-state {
   margin-bottom: 1.5rem;
 }
 
@@ -568,7 +585,7 @@
 }
 
 .analytics-kpi-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .analytics-best-course strong {
@@ -597,6 +614,31 @@
   background: repeating-linear-gradient(0deg, transparent, transparent 43px, var(--lumina-gray-100) 44px);
 }
 
+.analytics-chart-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin: -0.5rem 0 0.75rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.analytics-chart-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.analytics-chart-meta i {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: var(--lumina-blue);
+  display: inline-block;
+}
+
 .analytics-bar-wrap {
   display: grid;
   grid-template-rows: 1fr auto;
@@ -611,6 +653,11 @@
   min-height: 3px;
   border-radius: 6px 6px 0 0;
   background: var(--lumina-blue);
+}
+
+.analytics-bar:focus-visible {
+  outline: 3px solid var(--lumina-blue-pale);
+  outline-offset: 2px;
 }
 
 .analytics-bar-label {
@@ -662,6 +709,15 @@
 .analytics-course-table td:nth-child(n+2),
 .analytics-course-table th:nth-child(n+2) {
   text-align: right;
+}
+
+.analytics-course-table {
+  min-width: 760px;
+}
+
+.analytics-filter-grid .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 @media (max-width: 1180px) {

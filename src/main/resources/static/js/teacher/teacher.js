@@ -1,11 +1,10 @@
 'use strict';
-console.log('Teacher JS loaded');
 document.addEventListener('DOMContentLoaded', function() {
     var currentPath = window.location.pathname;
     var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
     sidebarLinks.forEach(function(link) {
         var linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
-        if (linkPath === currentPath) {
+        if (linkPath === currentPath || (linkPath === '/teacher/analytics' && currentPath === '/instructor/analytics')) {
             link.classList.add('active');
         }
     });
