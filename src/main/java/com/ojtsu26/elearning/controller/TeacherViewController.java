@@ -21,6 +21,7 @@ import com.ojtsu26.elearning.service.LessonService;
 import com.ojtsu26.elearning.service.ProfileService;
 import com.ojtsu26.elearning.service.RoadmapService;
 import com.ojtsu26.elearning.service.TeacherCourseStudentService;
+import com.ojtsu26.elearning.service.TeacherDashboardService;
 import com.ojtsu26.elearning.service.VideoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -49,11 +50,15 @@ public class TeacherViewController {
     private final VideoService videoService;
     private final ProfileService profileService;
     private final TeacherCourseStudentService teacherCourseStudentService;
+    private final TeacherDashboardService teacherDashboardService;
     private final BlogPostService blogPostService;
     private final AssessmentService assessmentService;
 
     @GetMapping("/dashboard")
-    public String dashboard() { return "teacher/dashboard"; }
+    public String dashboard(Model model) {
+        model.addAttribute("dashboardStats", teacherDashboardService.getCurrentTeacherStats());
+        return "teacher/dashboard";
+    }
 
     @GetMapping("/profile")
     public String profile(Model model) {

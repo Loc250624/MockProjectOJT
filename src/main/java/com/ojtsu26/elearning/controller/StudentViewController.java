@@ -54,6 +54,7 @@ public class StudentViewController {
     private final CurrencyConversionService currencyConversionService;
     private final BlogPostService blogPostService;
     private final AssessmentService assessmentService;
+    private final StudentDashboardService studentDashboardService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -64,6 +65,7 @@ public class StudentViewController {
         model.addAttribute("enrolledCourseCount", courseCards.size());
         model.addAttribute("completedCourseCount", completed);
         model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
+        model.addAttribute("dashboardStats", studentDashboardService.getCurrentStudentStats());
         return "student/dashboard";
     }
 

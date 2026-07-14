@@ -130,4 +130,21 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
                                                                     @Param("from") LocalDateTime from,
                                                                     @Param("to") LocalDateTime to,
                                                                     @Param("courseId") Integer courseId);
+
+    @Query("""
+            select distinct o.currency
+            from OrderItem oi
+            join oi.order o
+            join oi.course c
+            where c.instructor.id = :teacherId
+              and o.status = :paidStatus
+              and o.createdAt >= :from
+              and o.createdAt < :to
+              and o.currency is not null
+              and o.currency <> ''
+            """)
+    List<String> findTeacherPaidRevenueCurrencies(@Param("teacherId") Integer teacherId,
+                                                  @Param("paidStatus") OrderStatus paidStatus,
+                                                  @Param("from") LocalDateTime from,
+                                                  @Param("to") LocalDateTime to);
 }

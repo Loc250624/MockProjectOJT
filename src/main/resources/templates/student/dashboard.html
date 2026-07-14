@@ -49,10 +49,12 @@
                     <div class="stat-change stat-change-neutral">Active learning</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">🏆</div>
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">C</div>
                     <div class="stat-label">Certificates</div>
-                    <div class="stat-value">3</div>
-                    <div class="stat-change stat-change-up">Verified credentials</div>
+                    <div class="stat-value" th:text="${dashboardStats.activeCertificates}">0</div>
+                    <div class="stat-change"
+                         th:classappend="${dashboardStats.certificateCaptionClass}"
+                         th:text="${dashboardStats.certificateCaption}">No credentials yet</div>
                 </div>
             </div>
 
