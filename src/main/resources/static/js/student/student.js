@@ -324,6 +324,8 @@ function initVideoProgress(element) {
     var lastSavedMax = highestLocal;
     var lastSentAt = 0;
     var saving = false;
+    var completionRequestSent = false;
+    var pendingCompletionSave = false;
     var playerWrapper = null;
 
     function finiteSeconds(value) {
@@ -371,13 +373,24 @@ function initVideoProgress(element) {
         }
         var now = Date.now();
         var payload = buildProgressPayload(current, eventType);
+        var completionEvent = payload.eventType === 'ENDED'
+            || (payload.durationSeconds > 0 && payload.maxReachedSeconds * 100 >= payload.durationSeconds * 90);
+        if (completionEvent && completionRequestSent) {
+            return Promise.resolve();
+        }
         if (!force && now - lastSentAt < 10000 && payload.maxReachedSeconds - lastSavedMax < 10) {
             return Promise.resolve();
         }
         if (saving) {
+            if (completionEvent) {
+                pendingCompletionSave = true;
+            }
             return Promise.resolve();
         }
         saving = true;
+        if (completionEvent) {
+            completionRequestSent = true;
+        }
         lastSentAt = now;
         return fetch('/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/video-progress', {
             method: 'POST',
@@ -390,14 +403,24 @@ function initVideoProgress(element) {
             var data = apiResponse.data || {};
             lastSavedPosition = typeof data.lastPositionSeconds === 'number' ? data.lastPositionSeconds : payload.currentTimeSeconds;
             lastSavedMax = Math.max(lastSavedMax, data.maxReachedSeconds || data.watchedSeconds || payload.maxReachedSeconds);
+            if (completionEvent && !data.completed) {
+                completionRequestSent = false;
+            }
             applyLearningProgress(apiResponse.data);
         }).catch(function (error) {
+            if (completionEvent) {
+                completionRequestSent = false;
+            }
             var help = document.getElementById('video-progress-help');
             if (help) {
                 help.textContent = error.message;
             }
         }).finally(function () {
             saving = false;
+            if (pendingCompletionSave) {
+                pendingCompletionSave = false;
+                saveProgress(true, currentDuration(), 'ENDED');
+            }
         });
     }
 
@@ -416,7 +439,9 @@ function initVideoProgress(element) {
     }
 
     function onTimeUpdate(currentTime) {
-        saveProgress(false, currentTime, 'TIME_UPDATE');
+        var duration = currentDuration();
+        var nearCompletion = duration > 0 && finiteSeconds(currentTime) * 100 >= duration * 90;
+        saveProgress(nearCompletion, currentTime, 'TIME_UPDATE');
     }
 
     function onSeeked(currentTime) {
@@ -557,6 +582,7 @@ function initQuizPanel(panel) {
     var saveButton = document.getElementById('quiz-save-button');
     var submitButton = document.getElementById('quiz-submit-button');
     var result = document.getElementById('quiz-result');
+    var retakeButton = document.getElementById('quiz-retake-button');
     var stateLabel = document.getElementById('quiz-state-label');
     var attempt = null;
 
@@ -591,6 +617,10 @@ function initQuizPanel(panel) {
     function renderResult(data) {
         form.hidden = true;
         result.hidden = false;
+        if (retakeButton) {
+            retakeButton.disabled = false;
+            retakeButton.hidden = false;
+        }
         var score = data.score == null ? 'Not scored' : data.score + '%';
         var status = data.passed ? 'Passed' : 'Not passed';
         result.querySelector('span').textContent = status + '. Score: ' + score + '.';
@@ -610,6 +640,7 @@ function initQuizPanel(panel) {
         attempt = data;
         loading.hidden = true;
         if (data.unavailable) {
+            result.hidden = true;
             unavailable.hidden = false;
             unavailable.querySelector('span').textContent = data.unavailableMessage || 'This quiz is not available right now.';
             if (stateLabel) {
@@ -622,6 +653,12 @@ function initQuizPanel(panel) {
             return;
         }
 
+        unavailable.hidden = true;
+        result.hidden = true;
+        if (retakeButton) {
+            retakeButton.hidden = true;
+            retakeButton.disabled = false;
+        }
         questionsWrap.replaceChildren();
         (data.questions || []).forEach(function (question, index) {
             var block = document.createElement('fieldset');
@@ -648,9 +685,23 @@ function initQuizPanel(panel) {
             questionsWrap.appendChild(block);
         });
         form.hidden = false;
+        setPanelMessage('quiz-message', '', false);
         if (stateLabel) {
             stateLabel.textContent = 'Draft';
         }
+    }
+
+    function loadQuiz(message) {
+        if (message) {
+            setPanelMessage('quiz-message', message, false);
+        }
+        return fetch(endpoint(''), { credentials: 'same-origin' })
+            .then(function(response) {
+                return parseLearningJson(response, 'Unable to load quiz');
+            })
+            .then(function(apiResponse) {
+                renderQuiz(apiResponse.data || {});
+            });
     }
 
     function sendQuiz(action, message) {
@@ -678,13 +729,7 @@ function initQuizPanel(panel) {
         });
     }
 
-    fetch(endpoint(''), { credentials: 'same-origin' })
-        .then(function (response) {
-            return parseLearningJson(response, 'Unable to load quiz');
-        })
-        .then(function (apiResponse) {
-            renderQuiz(apiResponse.data || {});
-        })
+    loadQuiz()
         .catch(function (error) {
             loading.hidden = true;
             unavailable.hidden = false;
@@ -714,6 +759,20 @@ function initQuizPanel(panel) {
                 })
                 .finally(function () {
                     submitButton.disabled = false;
+                });
+        });
+    }
+    if (retakeButton) {
+        retakeButton.addEventListener('click', function() {
+            retakeButton.disabled = true;
+            loading.hidden = false;
+            loadQuiz('Starting a new attempt...')
+                .catch(function(error) {
+                    setPanelMessage('quiz-message', error.message, true);
+                    retakeButton.disabled = false;
+                })
+                .finally(function() {
+                    loading.hidden = true;
                 });
         });
     }
@@ -850,11 +909,6 @@ function initCodePanel(panel) {
                     submitButton.disabled = false;
                 });
         });
-    }
-
-    element.classList.remove('error', 'success');
-    if (type) {
-        element.classList.add(type);
     }
 }
 

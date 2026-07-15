@@ -86,7 +86,7 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
             return unavailableQuiz(courseId, lessonId, "This quiz has no questions yet.");
         }
 
-        Submission attempt = currentAttempt(student.getId(), lessonId)
+        Submission attempt = currentDraftAttempt(student.getId(), lessonId)
                 .orElseGet(() -> createQuizAttempt(student, lesson));
         return toQuizDto(courseId, lessonId, quiz, questions, attempt);
     }
@@ -229,13 +229,10 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         return submissionRepository.save(attempt);
     }
 
-    private java.util.Optional<Submission> currentAttempt(Integer studentId, Integer lessonId) {
-        java.util.Optional<Submission> pending = submissionRepository
-                .findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(studentId, lessonId, SubmissionStatus.PENDING_REVIEW);
-        if (pending.isPresent()) {
-            return pending;
-        }
-        return submissionRepository.findTopByStudentIdAndLessonIdOrderByIdDesc(studentId, lessonId);
+    private java.util.Optional<Submission> currentDraftAttempt(Integer studentId, Integer lessonId) {
+        return submissionRepository.findDraftsForUpdate(studentId, lessonId, SubmissionStatus.PENDING_REVIEW)
+                .stream()
+                .findFirst();
     }
 
     private Submission requirePendingAttempt(StudentQuizSubmissionRequestDTO request, Integer lessonId) {

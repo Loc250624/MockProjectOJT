@@ -229,6 +229,65 @@ class StudentLearningServiceTest {
     }
 
     @Test
+    void videoCompletionUnlocksNextCodingLesson() {
+        stubAccess();
+        Lesson codingLesson = Lesson.builder()
+                .id(103)
+                .course(course)
+                .title("Build It")
+                .type(LessonType.CODING)
+                .orderIndex(3)
+                .codingassignment(CodingAssignment.builder().id(88).build())
+                .build();
+        LessonProgress completedFirst = completedProgress(firstLesson);
+        LessonProgress videoProgress = LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(secondLesson)
+                .isCompleted(false)
+                .watchedSeconds(0)
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, secondLesson, codingLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(videoProgress));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(completedFirst, videoProgress));
+
+        LearningProgressDTO response = service.recordVideoProgress(10, 102, videoProgressRequest(90, 90, 90, "ENDED"));
+
+        assertTrue(response.getCompleted());
+        assertEquals(103, response.getNextLessonId());
+        assertTrue(response.getNextLessonAccessible());
+    }
+
+    @Test
+    void videoCompletionUnlocksNextQuizLesson() {
+        stubAccess();
+        Lesson quizLesson = Lesson.builder()
+                .id(104)
+                .course(course)
+                .title("Check Understanding")
+                .type(LessonType.QUIZ)
+                .orderIndex(3)
+                .build();
+        LessonProgress completedFirst = completedProgress(firstLesson);
+        LessonProgress videoProgress = LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(secondLesson)
+                .isCompleted(false)
+                .watchedSeconds(0)
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, secondLesson, quizLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(videoProgress));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(completedFirst, videoProgress));
+
+        LearningProgressDTO response = service.recordVideoProgress(10, 102, videoProgressRequest(90, 90, 90, "ENDED"));
+
+        assertTrue(response.getCompleted());
+        assertEquals(104, response.getNextLessonId());
+        assertTrue(response.getNextLessonAccessible());
+    }
+
+    @Test
     void anotherStudentsCompletionDoesNotUnlockCurrentStudentsLesson() {
         stubAccess();
         when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, secondLesson));
@@ -507,7 +566,7 @@ class StudentLearningServiceTest {
     }
 
     @Test
-    void courseProgressHandlesZeroRequiredLessons() {
+    void courseProgressIncludesQuizLessonsInRequiredCurriculum() {
         stubAccess();
         Lesson quizLesson = Lesson.builder()
                 .id(104)
@@ -521,8 +580,8 @@ class StudentLearningServiceTest {
 
         LearningProgressDTO progress = service.getCourseProgress(10);
 
-        assertEquals(0, progress.getTotalLessons());
-        assertEquals(BigDecimal.ZERO, progress.getProgressPercentage());
+        assertEquals(1, progress.getTotalLessons());
+        assertEquals(new BigDecimal("0.00"), progress.getProgressPercentage());
         assertFalse(progress.getCompleted());
     }
 
