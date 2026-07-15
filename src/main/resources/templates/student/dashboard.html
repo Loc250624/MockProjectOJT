@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard — Student Portal | LumiNa</title>
+    <title>Student Dashboard - Student Portal | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
@@ -13,43 +13,38 @@
 <body>
 
 <div class="lumina-portal">
-    
-    <!-- Sidebar -->
     <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
 
-    <!-- Topbar & Main -->
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
-        
         <div th:replace="~{fragments/layout :: topbar-student('Dashboard')}"></div>
-        
+
         <main class="lumina-portal-main">
             <div class="page-header">
-                <h1 class="page-title">Welcome back, <span th:text="${#authentication?.name ?: 'Alex'}">Alex</span></h1>
-                <p class="page-subtitle">Here is your academic progress overview for the Fall 2024 semester.</p>
+                <h1 class="page-title">Welcome back, <span th:text="${#authentication?.name ?: 'student'}">student</span></h1>
+                <p class="page-subtitle">Here is your academic progress overview.</p>
             </div>
 
-            <!-- Stats Row -->
             <div class="stats-grid-4">
                 <div class="stat-card">
-                    <div class="stat-icon">📚</div>
+                    <div class="stat-icon">&#128218;</div>
                     <div class="stat-label">Enrolled Courses</div>
                     <div class="stat-value" th:text="${enrolledCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Total lifetime</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">✓</div>
+                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">&#10003;</div>
                     <div class="stat-label">Completed</div>
                     <div class="stat-value" th:text="${completedCourseCount}">0</div>
-                    <div class="stat-change stat-change-up">↑ 1 this month</div>
+                    <div class="stat-change stat-change-neutral">Finished courses</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-warning-bg);color:var(--lumina-warning);">⏳</div>
+                    <div class="stat-icon" style="background:var(--lumina-warning-bg);color:var(--lumina-warning);">&#9203;</div>
                     <div class="stat-label">In Progress</div>
                     <div class="stat-value" th:text="${inProgressCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Active learning</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">C</div>
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">&#127942;</div>
                     <div class="stat-label">Certificates</div>
                     <div class="stat-value" th:text="${dashboardStats.activeCertificates}">0</div>
                     <div class="stat-change"
@@ -59,7 +54,6 @@
             </div>
 
             <div class="grid-main-aside">
-                <!-- Left: Active Courses -->
                 <div>
                     <div class="section-head">
                         <h2 class="section-title">My Active Courses</h2>
@@ -94,123 +88,40 @@
                         <p>Your enrolled courses will appear here after you join a course.</p>
                         <a th:href="@{/student/courses}" class="btn btn-primary">Browse Catalog</a>
                     </div>
-
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem;" th:if="${false}">
-                        
-                        <div class="progress-card">
-                            <div class="pc-header">
-                                <div class="pc-icon">💻</div>
-                                <div>
-                                    <div class="pc-title">Systems Architecture & Design</div>
-                                    <div class="pc-instructor">Dr. Michael Chen</div>
-                                </div>
-                            </div>
-                            <div class="pc-progress">
-                                <div class="pc-progress-info">
-                                    <span class="lbl">Module 4 of 10</span>
-                                    <span class="pct">42%</span>
-                                </div>
-                                <div class="progress-bar-wrap">
-                                    <div class="progress-bar-fill" style="width: 42%;"></div>
-                                </div>
-                            </div>
-                            <div class="pc-actions">
-                                <a th:href="@{/student/course-detail}" class="btn btn-primary btn-sm btn-full">Continue Learning</a>
-                            </div>
-                        </div>
-
-                        <div class="progress-card">
-                            <div class="pc-header">
-                                <div class="pc-icon" style="background:linear-gradient(135deg, #134e4a, #0d9488);">🎨</div>
-                                <div>
-                                    <div class="pc-title">Advanced UI/UX Research</div>
-                                    <div class="pc-instructor">Prof. Sarah Jenkins</div>
-                                </div>
-                            </div>
-                            <div class="pc-progress">
-                                <div class="pc-progress-info">
-                                    <span class="lbl">Final Project</span>
-                                    <span class="pct">78%</span>
-                                </div>
-                                <div class="progress-bar-wrap">
-                                    <div class="progress-bar-fill" style="width: 78%;"></div>
-                                </div>
-                            </div>
-                            <div class="pc-actions">
-                                <a th:href="@{/student/course-detail}" class="btn btn-primary btn-sm btn-full">Continue Learning</a>
-                            </div>
-                        </div>
-
-                        <div class="progress-card">
-                            <div class="pc-header">
-                                <div class="pc-icon" style="background:linear-gradient(135deg, #4a1942, #9d174d);">🧠</div>
-                                <div>
-                                    <div class="pc-title">Neural Networks Found.</div>
-                                    <div class="pc-instructor">Dr. Alan Turing</div>
-                                </div>
-                            </div>
-                            <div class="pc-progress">
-                                <div class="pc-progress-info">
-                                    <span class="lbl">Module 2 of 12</span>
-                                    <span class="pct">15%</span>
-                                </div>
-                                <div class="progress-bar-wrap">
-                                    <div class="progress-bar-fill" style="width: 15%;"></div>
-                                </div>
-                            </div>
-                            <div class="pc-actions">
-                                <a th:href="@{/student/course-detail}" class="btn btn-primary btn-sm btn-full">Continue Learning</a>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
 
-                <!-- Right: Deadlines -->
                 <div>
                     <div class="section-head">
                         <h2 class="section-title">Upcoming Deadlines</h2>
                     </div>
 
                     <div class="card card-padded-sm">
-                        <div class="deadline-card urgent">
-                            <div class="date-badge">
-                                <span class="day">15</span>
-                                <span class="month">NOV</span>
-                            </div>
-                            <div>
-                                <div class="deadline-title">Midterm Assessment</div>
-                                <div class="deadline-code">Systems Architecture</div>
-                            </div>
+                        <div class="student-empty-state" th:if="${#lists.isEmpty(upcomingDeadlines)}">
+                            <h3>No upcoming deadlines</h3>
+                            <p>You have no upcoming assignment deadlines.</p>
                         </div>
-                        <div class="deadline-card">
+                        <a th:each="deadline : ${upcomingDeadlines}"
+                           th:href="${deadline.destinationUrl}"
+                           class="deadline-card"
+                           th:classappend="${deadline.cardClass}"
+                           style="text-decoration:none;">
                             <div class="date-badge">
-                                <span class="day">22</span>
-                                <span class="month">NOV</span>
+                                <span class="day" th:text="${deadline.day}">--</span>
+                                <span class="month" th:text="${deadline.month}">---</span>
                             </div>
-                            <div>
-                                <div class="deadline-title">Project Draft Submission</div>
-                                <div class="deadline-code">UI/UX Research</div>
+                            <div style="min-width:0;">
+                                <div class="deadline-title" th:text="${deadline.title}">Assignment</div>
+                                <div class="deadline-code" th:text="${deadline.courseTitle}">Course</div>
+                                <span class="badge" th:classappend="${deadline.statusClass}" th:text="${deadline.statusLabel}">Upcoming</span>
                             </div>
-                        </div>
-                        <div class="deadline-card muted">
-                            <div class="date-badge">
-                                <span class="day">05</span>
-                                <span class="month">DEC</span>
-                            </div>
-                            <div>
-                                <div class="deadline-title">Quiz 3: Backpropagation</div>
-                                <div class="deadline-code">Neural Networks</div>
-                            </div>
-                        </div>
-                        
-                        <a href="#" class="btn btn-ghost btn-sm btn-full mt-sm">View Full Calendar</a>
+                        </a>
+
+                        <a th:href="@{/student/deadlines}" class="btn btn-ghost btn-sm btn-full mt-sm">View Full Calendar</a>
                     </div>
                 </div>
             </div>
-
         </main>
-        
+
         <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>

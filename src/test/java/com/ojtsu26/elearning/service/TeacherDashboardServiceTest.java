@@ -1,44 +1,54 @@
 package com.ojtsu26.elearning.service;
 
-import com.ojtsu26.elearning.dto.response.TeacherDashboardStatsDTO;
+import com.ojtsu26.elearning.dto.response.TeacherDashboardDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
+import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
 import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
-import com.ojtsu26.elearning.repository.LessonProgressRepository;
+import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.OrderItemRepository;
+import com.ojtsu26.elearning.repository.SubmissionRepository;
+import com.ojtsu26.elearning.repository.projection.TeacherCourseMetricProjection;
+import com.ojtsu26.elearning.repository.projection.TeacherRecentSubmissionProjection;
+import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.service.impl.TeacherDashboardServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TeacherDashboardServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
     @Mock
-    private LessonProgressRepository lessonProgressRepository;
+    private CourseRepository courseRepository;
+
     @Mock
     private CourseEnrollmentRepository enrollmentRepository;
+
     @Mock
     private OrderItemRepository orderItemRepository;
+
+    @Mock
+    private SubmissionRepository submissionRepository;
 
     private TeacherDashboardServiceImpl service;
     private User teacher;
@@ -47,86 +57,148 @@ class TeacherDashboardServiceTest {
     void setUp() {
         service = new TeacherDashboardServiceImpl(
                 currentUserService,
-                lessonProgressRepository,
+                courseRepository,
                 enrollmentRepository,
-                orderItemRepository
+                orderItemRepository,
+                submissionRepository
         );
-        teacher = User.builder().id(7).role(Role.TEACHER).build();
+        teacher = User.builder().id(7).role(Role.TEACHER).fullName("Teacher").build();
     }
 
     @Test
-    void teacherStatsUseCurrentMonthBoundaryOwnDataAndPaidRevenueOnly() {
+    void buildsTeacherScopedDashboardFromGroupedQueries() {
         when(currentUserService.getCurrentUser()).thenReturn(teacher);
-        LocalDate firstDay = LocalDate.now().withDayOfMonth(1);
-        LocalDateTime currentFrom = firstDay.atStartOfDay();
-        LocalDateTime currentTo = LocalDate.now().plusDays(1).atStartOfDay();
-        LocalDateTime previousFrom = currentFrom.minusMonths(1);
+        Course draftCourse = Course.builder()
+                .id(11)
+                .title("Draft Course")
+                .status(CourseStatus.DRAFT)
+                .updatedAt(LocalDateTime.now())
+                .build();
+        Course approvedCourse = Course.builder()
+                .id(12)
+                .title("Approved Course")
+                .status(CourseStatus.APPROVED)
+                .updatedAt(LocalDateTime.now().minusDays(1))
+                .build();
+        when(courseRepository.findByInstructorId(7)).thenReturn(List.of(draftCourse, approvedCourse));
+        when(enrollmentRepository.findDashboardCourseMetricsByTeacherId(7))
+                .thenReturn(List.of(metric(11, 4L, "37.6"), metric(12, 2L, "101.9")));
+        when(orderItemRepository.findTeacherRevenueByCourse(eq(7), eq(OrderStatus.PAID), any(LocalDateTime.class), any(LocalDateTime.class), isNull()))
+                .thenReturn(List.of(revenue(11, "49.995"), revenue(12, "10.00")));
+        when(submissionRepository.findRecentDashboardSubmissionsByTeacherId(eq(7), any(), any(Pageable.class)))
+                .thenReturn(List.of(submission(50, 60, "Homework", "Student One", SubmissionStatus.SUBMITTED)));
+        when(orderItemRepository.sumTeacherRevenue(eq(7), eq(OrderStatus.PAID), any(LocalDateTime.class), any(LocalDateTime.class), isNull()))
+                .thenReturn(new BigDecimal("59.995"));
+        when(enrollmentRepository.averageProgressByTeacherId(7)).thenReturn(new BigDecimal("88.4"));
+        when(enrollmentRepository.countDistinctStudentsByTeacherId(7)).thenReturn(5L);
 
-        when(lessonProgressRepository.countTeacherActiveStudentsForAnalytics(7, currentFrom, currentTo)).thenReturn(15L);
-        when(lessonProgressRepository.countTeacherActiveStudentsForAnalytics(7, previousFrom, currentFrom)).thenReturn(10L);
-        when(enrollmentRepository.averageProgressByTeacherId(7)).thenReturn(new BigDecimal("82.34"));
-        when(enrollmentRepository.averageProgressByTeacherIdAndEnrolledAtBetween(7, currentFrom, currentTo))
-                .thenReturn(new BigDecimal("80.00"));
-        when(enrollmentRepository.averageProgressByTeacherIdAndEnrolledAtBetween(7, previousFrom, currentFrom))
-                .thenReturn(new BigDecimal("70.00"));
-        when(orderItemRepository.sumTeacherRevenue(7, OrderStatus.PAID, currentFrom, currentTo, null))
-                .thenReturn(new BigDecimal("200.00"));
-        when(orderItemRepository.sumTeacherRevenue(7, OrderStatus.PAID, previousFrom, currentFrom, null))
-                .thenReturn(new BigDecimal("100.00"));
-        when(orderItemRepository.findTeacherPaidRevenueCurrencies(7, OrderStatus.PAID, currentFrom, currentTo))
-                .thenReturn(List.of("USD"));
+        TeacherDashboardDTO result = service.getCurrentTeacherDashboard();
 
-        TeacherDashboardStatsDTO stats = service.getCurrentTeacherStats();
-
-        assertEquals(15, stats.getActiveStudents());
-        assertEquals(new BigDecimal("82.3"), stats.getAverageCompletionRate());
-        assertEquals(new BigDecimal("200.00"), stats.getTotalRevenueMtd());
-        assertEquals("USD", stats.getRevenueCurrencyCode());
-        assertTrue(stats.getActiveStudentsChangeText().contains("50%"));
-        assertTrue(stats.getCompletionRateChangeText().contains("10 pts"));
-        assertTrue(stats.getRevenueChangeText().contains("100%"));
-
-        verify(orderItemRepository).sumTeacherRevenue(7, OrderStatus.PAID, currentFrom, currentTo, null);
-        verify(orderItemRepository).sumTeacherRevenue(7, OrderStatus.PAID, previousFrom, currentFrom, null);
-        verify(orderItemRepository, never()).sumTeacherRevenue(7, OrderStatus.PENDING, currentFrom, currentTo, null);
-        verify(orderItemRepository, never()).sumTeacherRevenue(7, OrderStatus.FAILED, currentFrom, currentTo, null);
+        assertEquals(5, result.getTotalActiveStudents());
+        assertEquals(88, result.getAverageCompletionPercent());
+        assertEquals("$60.00", result.getRevenueMonthToDateDisplay());
+        assertEquals(2, result.getActiveCourses().size());
+        assertEquals("Resume", result.getActiveCourses().get(0).getActionLabel());
+        assertEquals("/teacher/courses/edit/11", result.getActiveCourses().get(0).getActionUrl());
+        assertEquals(100, result.getActiveCourses().get(1).getAverageCompletionPercent());
+        assertEquals("Needs Review", result.getRecentSubmissions().get(0).getReviewStatus());
+        assertEquals("/teacher/assignments/60/submissions", result.getGradeAllUrl());
+        verify(orderItemRepository).sumTeacherRevenue(eq(7), eq(OrderStatus.PAID), any(LocalDateTime.class), any(LocalDateTime.class), isNull());
     }
 
     @Test
-    void zeroRecordsAndZeroPreviousDenominatorRenderNeutralValues() {
-        when(currentUserService.getCurrentUser()).thenReturn(teacher);
-        LocalDate firstDay = LocalDate.now().withDayOfMonth(1);
-        LocalDateTime currentFrom = firstDay.atStartOfDay();
-        LocalDateTime currentTo = LocalDate.now().plusDays(1).atStartOfDay();
-        LocalDateTime previousFrom = currentFrom.minusMonths(1);
+    void nonTeacherCannotReadTeacherDashboardData() {
+        User student = User.builder().id(8).role(Role.STUDENT).build();
+        when(currentUserService.getCurrentUser()).thenReturn(student);
 
-        when(lessonProgressRepository.countTeacherActiveStudentsForAnalytics(7, currentFrom, currentTo)).thenReturn(0L);
-        when(lessonProgressRepository.countTeacherActiveStudentsForAnalytics(7, previousFrom, currentFrom)).thenReturn(0L);
-        when(enrollmentRepository.averageProgressByTeacherId(7)).thenReturn(null);
-        when(enrollmentRepository.averageProgressByTeacherIdAndEnrolledAtBetween(7, currentFrom, currentTo)).thenReturn(null);
-        when(enrollmentRepository.averageProgressByTeacherIdAndEnrolledAtBetween(7, previousFrom, currentFrom)).thenReturn(null);
-        when(orderItemRepository.sumTeacherRevenue(7, OrderStatus.PAID, currentFrom, currentTo, null)).thenReturn(null);
-        when(orderItemRepository.sumTeacherRevenue(7, OrderStatus.PAID, previousFrom, currentFrom, null)).thenReturn(BigDecimal.ZERO);
-        when(orderItemRepository.findTeacherPaidRevenueCurrencies(7, OrderStatus.PAID, currentFrom, currentTo)).thenReturn(List.of());
+        assertThrows(BusinessException.class, () -> service.getCurrentTeacherDashboard());
 
-        TeacherDashboardStatsDTO stats = service.getCurrentTeacherStats();
-
-        assertEquals(0, stats.getActiveStudents());
-        assertEquals(new BigDecimal("0.0"), stats.getAverageCompletionRate());
-        assertEquals(new BigDecimal("0.00"), stats.getTotalRevenueMtd());
-        assertEquals("", stats.getRevenueCurrencyCode());
-        assertEquals("No change from last month", stats.getActiveStudentsChangeText());
-        assertEquals("No previous-month completion data", stats.getCompletionRateChangeText());
-        assertEquals("No change from last month", stats.getRevenueChangeText());
+        verifyNoInteractions(courseRepository, enrollmentRepository, orderItemRepository, submissionRepository);
     }
 
-    @Test
-    void wrongRoleIsRejectedBeforeDashboardQueries() {
-        when(currentUserService.getCurrentUser()).thenReturn(User.builder().id(9).role(Role.STUDENT).build());
+    private TeacherCourseMetricProjection metric(Integer courseId, Long enrollmentCount, String averageProgress) {
+        return new TeacherCourseMetricProjection() {
+            @Override
+            public Integer getCourseId() {
+                return courseId;
+            }
 
-        assertThrows(BusinessException.class, () -> service.getCurrentTeacherStats());
+            @Override
+            public Long getEnrollmentCount() {
+                return enrollmentCount;
+            }
 
-        verify(lessonProgressRepository, never()).countTeacherActiveStudentsForAnalytics(any(), any(), any());
-        verify(orderItemRepository, never()).sumTeacherRevenue(any(), any(), any(), any(), any());
+            @Override
+            public BigDecimal getAverageProgress() {
+                return new BigDecimal(averageProgress);
+            }
+        };
+    }
+
+    private TeacherRevenueCourseProjection revenue(Integer courseId, String amount) {
+        return new TeacherRevenueCourseProjection() {
+            @Override
+            public Integer getCourseId() {
+                return courseId;
+            }
+
+            @Override
+            public String getCourseTitle() {
+                return "Course";
+            }
+
+            @Override
+            public BigDecimal getRevenue() {
+                return new BigDecimal(amount);
+            }
+
+            @Override
+            public Long getPaidOrderCount() {
+                return 1L;
+            }
+
+            @Override
+            public Long getUnitsSold() {
+                return 1L;
+            }
+        };
+    }
+
+    private TeacherRecentSubmissionProjection submission(Integer submissionId,
+                                                         Integer assignmentId,
+                                                         String title,
+                                                         String studentName,
+                                                         SubmissionStatus status) {
+        return new TeacherRecentSubmissionProjection() {
+            @Override
+            public Integer getSubmissionId() {
+                return submissionId;
+            }
+
+            @Override
+            public Integer getAssignmentId() {
+                return assignmentId;
+            }
+
+            @Override
+            public String getAssessmentTitle() {
+                return title;
+            }
+
+            @Override
+            public String getStudentName() {
+                return studentName;
+            }
+
+            @Override
+            public LocalDateTime getSubmittedAt() {
+                return LocalDateTime.now().minusHours(2);
+            }
+
+            @Override
+            public SubmissionStatus getStatus() {
+                return status;
+            }
+        };
     }
 }

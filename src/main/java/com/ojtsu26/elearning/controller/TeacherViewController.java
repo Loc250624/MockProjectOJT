@@ -55,13 +55,15 @@ public class TeacherViewController {
     private final VideoService videoService;
     private final ProfileService profileService;
     private final TeacherCourseStudentService teacherCourseStudentService;
-    private final TeacherDashboardService teacherDashboardService;
     private final BlogPostService blogPostService;
     private final AssessmentService assessmentService;
+    private final TeacherDashboardService teacherDashboardService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         model.addAttribute("dashboardStats", teacherDashboardService.getCurrentTeacherStats());
+        model.addAttribute("teacherDashboard", teacherDashboardService.getCurrentTeacherDashboard());
+
         return "teacher/dashboard";
     }
 

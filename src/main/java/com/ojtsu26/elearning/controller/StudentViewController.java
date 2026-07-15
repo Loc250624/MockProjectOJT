@@ -66,7 +66,15 @@ public class StudentViewController {
         model.addAttribute("completedCourseCount", completed);
         model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
         model.addAttribute("dashboardStats", studentDashboardService.getCurrentStudentStats());
+        model.addAttribute("upcomingDeadlines", studentDashboardService.getCurrentStudentDeadlines(3));
+
         return "student/dashboard";
+    }
+
+    @GetMapping("/deadlines")
+    public String deadlines(Model model) {
+        model.addAttribute("deadlines", studentDashboardService.getCurrentStudentDeadlines(25));
+        return "student/deadlines";
     }
 
     @GetMapping("/profile")
