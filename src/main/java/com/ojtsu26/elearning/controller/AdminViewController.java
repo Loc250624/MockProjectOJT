@@ -5,13 +5,12 @@ import com.ojtsu26.elearning.service.BlogCommentService;
 import com.ojtsu26.elearning.service.BlogPostService;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.ProfileService;
+import com.ojtsu26.elearning.service.TransactionService;
 import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
 import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.security.CustomUserDetails;
-import com.ojtsu26.elearning.service.ProfileOverviewService;
-import com.ojtsu26.elearning.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -26,8 +25,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.validation.BindingResult;
 import jakarta.validation.Valid;
 
-import com.ojtsu26.elearning.repository.TransactionRepository;
 import com.ojtsu26.elearning.model.entity.Transaction;
+import com.ojtsu26.elearning.model.enums.PaymentMethod;
+import com.ojtsu26.elearning.model.enums.TransactionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,10 +40,10 @@ public class AdminViewController {
 
     private final CategoryService categoryService;
     private final CourseService courseService;
-    private final TransactionRepository transactionRepository;
     private final ProfileService profileService;
     private final BlogPostService blogPostService;
     private final BlogCommentService blogCommentService;
+    private final TransactionService transactionService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
@@ -249,9 +249,10 @@ public class AdminViewController {
                            @RequestParam(value = "keyword", required = false) String keyword,
                            Model model) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Transaction> txnPage = transactionRepository.searchTransactions(keyword, pageable);
+        Page<Transaction> txnPage = transactionService.searchTransactions(keyword, pageable);
 
         model.addAttribute("transactions", txnPage.getContent());
+        model.addAttribute("paymentSummary", transactionService.getAdminPaymentSummary());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", txnPage.getTotalPages());
         model.addAttribute("keyword", keyword);
@@ -259,17 +260,9 @@ public class AdminViewController {
     }
 
     @GetMapping("/transactions")
-    public String transactions(@RequestParam(value = "page", defaultValue = "0") int page,
-                               @RequestParam(value = "size", defaultValue = "10") int size,
-                               @RequestParam(value = "keyword", required = false) String keyword,
-                               Model model) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Transaction> txnPage = transactionRepository.searchTransactions(keyword, pageable);
-
-        model.addAttribute("transactions", txnPage.getContent());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", txnPage.getTotalPages());
-        model.addAttribute("keyword", keyword);
+    public String transactions(Model model) {
+        model.addAttribute("transactionStatuses", TransactionStatus.values());
+        model.addAttribute("paymentMethods", PaymentMethod.values());
         return "admin/transactions";
     }
 

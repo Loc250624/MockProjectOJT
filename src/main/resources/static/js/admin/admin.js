@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     highlightCurrentAdminNav();
     initUserAdministration();
+    initAdminTransactions();
 });
 
 function highlightCurrentAdminNav() {
@@ -450,6 +451,416 @@ function initUserAdministration() {
         elements.feedback.style.display = message ? 'block' : 'none';
         elements.feedback.style.color = success ? 'var(--lumina-success)' : 'var(--lumina-danger)';
     }
+}
+
+function initAdminTransactions() {
+    var tableBody = document.getElementById('transactions-table-body');
+    if (!tableBody) {
+        return;
+    }
+
+    var state = {
+        page: 0,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+        transactions: [],
+        selectedTransactionId: null
+    };
+
+    var elements = {
+        searchInput: document.getElementById('transaction-search-input'),
+        statusFilter: document.getElementById('transaction-status-filter'),
+        methodFilter: document.getElementById('transaction-method-filter'),
+        fromFilter: document.getElementById('transaction-from-filter'),
+        toFilter: document.getElementById('transaction-to-filter'),
+        sortFilter: document.getElementById('transaction-sort-filter'),
+        tableBody: tableBody,
+        mobileList: document.getElementById('transactions-mobile-list'),
+        loading: document.getElementById('transactions-loading'),
+        error: document.getElementById('transactions-error'),
+        emptyState: document.getElementById('transactions-empty-state'),
+        pagination: document.getElementById('transactions-pagination'),
+        summary: document.getElementById('transactions-result-summary'),
+        summarySuccessAmount: document.getElementById('txn-summary-success-amount'),
+        summarySuccessCount: document.getElementById('txn-summary-success-count'),
+        summaryPending: document.getElementById('txn-summary-pending'),
+        summaryFailed: document.getElementById('txn-summary-failed'),
+        summaryRefunded: document.getElementById('txn-summary-refunded'),
+        summaryTotal: document.getElementById('txn-summary-total'),
+        panel: document.getElementById('transaction-panel'),
+        panelClose: document.getElementById('transaction-panel-close'),
+        panelLoading: document.getElementById('transaction-panel-loading'),
+        panelError: document.getElementById('transaction-panel-error'),
+        panelContent: document.getElementById('transaction-panel-content'),
+        panelRef: document.getElementById('transaction-panel-ref'),
+        panelStatus: document.getElementById('transaction-panel-status'),
+        panelAmount: document.getElementById('transaction-panel-amount'),
+        panelPayer: document.getElementById('transaction-panel-payer'),
+        panelOrder: document.getElementById('transaction-panel-order'),
+        panelCourse: document.getElementById('transaction-panel-course'),
+        panelMethod: document.getElementById('transaction-panel-method'),
+        panelCreated: document.getElementById('transaction-panel-created'),
+        panelUpdated: document.getElementById('transaction-panel-updated'),
+        panelOrderTotal: document.getElementById('transaction-panel-order-total'),
+        panelOrderPaid: document.getElementById('transaction-panel-order-paid')
+    };
+
+    var debouncedLoadTransactions = debounce(function() {
+        state.page = 0;
+        loadTransactions();
+    }, 350);
+
+    elements.searchInput.addEventListener('input', debouncedLoadTransactions);
+    [elements.statusFilter, elements.methodFilter, elements.fromFilter, elements.toFilter, elements.sortFilter].forEach(function(filter) {
+        filter.addEventListener('change', function() {
+            state.page = 0;
+            loadTransactions();
+        });
+    });
+
+    elements.tableBody.addEventListener('click', function(event) {
+        var action = event.target.closest('[data-transaction-id]');
+        if (action) {
+            openTransactionPanel(Number(action.getAttribute('data-transaction-id')));
+        }
+    });
+
+    elements.mobileList.addEventListener('click', function(event) {
+        var action = event.target.closest('[data-transaction-id]');
+        if (action) {
+            openTransactionPanel(Number(action.getAttribute('data-transaction-id')));
+        }
+    });
+
+    elements.panelClose.addEventListener('click', function() {
+        elements.panel.classList.remove('open');
+    });
+
+    loadSummary();
+    loadTransactions();
+
+    function loadSummary() {
+        fetch('/api/admin/transactions/summary', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Unable to load transaction summary.');
+                }
+                return response.json();
+            })
+            .then(function(apiResponse) {
+                renderTransactionSummary(apiResponse.data || {});
+            })
+            .catch(function() {
+                renderTransactionSummary(null);
+            });
+    }
+
+    function loadTransactions() {
+        setTransactionsLoading(true);
+        setTransactionsError('');
+
+        if (elements.fromFilter.value && elements.toFilter.value && elements.fromFilter.value > elements.toFilter.value) {
+            renderTransactions([]);
+            renderTransactionPagination(null);
+            renderTransactionPageSummary(null);
+            elements.emptyState.hidden = true;
+            setTransactionsError('From date must be before or equal to To date.');
+            setTransactionsLoading(false);
+            return;
+        }
+
+        var sortParts = (elements.sortFilter.value || 'createdAt:desc').split(':');
+        state.sortBy = sortParts[0] || 'createdAt';
+        state.sortDir = sortParts[1] || 'desc';
+
+        var params = new URLSearchParams();
+        appendParam(params, 'keyword', elements.searchInput.value.trim());
+        appendParam(params, 'status', elements.statusFilter.value);
+        appendParam(params, 'paymentMethod', elements.methodFilter.value);
+        appendParam(params, 'from', elements.fromFilter.value);
+        appendParam(params, 'to', elements.toFilter.value);
+        params.set('page', state.page);
+        params.set('size', state.size);
+        params.set('sortBy', state.sortBy);
+        params.set('sortDir', state.sortDir);
+
+        fetch('/api/admin/transactions?' + params.toString(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return { message: 'Unable to load transactions.' };
+                }).then(function(apiResponse) {
+                    if (!response.ok) {
+                        throw new Error(apiResponse.message || 'Unable to load transactions.');
+                    }
+                    return apiResponse;
+                });
+            })
+            .then(function(apiResponse) {
+                var page = apiResponse.data;
+                state.transactions = page.content || [];
+                renderTransactions(state.transactions);
+                renderTransactionPageSummary(page);
+                renderTransactionPagination(page);
+                elements.emptyState.hidden = state.transactions.length > 0;
+            })
+            .catch(function(error) {
+                state.transactions = [];
+                renderTransactions([]);
+                renderTransactionPageSummary(null);
+                renderTransactionPagination(null);
+                elements.emptyState.hidden = true;
+                setTransactionsError(error.message || 'Unable to load transactions.');
+            })
+            .finally(function() {
+                setTransactionsLoading(false);
+            });
+    }
+
+    function renderTransactionSummary(summary) {
+        if (!summary) {
+            elements.summarySuccessAmount.textContent = '--';
+            elements.summarySuccessCount.textContent = '-- successful transactions';
+            elements.summaryPending.textContent = '--';
+            elements.summaryFailed.textContent = '--';
+            elements.summaryRefunded.textContent = '--';
+            elements.summaryTotal.textContent = '-- total transactions';
+            return;
+        }
+        elements.summarySuccessAmount.textContent = formatMoney(summary.successfulAmount, 'VND');
+        elements.summarySuccessCount.textContent = formatCount(summary.successfulTransactions) + ' successful transactions';
+        elements.summaryPending.textContent = formatCount(summary.pendingTransactions);
+        elements.summaryFailed.textContent = formatCount(summary.failedTransactions);
+        elements.summaryRefunded.textContent = formatCount(summary.refundedTransactions);
+        elements.summaryTotal.textContent = formatCount(summary.totalTransactions) + ' total transactions';
+    }
+
+    function renderTransactions(transactions) {
+        elements.tableBody.innerHTML = transactions.map(function(transaction) {
+            return '<tr>' +
+                '<td>' + referenceCell(transaction) + '</td>' +
+                '<td>' + payerCell(transaction) + '</td>' +
+                '<td>' + orderCell(transaction) + '</td>' +
+                '<td class="admin-money-cell">' + escapeHtml(formatMoney(transaction.amount, transaction.currency)) + '</td>' +
+                '<td>' + escapeHtml(transaction.paymentMethod || '--') + '</td>' +
+                '<td>' + transactionStatusBadge(transaction.status) + '</td>' +
+                '<td class="admin-time-cell">' + escapeHtml(formatDateTime(transaction.createdAt)) + '</td>' +
+                '<td style="text-align:center;"><button type="button" class="btn btn-ghost btn-sm" data-transaction-id="' + escapeHtml(transaction.id) + '" title="View transaction detail">View</button></td>' +
+            '</tr>';
+        }).join('');
+
+        elements.mobileList.innerHTML = transactions.map(function(transaction) {
+            return '<article class="admin-transaction-card">' +
+                '<div class="admin-transaction-card-head">' +
+                    '<div>' + referenceCell(transaction) + '</div>' +
+                    transactionStatusBadge(transaction.status) +
+                '</div>' +
+                '<div class="admin-transaction-card-amount">' + escapeHtml(formatMoney(transaction.amount, transaction.currency)) + '</div>' +
+                '<div class="admin-transaction-card-row"><span>Payer</span><strong>' + escapeHtml(displayPayer(transaction)) + '</strong></div>' +
+                '<div class="admin-transaction-card-row"><span>Order</span><strong>' + escapeHtml(displayOrder(transaction)) + '</strong></div>' +
+                '<div class="admin-transaction-card-row"><span>Method</span><strong>' + escapeHtml(transaction.paymentMethod || '--') + '</strong></div>' +
+                '<div class="admin-transaction-card-row"><span>Time</span><strong>' + escapeHtml(formatDateTime(transaction.createdAt)) + '</strong></div>' +
+                '<button type="button" class="btn btn-secondary btn-sm" data-transaction-id="' + escapeHtml(transaction.id) + '">Detail</button>' +
+            '</article>';
+        }).join('');
+    }
+
+    function renderTransactionPageSummary(page) {
+        if (!page || page.totalElements === 0) {
+            elements.summary.textContent = 'Showing 0 transactions';
+            return;
+        }
+        var start = page.number * page.size + 1;
+        var end = Math.min((page.number + 1) * page.size, page.totalElements);
+        elements.summary.textContent = 'Showing ' + start + '-' + end + ' of ' + page.totalElements + ' transactions';
+    }
+
+    function renderTransactionPagination(page) {
+        if (!page || page.totalPages <= 1) {
+            elements.pagination.innerHTML = '';
+            return;
+        }
+
+        var buttons = [];
+        buttons.push(transactionPageButton('Previous', page.number - 1, page.first));
+        for (var i = 0; i < page.totalPages; i += 1) {
+            if (i === 0 || i === page.totalPages - 1 || Math.abs(i - page.number) <= 1) {
+                buttons.push(transactionPageButton(String(i + 1), i, false, i === page.number));
+            } else if (buttons[buttons.length - 1] !== '<span class="page-btn dots">...</span>') {
+                buttons.push('<span class="page-btn dots">...</span>');
+            }
+        }
+        buttons.push(transactionPageButton('Next', page.number + 1, page.last));
+        elements.pagination.innerHTML = buttons.join('');
+
+        elements.pagination.querySelectorAll('button[data-page]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                state.page = Number(button.getAttribute('data-page'));
+                loadTransactions();
+            });
+        });
+    }
+
+    function transactionPageButton(label, pageNumber, disabled, active) {
+        return '<button type="button" class="page-btn' + (active ? ' active' : '') + '" data-page="' + pageNumber + '"' + (disabled ? ' disabled' : '') + '>' + escapeHtml(label) + '</button>';
+    }
+
+    function openTransactionPanel(transactionId) {
+        if (!Number.isFinite(transactionId)) {
+            return;
+        }
+        state.selectedTransactionId = transactionId;
+        elements.panel.classList.add('open');
+        elements.panelLoading.hidden = false;
+        elements.panelError.hidden = true;
+        elements.panelContent.hidden = true;
+
+        fetch('/api/admin/transactions/' + encodeURIComponent(transactionId), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return { message: 'Unable to load transaction detail.' };
+                }).then(function(apiResponse) {
+                    if (!response.ok) {
+                        throw new Error(apiResponse.message || 'Unable to load transaction detail.');
+                    }
+                    return apiResponse;
+                });
+            })
+            .then(function(apiResponse) {
+                renderTransactionDetail(apiResponse.data || {});
+                elements.panelContent.hidden = false;
+            })
+            .catch(function(error) {
+                elements.panelError.textContent = error.message || 'Unable to load transaction detail.';
+                elements.panelError.hidden = false;
+            })
+            .finally(function() {
+                elements.panelLoading.hidden = true;
+            });
+    }
+
+    function renderTransactionDetail(transaction) {
+        elements.panelRef.textContent = transaction.transactionRef || ('Transaction #' + (transaction.id || '--'));
+        elements.panelStatus.className = transactionStatusBadgeClass(transaction.status);
+        elements.panelStatus.textContent = formatEnum(transaction.status);
+        elements.panelAmount.textContent = formatMoney(transaction.amount, transaction.currency);
+        elements.panelPayer.textContent = displayPayer(transaction);
+        elements.panelOrder.textContent = displayOrder(transaction);
+        elements.panelCourse.textContent = transaction.courseTitle || '--';
+        elements.panelMethod.textContent = transaction.paymentMethod || '--';
+        elements.panelCreated.textContent = formatDateTime(transaction.createdAt);
+        elements.panelUpdated.textContent = formatDateTime(transaction.updatedAt);
+        elements.panelOrderTotal.textContent = formatMoney(transaction.orderTotalAmount, transaction.currency);
+        elements.panelOrderPaid.textContent = formatMoney(transaction.orderPaidAmount, transaction.currency);
+    }
+
+    function referenceCell(transaction) {
+        var reference = transaction.transactionRef || ('#' + transaction.id);
+        return '<div class="admin-ref-text">' + escapeHtml(reference || '--') + '</div>';
+    }
+
+    function payerCell(transaction) {
+        return '<div class="admin-payer-cell">' +
+            '<div>' + escapeHtml(transaction.studentName || 'Unknown payer') + '</div>' +
+            '<span>' + escapeHtml(transaction.studentEmail || '--') + '</span>' +
+        '</div>';
+    }
+
+    function orderCell(transaction) {
+        return '<div class="admin-order-cell">' +
+            '<div>' + escapeHtml(displayOrder(transaction)) + '</div>' +
+            '<span>' + escapeHtml(transaction.courseTitle || '--') + '</span>' +
+        '</div>';
+    }
+
+    function displayPayer(transaction) {
+        if (transaction.studentName && transaction.studentEmail) {
+            return transaction.studentName + ' (' + transaction.studentEmail + ')';
+        }
+        return transaction.studentName || transaction.studentEmail || '--';
+    }
+
+    function displayOrder(transaction) {
+        return transaction.orderCode || (transaction.orderId ? 'Order #' + transaction.orderId : '--');
+    }
+
+    function setTransactionsLoading(isLoading) {
+        elements.loading.hidden = !isLoading;
+    }
+
+    function setTransactionsError(message) {
+        elements.error.textContent = message;
+        elements.error.hidden = !message;
+    }
+}
+
+function transactionStatusBadge(status) {
+    return '<span class="' + transactionStatusBadgeClass(status) + '">' + escapeHtml(formatEnum(status)) + '</span>';
+}
+
+function transactionStatusBadgeClass(status) {
+    if (status === 'SUCCESS') {
+        return 'badge status-active badge-dot';
+    }
+    if (status === 'PENDING') {
+        return 'badge status-pending badge-dot';
+    }
+    if (status === 'FAILED') {
+        return 'badge admin-badge-danger';
+    }
+    if (status === 'REFUNDED') {
+        return 'badge admin-badge-muted';
+    }
+    return 'badge';
+}
+
+function formatMoney(amount, currency) {
+    if (amount == null || amount === '') {
+        return '--';
+    }
+    var numericAmount = Number(amount);
+    if (Number.isNaN(numericAmount)) {
+        return '--';
+    }
+    var currencyCode = currency || 'VND';
+    return new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(numericAmount) + ' ' + currencyCode;
+}
+
+function formatCount(value) {
+    var numericValue = Number(value || 0);
+    return new Intl.NumberFormat().format(numericValue);
+}
+
+function formatDateTime(value) {
+    if (!value) {
+        return '--';
+    }
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '--';
+    }
+    return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 function appendParam(params, name, value) {

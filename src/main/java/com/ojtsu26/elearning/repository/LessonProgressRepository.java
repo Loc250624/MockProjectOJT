@@ -63,6 +63,17 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
                                          @Param("to") java.time.LocalDateTime to);
 
     @Query("""
+            select count(distinct p.enrollment.student.id)
+            from LessonProgress p
+            where p.enrollment.course.instructor.id = :teacherId
+              and coalesce(p.lastAccessedAt, p.lastUpdatedAt) >= :from
+              and coalesce(p.lastAccessedAt, p.lastUpdatedAt) < :to
+            """)
+    long countTeacherActiveStudentsForAnalytics(@Param("teacherId") Integer teacherId,
+                                                @Param("from") java.time.LocalDateTime from,
+                                                @Param("to") java.time.LocalDateTime to);
+
+    @Query("""
             select p.enrollment.student.id as studentId,
                    coalesce(p.lastAccessedAt, p.lastUpdatedAt) as occurredAt
             from LessonProgress p

@@ -2,13 +2,19 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
+import com.ojtsu26.elearning.dto.response.AdminPaymentSummaryDTO;
+import com.ojtsu26.elearning.dto.response.AdminTransactionDTO;
+import com.ojtsu26.elearning.dto.response.AdminTransactionDetailDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.model.enums.TransactionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
+import com.ojtsu26.elearning.service.TransactionService;
 import com.ojtsu26.elearning.service.UserService;
 import com.ojtsu26.elearning.service.BlogCommentService;
 import com.ojtsu26.elearning.service.BlogPostService;
@@ -23,6 +29,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -36,11 +45,15 @@ public class AdminActionController {
     private static final Set<String> ALLOWED_USER_SORT_FIELDS = Set.of(
             "id", "fullName", "email", "role", "status", "authProvider", "createdAt"
     );
+    private static final Set<String> ALLOWED_TRANSACTION_SORT_FIELDS = Set.of(
+            "id", "amount", "paymentMethod", "transactionRef", "status", "createdAt", "updatedAt"
+    );
 
     private final UserService userService;
     private final JwtCookieService jwtCookieService;
     private final BlogPostService blogPostService;
     private final BlogCommentService blogCommentService;
+    private final TransactionService transactionService;
 
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
@@ -79,6 +92,14 @@ public class AdminActionController {
     }
 
     private Pageable buildUserSearchPageable(int page, int size, String sortBy, String sortDir) {
+        return buildPageable(page, size, sortBy, sortDir, ALLOWED_USER_SORT_FIELDS);
+    }
+
+    private Pageable buildTransactionSearchPageable(int page, int size, String sortBy, String sortDir) {
+        return buildPageable(page, size, sortBy, sortDir, ALLOWED_TRANSACTION_SORT_FIELDS);
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDir, Set<String> allowedSortFields) {
         if (page < 0) {
             throw new IllegalArgumentException("page must not be less than 0");
         }
@@ -86,7 +107,7 @@ public class AdminActionController {
             throw new IllegalArgumentException("size must be at least 1");
         }
         int normalizedSize = Math.min(size, 100);
-        if (!ALLOWED_USER_SORT_FIELDS.contains(sortBy)) {
+        if (!allowedSortFields.contains(sortBy)) {
             throw new IllegalArgumentException("sortBy is not supported");
         }
         String normalizedSortDir = sortDir.toLowerCase(Locale.ROOT);
@@ -106,6 +127,56 @@ public class AdminActionController {
             return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(parameterName + " is not valid");
+        }
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<ApiResponse<Page<AdminTransactionDTO>>> searchTransactions(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        TransactionStatus parsedStatus = parseEnum(status, TransactionStatus.class, "status");
+        PaymentMethod parsedPaymentMethod = parseEnum(paymentMethod, PaymentMethod.class, "paymentMethod");
+        LocalDate fromDate = parseDate(from, "from");
+        LocalDate toDate = parseDate(to, "to");
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException("from must be before or equal to to");
+        }
+
+        LocalDateTime fromDateTime = fromDate == null ? null : fromDate.atStartOfDay();
+        LocalDateTime toDateExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay();
+        Pageable pageable = buildTransactionSearchPageable(page, size, sortBy, sortDir);
+
+        Page<AdminTransactionDTO> transactions = transactionService.searchAdminTransactions(
+                keyword, parsedStatus, parsedPaymentMethod, fromDateTime, toDateExclusive, pageable);
+        return ResponseEntity.ok(ApiResponse.success(transactions));
+    }
+
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<ApiResponse<AdminTransactionDetailDTO>> transactionDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(transactionService.findAdminTransactionDetail(id)));
+    }
+
+    @GetMapping("/transactions/summary")
+    public ResponseEntity<ApiResponse<AdminPaymentSummaryDTO>> transactionSummary() {
+        return ResponseEntity.ok(ApiResponse.success(transactionService.getAdminPaymentSummary()));
+    }
+
+    private LocalDate parseDate(String value, String parameterName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException(parameterName + " must use yyyy-MM-dd");
         }
     }
 

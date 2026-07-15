@@ -33,22 +33,29 @@
             <!-- Stats Grid -->
             <div class="stats-grid-3">
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon">ST</div>
                     <div class="stat-label">Total Active Students</div>
-                    <div class="stat-value">1,482</div>
-                    <div class="stat-change stat-change-up">↑ 12% from last month</div>
+                    <div class="stat-value" th:text="${#numbers.formatInteger(dashboardStats.activeStudents, 0, 'COMMA')}">0</div>
+                    <div class="stat-change"
+                         th:classappend="${dashboardStats.activeStudentsChangeClass}"
+                         th:text="${dashboardStats.activeStudentsChangeText}">No change from last month</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">📈</div>
+                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">%</div>
                     <div class="stat-label">Avg. Completion Rate</div>
-                    <div class="stat-value">78.4%</div>
-                    <div class="stat-change stat-change-up">↑ 2.1% from last month</div>
+                    <div class="stat-value" th:text="${#numbers.formatDecimal(dashboardStats.averageCompletionRate, 1, 'COMMA', 1, 'POINT') + '%'}">0.0%</div>
+                    <div class="stat-change"
+                         th:classappend="${dashboardStats.completionRateChangeClass}"
+                         th:text="${dashboardStats.completionRateChangeText}">No previous-month completion data</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">💰</div>
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">$</div>
                     <div class="stat-label">Total Revenue (MTD)</div>
-                    <div class="stat-value">$42.8k</div>
-                    <div class="stat-change stat-change-neutral">Expected $50k by month end</div>
+                    <div class="stat-value"
+                         th:text="${#strings.isEmpty(dashboardStats.revenueCurrencyCode) ? #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT') : dashboardStats.revenueCurrencyCode + ' ' + #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT')}">0.00</div>
+                    <div class="stat-change"
+                         th:classappend="${dashboardStats.revenueChangeClass}"
+                         th:text="${dashboardStats.revenueChangeText}">No paid revenue last month</div>
                 </div>
             </div>
 

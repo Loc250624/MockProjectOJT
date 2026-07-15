@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -94,6 +95,24 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     @Query("select e from CourseEnrollment e join fetch e.student s join fetch e.course c left join fetch c.instructor where e.course.id = :courseId and e.student.id = :studentId")
     Optional<CourseEnrollment> findCourseStudentEnrollmentForReport(@Param("courseId") Integer courseId,
                                                                     @Param("studentId") Integer studentId);
+
+    @Query("""
+            select coalesce(avg(coalesce(e.progressPercentage, 0)), 0)
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+            """)
+    BigDecimal averageProgressByTeacherId(@Param("teacherId") Integer teacherId);
+
+    @Query("""
+            select avg(coalesce(e.progressPercentage, 0))
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+              and e.enrolledAt >= :from
+              and e.enrolledAt < :to
+            """)
+    BigDecimal averageProgressByTeacherIdAndEnrolledAtBetween(@Param("teacherId") Integer teacherId,
+                                                               @Param("from") LocalDateTime from,
+                                                               @Param("to") LocalDateTime to);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from CourseEnrollment e where e.student.id = :studentId and e.course.id = :courseId")

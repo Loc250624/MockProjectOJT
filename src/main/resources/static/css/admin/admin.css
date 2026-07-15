@@ -410,3 +410,257 @@
     gap: 0.75rem;
   }
 }
+
+/* Admin transactions */
+.admin-transactions-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-kicker {
+  color: var(--lumina-gray-500);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+.admin-transactions-toolbar {
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.admin-transactions-search {
+  flex: 1 1 260px;
+  max-width: 360px;
+  width: auto;
+}
+
+.admin-transactions-filters {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-transactions-filters .form-control {
+  height: 36px;
+  min-width: 132px;
+  width: auto;
+  font-size: 0.8125rem;
+}
+
+.admin-table-state {
+  color: var(--lumina-gray-500);
+  font-size: 0.875rem;
+  padding: 1rem 1.5rem;
+}
+
+.admin-table-state[hidden] {
+  display: none !important;
+}
+
+.admin-table-state-error {
+  color: var(--lumina-danger);
+}
+
+.admin-transactions-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-transactions-table {
+  min-width: 920px;
+}
+
+.admin-table-footer {
+  align-items: center;
+  background: white;
+  border-top: 1px solid var(--lumina-gray-200);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+}
+
+.admin-result-summary {
+  color: var(--lumina-gray-500);
+  font-size: 0.8125rem;
+}
+
+.admin-ref-text {
+  color: var(--lumina-gray-700);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-payer-cell div,
+.admin-order-cell div {
+  color: var(--lumina-gray-900);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-payer-cell span,
+.admin-order-cell span,
+.admin-time-cell {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-money-cell {
+  color: var(--lumina-gray-900);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-badge-danger {
+  background: var(--lumina-danger-bg);
+  color: var(--lumina-danger);
+}
+
+.admin-badge-muted {
+  background: var(--lumina-gray-100);
+  color: var(--lumina-gray-600);
+}
+
+.admin-transactions-mobile-list {
+  display: none;
+}
+
+.admin-transaction-card {
+  border-top: 1px solid var(--lumina-gray-200);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+}
+
+.admin-transaction-card-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.admin-transaction-card-amount {
+  color: var(--lumina-gray-900);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.admin-transaction-card-row {
+  align-items: start;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
+.admin-transaction-card-row span {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-transaction-card-row strong {
+  color: var(--lumina-gray-800);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.transaction-detail-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.transaction-detail-ref {
+  color: var(--lumina-gray-900);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.transaction-detail-amount {
+  color: var(--lumina-gray-900);
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+}
+
+.transaction-detail-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.detail-label {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  color: var(--lumina-gray-900);
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px) {
+  .admin-transactions-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-transactions-search {
+    max-width: none;
+    width: 100%;
+  }
+
+  .admin-transactions-filters {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-transactions-filters,
+  .admin-transactions-filters .form-control {
+    width: 100%;
+  }
+
+  .admin-transactions-table-wrap {
+    display: none;
+  }
+
+  .admin-transactions-mobile-list {
+    display: block;
+  }
+
+  .admin-table-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-table-footer .pagination {
+    justify-content: flex-start;
+  }
+
+  .admin-transaction-panel {
+    max-width: 100vw;
+    right: -100vw;
+    width: min(400px, 100vw);
+  }
+
+  .transaction-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
