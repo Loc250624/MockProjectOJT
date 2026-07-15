@@ -2,6 +2,8 @@ package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,12 @@ import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Integer> {
+    interface AssignmentSubmissionStats {
+        Integer getAssignmentId();
+        Long getSubmissionCount();
+        Long getPendingCount();
+    }
+
     @Query("""
             select count(s)
             from Submission s
@@ -55,4 +63,82 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
 
     @Query("select s from Submission s join fetch s.student join fetch s.assignment a join fetch a.lesson l where a.id = :assignmentId order by s.submittedAt desc")
     List<Submission> findByAssignmentIdWithStudent(@Param("assignmentId") Integer assignmentId);
+
+    @Query("""
+            select s.assignment.id as assignmentId,
+                   count(s.id) as submissionCount,
+                   coalesce(sum(case when s.status in :pendingStatuses then 1 else 0 end), 0) as pendingCount
+            from Submission s
+            where s.assignment.id in :assignmentIds
+            group by s.assignment.id
+            """)
+    List<AssignmentSubmissionStats> countSubmissionStatsByAssignmentIds(
+            @Param("assignmentIds") List<Integer> assignmentIds,
+            @Param("pendingStatuses") List<SubmissionStatus> pendingStatuses);
+
+    @Query(value = """
+            select s
+            from Submission s
+            join fetch s.student st
+            join fetch s.assignment a
+            join fetch a.lesson l
+            join fetch l.course c
+            left join fetch c.instructor
+            where c.instructor.id = :teacherId
+            and (:courseId is null or c.id = :courseId)
+            and (:assignmentId is null or a.id = :assignmentId)
+            and (:status is null or s.status = :status)
+            and (:search is null
+                or lower(st.fullName) like lower(concat('%', :search, '%'))
+                or lower(st.email) like lower(concat('%', :search, '%'))
+                or lower(a.title) like lower(concat('%', :search, '%'))
+                or lower(c.title) like lower(concat('%', :search, '%')))
+            order by s.submittedAt desc, s.updatedAt desc, s.id desc
+            """,
+            countQuery = """
+            select count(s)
+            from Submission s
+            join s.student st
+            join s.assignment a
+            join a.lesson l
+            join l.course c
+            where c.instructor.id = :teacherId
+            and (:courseId is null or c.id = :courseId)
+            and (:assignmentId is null or a.id = :assignmentId)
+            and (:status is null or s.status = :status)
+            and (:search is null
+                or lower(st.fullName) like lower(concat('%', :search, '%'))
+                or lower(st.email) like lower(concat('%', :search, '%'))
+                or lower(a.title) like lower(concat('%', :search, '%'))
+                or lower(c.title) like lower(concat('%', :search, '%')))
+            """)
+    Page<Submission> findTeacherSubmissions(@Param("teacherId") Integer teacherId,
+                                            @Param("courseId") Integer courseId,
+                                            @Param("assignmentId") Integer assignmentId,
+                                            @Param("status") SubmissionStatus status,
+                                            @Param("search") String search,
+                                            Pageable pageable);
+
+    @Query("""
+            select count(s)
+            from Submission s
+            join s.student st
+            join s.assignment a
+            join a.lesson l
+            join l.course c
+            where c.instructor.id = :teacherId
+            and (:courseId is null or c.id = :courseId)
+            and (:assignmentId is null or a.id = :assignmentId)
+            and s.status in :statuses
+            and (:search is null
+                or lower(st.fullName) like lower(concat('%', :search, '%'))
+                or lower(st.email) like lower(concat('%', :search, '%'))
+                or lower(a.title) like lower(concat('%', :search, '%'))
+                or lower(c.title) like lower(concat('%', :search, '%')))
+            """)
+    long countTeacherSubmissionsByStatuses(@Param("teacherId") Integer teacherId,
+                                           @Param("courseId") Integer courseId,
+                                           @Param("assignmentId") Integer assignmentId,
+                                           @Param("statuses") List<SubmissionStatus> statuses,
+                                           @Param("search") String search);
 }

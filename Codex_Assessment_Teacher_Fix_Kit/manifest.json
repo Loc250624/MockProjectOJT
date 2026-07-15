@@ -1,0 +1,101 @@
+{
+  "package": "Codex_Assessment_Teacher_Fix_Kit",
+  "purpose": "Repair and complete ASM-01..ASM-06 with focus on Teacher Grading and Assignments",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "size": 4248,
+      "sha256": "e3846c1bbe944e4e5823c60b8a20c0b55af7b9b29811ae5dd51b7222178acadc"
+    },
+    {
+      "path": "README_FIRST.md",
+      "size": 2221,
+      "sha256": "f448d37c4acea47a8efb6e61b286bfdd8c3c191947e387f3a8fb982b01248b51"
+    },
+    {
+      "path": "docs/01_PROBLEM_STATEMENT.md",
+      "size": 1579,
+      "sha256": "7609f6a098dd550d6d5564ed432aab97554f147512fb82732a3c2b12cb034cc2"
+    },
+    {
+      "path": "docs/02_ASM_FUNCTIONAL_REQUIREMENTS.md",
+      "size": 5168,
+      "sha256": "4a760fa7d7aaadcb368c78313037c8a113e17e0d4e580b0e3dade50a82d6abb7"
+    },
+    {
+      "path": "docs/03_IMPLEMENTATION_PLAN.md",
+      "size": 4199,
+      "sha256": "82398453efa31f6a72f8bc6f9b1c3e98649da51768a244b7c6755d0e5da779a4"
+    },
+    {
+      "path": "docs/04_UI_REPAIR_SPEC.md",
+      "size": 2176,
+      "sha256": "08d7ff6fca27eb259a1740b21e939c9dc2cd74e05631bb751dbe3c6442a9f92f"
+    },
+    {
+      "path": "docs/05_BACKEND_SECURITY_AND_DATA_CHECKLIST.md",
+      "size": 1703,
+      "sha256": "10a62a1ab5d006979641b81e7402c419b6248fa1fcb3f09dc9c96801a8b89f2a"
+    },
+    {
+      "path": "docs/06_TEST_PLAN.md",
+      "size": 2422,
+      "sha256": "a113c03671f3287cf478d6f7de5ecd42c3bee09d3045330976cf33650e7b6d82"
+    },
+    {
+      "path": "docs/07_ACCEPTANCE_CRITERIA.md",
+      "size": 2418,
+      "sha256": "703bc6cea93a494c93da23a22c0abf1c3d1026822fbc9c4f6c057ba802169dfb"
+    },
+    {
+      "path": "docs/08_MANUAL_TEST_CASES.md",
+      "size": 2513,
+      "sha256": "180569eb5882090e1d5d6d40883c4ca206375047ae4d6265e4447468ca7d227b"
+    },
+    {
+      "path": "docs/09_DATA_MIGRATION_AND_SEED_RULES.md",
+      "size": 1447,
+      "sha256": "a56a60778e1afd66f86116b4bd8f1dd2610873c76e9a36ea203116ba6b384ca6"
+    },
+    {
+      "path": "docs/10_CODEX_OUTPUT_TEMPLATE.md",
+      "size": 1045,
+      "sha256": "eaec1e0971b60e4304d2362eb6b6b6e2833165d1b3acb583fce32487ed381589"
+    },
+    {
+      "path": "evidence/README.md",
+      "size": 341,
+      "sha256": "46f18409f119a45dee1698451ae7bab9efda8593671cfa2e5b058c12a2f7a3e0"
+    },
+    {
+      "path": "evidence/teacher-assignments-current.png",
+      "size": 86647,
+      "sha256": "5ad23bdcf9d579ccedd91a03078f152e5132013eee927c083995245fb7204aaa"
+    },
+    {
+      "path": "evidence/teacher-grading-current.png",
+      "size": 53769,
+      "sha256": "51dbccf5f169f4691db474fa737d53e9d583552c42c845236f779a7bf76c2e2e"
+    },
+    {
+      "path": "prompts/CODEX_MASTER_PROMPT.txt",
+      "size": 4018,
+      "sha256": "b2bbbd6b04c95071604a7910562c6c3dee63dd75b80e69fa027a0b79181981a1"
+    },
+    {
+      "path": "prompts/CODEX_STEP_PROMPTS.md",
+      "size": 3535,
+      "sha256": "25352a812b0ed150217702606c6009a078779bda8621eb18bc4c9338ea1ea52a"
+    },
+    {
+      "path": "scripts/preflight-check.ps1",
+      "size": 694,
+      "sha256": "f97aa0efe7a0be71ba9e46dbe01fb6150972d464c82f1cfa62b91b595c44407d"
+    },
+    {
+      "path": "scripts/preflight-check.sh",
+      "size": 726,
+      "sha256": "527cfa28a0d8f6174aab7e8b823174465be4dbaaaa93aea53c7542754fd2a609"
+    }
+  ]
+}

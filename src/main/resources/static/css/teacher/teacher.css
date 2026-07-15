@@ -815,6 +815,16 @@
   gap: 0.75rem;
 }
 
+.assessment-wide {
+  grid-column: span 2;
+}
+
+.assessment-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .assessment-list {
   display: grid;
   gap: 0.75rem;
@@ -857,6 +867,192 @@
   width: auto;
 }
 
+.teacher-question-row {
+  display: block;
+}
+
+.teacher-assessment-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.teacher-assessment-panel {
+  overflow: hidden;
+}
+
+.assessment-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(140px, 0.75fr) minmax(220px, 1.25fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.assessment-filter-bar label {
+  display: grid;
+  gap: 0.35rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.assessment-filter-bar input,
+.assessment-filter-bar select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.7rem;
+  font: inherit;
+}
+
+.assessment-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+.assessment-pagination .disabled {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.assessment-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.assessment-summary-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.assessment-summary-card span {
+  display: block;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.assessment-summary-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: #0f172a;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.teacher-assessment-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.teacher-assessment-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.teacher-assessment-table th,
+.teacher-assessment-table td {
+  padding: 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+}
+
+.teacher-assessment-table th {
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.teacher-assessment-table small,
+.teacher-submission-text {
+  display: block;
+  margin-top: 0.25rem;
+  color: #64748b;
+}
+
+.teacher-grading-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 0.9rem;
+}
+
+.teacher-grading-meta div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.teacher-grading-meta dt {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.teacher-grading-meta dd {
+  margin: 0.25rem 0 0;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.assessment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.assessment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.assessment-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.teacher-empty-state {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.teacher-empty-state strong {
+  color: #0f172a;
+}
+
 .empty-state {
   padding: 1.5rem;
   border: 1px dashed #cbd5e1;
@@ -878,7 +1074,26 @@ pre {
   .assessment-heading.inline {
     flex-direction: column;
   }
+  .teacher-assessment-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .assessment-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .assessment-filter-bar,
+  .assessment-pagination {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+  .teacher-grading-meta {
+    grid-template-columns: 1fr;
+  }
   .assessment-grid-4 {
     grid-template-columns: 1fr;
+  }
+  .assessment-wide {
+    grid-column: auto;
   }
 }

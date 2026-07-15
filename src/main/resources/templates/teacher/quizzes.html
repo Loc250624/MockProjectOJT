@@ -3,74 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Quizzes</title>
+    <title>Quizzes - Teacher Portal | LumiNa</title>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body th:attr="data-course-id=${courseId}">
-<header th:replace="~{fragments/layout :: header('teacher')}"></header>
-<div class="layout-container">
+<div class="lumina-portal">
     <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-    <main class="main-content assessment-content">
-        <div class="assessment-heading">
-            <div>
-                <p class="eyebrow">Assessment management</p>
-                <h1>Quiz Builder</h1>
-            </div>
-        </div>
 
-        <section class="assessment-panel">
-            <h2>Create quiz</h2>
-            <form id="teacher-quiz-form" class="assessment-form compact">
-                <input name="lessonId" type="number" min="1" placeholder="Lesson ID" required>
-                <input name="title" placeholder="Quiz title" required>
-                <textarea name="description" rows="3" placeholder="Description"></textarea>
-                <div class="assessment-grid-4">
-                    <input name="durationMinutes" type="number" min="1" value="30" required>
-                    <input name="maxAttempts" type="number" min="1" value="1" required>
-                    <input name="passingScore" type="number" min="0" max="100" step="0.01" value="70">
-                    <select name="status">
-                        <option value="DRAFT">Draft</option>
-                        <option value="PUBLISHED">Published</option>
-                    </select>
+    <div class="lumina-portal-content">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Quizzes')}"></div>
+
+        <main class="lumina-portal-main assessment-content" style="flex:1;">
+            <div class="page-header teacher-assessment-header">
+                <div>
+                    <p class="teacher-breadcrumb">
+                        <a th:href="@{/teacher/dashboard}">Dashboard</a>
+                        <span>/</span>
+                        <span>Quizzes</span>
+                    </p>
+                    <h1 class="page-title">Quiz Builder</h1>
+                    <p class="page-subtitle">Create quizzes, manage questions, and publish only validated assessments.</p>
                 </div>
-                <button class="btn btn-primary" type="submit">Create quiz</button>
-                <div class="assessment-message" id="teacher-quiz-message"></div>
-            </form>
-        </section>
-
-        <section class="assessment-panel">
-            <h2>Quizzes</h2>
-            <div class="empty-state" th:if="${quizzes == null || #lists.isEmpty(quizzes)}">No quizzes in this course yet.</div>
-            <div class="assessment-list" th:unless="${quizzes == null || #lists.isEmpty(quizzes)}">
-                <article class="assessment-card" th:each="quiz : ${quizzes}" th:attr="data-quiz-id=${quiz.id}">
-                    <div class="assessment-heading inline">
-                        <div>
-                            <h3 th:text="${quiz.title}">Quiz</h3>
-                            <p th:text="${quiz.lessonTitle}">Lesson</p>
-                        </div>
-                        <button class="btn btn-secondary delete-quiz-btn" type="button">Delete</button>
-                    </div>
-                    <form class="teacher-question-form assessment-form compact">
-                        <input name="content" placeholder="Question text" required>
-                        <select name="questionType">
-                            <option value="SINGLE_CHOICE">Single choice</option>
-                            <option value="MULTIPLE_CHOICE">Multiple choice</option>
-                        </select>
-                        <input name="points" type="number" min="0" step="0.01" value="1">
-                        <input name="options" placeholder="Options separated by |, mark correct with * e.g. *A|B|C" required>
-                        <button class="btn btn-primary" type="submit">Add question</button>
-                    </form>
-                    <div class="assessment-list small">
-                        <div class="result-row" th:each="question : ${quiz.questions}">
-                            <span th:text="${question.content}">Question</span>
-                            <small th:text="${question.points} + ' pts'">1 pts</small>
-                        </div>
-                    </div>
-                </article>
+                <a class="btn btn-secondary" th:href="@{/teacher/courses}">My Courses</a>
             </div>
-        </section>
-    </main>
+
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <section class="assessment-panel teacher-assessment-panel">
+                <div class="assessment-heading inline">
+                    <div>
+                        <h2>Course</h2>
+                        <p>Select one of your courses before managing quizzes.</p>
+                    </div>
+                </div>
+                <form class="assessment-filter-bar" method="get" th:action="@{/teacher/quizzes}">
+                    <label>
+                        <span>Course</span>
+                        <select name="courseId" required>
+                            <option value="">Choose a course</option>
+                            <option th:each="course : ${courses}"
+                                    th:value="${course.id}"
+                                    th:selected="${selectedCourseId != null && selectedCourseId == course.id}"
+                                    th:text="${course.title}">Course</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-primary" type="submit">Open Builder</button>
+                </form>
+            </section>
+
+            <section class="assessment-panel teacher-assessment-panel" th:if="${courseId != null}">
+                <div class="assessment-heading inline">
+                    <div>
+                        <h2>Create Quiz</h2>
+                        <p th:text="${selectedCourse != null ? selectedCourse.title : 'Selected course'}">Selected course</p>
+                    </div>
+                </div>
+                <form id="teacher-quiz-form" class="assessment-form compact">
+                    <label>
+                        <span>Lesson</span>
+                        <select name="lessonId" required>
+                            <option value="">Choose lesson</option>
+                            <option th:each="lesson : ${lessons}"
+                                    th:value="${lesson.id}"
+                                    th:text="${lesson.title}">Lesson</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Title</span>
+                        <input name="title" placeholder="Quiz title" required>
+                    </label>
+                    <label>
+                        <span>Description</span>
+                        <textarea name="description" rows="3" placeholder="Description"></textarea>
+                    </label>
+                    <div class="assessment-grid-4">
+                        <label>
+                            <span>Duration</span>
+                            <input name="durationMinutes" type="number" min="1" value="30" required>
+                        </label>
+                        <label>
+                            <span>Attempts</span>
+                            <input name="maxAttempts" type="number" min="1" value="1" required>
+                        </label>
+                        <label>
+                            <span>Pass score</span>
+                            <input name="passingScore" type="number" min="0" max="100" step="0.01" value="70">
+                        </label>
+                        <label>
+                            <span>Status</span>
+                            <select name="status">
+                                <option value="DRAFT">Draft</option>
+                                <option value="PUBLISHED">Published</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Create Quiz</button>
+                    <div class="assessment-message" id="teacher-quiz-message"></div>
+                </form>
+            </section>
+
+            <section class="assessment-panel teacher-assessment-panel" th:if="${courseId != null}">
+                <div class="assessment-heading inline">
+                    <div>
+                        <h2>Quizzes</h2>
+                        <p>Archive attempted quizzes to preserve history; delete is only used before attempts exist.</p>
+                    </div>
+                </div>
+
+                <div class="empty-state" th:if="${quizzes == null || #lists.isEmpty(quizzes)}">No quizzes in this course yet.</div>
+
+                <div class="assessment-list" th:unless="${quizzes == null || #lists.isEmpty(quizzes)}">
+                    <article class="assessment-card teacher-quiz-card" th:each="quiz : ${quizzes}" th:attr="data-quiz-id=${quiz.id}">
+                        <div class="assessment-heading inline">
+                            <div>
+                                <h3 th:text="${quiz.title}">Quiz</h3>
+                                <p>
+                                    <span th:text="${quiz.lessonTitle}">Lesson</span>
+                                    <span> · </span>
+                                    <span th:text="${quiz.status}">DRAFT</span>
+                                    <span> · </span>
+                                    <span th:text="${quiz.totalPoints} + ' pts'">0 pts</span>
+                                </p>
+                            </div>
+                            <button class="btn btn-secondary delete-quiz-btn" type="button"
+                                    th:text="${quiz.status?.name() == 'ARCHIVED' ? 'Archived' : 'Archive / Delete'}"
+                                    th:disabled="${quiz.status?.name() == 'ARCHIVED'}">Archive / Delete</button>
+                        </div>
+
+                        <form class="teacher-quiz-update-form assessment-form compact">
+                            <input type="hidden" name="quizId" th:value="${quiz.id}">
+                            <div class="assessment-grid-4">
+                                <label>
+                                    <span>Lesson</span>
+                                    <select name="lessonId" required>
+                                        <option th:each="lesson : ${lessons}"
+                                                th:value="${lesson.id}"
+                                                th:selected="${quiz.lessonId == lesson.id}"
+                                                th:text="${lesson.title}">Lesson</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>Title</span>
+                                    <input name="title" th:value="${quiz.title}" required>
+                                </label>
+                                <label>
+                                    <span>Duration</span>
+                                    <input name="durationMinutes" type="number" min="1" th:value="${quiz.durationMinutes}" required>
+                                </label>
+                                <label>
+                                    <span>Status</span>
+                                    <select name="status">
+                                        <option th:each="status : ${quizStatuses}"
+                                                th:value="${status}"
+                                                th:selected="${quiz.status == status}"
+                                                th:text="${status}">DRAFT</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="assessment-grid-4">
+                                <label>
+                                    <span>Attempts</span>
+                                    <input name="maxAttempts" type="number" min="1" th:value="${quiz.maxAttempts}" required>
+                                </label>
+                                <label>
+                                    <span>Pass score</span>
+                                    <input name="passingScore" type="number" min="0" max="100" step="0.01" th:value="${quiz.passingScore}">
+                                </label>
+                                <label class="assessment-wide">
+                                    <span>Description</span>
+                                    <input name="description" th:value="${quiz.description}" placeholder="Description">
+                                </label>
+                            </div>
+                            <button class="btn btn-secondary" type="submit">Save Quiz</button>
+                            <div class="assessment-message"></div>
+                        </form>
+
+                        <div class="assessment-list small teacher-question-list">
+                            <div class="result-row teacher-question-row"
+                                 th:each="question, stat : ${quiz.questions}"
+                                 th:attr="data-question-id=${question.id}">
+                                <form class="teacher-question-update-form assessment-form compact">
+                                    <input type="hidden" name="questionId" th:value="${question.id}">
+                                    <div class="assessment-grid-4">
+                                        <label>
+                                            <span>Order</span>
+                                            <input name="displayOrder" type="number" min="1" th:value="${question.displayOrder != null ? question.displayOrder : stat.count}">
+                                        </label>
+                                        <label class="assessment-wide">
+                                            <span>Question</span>
+                                            <input name="content" th:value="${question.content}" required>
+                                        </label>
+                                        <label>
+                                            <span>Type</span>
+                                            <select name="questionType">
+                                                <option value="SINGLE_CHOICE" th:selected="${question.questionType?.name() == 'SINGLE_CHOICE'}">Single choice</option>
+                                                <option value="MULTIPLE_CHOICE" th:selected="${question.questionType?.name() == 'MULTIPLE_CHOICE'}">Multiple choice</option>
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Points</span>
+                                            <input name="points" type="number" min="0.01" step="0.01" th:value="${question.points}">
+                                        </label>
+                                    </div>
+                                    <label>
+                                        <span>Options</span>
+                                        <input name="options"
+                                               th:value="${#strings.listJoin(question.options.![correct == true ? '*' + content : content], '|')}"
+                                               placeholder="Options separated by |, mark correct with *" required>
+                                    </label>
+                                    <div class="assessment-action-row">
+                                        <button class="btn btn-secondary" type="submit">Save Question</button>
+                                        <button class="btn btn-secondary delete-question-btn" type="button">Delete</button>
+                                        <button class="btn btn-secondary question-move-btn" type="button" data-direction="up">Up</button>
+                                        <button class="btn btn-secondary question-move-btn" type="button" data-direction="down">Down</button>
+                                    </div>
+                                    <div class="assessment-message"></div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <form class="teacher-question-form assessment-form compact">
+                            <h4>Add Question</h4>
+                            <input name="content" placeholder="Question text" required>
+                            <div class="assessment-grid-4">
+                                <select name="questionType">
+                                    <option value="SINGLE_CHOICE">Single choice</option>
+                                    <option value="MULTIPLE_CHOICE">Multiple choice</option>
+                                </select>
+                                <input name="points" type="number" min="0.01" step="0.01" value="1">
+                                <input name="displayOrder" type="number" min="1" placeholder="Order">
+                                <button class="btn btn-primary" type="submit">Add Question</button>
+                            </div>
+                            <input name="options" placeholder="Options separated by |, mark correct with * e.g. *A|B|C" required>
+                        </form>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
 </div>
 <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>

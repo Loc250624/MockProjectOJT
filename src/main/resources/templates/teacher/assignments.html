@@ -1,21 +1,137 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignments - Teacher - OJTSU26 E-Learning</title>
+    <title>Assignments - Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body>
-    <header th:replace="~{fragments/layout :: header('teacher')}"></header>
-    <div class="layout-container">
-        <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-        <main class="main-content">
-            <h1>Assignments</h1>
-            <table class="table"><thead><tr><th>ID</th><th>Student</th><th>Course</th><th>Assignment</th><th>Status</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Student A</td><td>Java</td><td>Assign 1</td><td>Submitted</td><td><button class="btn btn-info">Grade</button></td></tr></tbody></table>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
+
+    <div class="lumina-portal-content">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Assignments')}"></div>
+
+        <main class="lumina-portal-main assessment-content" style="flex:1;">
+            <div class="page-header teacher-assessment-header">
+                <div>
+                    <p class="teacher-breadcrumb">
+                        <a th:href="@{/teacher/dashboard}">Dashboard</a>
+                        <span>/</span>
+                        <span>Assignments</span>
+                    </p>
+                    <h1 class="page-title">Assignments</h1>
+                    <p class="page-subtitle">Create and manage assessments for your courses.</p>
+                </div>
+                <a class="btn btn-primary" th:href="@{/teacher/lessons}">Create Assignment</a>
+            </div>
+
+            <section class="assessment-panel teacher-assessment-panel">
+                <div class="assessment-heading inline">
+                    <div>
+                        <h2>Assignment Library</h2>
+                        <p>Assignments will appear here after they are connected to your course lessons.</p>
+                    </div>
+                </div>
+
+                <form class="assessment-filter-bar" method="get" th:action="@{/teacher/assignments}">
+                    <label>
+                        <span>Course</span>
+                        <select name="courseId">
+                            <option value="">All courses</option>
+                            <option th:each="course : ${courses}"
+                                    th:value="${course.id}"
+                                    th:selected="${selectedCourseId != null && selectedCourseId == course.id}"
+                                    th:text="${course.title}">Course</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Status</span>
+                        <select name="status">
+                            <option value="">All statuses</option>
+                            <option th:each="assignmentStatus : ${assignmentStatuses}"
+                                    th:value="${assignmentStatus}"
+                                    th:selected="${assignmentStatus == selectedStatus}"
+                                    th:text="${assignmentStatus}">Status</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Search</span>
+                        <input name="search" type="search" th:value="${search}" placeholder="Assignment or course">
+                    </label>
+                    <button class="btn btn-secondary" type="submit">Filter</button>
+                </form>
+
+                <div class="teacher-assessment-table-wrap"
+                     th:if="${assignments != null && !#lists.isEmpty(assignments)}">
+                    <table class="teacher-assessment-table">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Course</th>
+                            <th>Due date</th>
+                            <th>Status</th>
+                            <th>Submissions</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="assignment : ${assignments}">
+                            <td>
+                                <strong th:text="${assignment.title}">Assignment title</strong>
+                                <small th:if="${assignment.type != null}" th:text="${assignment.type}">Type</small>
+                            </td>
+                            <td th:text="${assignment.courseTitle}">Course title</td>
+                            <td th:text="${assignment.dueDate != null ? #temporals.format(assignment.dueDate, 'MMM d, yyyy HH:mm') : 'No due date'}">Due date</td>
+                            <td>
+                                <span class="assessment-status-badge" th:text="${assignment.status}">Status</span>
+                            </td>
+                            <td>
+                                <span th:text="${assignment.submissionCount != null ? assignment.submissionCount : 0}">0</span>
+                                <small th:if="${assignment.pendingCount != null}"
+                                       th:text="${assignment.pendingCount + ' pending'}">0 pending</small>
+                            </td>
+                            <td>
+                                <div class="assessment-actions">
+                                    <a class="btn btn-secondary"
+                                       th:href="@{/teacher/assignments/{id}/submissions(id=${assignment.id})}">Grade</a>
+                                    <a class="btn btn-secondary"
+                                       th:href="@{/teacher/assignments/{id}/testcases(id=${assignment.id})}">Testcases</a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <nav class="assessment-pagination"
+                     th:if="${assignmentPage != null && assignmentPage.totalPages > 1}">
+                    <a class="btn btn-secondary"
+                       th:classappend="${assignmentPage.first} ? ' disabled'"
+                       th:href="@{/teacher/assignments(courseId=${selectedCourseId},status=${selectedStatus},search=${search},page=${assignmentPage.number - 1},size=${assignmentPage.size})}">Previous</a>
+                    <span th:text="${'Page ' + (assignmentPage.number + 1) + ' of ' + assignmentPage.totalPages}">Page</span>
+                    <a class="btn btn-secondary"
+                       th:classappend="${assignmentPage.last} ? ' disabled'"
+                       th:href="@{/teacher/assignments(courseId=${selectedCourseId},status=${selectedStatus},search=${search},page=${assignmentPage.number + 1},size=${assignmentPage.size})}">Next</a>
+                </nav>
+
+                <div class="empty-state teacher-empty-state"
+                     th:if="${assignments == null || #lists.isEmpty(assignments)}">
+                    <strong>No assignments to show yet.</strong>
+                    <span>Create coding assignments from course lessons, then return here to manage submissions and grading.</span>
+                </div>
+            </section>
         </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
-    <script th:src="@{/js/teacher/teacher.js}"></script>
+</div>
+
+<script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

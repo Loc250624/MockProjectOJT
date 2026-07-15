@@ -9,6 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface QuizAnswerRepository extends JpaRepository<QuizAnswer, Integer> {
+    long countByQuestionId(Integer questionId);
+
     List<QuizAnswer> findByAttemptId(Integer attemptId);
 
     Optional<QuizAnswer> findByAttemptIdAndQuestionId(Integer attemptId, Integer questionId);

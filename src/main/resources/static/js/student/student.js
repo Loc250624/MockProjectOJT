@@ -1,8 +1,8 @@
 'use strict';
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     var currentPath = window.location.pathname;
     var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
-    sidebarLinks.forEach(function(link) {
+    sidebarLinks.forEach(function (link) {
         var linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
         if (linkPath === currentPath) {
             link.classList.add('active');
@@ -46,10 +46,10 @@ function initCourseEnrollmentCta() {
 
     function parseJsonResponse(response, fallbackMessage) {
         return response.json()
-            .catch(function() {
+            .catch(function () {
                 return { message: fallbackMessage };
             })
-            .then(function(body) {
+            .then(function (body) {
                 if (!response.ok) {
                     throw new Error(body.message || fallbackMessage);
                 }
@@ -60,9 +60,9 @@ function initCourseEnrollmentCta() {
     function refreshState() {
         return fetch('/student/courses/' + courseId + '/enrollment-state', {
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to refresh enrollment state');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             var state = apiResponse.data;
             if (!state) {
                 return;
@@ -79,7 +79,7 @@ function initCourseEnrollmentCta() {
         });
     }
 
-    enrollButton.addEventListener('click', function() {
+    enrollButton.addEventListener('click', function () {
         enrollButton.disabled = true;
         enrollButton.textContent = 'Enrolling...';
         setMessage('Confirming enrollment...', false);
@@ -87,12 +87,12 @@ function initCourseEnrollmentCta() {
         fetch('/student/courses/' + courseId + '/enroll', {
             method: 'POST',
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to enroll in this course');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             setMessage(apiResponse.message || 'Enrollment confirmed', false);
             return refreshState();
-        }).catch(function(error) {
+        }).catch(function (error) {
             setMessage(error.message, true);
             enrollButton.disabled = false;
             enrollButton.textContent = originalText;
@@ -115,10 +115,10 @@ function initLearningProgress() {
 
 function parseLearningJson(response, fallbackMessage) {
     return response.json()
-        .catch(function() {
+        .catch(function () {
             return { message: fallbackMessage };
         })
-        .then(function(body) {
+        .then(function (body) {
             if (!response.ok) {
                 throw new Error(body.message || fallbackMessage);
             }
@@ -140,7 +140,7 @@ function applyLearningProgress(progress) {
     if (courseStatus && progress.courseStatus) {
         courseStatus.textContent = progress.courseStatus === 'COMPLETED' ? 'Completed'
             : progress.courseStatus === 'IN_PROGRESS' ? 'In Progress'
-            : 'Not Started';
+                : 'Not Started';
     }
 
     var courseCount = document.getElementById('course-progress-count');
@@ -160,7 +160,7 @@ function applyLearningProgress(progress) {
         help.textContent = 'Saved through ' + progress.watchedSeconds + ' seconds.';
     }
 
-    document.querySelectorAll('.learning-progress-summary .progress-bar-fill, .pc-progress .progress-bar-fill').forEach(function(fill) {
+    document.querySelectorAll('.learning-progress-summary .progress-bar-fill, .pc-progress .progress-bar-fill').forEach(function (fill) {
         if (progress.progressPercentage != null) {
             fill.style.width = progress.progressPercentage + '%';
         }
@@ -200,32 +200,32 @@ function Html5PlayerWrapper(video, options) {
     if (options.onPlay) video.addEventListener('play', options.onPlay);
     if (options.onPause) video.addEventListener('pause', options.onPause);
     if (options.onTimeUpdate) {
-        video.addEventListener('timeupdate', function() {
+        video.addEventListener('timeupdate', function () {
             options.onTimeUpdate(video.currentTime);
         });
     }
     if (options.onEnded) video.addEventListener('ended', options.onEnded);
     if (options.onSeeked) {
-        video.addEventListener('seeked', function() {
+        video.addEventListener('seeked', function () {
             options.onSeeked(video.currentTime);
         });
     }
     if (options.onError) {
-        video.addEventListener('error', function() {
+        video.addEventListener('error', function () {
             options.onError();
         });
     }
 
-    this.seekTo = function(seconds) {
+    this.seekTo = function (seconds) {
         video.currentTime = seconds;
     };
-    this.getCurrentTime = function() {
+    this.getCurrentTime = function () {
         return video.currentTime;
     };
-    this.getDuration = function() {
+    this.getDuration = function () {
         return video.duration;
     };
-    this.destroy = function() {};
+    this.destroy = function () { };
 }
 
 function YouTubePlayerWrapper(iframe, options) {
@@ -235,7 +235,7 @@ function YouTubePlayerWrapper(iframe, options) {
 
     function startTracking() {
         if (progressInterval) clearInterval(progressInterval);
-        progressInterval = setInterval(function() {
+        progressInterval = setInterval(function () {
             if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
                 options.onTimeUpdate(player.getCurrentTime());
             }
@@ -281,7 +281,7 @@ function YouTubePlayerWrapper(iframe, options) {
 
     if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
         var oldCallback = window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady = function() {
+        window.onYouTubeIframeAPIReady = function () {
             if (oldCallback) oldCallback();
             createPlayer();
         };
@@ -295,18 +295,18 @@ function YouTubePlayerWrapper(iframe, options) {
         createPlayer();
     }
 
-    this.seekTo = function(seconds) {
+    this.seekTo = function (seconds) {
         if (player && typeof player.seekTo === 'function') {
             player.seekTo(seconds, true);
         }
     };
-    this.getCurrentTime = function() {
+    this.getCurrentTime = function () {
         return player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
     };
-    this.getDuration = function() {
+    this.getDuration = function () {
         return player && typeof player.getDuration === 'function' ? player.getDuration() : 0;
     };
-    this.destroy = function() {
+    this.destroy = function () {
         stopTracking();
         if (player && typeof player.destroy === 'function') {
             player.destroy();
@@ -384,19 +384,19 @@ function initVideoProgress(element) {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(payload)
-        }).then(function(response) {
+        }).then(function (response) {
             return parseLearningJson(response, 'Unable to save video progress');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             var data = apiResponse.data || {};
             lastSavedPosition = typeof data.lastPositionSeconds === 'number' ? data.lastPositionSeconds : payload.currentTimeSeconds;
             lastSavedMax = Math.max(lastSavedMax, data.maxReachedSeconds || data.watchedSeconds || payload.maxReachedSeconds);
             applyLearningProgress(apiResponse.data);
-        }).catch(function(error) {
+        }).catch(function (error) {
             var help = document.getElementById('video-progress-help');
             if (help) {
                 help.textContent = error.message;
             }
-        }).finally(function() {
+        }).finally(function () {
             saving = false;
         });
     }
@@ -407,7 +407,7 @@ function initVideoProgress(element) {
         }
     }
 
-    function onPlay() {}
+    function onPlay() { }
 
     function onPause() {
         if (playerWrapper) {
@@ -458,7 +458,7 @@ function initVideoProgress(element) {
         });
     }
 
-    window.addEventListener('beforeunload', function() {
+    window.addEventListener('beforeunload', function () {
         if (playerWrapper) {
             var current = Math.floor(playerWrapper.getCurrentTime() || 0);
             var payload = buildProgressPayload(current, 'UNLOAD');
@@ -472,7 +472,7 @@ function initVideoProgress(element) {
 
 function initLessonCompletion(button) {
     var message = document.getElementById('lesson-complete-message');
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         button.disabled = true;
         if (message) {
             message.textContent = 'Saving completion...';
@@ -480,14 +480,14 @@ function initLessonCompletion(button) {
         fetch('/student/courses/' + encodeURIComponent(button.dataset.courseId) + '/lessons/' + encodeURIComponent(button.dataset.lessonId) + '/complete', {
             method: 'POST',
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             return parseLearningJson(response, 'Unable to complete this lesson');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             applyLearningProgress(apiResponse.data);
             if (message) {
                 message.textContent = 'Lesson completed.';
             }
-        }).catch(function(error) {
+        }).catch(function (error) {
             button.disabled = false;
             if (message) {
                 message.textContent = error.message;
@@ -526,9 +526,9 @@ function setPanelMessage(elementId, text, isError) {
 }
 
 function assessmentJson(response, fallbackMessage) {
-    return response.json().catch(function() {
+    return response.json().catch(function () {
         return { message: fallbackMessage };
-    }).then(function(body) {
+    }).then(function (body) {
         if (!response.ok) {
             throw new Error(body.message || fallbackMessage);
         }
@@ -578,7 +578,7 @@ function initQuizPanel(panel) {
         if (!attempt || !attempt.questions) {
             return answers;
         }
-        attempt.questions.forEach(function(question) {
+        attempt.questions.forEach(function (question) {
             var selector = '[name="quiz-question-' + question.id + '"]:checked';
             var checked = questionsWrap.querySelector(selector);
             if (checked) {
@@ -623,7 +623,7 @@ function initQuizPanel(panel) {
         }
 
         questionsWrap.replaceChildren();
-        (data.questions || []).forEach(function(question, index) {
+        (data.questions || []).forEach(function (question, index) {
             var block = document.createElement('fieldset');
             block.className = 'learning-question';
             block.appendChild(createTextElement('legend', null, (index + 1) + '. ' + (question.questionText || 'Question')));
@@ -631,7 +631,7 @@ function initQuizPanel(panel) {
             if (!options.length) {
                 block.appendChild(createTextElement('p', 'learning-help', 'No options are configured for this question.'));
             }
-            options.forEach(function(option) {
+            options.forEach(function (option) {
                 var label = document.createElement('label');
                 label.className = 'learning-answer-option';
                 var input = document.createElement('input');
@@ -667,9 +667,9 @@ function initQuizPanel(panel) {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(payload)
-        }).then(function(response) {
+        }).then(function (response) {
             return parseLearningJson(response, 'Unable to update quiz attempt');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             attempt = apiResponse.data;
             setPanelMessage('quiz-message', action === '/submit' ? 'Quiz submitted.' : 'Draft saved.', false);
             if (attempt.submitted) {
@@ -679,13 +679,13 @@ function initQuizPanel(panel) {
     }
 
     fetch(endpoint(''), { credentials: 'same-origin' })
-        .then(function(response) {
+        .then(function (response) {
             return parseLearningJson(response, 'Unable to load quiz');
         })
-        .then(function(apiResponse) {
+        .then(function (apiResponse) {
             renderQuiz(apiResponse.data || {});
         })
-        .catch(function(error) {
+        .catch(function (error) {
             loading.hidden = true;
             unavailable.hidden = false;
             unavailable.querySelector('span').textContent = error.message;
@@ -693,26 +693,26 @@ function initQuizPanel(panel) {
         });
 
     if (saveButton) {
-        saveButton.addEventListener('click', function() {
+        saveButton.addEventListener('click', function () {
             saveButton.disabled = true;
             sendQuiz('/save', 'Saving draft...')
-                .catch(function(error) {
+                .catch(function (error) {
                     setPanelMessage('quiz-message', error.message, true);
                 })
-                .finally(function() {
+                .finally(function () {
                     saveButton.disabled = false;
                 });
         });
     }
     if (form) {
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault();
             submitButton.disabled = true;
             sendQuiz('/submit', 'Submitting quiz...')
-                .catch(function(error) {
+                .catch(function (error) {
                     setPanelMessage('quiz-message', error.message, true);
                 })
-                .finally(function() {
+                .finally(function () {
                     submitButton.disabled = false;
                 });
         });
@@ -750,7 +750,7 @@ function initCodePanel(panel) {
         }
 
         languageSelect.replaceChildren();
-        (data.allowedLanguages || []).forEach(function(language) {
+        (data.allowedLanguages || []).forEach(function (language) {
             var option = document.createElement('option');
             option.value = language;
             option.textContent = language;
@@ -763,7 +763,7 @@ function initCodePanel(panel) {
         editor.value = data.submittedCode || data.starterCode || '';
         timeLimit.textContent = data.timeLimitMs ? 'Time limit: ' + data.timeLimitMs + ' ms' : '';
         examples.replaceChildren();
-        (data.examples || []).forEach(function(example, index) {
+        (data.examples || []).forEach(function (example, index) {
             var item = document.createElement('div');
             item.className = 'learning-code-example';
             item.appendChild(createTextElement('strong', null, 'Example ' + (index + 1)));
@@ -803,9 +803,9 @@ function initCodePanel(panel) {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(codePayload())
-        }).then(function(response) {
+        }).then(function (response) {
             return parseLearningJson(response, 'Unable to update code submission');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             assignment = apiResponse.data;
             renderAssignment(assignment);
             setPanelMessage('code-message', action === '/submit' ? 'Submitted for review.' : 'Draft saved.', false);
@@ -813,13 +813,13 @@ function initCodePanel(panel) {
     }
 
     fetch(endpoint(''), { credentials: 'same-origin' })
-        .then(function(response) {
+        .then(function (response) {
             return parseLearningJson(response, 'Unable to load coding exercise');
         })
-        .then(function(apiResponse) {
+        .then(function (apiResponse) {
             renderAssignment(apiResponse.data || {});
         })
-        .catch(function(error) {
+        .catch(function (error) {
             loading.hidden = true;
             unavailable.hidden = false;
             unavailable.querySelector('span').textContent = error.message;
@@ -827,13 +827,13 @@ function initCodePanel(panel) {
         });
 
     if (saveButton) {
-        saveButton.addEventListener('click', function() {
+        saveButton.addEventListener('click', function () {
             saveButton.disabled = true;
             sendCode('/save', 'Saving draft...')
-                .catch(function(error) {
+                .catch(function (error) {
                     setPanelMessage('code-message', error.message, true);
                 })
-                .finally(function() {
+                .finally(function () {
                     if (!assignment || !assignment.submitted) {
                         saveButton.disabled = false;
                     }
@@ -841,17 +841,17 @@ function initCodePanel(panel) {
         });
     }
     if (form) {
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault();
             submitButton.disabled = true;
             sendCode('/submit', 'Submitting code...')
-                .catch(function(error) {
+                .catch(function (error) {
                     setPanelMessage('code-message', error.message, true);
                     submitButton.disabled = false;
                 });
         });
     }
-=======
+
     element.classList.remove('error', 'success');
     if (type) {
         element.classList.add(type);
@@ -876,19 +876,19 @@ function initAssessmentQuiz() {
 
     function showQuestion(index) {
         current = Math.max(0, Math.min(index, questions.length - 1));
-        questions.forEach(function(question, questionIndex) {
+        questions.forEach(function (question, questionIndex) {
             question.classList.toggle('active', questionIndex === current);
         });
-        navButtons.forEach(function(button, buttonIndex) {
+        navButtons.forEach(function (button, buttonIndex) {
             button.classList.toggle('active', buttonIndex === current);
         });
     }
 
     function collectAnswers() {
-        return questions.map(function(question) {
+        return questions.map(function (question) {
             return {
                 questionId: Number(question.dataset.questionId),
-                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked')).map(function(input) {
+                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked')).map(function (input) {
                     return Number(input.value);
                 })
             };
@@ -896,7 +896,7 @@ function initAssessmentQuiz() {
     }
 
     function markAnswered() {
-        questions.forEach(function(question, index) {
+        questions.forEach(function (question, index) {
             if (navButtons[index]) {
                 navButtons[index].classList.toggle('answered', question.querySelectorAll('input:checked').length > 0);
             }
@@ -911,9 +911,9 @@ function initAssessmentQuiz() {
         return fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
             method: 'POST',
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             return assessmentJson(response, 'Unable to start quiz');
-        }).then(function(body) {
+        }).then(function (body) {
             attemptId = body.data.id;
             setAssessmentMessage(saveState, 'Draft active', null);
             return attemptId;
@@ -921,43 +921,43 @@ function initAssessmentQuiz() {
     }
 
     function saveDraft() {
-        return ensureAttempt().then(function(id) {
+        return ensureAttempt().then(function (id) {
             return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/draft', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
                 body: JSON.stringify({ answers: collectAnswers() })
             });
-        }).then(function(response) {
+        }).then(function (response) {
             return assessmentJson(response, 'Unable to save draft');
-        }).then(function() {
+        }).then(function () {
             setAssessmentMessage(message, 'Draft saved.', 'success');
             setAssessmentMessage(saveState, 'Saved', null);
-        }).catch(function(error) {
+        }).catch(function (error) {
             setAssessmentMessage(message, error.message, 'error');
         });
     }
 
-    navButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
+    navButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
             showQuestion(Number(button.dataset.questionIndex));
         });
     });
-    document.querySelectorAll('.quiz-option input').forEach(function(input) {
-        input.addEventListener('change', function() {
+    document.querySelectorAll('.quiz-option input').forEach(function (input) {
+        input.addEventListener('change', function () {
             markAnswered();
-            input.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(function(option) {
+            input.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(function (option) {
                 option.classList.toggle('selected', option.querySelector('input:checked') !== null);
             });
         });
     });
     var previous = document.getElementById('previous-question-btn');
     if (previous) {
-        previous.addEventListener('click', function() { showQuestion(current - 1); });
+        previous.addEventListener('click', function () { showQuestion(current - 1); });
     }
     var next = document.getElementById('next-question-btn');
     if (next) {
-        next.addEventListener('click', function() { showQuestion(current + 1); });
+        next.addEventListener('click', function () { showQuestion(current + 1); });
     }
     var save = document.getElementById('save-quiz-btn');
     if (save) {
@@ -965,11 +965,11 @@ function initAssessmentQuiz() {
     }
     var submit = document.getElementById('submit-quiz-btn');
     if (submit) {
-        submit.addEventListener('click', function() {
+        submit.addEventListener('click', function () {
             if (!window.confirm('Submit this quiz attempt? You cannot edit it after submission.')) {
                 return;
             }
-            ensureAttempt().then(function(id) {
+            ensureAttempt().then(function (id) {
                 submit.disabled = true;
                 return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/submit', {
                     method: 'POST',
@@ -977,11 +977,11 @@ function initAssessmentQuiz() {
                     credentials: 'same-origin',
                     body: JSON.stringify({ answers: collectAnswers() })
                 });
-            }).then(function(response) {
+            }).then(function (response) {
                 return assessmentJson(response, 'Unable to submit quiz');
-            }).then(function(body) {
+            }).then(function (body) {
                 window.location.href = '/student/quizzes/' + encodeURIComponent(body.data.id) + '/result';
-            }).catch(function(error) {
+            }).catch(function (error) {
                 submit.disabled = false;
                 setAssessmentMessage(message, error.message, 'error');
             });
@@ -989,7 +989,7 @@ function initAssessmentQuiz() {
     }
     markAnswered();
     showQuestion(0);
-    ensureAttempt().catch(function(error) {
+    ensureAttempt().catch(function (error) {
         setAssessmentMessage(message, error.message, 'error');
     });
 }
@@ -1024,37 +1024,36 @@ function initAssessmentSubmission() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(body)
-        }).then(function(response) {
+        }).then(function (response) {
             return assessmentJson(response, 'Unable to save submission');
-        }).then(function(apiResponse) {
+        }).then(function (apiResponse) {
             setAssessmentMessage(message, apiResponse.message, 'success');
             if (kind === 'submit' && apiResponse.data && apiResponse.data.id) {
                 window.location.href = '/student/submissions/' + encodeURIComponent(apiResponse.data.id) + '/result';
             }
-        }).catch(function(error) {
+        }).catch(function (error) {
             setAssessmentMessage(message, error.message, 'error');
         });
     }
 
     if (draftButton) {
-        draftButton.addEventListener('click', function() { send('draft'); });
+        draftButton.addEventListener('click', function () { send('draft'); });
     }
-    form.addEventListener('submit', function(event) {
+    form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (window.confirm('Submit this assignment?')) {
             send('submit');
         }
     });
->>>>>>> origin/feature/assessment
 }
 
 function switchProfileTab(tabName) {
     var tabs = document.querySelectorAll('[data-profile-tab]');
     var panels = document.querySelectorAll('[data-profile-panel]');
-    tabs.forEach(function(tab) {
+    tabs.forEach(function (tab) {
         tab.classList.toggle('active', tab.dataset.profileTab === tabName);
     });
-    panels.forEach(function(panel) {
+    panels.forEach(function (panel) {
         panel.classList.toggle('active', panel.dataset.profilePanel === tabName);
     });
 }
@@ -1065,8 +1064,8 @@ function initProfileTabs() {
         return;
     }
 
-    tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
             switchProfileTab(tab.dataset.profileTab);
         });
     });
@@ -1134,7 +1133,7 @@ function initProfileEditor() {
 
     function setAvatarPreview(src) {
         var nextSrc = src || placeholderSrc;
-        document.querySelectorAll('[data-profile-avatar="true"]').forEach(function(image) {
+        document.querySelectorAll('[data-profile-avatar="true"]').forEach(function (image) {
             image.src = nextSrc;
         });
         if (avatarPreview) {
@@ -1162,10 +1161,10 @@ function initProfileEditor() {
 
     function parseJsonResponse(response, fallbackMessage) {
         return response.json()
-            .catch(function() {
+            .catch(function () {
                 return { message: fallbackMessage };
             })
-            .then(function(body) {
+            .then(function (body) {
                 if (!response.ok) {
                     throw new Error(body.message || fallbackMessage);
                 }
@@ -1206,7 +1205,7 @@ function initProfileEditor() {
 
         setMessage('Checking image URL...', 'loading');
         var probe = new Image();
-        probe.onload = function() {
+        probe.onload = function () {
             clearAvatarChoice();
             selectedAvatarUrl = normalizedUrl;
             if (avatarUrlInput) avatarUrlInput.value = normalizedUrl;
@@ -1214,7 +1213,7 @@ function initProfileEditor() {
             setAvatarPreview(normalizedUrl);
             setMessage('Preview loaded. Click Save to fetch and store the image.', 'loading');
         };
-        probe.onerror = function() {
+        probe.onerror = function () {
             setMessage('The image URL could not be loaded. Please use a public JPG, PNG, or WEBP URL.', 'error');
         };
         probe.src = normalizedUrl;
@@ -1230,7 +1229,7 @@ function initProfileEditor() {
                 fullName: fullNameInput.value.trim(),
                 email: emailInput.value.trim()
             })
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to update profile');
         });
     }
@@ -1242,7 +1241,7 @@ function initProfileEditor() {
             method: 'POST',
             credentials: 'same-origin',
             body: formData
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to upload avatar');
         });
     }
@@ -1253,7 +1252,7 @@ function initProfileEditor() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify({ imageUrl: url })
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to update avatar from URL');
         });
     }
@@ -1262,7 +1261,7 @@ function initProfileEditor() {
         return fetch('/api/profile/avatar', {
             method: 'DELETE',
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             return parseJsonResponse(response, 'Unable to remove avatar');
         });
     }
@@ -1286,41 +1285,41 @@ function initProfileEditor() {
         quickAvatarEditButton.addEventListener('click', openEditTab);
     }
 
-    cancelButton.addEventListener('click', function() {
+    cancelButton.addEventListener('click', function () {
         setAvatarPreview(currentAvatarSrc);
         closeForm();
         setMessage('', 'loading');
         switchProfileTab('overview');
     });
 
-    avatarInput.addEventListener('change', function() {
+    avatarInput.addEventListener('change', function () {
         setSelectedAvatarFile(avatarInput.files && avatarInput.files[0]);
     });
 
-    avatarUrlButton.addEventListener('click', function() {
+    avatarUrlButton.addEventListener('click', function () {
         avatarUrlPanel.hidden = !avatarUrlPanel.hidden;
         if (!avatarUrlPanel.hidden) {
             avatarUrlInput.focus();
         }
     });
 
-    avatarUrlPreviewButton.addEventListener('click', function() {
+    avatarUrlPreviewButton.addEventListener('click', function () {
         setSelectedAvatarUrl(avatarUrlInput.value);
     });
 
-    removeAvatarButton.addEventListener('click', function() {
+    removeAvatarButton.addEventListener('click', function () {
         clearAvatarChoice();
         shouldRemoveAvatar = true;
         setAvatarPreview(placeholderSrc);
         setMessage('Photo will be removed after you click Save.', 'loading');
     });
 
-    form.addEventListener('submit', function(event) {
+    form.addEventListener('submit', function (event) {
         event.preventDefault();
         setLoading(true);
 
         updateProfile()
-            .then(function(profileResponse) {
+            .then(function (profileResponse) {
                 if (selectedAvatarFile) {
                     return uploadAvatar(selectedAvatarFile);
                 }
@@ -1332,7 +1331,7 @@ function initProfileEditor() {
                 }
                 return profileResponse;
             })
-            .then(function(apiResponse) {
+            .then(function (apiResponse) {
                 if (!apiResponse.data) {
                     throw new Error(apiResponse.message || 'Unable to update profile');
                 }
@@ -1341,10 +1340,10 @@ function initProfileEditor() {
                 setMessage(apiResponse.message || 'Profile updated successfully', 'success');
                 switchProfileTab('overview');
             })
-            .catch(function(error) {
+            .catch(function (error) {
                 setMessage(error.message, 'error');
             })
-            .finally(function() {
+            .finally(function () {
                 setLoading(false);
             });
     });
@@ -1361,7 +1360,7 @@ function initTeacherStudentFilters() {
     function applyFilters() {
         var searchTerm = searchInput.value.trim().toLowerCase();
         var status = statusFilter.value;
-        cards.forEach(function(card) {
+        cards.forEach(function (card) {
             var matchesSearch = !searchTerm || (card.dataset.search || '').toLowerCase().includes(searchTerm);
             var matchesStatus = !status || card.dataset.status === status;
             card.hidden = !(matchesSearch && matchesStatus);
@@ -1396,10 +1395,10 @@ function initStudentCertificates() {
 
     function parseJsonResponse(response, fallbackMessage) {
         return response.json()
-            .catch(function() {
+            .catch(function () {
                 return { message: fallbackMessage };
             })
-            .then(function(body) {
+            .then(function (body) {
                 if (!response.ok) {
                     throw new Error(body.message || fallbackMessage);
                 }
@@ -1453,7 +1452,7 @@ function initStudentCertificates() {
         download.type = 'button';
         download.className = 'btn btn-primary btn-sm flex-1';
         download.textContent = 'Download PDF';
-        download.addEventListener('click', function() {
+        download.addEventListener('click', function () {
             downloadCertificate(certificate.id, download);
         });
         var verify = document.createElement('a');
@@ -1491,7 +1490,7 @@ function initStudentCertificates() {
         total.textContent = String(totalElements || items.length);
         empty.hidden = items.length > 0;
         historyCard.hidden = items.length === 0;
-        items.forEach(function(certificate) {
+        items.forEach(function (certificate) {
             grid.appendChild(renderCard(certificate));
             tableBody.appendChild(renderRow(certificate));
         });
@@ -1503,12 +1502,12 @@ function initStudentCertificates() {
         button.textContent = 'Preparing...';
         fetch('/api/student/certificates/' + encodeURIComponent(certificateId) + '/download', {
             credentials: 'same-origin'
-        }).then(function(response) {
+        }).then(function (response) {
             if (!response.ok) {
                 throw new Error('Unable to download this certificate.');
             }
             return response.blob();
-        }).then(function(blob) {
+        }).then(function (blob) {
             var url = URL.createObjectURL(blob);
             var anchor = document.createElement('a');
             anchor.href = url;
@@ -1517,9 +1516,9 @@ function initStudentCertificates() {
             anchor.click();
             anchor.remove();
             URL.revokeObjectURL(url);
-        }).catch(function(error) {
+        }).catch(function (error) {
             setMessage(error.message, true);
-        }).finally(function() {
+        }).finally(function () {
             button.disabled = false;
             button.textContent = original;
         });
@@ -1527,16 +1526,16 @@ function initStudentCertificates() {
 
     fetch('/api/student/certificates', {
         credentials: 'same-origin'
-    }).then(function(response) {
+    }).then(function (response) {
         return parseJsonResponse(response, 'Unable to load certificates');
-    }).then(function(apiResponse) {
+    }).then(function (apiResponse) {
         var data = apiResponse.data || {};
         renderCertificates(data.content || [], data.totalElements || 0);
         setMessage('', false);
-    }).catch(function(error) {
+    }).catch(function (error) {
         setMessage(error.message, true);
         empty.hidden = false;
-    }).finally(function() {
+    }).finally(function () {
         loading.hidden = true;
     });
 }
