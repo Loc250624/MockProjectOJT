@@ -103,12 +103,7 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
             """)
     List<TeacherCourseMetricProjection> findDashboardCourseMetricsByTeacherId(@Param("teacherId") Integer teacherId);
 
-    @Query("""
-            select coalesce(avg(e.progressPercentage), 0)
-            from CourseEnrollment e
-            where e.course.instructor.id = :teacherId
-            """)
-    java.math.BigDecimal averageProgressByTeacherId(@Param("teacherId") Integer teacherId);
+
 
     @Query("select e from CourseEnrollment e join fetch e.student s join fetch e.course c left join fetch c.instructor where e.course.id = :courseId and e.student.id = :studentId")
     Optional<CourseEnrollment> findCourseStudentEnrollmentForReport(@Param("courseId") Integer courseId,
