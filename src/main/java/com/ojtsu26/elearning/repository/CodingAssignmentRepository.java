@@ -1,8 +1,11 @@
 package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.CodingAssignment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,4 +20,36 @@ public interface CodingAssignmentRepository extends JpaRepository<CodingAssignme
 
     @Query("select a from CodingAssignment a join fetch a.lesson l join fetch l.course c left join fetch c.instructor where a.id = :assignmentId")
     Optional<CodingAssignment> findByIdWithCourse(Integer assignmentId);
+
+    @Query(value = """
+            select a
+            from CodingAssignment a
+            join fetch a.lesson l
+            join fetch l.course c
+            left join fetch c.instructor
+            where c.instructor.id = :teacherId
+            and (:courseId is null or c.id = :courseId)
+            and (:status is null or lower(a.status) = lower(:status))
+            and (:search is null
+                or lower(a.title) like lower(concat('%', :search, '%'))
+                or lower(c.title) like lower(concat('%', :search, '%')))
+            order by a.updatedAt desc, a.id desc
+            """,
+            countQuery = """
+            select count(a)
+            from CodingAssignment a
+            join a.lesson l
+            join l.course c
+            where c.instructor.id = :teacherId
+            and (:courseId is null or c.id = :courseId)
+            and (:status is null or lower(a.status) = lower(:status))
+            and (:search is null
+                or lower(a.title) like lower(concat('%', :search, '%'))
+                or lower(c.title) like lower(concat('%', :search, '%')))
+            """)
+    Page<CodingAssignment> findTeacherAssignments(@Param("teacherId") Integer teacherId,
+                                                  @Param("courseId") Integer courseId,
+                                                  @Param("status") String status,
+                                                  @Param("search") String search,
+                                                  Pageable pageable);
 }

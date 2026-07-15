@@ -12,6 +12,8 @@ import java.util.Optional;
 
 @Repository
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Integer> {
+    long countByQuizId(Integer quizId);
+
     long countByQuizIdAndStudentIdAndStatusIn(Integer quizId, Integer studentId, List<QuizAttemptStatus> statuses);
 
     Optional<QuizAttempt> findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(Integer quizId, Integer studentId, QuizAttemptStatus status);

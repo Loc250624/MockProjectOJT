@@ -71,7 +71,7 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = BusinessException.class)
     public CertificateResponseDTO issueAutomaticallyIfEligible(Integer enrollmentId) {
         CourseEnrollment enrollment = enrollmentRepository.findByIdForCertificateIssue(enrollmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENROLLMENT_NOT_FOUND));

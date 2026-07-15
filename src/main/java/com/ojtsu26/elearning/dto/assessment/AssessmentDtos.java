@@ -85,6 +85,8 @@ public final class AssessmentDtos {
         @NotBlank
         private String expectedOutput;
         private Boolean hidden = false;
+        @NotNull
+        @DecimalMin(value = "0.0", inclusive = false)
         private BigDecimal points = BigDecimal.ONE;
         private Integer displayOrder;
     }
@@ -96,6 +98,7 @@ public final class AssessmentDtos {
         private BigDecimal score;
         @NotBlank
         private String feedback;
+        private Boolean publish = true;
     }
 
     @Data
@@ -150,6 +153,7 @@ public final class AssessmentDtos {
         private Integer assignmentId;
         private Integer lessonId;
         private Integer courseId;
+        private String courseTitle;
         private String assignmentTitle;
         private String studentName;
         private String contentText;
@@ -158,12 +162,39 @@ public final class AssessmentDtos {
         private String filePath;
         private SubmissionStatus status;
         private BigDecimal score;
+        private BigDecimal maxScore;
         private String feedback;
         private LocalDateTime submittedAt;
+        private LocalDateTime updatedAt;
+        private LocalDateTime gradedAt;
+        private String gradedByName;
+        private Boolean released;
         private CodeJudgeStatus judgeStatus;
         private Integer totalTests;
         private Integer passedTests;
         private String outputLog;
+    }
+
+    @Data
+    public static class AssignmentView {
+        private Integer id;
+        private Integer lessonId;
+        private Integer courseId;
+        private String courseTitle;
+        private String title;
+        private String type;
+        private LocalDateTime dueDate;
+        private String status;
+        private BigDecimal maxScore;
+        private long submissionCount;
+        private long pendingCount;
+    }
+
+    @Data
+    public static class GradingSummaryView {
+        private long pendingCount;
+        private long gradedCount;
+        private long failedCount;
     }
 
     @Data

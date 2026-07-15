@@ -55,6 +55,12 @@ class StudentViewControllerTest {
     private CourseEnrollmentRepository courseEnrollmentRepository;
 
     @Autowired
+    private LessonRepository lessonRepository;
+
+    @Autowired
+    private LessonProgressRepository lessonProgressRepository;
+
+    @Autowired
     private JwtUtils jwtUtils;
 
     @Autowired
@@ -84,7 +90,9 @@ class StudentViewControllerTest {
         refundTransactionRepository.deleteAll();
         transactionRepository.deleteAll();
         orderRepository.deleteAll();
+        lessonProgressRepository.deleteAll();
         courseEnrollmentRepository.deleteAll();
+        lessonRepository.deleteAll();
         courseRepository.deleteAll();
         categoryRepository.deleteAll();
         userRepository.deleteAll();
@@ -160,6 +168,46 @@ class StudentViewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/my-courses"))
                 .andExpect(model().attributeExists("courseCards"));
+    }
+
+    @Test
+    void dashboardDoesNotRollbackWhenAutoCertificateIsNotYetEligible() throws Exception {
+        CourseEnrollment enrollment = courseEnrollmentRepository
+                .findByStudentIdAndCourseId(student.getId(), course.getId())
+                .orElseThrow();
+
+        Lesson contentLesson = lessonRepository.save(Lesson.builder()
+                .course(course)
+                .title("Required content")
+                .type(LessonType.VIDEO)
+                .orderIndex(1)
+                .build());
+        lessonRepository.save(Lesson.builder()
+                .course(course)
+                .title("Required assessment")
+                .type(LessonType.QUIZ)
+                .orderIndex(2)
+                .build());
+        lessonProgressRepository.save(LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(contentLesson)
+                .isCompleted(true)
+                .completedAt(LocalDateTime.now())
+                .lastAccessedAt(LocalDateTime.now())
+                .watchedSeconds(1)
+                .lastPositionSeconds(1)
+                .maxReachedSeconds(1)
+                .build());
+
+        mockMvc.perform(get("/student/dashboard")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("student/dashboard"))
+                .andExpect(model().attributeExists("courseCards"));
+
+        CourseEnrollment updated = courseEnrollmentRepository.findById(enrollment.getId()).orElseThrow();
+        assertTrue(Boolean.TRUE.equals(updated.getIsCompleted()));
+        assertEquals(0, new BigDecimal("100.00").compareTo(updated.getProgressPercentage()));
     }
 
     @Test

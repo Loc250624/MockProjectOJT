@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/teacher")
 @RequiredArgsConstructor
@@ -50,6 +52,14 @@ public class TeacherAssessmentRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "Question deleted"));
     }
 
+    @PostMapping("/quizzes/{quizId}/questions/reorder")
+    public ResponseEntity<ApiResponse<List<QuestionView>>> reorderQuestions(@PathVariable Integer quizId,
+                                                                            @RequestBody List<Integer> questionIdsInOrder) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assessmentService.reorderTeacherQuestions(quizId, questionIdsInOrder),
+                "Questions reordered"));
+    }
+
     @PostMapping("/submissions/{submissionId}/grade")
     public ResponseEntity<ApiResponse<SubmissionView>> gradeSubmission(@PathVariable Integer submissionId,
                                                                        @Valid @RequestBody GradePayload payload) {
@@ -62,8 +72,20 @@ public class TeacherAssessmentRestController {
         return ResponseEntity.ok(ApiResponse.success(assessmentService.createTeacherTestcase(assignmentId, payload), "Testcase created"));
     }
 
+    @PutMapping("/testcases/{testcaseId}")
+    public ResponseEntity<ApiResponse<TestcaseView>> updateTestcase(@PathVariable Integer testcaseId,
+                                                                    @Valid @RequestBody TestcasePayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(assessmentService.updateTeacherTestcase(testcaseId, payload), "Testcase updated"));
+    }
+
+    @DeleteMapping("/testcases/{testcaseId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTestcase(@PathVariable Integer testcaseId) {
+        assessmentService.deleteTeacherTestcase(testcaseId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Testcase deleted"));
+    }
+
     @PostMapping("/submissions/{submissionId}/judge")
     public ResponseEntity<ApiResponse<SubmissionView>> judgeSubmission(@PathVariable Integer submissionId) {
-        return ResponseEntity.ok(ApiResponse.success(assessmentService.judgeSubmission(submissionId), "Mock judge completed"));
+        return ResponseEntity.ok(ApiResponse.success(assessmentService.judgeSubmission(submissionId), "Code judge finished"));
     }
 }

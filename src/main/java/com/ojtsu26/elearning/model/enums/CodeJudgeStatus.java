@@ -5,5 +5,7 @@ public enum CodeJudgeStatus {
     RUNNING,
     PASSED,
     FAILED,
-    ERROR
+    ERROR,
+    TIMEOUT,
+    UNAVAILABLE
 }

@@ -1048,6 +1048,7 @@ function initAssessmentSubmission() {
 
 }
 
+
 function switchProfileTab(tabName) {
     var tabs = document.querySelectorAll('[data-profile-tab]');
     var panels = document.querySelectorAll('[data-profile-panel]');

@@ -3,38 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submission Grading</title>
+    <title>Grading - Teacher Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
 <body th:attr="data-assignment-id=${assignmentId}">
-<header th:replace="~{fragments/layout :: header('teacher')}"></header>
-<div class="layout-container">
+<div class="lumina-portal">
     <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
-    <main class="main-content assessment-content">
-        <h1>Submission Grading</h1>
-        <section class="assessment-panel">
-            <div class="empty-state" th:if="${submissions == null || #lists.isEmpty(submissions)}">No submissions yet.</div>
-            <div class="assessment-list" th:unless="${submissions == null || #lists.isEmpty(submissions)}">
-                <article class="assessment-card" th:each="submission : ${submissions}" th:attr="data-submission-id=${submission.id}">
-                    <div class="assessment-heading inline">
-                        <div>
-                            <h3 th:text="${submission.studentName}">Student</h3>
-                            <p th:text="${submission.status}">Status</p>
-                        </div>
-                        <button class="btn btn-secondary judge-submission-btn" type="button">Run mock judge</button>
-                    </div>
-                    <pre th:if="${submission.codeContent != null}" th:text="${submission.codeContent}">Code</pre>
-                    <form class="teacher-grade-form assessment-form compact">
-                        <input name="score" type="number" min="0" max="100" step="0.01" th:value="${submission.score}" placeholder="Score" required>
-                        <textarea name="feedback" rows="3" placeholder="Feedback" required th:text="${submission.feedback}"></textarea>
-                        <button class="btn btn-primary" type="submit">Save grade</button>
-                    </form>
-                </article>
+
+    <div class="lumina-portal-content">
+        <div th:replace="~{fragments/layout :: topbar-teacher('Grading')}"></div>
+
+        <main class="lumina-portal-main assessment-content" style="flex:1;">
+            <div class="page-header teacher-assessment-header">
+                <div>
+                    <p class="teacher-breadcrumb">
+                        <a th:href="@{/teacher/dashboard}">Dashboard</a>
+                        <span>/</span>
+                        <span>Grading</span>
+                    </p>
+                    <h1 class="page-title">Grading</h1>
+                    <p class="page-subtitle">Review student submissions and publish assessment feedback.</p>
+                </div>
+                <a class="btn btn-secondary" th:href="@{/teacher/assignments}">View Assignments</a>
             </div>
-        </section>
-    </main>
+
+            <section class="assessment-summary-grid" aria-label="Grading summary">
+                <article class="assessment-summary-card">
+                    <span>In queue</span>
+                    <strong th:text="${gradingSummary != null ? gradingSummary.pendingCount : 0}">0</strong>
+                </article>
+                <article class="assessment-summary-card">
+                    <span>Graded</span>
+                    <strong th:text="${gradingSummary != null ? gradingSummary.gradedCount : 0}">0</strong>
+                </article>
+                <article class="assessment-summary-card">
+                    <span>Returned / failed</span>
+                    <strong th:text="${gradingSummary != null ? gradingSummary.failedCount : 0}">0</strong>
+                </article>
+            </section>
+
+            <section class="assessment-panel teacher-assessment-panel">
+                <div class="assessment-heading inline">
+                    <div>
+                        <h2>Submission Queue</h2>
+                        <p>Open a submission to review code, feedback, and score.</p>
+                    </div>
+                </div>
+
+                <form class="assessment-filter-bar" method="get" th:action="@{/teacher/grading}">
+                    <label>
+                        <span>Course</span>
+                        <select name="courseId">
+                            <option value="">All courses</option>
+                            <option th:each="course : ${courses}"
+                                    th:value="${course.id}"
+                                    th:selected="${selectedCourseId != null && selectedCourseId == course.id}"
+                                    th:text="${course.title}">Course</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Assignment</span>
+                        <select name="assignmentId">
+                            <option value="">All assignments</option>
+                            <option th:each="assignment : ${assignmentFilters}"
+                                    th:value="${assignment.id}"
+                                    th:selected="${assignmentId != null && assignmentId == assignment.id}"
+                                    th:text="${assignment.title}">Assignment</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Status</span>
+                        <select name="status">
+                            <option value="">All statuses</option>
+                            <option th:each="submissionStatus : ${submissionStatuses}"
+                                    th:value="${submissionStatus}"
+                                    th:selected="${selectedStatus != null && selectedStatus == submissionStatus}"
+                                    th:text="${submissionStatus}">Status</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Search</span>
+                        <input name="search" type="search" th:value="${search}" placeholder="Student, course, assignment">
+                    </label>
+                    <button class="btn btn-secondary" type="submit">Filter</button>
+                </form>
+
+                <div class="assessment-list teacher-grading-list"
+                     th:if="${submissions != null && !#lists.isEmpty(submissions)}">
+                    <article class="assessment-card teacher-grading-card"
+                             th:each="submission : ${submissions}"
+                             th:attr="data-submission-id=${submission.id}">
+                        <div class="assessment-heading inline">
+                            <div>
+                                <h3 th:text="${submission.studentName}">Student</h3>
+                                <p>
+                                    <span th:text="${submission.courseTitle}">Course</span>
+                                    <span> / </span>
+                                    <span th:text="${submission.assignmentTitle}">Assignment</span>
+                                    <span th:if="${submission.submittedAt != null}"
+                                          th:text="${' · ' + #temporals.format(submission.submittedAt, 'MMM d, yyyy HH:mm')}">Submitted</span>
+                                </p>
+                            </div>
+                            <span class="assessment-status-badge" th:text="${submission.status}">Status</span>
+                        </div>
+
+                        <dl class="teacher-grading-meta">
+                            <div>
+                                <dt>Submitted</dt>
+                                <dd th:text="${submission.submittedAt != null ? #temporals.format(submission.submittedAt, 'MMM d, yyyy HH:mm') : 'Not submitted'}">Submitted</dd>
+                            </div>
+                            <div>
+                                <dt>Max score</dt>
+                                <dd th:text="${submission.maxScore != null ? submission.maxScore : 100}">100</dd>
+                            </div>
+                            <div>
+                                <dt>Last graded by</dt>
+                                <dd th:text="${submission.gradedByName != null ? submission.gradedByName : 'Not graded'}">Not graded</dd>
+                            </div>
+                            <div>
+                                <dt>Graded at</dt>
+                                <dd th:text="${submission.gradedAt != null ? #temporals.format(submission.gradedAt, 'MMM d, yyyy HH:mm') : 'Not graded'}">Not graded</dd>
+                            </div>
+                            <div>
+                                <dt>Judge status</dt>
+                                <dd th:text="${submission.judgeStatus != null ? submission.judgeStatus : 'Not run'}">Not run</dd>
+                            </div>
+                            <div>
+                                <dt>Judge tests</dt>
+                                <dd th:text="${submission.totalTests != null ? submission.passedTests + ' / ' + submission.totalTests : 'Not run'}">Not run</dd>
+                            </div>
+                        </dl>
+
+                        <pre th:if="${submission.codeContent != null}" th:text="${submission.codeContent}">Code</pre>
+                        <pre th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge output</pre>
+                        <p class="teacher-submission-text"
+                           th:if="${submission.contentText != null}"
+                           th:text="${submission.contentText}">Submission text</p>
+
+                        <form class="teacher-grade-form assessment-form compact">
+                            <label>
+                                <span>Score</span>
+                                <input name="score" type="number" min="0"
+                                       th:max="${submission.maxScore != null ? submission.maxScore : 100}"
+                                       step="0.01"
+                                       th:value="${submission.score}" placeholder="0.00" required>
+                            </label>
+                            <label>
+                                <span>Feedback</span>
+                                <textarea name="feedback" rows="3" placeholder="Feedback for the student" required
+                                          th:text="${submission.feedback}"></textarea>
+                            </label>
+                            <div class="assessment-message" role="status"></div>
+                            <div class="assessment-actions">
+                                <button class="btn btn-secondary" type="submit" data-publish="false">Save Draft</button>
+                                <button class="btn btn-primary" type="submit" data-publish="true">Publish Final</button>
+                                <button class="btn btn-secondary judge-submission-btn" type="button">Run Judge</button>
+                            </div>
+                        </form>
+                    </article>
+                </div>
+
+                <nav class="assessment-pagination"
+                     th:if="${submissionPage != null && submissionPage.totalPages > 1}">
+                    <a class="btn btn-secondary"
+                       th:classappend="${submissionPage.first} ? ' disabled'"
+                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number - 1},size=${submissionPage.size})}">Previous</a>
+                    <span th:text="${'Page ' + (submissionPage.number + 1) + ' of ' + submissionPage.totalPages}">Page</span>
+                    <a class="btn btn-secondary"
+                       th:classappend="${submissionPage.last} ? ' disabled'"
+                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number + 1},size=${submissionPage.size})}">Next</a>
+                </nav>
+
+                <div class="empty-state teacher-empty-state"
+                     th:if="${submissions == null || #lists.isEmpty(submissions)}">
+                    <strong>No submissions need attention.</strong>
+                    <span>Submitted assignment work will appear here once students send it for review.</span>
+                </div>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/layout :: portal-footer}"></div>
+    </div>
 </div>
+
 <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>
