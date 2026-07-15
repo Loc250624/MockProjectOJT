@@ -516,14 +516,14 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     }
 
     private boolean isVideoComplete(LessonProgress progress, Lesson lesson, String eventType) {
-        if ("ENDED".equals(eventType)) {
-            return true;
-        }
         Integer durationSeconds = progress.getDurationSeconds() != null && progress.getDurationSeconds() > 0
                 ? progress.getDurationSeconds()
                 : lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds();
         if (durationSeconds == null || durationSeconds <= 0) {
             return false;
+        }
+        if ("ENDED".equals(eventType)) {
+            return true;
         }
         return maxStoredReachedSeconds(progress) * 100 >= durationSeconds * VIDEO_COMPLETION_THRESHOLD_PERCENT;
     }
@@ -613,14 +613,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private List<Lesson> requiredLessons(List<Lesson> lessons) {
         return lessons.stream()
-                .filter(this::isRequiredContentLesson)
+                .filter(this::isRequiredLesson)
                 .toList();
     }
 
-    private boolean isRequiredContentLesson(Lesson lesson) {
-        return (lesson.getType() == null || lesson.getType() == LessonType.VIDEO)
-                && lesson.getQuiz() == null
-                && lesson.getCodingassignment() == null;
+    private boolean isRequiredLesson(Lesson lesson) {
+        return lesson != null;
     }
 
     private LearningProgressDTO toProgressDto(AccessContext context, List<Lesson> lessons, Lesson lesson, LessonProgress progress, CourseProgressSnapshot snapshot) {

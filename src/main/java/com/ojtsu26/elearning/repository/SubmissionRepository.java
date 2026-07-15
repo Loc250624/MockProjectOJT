@@ -2,7 +2,9 @@ package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -36,6 +38,18 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
     long countSubmittedAssessmentLessons(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
 
     Optional<Submission> findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(Integer studentId, Integer lessonId, SubmissionStatus status);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select s from Submission s
+            where s.student.id = :studentId
+              and s.lesson.id = :lessonId
+              and s.status = :status
+            order by s.id desc
+            """)
+    List<Submission> findDraftsForUpdate(@Param("studentId") Integer studentId,
+                                          @Param("lessonId") Integer lessonId,
+                                          @Param("status") SubmissionStatus status);
 
     Optional<Submission> findTopByStudentIdAndLessonIdOrderByIdDesc(Integer studentId, Integer lessonId);
 

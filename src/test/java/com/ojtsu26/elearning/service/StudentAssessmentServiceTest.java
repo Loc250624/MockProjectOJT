@@ -126,8 +126,8 @@ class StudentAssessmentServiceTest {
                 .build();
         when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
         when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
-        when(submissionRepository.findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(1, 201, SubmissionStatus.PENDING_REVIEW))
-                .thenReturn(Optional.of(pending));
+        when(submissionRepository.findDraftsForUpdate(1, 201, SubmissionStatus.PENDING_REVIEW))
+                .thenReturn(List.of(pending));
 
         StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
 
@@ -136,6 +136,64 @@ class StudentAssessmentServiceTest {
         assertEquals("A", response.getAnswers().get(401));
         assertFalse(response.getSubmitted());
         verify(submissionRepository, never()).save(any());
+    }
+
+    @Test
+    void quizStartCreatesFreshAttemptAfterPassedSubmission() {
+        stubAccessible(quizLesson);
+        Submission oldPassed = Submission.builder()
+                .id(501)
+                .student(student)
+                .lesson(quizLesson)
+                .status(SubmissionStatus.PASSED)
+                .score(new BigDecimal("100.00"))
+                .submittedContent("{\"type\":\"QUIZ\",\"state\":\"SUBMITTED\",\"answers\":{\"401\":\"A\"}}")
+                .build();
+        when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
+        when(submissionRepository.findDraftsForUpdate(1, 201, SubmissionStatus.PENDING_REVIEW)).thenReturn(List.of());
+        when(submissionRepository.save(any(Submission.class))).thenAnswer(invocation -> {
+            Submission saved = invocation.getArgument(0);
+            saved.setId(502);
+            return saved;
+        });
+
+        StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
+
+        assertEquals(502, response.getAttemptId());
+        assertEquals(SubmissionStatus.PASSED, oldPassed.getStatus());
+        assertEquals(new BigDecimal("100.00"), oldPassed.getScore());
+        assertTrue(response.getAnswers().isEmpty());
+        assertFalse(response.getSubmitted());
+    }
+
+    @Test
+    void quizStartCreatesFreshAttemptAfterFailedSubmission() {
+        stubAccessible(quizLesson);
+        Submission oldFailed = Submission.builder()
+                .id(501)
+                .student(student)
+                .lesson(quizLesson)
+                .status(SubmissionStatus.FAILED)
+                .score(new BigDecimal("50.00"))
+                .submittedContent("{\"type\":\"QUIZ\",\"state\":\"SUBMITTED\",\"answers\":{\"401\":\"B\"}}")
+                .build();
+        when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne, questionTwo));
+        when(submissionRepository.findDraftsForUpdate(1, 201, SubmissionStatus.PENDING_REVIEW)).thenReturn(List.of());
+        when(submissionRepository.save(any(Submission.class))).thenAnswer(invocation -> {
+            Submission saved = invocation.getArgument(0);
+            saved.setId(503);
+            return saved;
+        });
+
+        StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
+
+        assertEquals(503, response.getAttemptId());
+        assertEquals(SubmissionStatus.FAILED, oldFailed.getStatus());
+        assertEquals(new BigDecimal("50.00"), oldFailed.getScore());
+        assertTrue(response.getAnswers().isEmpty());
+        assertFalse(response.getSubmitted());
     }
 
     @Test
@@ -195,7 +253,7 @@ class StudentAssessmentServiceTest {
         BusinessException exception = assertThrows(BusinessException.class, () -> service.getOrStartQuiz(10, 201));
 
         assertEquals("Complete \"Intro\" to unlock this lesson.", exception.getMessage());
-        verify(submissionRepository, never()).findTopByStudentIdAndLessonIdOrderByIdDesc(any(), any());
+        verify(submissionRepository, never()).findDraftsForUpdate(any(), any(), any());
         verify(submissionRepository, never()).save(any());
     }
 
