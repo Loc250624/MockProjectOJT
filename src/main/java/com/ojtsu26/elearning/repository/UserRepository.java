@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.projection.AdminStudentEventProjection;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecificationExecutor<User> {
     Optional<User> findByEmail(String email);
     Optional<User> findByEmailIgnoreCase(String email);
+    Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
     boolean existsByEmail(String email);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Integer id);
     long countByRole(Role role);

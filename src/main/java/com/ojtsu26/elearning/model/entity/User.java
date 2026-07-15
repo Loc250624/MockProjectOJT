@@ -32,6 +32,21 @@ public class User {
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
+    /**
+     * The opaque ID issued by the OAuth provider (e.g. Google "sub", GitHub numeric id).
+     * Used as a secondary key to locate the account when the user changes their email
+     * on the provider side, preventing duplicate row creation.
+     */
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
+    /**
+     * Timestamp of the most recent successful login, updated by OAuth2LoginSuccessHandler
+     * and AuthServiceImpl on every login.
+     */
+    @Column(name = "last_login_at")
+    private java.time.LocalDateTime lastLoginAt;
+
     @Convert(converter = RoleConverter.class)
     private Role role;
 

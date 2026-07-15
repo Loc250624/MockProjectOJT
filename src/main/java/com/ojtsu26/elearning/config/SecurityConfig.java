@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.config;
 
 import com.ojtsu26.elearning.security.CustomAccessDeniedHandler;
+import com.ojtsu26.elearning.security.CustomOAuth2UserService;
 import com.ojtsu26.elearning.security.CustomUserDetailsService;
 import com.ojtsu26.elearning.security.JwtAuthEntryPoint;
 import com.ojtsu26.elearning.security.JwtAuthFilter;
@@ -9,27 +10,30 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.HttpHeaders;
-import java.time.Duration;
 
+import java.time.Duration;
 import java.util.List;
 
 @Configuration
@@ -43,6 +47,8 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint unauthorizedHandler;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -63,6 +69,36 @@ public class SecurityConfig {
         // All existing plain-text passwords are migrated to BCrypt by
         // PasswordMigrationRunner at application startup.
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Custom OAuth2 authorization-request resolver.
+     *
+     * <p>Intercepts every Google authorization request and appends
+     * {@code prompt=select_account} so that Google always shows the
+     * account-chooser screen, even when the user is already signed in to a
+     * Google account in their browser.  Without this parameter, Google silently
+     * reuses the last session — making it impossible to switch accounts without
+     * first logging out of Google entirely.</p>
+     *
+     * <p>GitHub receives the same parameter but ignores it silently, so adding
+     * it unconditionally is the simplest, safest approach.</p>
+     */
+    @Bean
+    public OAuth2AuthorizationRequestResolver oAuth2AuthorizationRequestResolver() {
+        DefaultOAuth2AuthorizationRequestResolver resolver =
+                new DefaultOAuth2AuthorizationRequestResolver(
+                        clientRegistrationRepository,
+                        "/oauth2/authorization");
+
+        // Append prompt=select_account to every outbound authorization request.
+        // Google: shows the account-chooser dialog.
+        // GitHub: unknown parameter — silently ignored by GitHub.
+        resolver.setAuthorizationRequestCustomizer(
+                customizer -> customizer.additionalParameters(
+                        params -> params.put("prompt", "select_account")));
+
+        return resolver;
     }
 
     @Bean
@@ -105,6 +141,14 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/auth/login")
+                // Wire the custom user-info service that handles GitHub private email
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                // Wire the custom resolver that forces Google account-chooser every time
+                .authorizationEndpoint(auth -> auth
+                    .authorizationRequestResolver(oAuth2AuthorizationRequestResolver())
+                )
                 .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler((request, response, exception) -> {
                     logOAuth2Failure(request.getRequestURI(), exception);
@@ -114,18 +158,30 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutUrl("/auth/logout")
                 .logoutSuccessHandler((request, response, authentication) -> {
-                    ResponseCookie cookie = ResponseCookie.from("jwt_token", "")
+                    // Expire the JWT HTTP-Only cookie
+                    ResponseCookie jwtClear = ResponseCookie.from("jwt_token", "")
                             .httpOnly(true)
                             .path("/")
                             .maxAge(Duration.ZERO)
                             .sameSite("Lax")
                             .build();
-                    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                    response.addHeader(HttpHeaders.SET_COOKIE, jwtClear.toString());
+
+                    // Expire the session cookie (used internally by Spring OAuth2
+                    // to store the PKCE state / nonce during the code exchange)
+                    ResponseCookie sessionClear = ResponseCookie.from("JSESSIONID", "")
+                            .httpOnly(true)
+                            .path("/")
+                            .maxAge(Duration.ZERO)
+                            .sameSite("Lax")
+                            .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, sessionClear.toString());
+
                     response.sendRedirect("/");
                 })
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("JSESSIONID", "jwt_token")
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -139,7 +195,6 @@ public class SecurityConfig {
                 && oauth2Exception.getError() != null) {
             errorCode = oauth2Exception.getError().getErrorCode();
         }
-
         log.error(
                 "OAuth2 login failed. URI={}, type={}, oauth2ErrorCode={}, message={}",
                 requestUri,

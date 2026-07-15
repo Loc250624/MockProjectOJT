@@ -91,7 +91,7 @@ function initCourseEnrollmentCta() {
             return parseJsonResponse(response, 'Unable to enroll in this course');
         }).then(function (apiResponse) {
             setMessage(apiResponse.message || 'Enrollment confirmed', false);
-            return refreshState();
+            window.location.href = '/student/my-courses';
         }).catch(function (error) {
             setMessage(error.message, true);
             enrollButton.disabled = false;
@@ -1099,7 +1099,6 @@ function initAssessmentSubmission() {
             send('submit');
         }
     });
-
 }
 
 

@@ -18,11 +18,28 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
+/**
+ * Handles the successful completion of an OAuth2 authorization code flow.
+ *
+ * <p>Responsibilities:
+ * <ol>
+ *   <li>Extract email and profile data from the OAuth2 principal.</li>
+ *   <li>Look up the user by {@code providerId} first, then fall back to email.
+ *       Using {@code providerId} prevents duplicate accounts when the user changes
+ *       their email on the provider side.</li>
+ *   <li>Auto-register new users so they never have to click "Register" manually.</li>
+ *   <li>Update {@code avatarUrl} and {@code lastLoginAt} on every login.</li>
+ *   <li>Issue a JWT HTTP-Only cookie and redirect to the appropriate dashboard.</li>
+ * </ol>
+ * </p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -32,58 +49,60 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtUtils jwtUtils;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
+
         OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
         OAuth2User oAuth2User = authToken.getPrincipal();
-        
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        
-        String registrationId = authToken.getAuthorizedClientRegistrationId().toUpperCase();
-        AuthProvider authProvider = AuthProvider.valueOf(registrationId);
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        User user;
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-            if (user.getStatus() == UserStatus.DELETED) {
-                SecurityContextHolder.clearContext();
-                log.warn("Deleted OAuth2 login attempt: {}", email);
-                response.sendRedirect("/auth/login?error=deleted");
-                return;
-            }
-            if (user.getStatus() != UserStatus.ACTIVE) {
-                SecurityContextHolder.clearContext();
-                log.warn("Blocked OAuth2 login attempt: {}", email);
-                response.sendRedirect("/auth/login?error=blocked");
-                return;
-            }
-            // Automatically link accounts if they log in via OAuth2 but registered locally
-            if (user.getAuthProvider() == AuthProvider.LOCAL) {
-                user.setAuthProvider(authProvider);
-                userRepository.save(user);
-            }
-        } else {
-            user = User.builder()
-                    .email(email)
-                    .fullName(name)
-                    .role(Role.STUDENT)
-                    .authProvider(authProvider)
-                    .status(UserStatus.ACTIVE)
-                    .build();
-            userRepository.save(user);
-            log.info("New user registered via OAuth2: {}", email);
-        }
+        String registrationId = authToken.getAuthorizedClientRegistrationId(); // "google" | "github"
+        AuthProvider authProvider = AuthProvider.valueOf(registrationId.toUpperCase());
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        // ------------------------------------------------------------------ //
+        // 1. Extract attributes from the provider.                             //
+        //    CustomOAuth2UserService already resolved a null GitHub email, so  //
+        //    "email" is guaranteed to be non-null here.                        //
+        // ------------------------------------------------------------------ //
+        String email      = oAuth2User.getAttribute("email");
+        String name       = oAuth2User.getAttribute("name");
+        String avatar     = resolveAvatarUrl(oAuth2User, registrationId);
+        String providerId = resolveProviderId(oAuth2User, registrationId);
+
+        // Defensive: CustomOAuth2UserService should have thrown before we get here,
+        // but guard anyway to produce a clear error message.
+        if (!StringUtils.hasText(email)) {
+            log.error("OAuth2 user from provider '{}' has no email — cannot authenticate", registrationId);
             SecurityContextHolder.clearContext();
-            log.warn("Inactive OAuth2 login attempt: {}", email);
-            response.sendRedirect(user.getStatus() == UserStatus.DELETED
-                    ? "/auth/login?error=deleted"
-                    : "/auth/login?error=blocked");
+            response.sendRedirect("/auth/login?error=oauth2_no_email");
             return;
         }
 
+        // ------------------------------------------------------------------ //
+        // 2. Find or create the user.                                          //
+        // ------------------------------------------------------------------ //
+        User user = findOrCreateUser(email, name, avatar, providerId, authProvider);
+
+        // ------------------------------------------------------------------ //
+        // 3. Guard against blocked / deleted accounts.                         //
+        // ------------------------------------------------------------------ //
+        if (user.getStatus() == UserStatus.DELETED) {
+            SecurityContextHolder.clearContext();
+            log.warn("OAuth2 login attempt by deleted account: {}", email);
+            response.sendRedirect("/auth/login?error=deleted");
+            return;
+        }
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            SecurityContextHolder.clearContext();
+            log.warn("OAuth2 login attempt by blocked account: {}", email);
+            response.sendRedirect("/auth/login?error=blocked");
+            return;
+        }
+
+        // ------------------------------------------------------------------ //
+        // 4. Issue JWT and redirect.                                           //
+        // ------------------------------------------------------------------ //
         String jwt = jwtUtils.generateTokenFromEmail(user.getEmail());
 
         ResponseCookie cookie = ResponseCookie.from("jwt_token", jwt)
@@ -94,12 +113,121 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        if (user.getRole() == Role.ADMIN) {
-            response.sendRedirect("/admin/dashboard");
-        } else if (user.getRole() == Role.TEACHER) {
-            response.sendRedirect("/teacher/dashboard");
-        } else {
-            response.sendRedirect("/student/dashboard");
+        String redirectUrl = switch (user.getRole()) {
+            case ADMIN   -> "/admin/dashboard";
+            case TEACHER -> "/teacher/dashboard";
+            default      -> "/student/dashboard";
+        };
+
+        log.info("OAuth2 login success: provider={}, email={}, role={}", registrationId, email, user.getRole());
+        response.sendRedirect(redirectUrl);
+    }
+
+    // ---------------------------------------------------------------------- //
+    // Private helpers                                                          //
+    // ---------------------------------------------------------------------- //
+
+    /**
+     * Looks up the user first by {@code providerId + provider}, then by email.
+     *
+     * <ul>
+     *   <li>If found by providerId  → update profile & lastLoginAt, return.</li>
+     *   <li>If found by email only  → link providerId, update profile, return.</li>
+     *   <li>If not found at all     → create a new account.</li>
+     * </ul>
+     */
+    private User findOrCreateUser(
+            String email,
+            String name,
+            String avatar,
+            String providerId,
+            AuthProvider authProvider) {
+
+        // -- Try providerId lookup first (most reliable) --
+        if (StringUtils.hasText(providerId)) {
+            Optional<User> byProvider = userRepository.findByProviderIdAndAuthProvider(providerId, authProvider);
+            if (byProvider.isPresent()) {
+                User user = byProvider.get();
+                updateLoginMetadata(user, name, avatar, email);
+                return userRepository.save(user);
+            }
         }
+
+        // -- Fall back to email lookup --
+        Optional<User> byEmail = userRepository.findByEmail(email);
+        if (byEmail.isPresent()) {
+            User user = byEmail.get();
+            // Link the OAuth provider to an existing local account transparently
+            if (user.getAuthProvider() == AuthProvider.LOCAL || user.getProviderId() == null) {
+                user.setAuthProvider(authProvider);
+                user.setProviderId(providerId);
+            }
+            updateLoginMetadata(user, name, avatar, email);
+            return userRepository.save(user);
+        }
+
+        // -- Auto-register new user --
+        User newUser = User.builder()
+                .email(email)
+                .fullName(StringUtils.hasText(name) ? name : email)
+                .avatarUrl(avatar)
+                .providerId(providerId)
+                .authProvider(authProvider)
+                .role(Role.STUDENT)
+                .status(UserStatus.ACTIVE)
+                .lastLoginAt(LocalDateTime.now())
+                .build();
+
+        userRepository.save(newUser);
+        log.info("Auto-registered new OAuth2 user: provider={}, email={}", authProvider, email);
+        return newUser;
+    }
+
+    /**
+     * Updates mutable profile fields and the last-login timestamp.
+     * Only overwrites {@code avatarUrl} when the provider returns a non-blank value.
+     */
+    private void updateLoginMetadata(User user, String name, String avatar, String email) {
+        if (StringUtils.hasText(avatar)) {
+            user.setAvatarUrl(avatar);
+        }
+        // Keep the name in sync only if it changed and is non-blank
+        if (StringUtils.hasText(name) && !name.equals(user.getFullName())) {
+            user.setFullName(name);
+        }
+        user.setLastLoginAt(LocalDateTime.now());
+    }
+
+    /**
+     * Resolves the provider-specific avatar URL.
+     * <ul>
+     *   <li>Google: attribute {@code "picture"}</li>
+     *   <li>GitHub: attribute {@code "avatar_url"}</li>
+     * </ul>
+     */
+    private String resolveAvatarUrl(OAuth2User oAuth2User, String registrationId) {
+        return switch (registrationId.toLowerCase()) {
+            case "google" -> oAuth2User.getAttribute("picture");
+            case "github" -> oAuth2User.getAttribute("avatar_url");
+            default -> null;
+        };
+    }
+
+    /**
+     * Resolves the provider-specific opaque user ID.
+     * <ul>
+     *   <li>Google: attribute {@code "sub"} (String)</li>
+     *   <li>GitHub: attribute {@code "id"}  (Integer → converted to String)</li>
+     * </ul>
+     */
+    private String resolveProviderId(OAuth2User oAuth2User, String registrationId) {
+        return switch (registrationId.toLowerCase()) {
+            case "google" -> oAuth2User.getAttribute("sub");
+            case "github" -> {
+                Object id = oAuth2User.getAttribute("id");
+                yield id != null ? String.valueOf(id) : null;
+            }
+            default -> null;
+        };
     }
 }
