@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.repository;
 
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
+import com.ojtsu26.elearning.repository.projection.TeacherCourseMetricProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherEnrollmentCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -90,6 +91,23 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
 
     @Query("select count(e) from CourseEnrollment e where e.course.id = :courseId and e.progressPercentage > 0 and (e.isCompleted = false or e.isCompleted is null)")
     long countInProgressByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("""
+            select e.course.id as courseId,
+                   count(e) as enrollmentCount,
+                   coalesce(avg(e.progressPercentage), 0) as averageProgress
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+            group by e.course.id
+            """)
+    List<TeacherCourseMetricProjection> findDashboardCourseMetricsByTeacherId(@Param("teacherId") Integer teacherId);
+
+    @Query("""
+            select coalesce(avg(e.progressPercentage), 0)
+            from CourseEnrollment e
+            where e.course.instructor.id = :teacherId
+            """)
+    java.math.BigDecimal averageProgressByTeacherId(@Param("teacherId") Integer teacherId);
 
     @Query("select e from CourseEnrollment e join fetch e.student s join fetch e.course c left join fetch c.instructor where e.course.id = :courseId and e.student.id = :studentId")
     Optional<CourseEnrollment> findCourseStudentEnrollmentForReport(@Param("courseId") Integer courseId,

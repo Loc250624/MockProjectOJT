@@ -1,0 +1,9 @@
+package com.ojtsu26.elearning.service;
+
+import com.ojtsu26.elearning.dto.response.StudentDeadlineDashboardDTO;
+
+import java.util.List;
+
+public interface StudentDashboardService {
+    List<StudentDeadlineDashboardDTO> getCurrentStudentDeadlines(int limit);
+}

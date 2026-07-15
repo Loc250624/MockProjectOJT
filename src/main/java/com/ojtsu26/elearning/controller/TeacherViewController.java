@@ -20,6 +20,7 @@ import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.LessonService;
 import com.ojtsu26.elearning.service.ProfileService;
 import com.ojtsu26.elearning.service.RoadmapService;
+import com.ojtsu26.elearning.service.TeacherDashboardService;
 import com.ojtsu26.elearning.service.TeacherCourseStudentService;
 import com.ojtsu26.elearning.service.VideoService;
 import lombok.RequiredArgsConstructor;
@@ -51,9 +52,13 @@ public class TeacherViewController {
     private final TeacherCourseStudentService teacherCourseStudentService;
     private final BlogPostService blogPostService;
     private final AssessmentService assessmentService;
+    private final TeacherDashboardService teacherDashboardService;
 
     @GetMapping("/dashboard")
-    public String dashboard() { return "teacher/dashboard"; }
+    public String dashboard(Model model) {
+        model.addAttribute("teacherDashboard", teacherDashboardService.getCurrentTeacherDashboard());
+        return "teacher/dashboard";
+    }
 
     @GetMapping("/profile")
     public String profile(Model model) {
