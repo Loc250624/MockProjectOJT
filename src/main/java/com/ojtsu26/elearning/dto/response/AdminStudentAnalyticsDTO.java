@@ -15,6 +15,7 @@ import java.util.List;
 public class AdminStudentAnalyticsDTO {
     private LocalDate from;
     private LocalDate to;
+    private String timeZone;
     private String groupBy;
     private long newStudents;
     private long activeStudents;

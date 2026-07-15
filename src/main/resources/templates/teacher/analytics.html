@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<div class="lumina-portal">
+<div class="lumina-portal teacher-analytics-page">
     <aside th:replace="~{fragments/layout :: sidebar-teacher}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
@@ -27,7 +27,7 @@
                         <span>Analytics</span>
                     </p>
                     <h1 class="page-title">Revenue Analytics</h1>
-                    <p class="page-subtitle">Track paid course revenue, order volume, and enrollments for your courses.</p>
+                    <p class="page-subtitle">Track paid course revenue, successful orders, and paid students for your courses.</p>
                 </div>
             </div>
 
@@ -75,52 +75,93 @@
             </div>
 
             <section id="analyticsContent" hidden>
-                <div class="progress-report-grid analytics-kpi-grid">
-                    <div class="report-kpi">
-                        <span>Total revenue</span>
-                        <strong data-total-revenue>$0.00</strong>
-                    </div>
-                    <div class="report-kpi">
-                        <span>Paid orders</span>
-                        <strong data-paid-orders>0</strong>
-                    </div>
-                    <div class="report-kpi">
-                        <span>Enrollments</span>
-                        <strong data-enrollments>0</strong>
-                    </div>
-                    <div class="report-kpi">
-                        <span>Students</span>
-                        <strong data-students>0</strong>
-                    </div>
-                    <div class="report-kpi analytics-best-course">
-                        <span>Best-selling course</span>
-                        <strong data-best-course>None yet</strong>
-                    </div>
+                <div id="analyticsSummaryLoading" class="teacher-state analytics-widget-state" hidden>
+                    <strong>Loading revenue summary</strong>
+                    <span>Collecting paid orders for the selected filter.</span>
                 </div>
 
-                <div id="analyticsEmpty" class="teacher-state" hidden>
+                <div id="analyticsSummaryError" class="teacher-state teacher-state-error analytics-widget-state" role="alert" hidden>
+                    <strong>Unable to load revenue summary.</strong>
+                    <span data-error-message>Please try again.</span>
+                </div>
+
+                <div id="analyticsSummaryEmpty" class="teacher-state analytics-widget-state" hidden>
                     <strong>No paid revenue found.</strong>
                     <span>Try a wider date range or select a different course.</span>
                 </div>
 
-                <div class="progress-report-layout analytics-layout">
-                    <section class="card report-chart-panel analytics-chart-panel" aria-labelledby="revenue-trend-title">
-                        <div class="card-header">
-                            <h2 id="revenue-trend-title" class="card-title">Revenue Trend</h2>
-                            <span class="teacher-page-meta" data-period-label></span>
+                <section id="analyticsSummaryContent" hidden>
+                    <div class="progress-report-grid analytics-kpi-grid">
+                        <div class="report-kpi">
+                            <span>Total revenue</span>
+                            <strong data-total-revenue>$0.00</strong>
+                            <small data-kpi-period data-kpi-unit="currency">USD, selected period</small>
                         </div>
-                        <div id="revenueTrendChart" class="analytics-chart" aria-label="Revenue trend chart"></div>
-                    </section>
+                        <div class="report-kpi">
+                            <span>Paid orders</span>
+                            <strong data-paid-orders>0</strong>
+                            <small data-kpi-period data-kpi-unit="orders">orders, selected period</small>
+                        </div>
+                        <div class="report-kpi">
+                            <span>Paid students</span>
+                            <strong data-paid-students>0</strong>
+                            <small data-kpi-period data-kpi-unit="students">students, selected period</small>
+                        </div>
+                        <div class="report-kpi">
+                            <span>Enrollments</span>
+                            <strong data-enrollments>0</strong>
+                            <small data-kpi-period data-kpi-unit="enrollments">enrollments, selected period</small>
+                        </div>
+                        <div class="report-kpi">
+                            <span>Students</span>
+                            <strong data-students>0</strong>
+                            <small data-kpi-period data-kpi-unit="students">students, selected period</small>
+                        </div>
+                        <div class="report-kpi analytics-best-course">
+                            <span>Best-selling course</span>
+                            <strong data-best-course>None yet</strong>
+                            <small data-kpi-period>selected period</small>
+                        </div>
+                    </div>
 
-                    <section class="card report-chart-panel" aria-labelledby="revenue-breakdown-title">
-                        <div class="card-header">
-                            <h2 id="revenue-breakdown-title" class="card-title">Course Snapshot</h2>
-                        </div>
-                        <div id="courseSnapshot" class="analytics-course-snapshot"></div>
-                    </section>
+                    <div class="progress-report-layout analytics-layout">
+                        <section class="card report-chart-panel analytics-chart-panel" aria-labelledby="revenue-trend-title">
+                            <div class="card-header">
+                                <h2 id="revenue-trend-title" class="card-title">Revenue Trend</h2>
+                                <span class="teacher-page-meta" data-period-label></span>
+                            </div>
+                            <div class="analytics-chart-meta" aria-hidden="true">
+                                <span><i></i>Revenue, <span data-teacher-currency>USD</span></span>
+                                <span>X-axis: period</span>
+                            </div>
+                            <div id="revenueTrendChart" class="analytics-chart" aria-label="Revenue trend chart"></div>
+                        </section>
+
+                        <section class="card report-chart-panel" aria-labelledby="revenue-breakdown-title">
+                            <div class="card-header">
+                                <h2 id="revenue-breakdown-title" class="card-title">Course Snapshot</h2>
+                            </div>
+                            <div id="courseSnapshot" class="analytics-course-snapshot"></div>
+                        </section>
+                    </div>
+                </section>
+
+                <div id="analyticsCoursesLoading" class="teacher-state analytics-widget-state" hidden>
+                    <strong>Loading course revenue</strong>
+                    <span>Collecting revenue by course for the selected filter.</span>
                 </div>
 
-                <section class="admin-table-container teacher-student-results" aria-labelledby="revenue-by-course-title">
+                <div id="analyticsCoursesError" class="teacher-state teacher-state-error analytics-widget-state" role="alert" hidden>
+                    <strong>Unable to load revenue by course.</strong>
+                    <span data-error-message>Please try again.</span>
+                </div>
+
+                <div id="analyticsCoursesEmpty" class="teacher-state analytics-widget-state" hidden>
+                    <strong>No courses found.</strong>
+                    <span>Create a course to start tracking revenue.</span>
+                </div>
+
+                <section id="analyticsCoursesContent" class="admin-table-container teacher-student-results" aria-labelledby="revenue-by-course-title" hidden>
                     <div class="admin-table-toolbar">
                         <div>
                             <h2 id="revenue-by-course-title" class="teacher-table-title">Revenue by Course</h2>

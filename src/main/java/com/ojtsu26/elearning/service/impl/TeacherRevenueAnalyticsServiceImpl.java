@@ -42,6 +42,7 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
     private static final String GROUP_DAY = "day";
     private static final String GROUP_MONTH = "month";
     private static final String GROUP_YEAR = "year";
+    private static final String REVENUE_CURRENCY = "USD";
 
     private final CurrentUserService currentUserService;
     private final CourseRepository courseRepository;
@@ -66,6 +67,8 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
                 teacher.getId(), OrderStatus.PAID, fromDateTime, toDateTime, courseId));
         long paidOrderCount = orderItemRepository.countTeacherPaidOrders(
                 teacher.getId(), OrderStatus.PAID, fromDateTime, toDateTime, courseId);
+        long paidStudentCount = orderItemRepository.countTeacherPaidStudents(
+                teacher.getId(), OrderStatus.PAID, fromDateTime, toDateTime, courseId);
         long enrollmentCount = enrollmentRepository.countTeacherEnrollmentsForAnalytics(
                 teacher.getId(), fromDateTime, toDateTime, courseId);
         long studentCount = enrollmentRepository.countTeacherStudentsForAnalytics(
@@ -85,8 +88,10 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
                 .to(filter.to())
                 .groupBy(cleanGroupBy)
                 .courseId(courseId)
+                .currency(REVENUE_CURRENCY)
                 .totalRevenue(totalRevenue)
                 .paidOrderCount(paidOrderCount)
+                .paidStudentCount(paidStudentCount)
                 .enrollmentCount(enrollmentCount)
                 .studentCount(studentCount)
                 .bestSellingCourse(bestSellingCourse)

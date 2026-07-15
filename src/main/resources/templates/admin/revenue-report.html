@@ -11,7 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
-<div class="lumina-portal">
+<div class="lumina-portal admin-analytics-page admin-revenue-report-page">
     <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
@@ -49,18 +49,27 @@
             </div>
 
             <section id="adminRevenueContent" hidden>
-                <div class="stats-grid-3">
+                <div class="stats-grid-4">
                     <div class="stat-card">
                         <div class="stat-label">Total Revenue</div>
                         <div class="stat-value" data-revenue-total>$0.00</div>
+                        <div class="stat-unit" data-revenue-currency>USD</div>
+                        <div class="stat-change stat-change-neutral">Sum of chart and table revenue</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Paid Orders</div>
+                        <div class="stat-label">Valid Transactions</div>
                         <div class="stat-value" data-revenue-orders>0</div>
+                        <div class="stat-unit">paid orders</div>
+                        <div class="stat-change stat-change-neutral">Distinct orders with status PAID</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Period</div>
                         <div class="admin-method-text" data-revenue-period></div>
+                        <div class="stat-change stat-change-neutral" data-revenue-timezone></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Revenue Basis</div>
+                        <div class="admin-method-text" data-revenue-method>Paid order items by order creation date</div>
                     </div>
                 </div>
 
@@ -72,7 +81,11 @@
                 <section class="card card-padded">
                     <div class="card-header">
                         <h2 class="card-title">Revenue Trend</h2>
-                        <span class="text-muted text-sm">Paid orders only</span>
+                        <span class="text-muted text-sm" data-revenue-chart-period>Paid orders only</span>
+                    </div>
+                    <div class="admin-chart-meta" aria-hidden="true">
+                        <span><i class="admin-chart-key admin-chart-key-primary"></i>Revenue, <span data-revenue-chart-currency>USD</span></span>
+                        <span class="admin-chart-axis">X-axis: period</span>
                     </div>
                     <div id="adminRevenueChart" class="admin-analytics-chart admin-analytics-chart-tall"></div>
                 </section>

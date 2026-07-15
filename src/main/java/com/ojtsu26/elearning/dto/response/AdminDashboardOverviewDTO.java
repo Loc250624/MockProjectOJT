@@ -21,6 +21,7 @@ public class AdminDashboardOverviewDTO {
     private long totalCourses;
     private long totalEnrollments;
     private long paidOrderCount;
+    private String currency;
     private BigDecimal totalRevenue;
     private long newStudents;
     private long activeStudents;

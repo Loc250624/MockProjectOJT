@@ -89,6 +89,10 @@
 }
 
 /* Admin analytics */
+.admin-analytics-page [hidden] {
+  display: none !important;
+}
+
 .admin-analytics-header {
   display: flex;
   align-items: flex-end;
@@ -125,6 +129,12 @@
   text-transform: none;
 }
 
+.admin-analytics-filter-row .btn:disabled,
+.admin-settings-header .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .admin-inline-loader {
   min-height: 220px;
   background: white;
@@ -136,8 +146,45 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.admin-stat-link {
+  display: block;
+  color: inherit;
+  min-width: 0;
+  text-decoration: none;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.admin-stat-link:hover,
+.admin-stat-link:focus-visible {
+  border-color: var(--lumina-blue);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.admin-stat-link:focus-visible {
+  outline: 3px solid var(--lumina-blue-pale);
+  outline-offset: 2px;
+}
+
+.admin-stat-link .stat-value,
+.admin-stat-link .stat-label,
+.admin-stat-link .stat-change {
+  overflow-wrap: anywhere;
+}
+
+.stat-card .stat-unit {
+  color: var(--lumina-gray-600);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
 .admin-dashboard-panels {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.7fr);
+}
+
+.admin-analytics-page .card-header {
+  flex-wrap: wrap;
 }
 
 .admin-method-text {
@@ -158,6 +205,58 @@
   padding: 1rem 0.25rem 0;
   overflow-x: auto;
   background: repeating-linear-gradient(0deg, transparent, transparent 42px, var(--lumina-gray-100) 43px);
+}
+
+.admin-chart-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin: -0.5rem 0 0.75rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-chart-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-chart-key {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.admin-chart-key-primary {
+  background: var(--lumina-blue);
+}
+
+.admin-chart-key-secondary {
+  background: var(--lumina-info);
+}
+
+.admin-chart-axis {
+  color: var(--lumina-gray-400);
+}
+
+.admin-chart-state {
+  align-self: stretch;
+  grid-column: 1 / -1;
+  min-height: 220px;
+  width: 100%;
+}
+
+.admin-chart-state .spinner {
+  margin-bottom: 0.75rem;
+}
+
+.admin-chart-state-error {
+  border-color: var(--lumina-danger-bg);
+  background: var(--lumina-danger-bg);
 }
 
 .admin-analytics-chart-tall {
@@ -198,6 +297,11 @@
   background: var(--lumina-blue);
 }
 
+.admin-chart-bar:focus-visible {
+  outline: 3px solid var(--lumina-blue-pale);
+  outline-offset: 2px;
+}
+
 .admin-chart-bar.secondary {
   background: var(--lumina-info);
 }
@@ -221,6 +325,7 @@
 
 .admin-responsive-table table {
   width: 100%;
+  min-width: 560px;
 }
 
 .admin-responsive-table td:nth-child(n+2),
@@ -252,6 +357,15 @@
   .admin-overview-grid,
   .admin-dashboard-panels {
     grid-template-columns: 1fr;
+  }
+
+  .admin-analytics-page .card-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-analytics-page .card-header .btn {
+    width: 100%;
   }
 
   .admin-responsive-table td:nth-child(n+2),
@@ -379,6 +493,11 @@
   min-width: 0;
 }
 
+.admin-setting-control {
+  display: grid;
+  gap: 0.4rem;
+}
+
 .admin-setting-input {
   width: 100%;
   min-height: 40px;
@@ -388,6 +507,29 @@
   color: var(--lumina-gray-900);
   font: inherit;
   padding: 0.6rem 0.75rem;
+}
+
+.admin-setting-input.is-invalid {
+  border-color: var(--lumina-danger);
+}
+
+.admin-setting-checkbox {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--lumina-blue);
+}
+
+.admin-setting-validation {
+  min-height: 1rem;
+  color: var(--lumina-danger);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-setting-unit {
+  color: var(--lumina-gray-500);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .admin-setting-input:disabled {

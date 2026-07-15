@@ -18,8 +18,10 @@ public class TeacherRevenueAnalyticsResponseDTO {
     private LocalDate to;
     private String groupBy;
     private Integer courseId;
+    private String currency;
     private BigDecimal totalRevenue;
     private long paidOrderCount;
+    private long paidStudentCount;
     private long enrollmentCount;
     private long studentCount;
     private TeacherRevenueCourseDTO bestSellingCourse;

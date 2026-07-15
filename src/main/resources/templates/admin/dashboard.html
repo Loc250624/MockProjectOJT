@@ -12,16 +12,16 @@
 </head>
 <body>
 
-<div class="lumina-portal">
+<div class="lumina-portal admin-analytics-page admin-dashboard-page">
     <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
 
     <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
-        <div th:replace="~{fragments/layout :: topbar-admin('Command Center')}"></div>
+        <div th:replace="~{fragments/layout :: topbar-admin('Dashboard')}"></div>
 
         <main class="lumina-portal-main">
             <div class="page-header admin-analytics-header">
                 <div>
-                    <h1 class="page-title">Admin Command Center</h1>
+                    <h1 class="page-title">Admin Dashboard</h1>
                     <p class="page-subtitle">Monitor users, learning activity, course volume, and paid revenue.</p>
                 </div>
                 <form id="adminDashboardFilters" class="admin-analytics-filter-row">
@@ -40,7 +40,7 @@
 
             <div id="adminDashboardError" class="alert-banner alert-error" hidden>
                 <span class="alert-icon">!</span>
-                <span data-error-message>Unable to load dashboard overview.</span>
+                <span data-error-message>Unable to load dashboard widgets.</span>
             </div>
 
             <div id="adminDashboardLoading" class="page-loader admin-inline-loader">
@@ -49,45 +49,77 @@
             </div>
 
             <section id="adminDashboardContent" hidden>
-                <div class="stats-grid-4 admin-overview-grid">
-                    <div class="stat-card">
+                <div id="dashboardOverviewLoading" class="empty-state admin-chart-state admin-chart-state-loading" hidden>
+                    <span class="spinner"></span>
+                    <div class="empty-state-title">Loading overview KPIs</div>
+                    <div class="empty-state-desc">Preparing the platform snapshot.</div>
+                </div>
+
+                <div id="dashboardOverviewError" class="empty-state admin-chart-state admin-chart-state-error" role="alert" hidden>
+                    <div class="empty-state-title">Overview KPIs unavailable</div>
+                    <div class="empty-state-desc" data-error-message>Unable to load dashboard overview.</div>
+                </div>
+
+                <div id="dashboardOverviewEmpty" class="empty-state admin-chart-state" hidden>
+                    <div class="empty-state-title">No overview data</div>
+                    <div class="empty-state-desc">No platform records were found for this snapshot.</div>
+                </div>
+
+                <div id="dashboardOverviewContent" class="stats-grid-4 admin-overview-grid" hidden>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/users}">
                         <div class="stat-label">Total Users</div>
                         <div class="stat-value" data-overview="totalUsers">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">users</div>
+                        <div class="stat-change stat-change-neutral">All registered accounts</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/users(role='STUDENT')}">
                         <div class="stat-label">Students</div>
                         <div class="stat-value" data-overview="totalStudents">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">students</div>
+                        <div class="stat-change stat-change-neutral">All student accounts</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/users(role='TEACHER')}">
                         <div class="stat-label">Teachers</div>
                         <div class="stat-value" data-overview="totalTeachers">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">teachers</div>
+                        <div class="stat-change stat-change-neutral">All teacher accounts</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/courses}">
                         <div class="stat-label">Courses</div>
                         <div class="stat-value" data-overview="totalCourses">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">courses</div>
+                        <div class="stat-change stat-change-neutral">All course records</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/courses}">
                         <div class="stat-label">Enrollments</div>
                         <div class="stat-value" data-overview="totalEnrollments">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">enrollments</div>
+                        <div class="stat-change stat-change-neutral">All course enrollments</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/transactions}">
                         <div class="stat-label">Paid Orders</div>
                         <div class="stat-value" data-overview="paidOrderCount">0</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit">orders</div>
+                        <div class="stat-change stat-change-neutral">All-time PAID orders</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics/revenue}">
                         <div class="stat-label">Total Revenue</div>
                         <div class="stat-value" data-overview-money="totalRevenue">$0.00</div>
-                    </div>
-                    <div class="stat-card">
+                        <div class="stat-unit" data-dashboard-currency>USD</div>
+                        <div class="stat-change stat-change-neutral">All-time paid order items</div>
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics}">
                         <div class="stat-label">New Students</div>
                         <div class="stat-value" data-overview="newStudents">0</div>
+                        <div class="stat-unit">students</div>
                         <div class="stat-change stat-change-neutral" data-overview-period></div>
-                    </div>
-                    <div class="stat-card">
+                    </a>
+                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics}">
                         <div class="stat-label">Active Students</div>
                         <div class="stat-value" data-overview="activeStudents">0</div>
-                        <div class="stat-change stat-change-neutral">Lesson activity based</div>
-                    </div>
+                        <div class="stat-unit">students</div>
+                        <div class="stat-change stat-change-neutral" data-overview-active-method>Lesson activity based</div>
+                    </a>
                 </div>
 
                 <div class="grid-main-aside admin-dashboard-panels">
@@ -99,7 +131,12 @@
                             </div>
                             <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics}">Open Analytics</a>
                         </div>
-                        <div id="dashboardStudentsChart" class="admin-analytics-chart"></div>
+                        <div class="admin-chart-meta" aria-hidden="true">
+                            <span><i class="admin-chart-key admin-chart-key-primary"></i>New students</span>
+                            <span><i class="admin-chart-key admin-chart-key-secondary"></i>Active students</span>
+                            <span class="admin-chart-axis">X-axis: period</span>
+                        </div>
+                        <div id="dashboardStudentsChart" class="admin-analytics-chart" aria-live="polite"></div>
                     </section>
 
                     <section class="card card-padded">
@@ -110,7 +147,11 @@
                             </div>
                             <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics/revenue}">Open Report</a>
                         </div>
-                        <div id="dashboardRevenueChart" class="admin-analytics-chart"></div>
+                        <div class="admin-chart-meta" aria-hidden="true">
+                            <span><i class="admin-chart-key admin-chart-key-primary"></i>Revenue, <span data-dashboard-revenue-currency>USD</span></span>
+                            <span class="admin-chart-axis">X-axis: period</span>
+                        </div>
+                        <div id="dashboardRevenueChart" class="admin-analytics-chart" aria-live="polite"></div>
                     </section>
                 </div>
             </section>
