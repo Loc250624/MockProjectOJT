@@ -148,6 +148,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             Optional<User> byProvider = userRepository.findByProviderIdAndAuthProvider(providerId, authProvider);
             if (byProvider.isPresent()) {
                 User user = byProvider.get();
+                if (user.getStatus() != UserStatus.ACTIVE) {
+                    return user;
+                }
                 updateLoginMetadata(user, name, avatar, email);
                 return userRepository.save(user);
             }
@@ -157,6 +160,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         Optional<User> byEmail = userRepository.findByEmail(email);
         if (byEmail.isPresent()) {
             User user = byEmail.get();
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                return user;
+            }
             // Link the OAuth provider to an existing local account transparently
             if (user.getAuthProvider() == AuthProvider.LOCAL || user.getProviderId() == null) {
                 user.setAuthProvider(authProvider);

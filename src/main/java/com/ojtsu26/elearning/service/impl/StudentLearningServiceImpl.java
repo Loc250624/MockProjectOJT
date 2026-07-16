@@ -552,7 +552,10 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        boolean completedCourse = total > 0 && completed == total;
+        if (Boolean.TRUE.equals(enrollment.getIsCompleted())) {
+            percentage = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
+        }
+        boolean completedCourse = (total > 0 && completed == total) || Boolean.TRUE.equals(enrollment.getIsCompleted());
         boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
         enrollment.setProgressPercentage(percentage);
         if (newlyCompleted) {
@@ -590,7 +593,10 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        boolean completedCourse = total > 0 && completed == total;
+        if (Boolean.TRUE.equals(enrollment.getIsCompleted())) {
+            percentage = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
+        }
+        boolean completedCourse = (total > 0 && completed == total) || Boolean.TRUE.equals(enrollment.getIsCompleted());
         boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
         enrollment.setProgressPercentage(percentage);
         if (newlyCompleted) {

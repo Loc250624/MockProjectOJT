@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.OrderItemRepository;
+import com.ojtsu26.elearning.repository.LessonProgressRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.projection.TeacherCourseMetricProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRecentSubmissionProjection;
@@ -50,6 +51,9 @@ class TeacherDashboardServiceTest {
     @Mock
     private SubmissionRepository submissionRepository;
 
+    @Mock
+    private LessonProgressRepository lessonProgressRepository;
+
     private TeacherDashboardServiceImpl service;
     private User teacher;
 
@@ -60,7 +64,8 @@ class TeacherDashboardServiceTest {
                 courseRepository,
                 enrollmentRepository,
                 orderItemRepository,
-                submissionRepository
+                submissionRepository,
+                lessonProgressRepository
         );
         teacher = User.builder().id(7).role(Role.TEACHER).fullName("Teacher").build();
     }

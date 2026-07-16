@@ -8,6 +8,7 @@ import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
+import com.ojtsu26.elearning.repository.CertificateRepository;
 import com.ojtsu26.elearning.repository.CodingAssignmentRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.projection.StudentDeadlineProjection;
@@ -42,12 +43,15 @@ class StudentDashboardServiceTest {
     @Mock
     private SubmissionRepository submissionRepository;
 
+    @Mock
+    private CertificateRepository certificateRepository;
+
     private StudentDashboardServiceImpl service;
     private User student;
 
     @BeforeEach
     void setUp() {
-        service = new StudentDashboardServiceImpl(currentUserService, assignmentRepository, submissionRepository);
+        service = new StudentDashboardServiceImpl(currentUserService, assignmentRepository, submissionRepository, certificateRepository);
         student = User.builder().id(5).role(Role.STUDENT).status(UserStatus.ACTIVE).build();
     }
 

@@ -175,6 +175,9 @@ class StudentViewControllerTest {
         CourseEnrollment enrollment = courseEnrollmentRepository
                 .findByStudentIdAndCourseId(student.getId(), course.getId())
                 .orElseThrow();
+        enrollment.setIsCompleted(true);
+        enrollment.setProgressPercentage(new BigDecimal("100.00"));
+        enrollment = courseEnrollmentRepository.save(enrollment);
 
         Lesson contentLesson = lessonRepository.save(Lesson.builder()
                 .course(course)
