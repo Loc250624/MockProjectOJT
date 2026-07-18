@@ -25,6 +25,7 @@ import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -260,6 +261,7 @@ class StudentViewControllerTest {
         org.springframework.test.web.servlet.MvcResult result = mockMvc.perform(post("/student/checkout")
                         .param("courseId", course2.getId().toString())
                         .param("pay", "vnpay")
+                        .with(csrf())
                         .cookie(new Cookie("jwt_token", studentToken)))
                 .andExpect(status().is3xxRedirection())
                 .andReturn();

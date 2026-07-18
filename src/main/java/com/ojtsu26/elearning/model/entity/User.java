@@ -10,7 +10,15 @@ import com.ojtsu26.elearning.model.enums.*;
 import java.util.List;
 
 @Entity
-@Table(name = "Users")
+@Table(
+        name = "Users",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_users_provider_identity",
+                        columnNames = {"auth_provider", "provider_id"}
+                )
+        }
+)
 @Getter
 @Setter
 @Builder
@@ -51,6 +59,7 @@ public class User {
     private Role role;
 
     @Convert(converter = AuthProviderConverter.class)
+    @Column(name = "auth_provider")
     private AuthProvider authProvider;
 
     @Convert(converter = UserStatusConverter.class)

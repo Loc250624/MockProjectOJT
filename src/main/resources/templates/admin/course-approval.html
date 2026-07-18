@@ -29,26 +29,26 @@
             <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
 
             <!-- Status filter tabs -->
-            <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+            <div class="admin-filter-tabs" style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
                 <a th:href="@{/admin/courses/approval(status='PENDING_APPROVAL')}"
                    th:classappend="${selectedStatus == 'PENDING_APPROVAL' ? ' active' : ''}"
                    class="filter-tab">
-                    Pending <span th:if="${pendingCount > 0}" style="margin-left:0.3rem;padding:2px 6px;background:#fbbf24;color:#fff;border-radius:999px;font-size:0.7rem;font-weight:700;" th:text="${pendingCount}"></span>
+                    Pending <span class="badge badge-warning admin-filter-count" th:if="${pendingCount > 0}" th:text="${pendingCount}"></span>
                 </a>
                 <a th:href="@{/admin/courses/approval(status='APPROVED')}"
                    th:classappend="${selectedStatus == 'APPROVED' ? ' active' : ''}"
                    class="filter-tab">
-                    Approved <span th:if="${approvedCount > 0}" style="margin-left:0.3rem;padding:2px 6px;background:#22c55e;color:#fff;border-radius:999px;font-size:0.7rem;font-weight:700;" th:text="${approvedCount}"></span>
+                    Approved <span class="badge badge-success admin-filter-count" th:if="${approvedCount > 0}" th:text="${approvedCount}"></span>
                 </a>
                 <a th:href="@{/admin/courses/approval(status='HIDDEN')}"
                    th:classappend="${selectedStatus == 'HIDDEN' ? ' active' : ''}"
                    class="filter-tab">
-                    Hidden <span th:if="${hiddenCount > 0}" style="margin-left:0.3rem;padding:2px 6px;background:#6b7280;color:#fff;border-radius:999px;font-size:0.7rem;font-weight:700;" th:text="${hiddenCount}"></span>
+                    Hidden <span class="badge badge-neutral admin-filter-count" th:if="${hiddenCount > 0}" th:text="${hiddenCount}"></span>
                 </a>
                 <a th:href="@{/admin/courses/approval(status='DRAFT')}"
                    th:classappend="${selectedStatus == 'DRAFT' ? ' active' : ''}"
                    class="filter-tab">
-                    Draft <span th:if="${draftCount > 0}" style="margin-left:0.3rem;padding:2px 6px;background:#94a3b8;color:#fff;border-radius:999px;font-size:0.7rem;font-weight:700;" th:text="${draftCount}"></span>
+                    Draft <span class="badge badge-outline admin-filter-count" th:if="${draftCount > 0}" th:text="${draftCount}"></span>
                 </a>
             </div>
 
@@ -99,45 +99,59 @@
 
                                 <!-- Actions (state-aware) -->
                                 <td style="padding:1rem 1.25rem;text-align:right;">
-                                    <div style="display:flex;gap:0.4rem;justify-content:flex-end;flex-wrap:wrap;">
+                                    <div class="table-action-cell admin-course-actions">
 
                                         <!-- APPROVE: only for PENDING_APPROVAL -->
                                         <form th:if="${crs.status.name() == 'PENDING_APPROVAL'}"
                                               th:action="@{'/admin/courses/approve/' + ${crs.id}}" method="post" style="display:inline;"
                                               onsubmit="return confirm('Approve this course?');">
-                                            <button type="submit" class="btn btn-primary btn-sm"
-                                                    th:id="'btn-approve-' + ${crs.id}">✓ Approve</button>
+                                            <button type="submit" class="action-btn primary"
+                                                    th:id="'btn-approve-' + ${crs.id}">
+                                                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                                <span>Approve</span>
+                                            </button>
                                         </form>
 
                                         <!-- REJECT: only for PENDING_APPROVAL (opens inline reason form) -->
                                         <span th:if="${crs.status.name() == 'PENDING_APPROVAL'}">
-                                            <button type="button" class="btn btn-outline btn-sm"
+                                            <button type="button" class="action-btn warning"
                                                     th:id="'btn-reject-toggle-' + ${crs.id}"
-                                                    th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'block\'; this.style.display=\'none\''">✕ Reject</button>
+                                                    th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'block\'; this.style.display=\'none\''">
+                                                <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+                                                <span>Reject</span>
+                                            </button>
                                         </span>
 
                                         <!-- HIDE: only for APPROVED -->
                                         <form th:if="${crs.status.name() == 'APPROVED'}"
                                               th:action="@{'/admin/courses/hide/' + ${crs.id}}" method="post" style="display:inline;"
                                               onsubmit="return confirm('Hide this course from the public catalog?');">
-                                            <button type="submit" class="btn btn-outline btn-sm"
-                                                    th:id="'btn-hide-' + ${crs.id}">Hide</button>
+                                            <button type="submit" class="action-btn warning"
+                                                    th:id="'btn-hide-' + ${crs.id}">
+                                                <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
+                                                <span>Hide</span>
+                                            </button>
                                         </form>
 
                                         <!-- UNHIDE: only for HIDDEN -->
                                         <form th:if="${crs.status.name() == 'HIDDEN'}"
                                               th:action="@{'/admin/courses/unhide/' + ${crs.id}}" method="post" style="display:inline;"
                                               onsubmit="return confirm('Restore this course to the public catalog?');">
-                                            <button type="submit" class="btn btn-primary btn-sm"
-                                                    th:id="'btn-unhide-' + ${crs.id}">Restore</button>
+                                            <button type="submit" class="action-btn primary"
+                                                    th:id="'btn-unhide-' + ${crs.id}">
+                                                <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                                                <span>Restore</span>
+                                            </button>
                                         </form>
 
                                         <!-- DELETE: always available -->
                                         <form th:action="@{'/admin/courses/delete/' + ${crs.id}}" method="post" style="display:inline;"
                                               onsubmit="return confirm('Permanently delete this course and all its data?');">
-                                            <button type="submit" class="btn btn-sm"
-                                                    style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;"
-                                                    th:id="'btn-delete-' + ${crs.id}">Delete</button>
+                                            <button type="submit" class="action-btn danger"
+                                                    th:id="'btn-delete-' + ${crs.id}">
+                                                <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
+                                                <span>Delete</span>
+                                            </button>
                                         </form>
 
                                     </div>
@@ -149,12 +163,16 @@
                                         <form th:action="@{'/admin/courses/reject/' + ${crs.id}}" method="post">
                                             <textarea name="rejectReason" rows="2" placeholder="Reason for rejection (required)..."
                                                       style="width:100%;padding:0.5rem;border:1px solid #fca5a5;border-radius:6px;font-size:0.8125rem;resize:vertical;" required></textarea>
-                                            <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
-                                                <button type="submit" class="btn btn-sm"
-                                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;"
-                                                        th:id="'btn-reject-confirm-' + ${crs.id}">Confirm Reject</button>
-                                                <button type="button" class="btn btn-outline btn-sm"
-                                                        th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'none\'; document.getElementById(\'btn-reject-toggle-' + ${crs.id} + '\').style.display=\'inline-flex\''">Cancel</button>
+                                            <div class="action-group" style="margin-top:0.4rem;">
+                                                <button type="submit" class="action-btn danger"
+                                                        th:id="'btn-reject-confirm-' + ${crs.id}">
+                                                    <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+                                                    <span>Confirm Reject</span>
+                                                </button>
+                                                <button type="button" class="action-btn"
+                                                        th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'none\'; document.getElementById(\'btn-reject-toggle-' + ${crs.id} + '\').style.display=\'inline-flex\''">
+                                                    <span>Cancel</span>
+                                                </button>
                                             </div>
                                         </form>
                                     </div>
@@ -164,7 +182,7 @@
                             <!-- Empty state -->
                             <tr th:if="${#lists.isEmpty(courses)}">
                                 <td colspan="5" style="padding:4rem;text-align:center;color:var(--lumina-gray-400);">
-                                    <div style="font-size:2rem;margin-bottom:0.5rem;">📭</div>
+                                    <span class="empty-state-icon admin-table-empty-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
                                     <div>No courses with status <strong th:text="${selectedStatus}"></strong>.</div>
                                 </td>
                             </tr>

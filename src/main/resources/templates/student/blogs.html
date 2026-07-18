@@ -23,7 +23,10 @@
                     <h1 class="page-title">My Blogs</h1>
                     <p class="page-subtitle">Keep learning notes as drafts and submit your best posts for review.</p>
                 </div>
-                <a th:href="@{/student/blogs/editor}" class="btn btn-primary">Write New Blog</a>
+                <a th:href="@{/student/blogs/editor}" class="btn btn-primary">
+                    <svg th:replace="~{fragments/icons :: icon('create')}"></svg>
+                    <span>Write New Blog</span>
+                </a>
             </div>
 
             <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
@@ -67,25 +70,36 @@
                         <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-600);"
                             th:text="${blog.updatedAt == null ? 'Not saved yet' : #temporals.format(blog.updatedAt, 'dd/MM/yyyy HH:mm')}">Date</td>
                         <td style="padding:1rem 1.5rem;">
-                            <form th:if="${blog.status.name() == 'DRAFT' || blog.status.name() == 'REJECTED'}"
-                                  th:action="@{'/student/blogs/' + ${blog.id} + '/submit'}"
-                                  method="post"
-                                  data-loading-form
-                                  style="display:inline;"
-                                  onsubmit="return confirm('Submit this blog for review?');">
-                                <button type="submit" class="btn btn-primary btn-sm">Submit for Review</button>
-                            </form>
-                            <a th:if="${blog.status.name() == 'REJECTED'}"
-                               th:href="@{'/student/blogs/editor/' + ${blog.id}}"
-                               class="btn btn-secondary btn-sm"
-                               style="margin-left:0.5rem;">Edit</a>
+                            <div class="action-group">
+                                <form th:if="${blog.status.name() == 'DRAFT' || blog.status.name() == 'REJECTED'}"
+                                      th:action="@{'/student/blogs/' + ${blog.id} + '/submit'}"
+                                      method="post"
+                                      data-loading-form
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Submit this blog for review?');">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                        <span>Submit for Review</span>
+                                    </button>
+                                </form>
+                                <a th:if="${blog.status.name() == 'REJECTED'}"
+                                   th:href="@{'/student/blogs/editor/' + ${blog.id}}"
+                                   class="btn btn-secondary btn-sm">
+                                    <svg th:replace="~{fragments/icons :: icon('edit')}"></svg>
+                                    <span>Edit</span>
+                                </a>
+                            </div>
                             <span th:if="${blog.status.name() == 'PENDING_REVIEW'}" style="font-size:0.8125rem;color:var(--lumina-gray-500);">Waiting for admin review</span>
                             <span th:if="${blog.status.name() == 'PUBLISHED'}" style="font-size:0.8125rem;color:var(--lumina-success);">Published</span>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(blogs)}">
                         <td colspan="4" style="padding:3rem;text-align:center;color:var(--lumina-gray-500);">
-                            No blog drafts yet. <a th:href="@{/student/blogs/editor}" style="color:var(--lumina-blue);font-weight:600;">Write your first blog</a>.
+                            <div class="student-table-empty">
+                                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></div>
+                                <div>No blog drafts yet.</div>
+                                <a th:href="@{/student/blogs/editor}" style="color:var(--lumina-blue);font-weight:600;">Write your first blog</a>.
+                            </div>
                         </td>
                     </tr>
                     </tbody>

@@ -3,6 +3,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     var currentCurrency = 'USD';
     var moneyFormatter = createMoneyFormatter(currentCurrency);
+    var ACTIVE_STUDENT_SUMMARY = 'Students with learning activity in the selected period.';
+    var ACTIVE_STUDENT_UNAVAILABLE = 'Active student definition unavailable.';
 
     function normalizeCurrency(currency) {
         return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
@@ -93,6 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function money(value) {
         return moneyFormatter.format(safeNumber(value));
+    }
+
+    function setActiveStudentMethod(node, technicalMethod, unavailable) {
+        if (!node) return;
+        node.textContent = unavailable ? ACTIVE_STUDENT_UNAVAILABLE : ACTIVE_STUDENT_SUMMARY;
+        node.setAttribute('data-technical-method', technicalMethod || '');
     }
 
     function setFormBusy(form, busy) {
@@ -363,9 +371,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 node.textContent = money(data[node.getAttribute('data-overview-money')]);
             });
             document.querySelector('[data-overview-period]').textContent = periodText(data);
+            var activePeriod = document.querySelector('[data-overview-active-period]');
+            if (activePeriod) {
+                activePeriod.textContent = periodText(data);
+            }
             var activeMethod = document.querySelector('[data-overview-active-method]');
             if (activeMethod) {
-                activeMethod.textContent = periodText(data) + '; ' + (data.activeStudentMethod || 'Lesson activity based');
+                setActiveStudentMethod(activeMethod, data.activeStudentMethod);
             }
             if (isOverviewEmpty(data)) {
                 setOverviewState('empty');
@@ -380,9 +392,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 node.textContent = '--';
             });
             document.querySelector('[data-overview-period]').textContent = 'Selected period unavailable';
+            var activePeriod = document.querySelector('[data-overview-active-period]');
+            if (activePeriod) {
+                activePeriod.textContent = 'Selected period unavailable';
+            }
             var activeMethod = document.querySelector('[data-overview-active-method]');
             if (activeMethod) {
-                activeMethod.textContent = 'Selected period unavailable';
+                setActiveStudentMethod(activeMethod, '', true);
             }
             setOverviewState('error');
         }
@@ -457,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearStudentsView() {
         document.querySelector('[data-students-new]').textContent = '0';
         document.querySelector('[data-students-active]').textContent = '0';
-        document.querySelector('[data-students-method]').textContent = '';
+        setActiveStudentMethod(document.querySelector('[data-students-method]'), '');
         document.querySelector('[data-students-period]').textContent = 'Selected period';
         document.querySelector('[data-students-chart-period]').textContent = '';
         document.querySelector('[data-students-timezone]').textContent = '';
@@ -472,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderStudentMetadata(data) {
-        document.querySelector('[data-students-method]').textContent = data.activeStudentMethod || 'Lesson progress activity';
+        setActiveStudentMethod(document.querySelector('[data-students-method]'), data.activeStudentMethod);
         document.querySelector('[data-students-period]').textContent = periodText(data);
         document.querySelector('[data-students-chart-period]').textContent = periodText(data);
         document.querySelector('[data-students-timezone]').textContent = data.timeZone ? 'Time zone: ' + data.timeZone : '';

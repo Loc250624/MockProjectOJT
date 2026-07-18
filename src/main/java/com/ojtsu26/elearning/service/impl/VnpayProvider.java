@@ -132,13 +132,13 @@ public class VnpayProvider implements PaymentProvider {
             }
             
             String rawSigData = actualHashData.toString();
-            log.info("VNPAY Raw signature string: {}", rawSigData);
             
             String vnp_SecureHash = hmacSha512(rawSigData, vnpayProps.getHashSecret());
-            log.info("VNPAY Generated secure hash: {}", vnp_SecureHash);
+            log.debug("VNPAY request signed: orderCode={}, signatureLength={}",
+                    request.getOrderCode(), vnp_SecureHash.length());
 
             String paymentUrl = vnpayProps.getEndpoint() + "?" + queryUrl + "&vnp_SecureHash=" + vnp_SecureHash;
-            log.info("VNPAY Initiated Redirect URL: {}", paymentUrl);
+            log.info("VNPAY initiated redirect for order: {}", request.getOrderCode());
 
             return PaymentResponse.builder()
                     .success(true)
@@ -156,7 +156,7 @@ public class VnpayProvider implements PaymentProvider {
 
     @Override
     public boolean verifyWebhookSignature(Map<String, String> params) {
-        log.info("Verifying VNPAY webhook signature. Params: {}", params);
+        log.info("Verifying VNPAY webhook signature for order: {}", params.get("vnp_TxnRef"));
         
         String secureHash = params.get("vnp_SecureHash");
         if (secureHash == null || secureHash.isEmpty()) {
@@ -187,10 +187,10 @@ public class VnpayProvider implements PaymentProvider {
             }
 
             String rawSigData = hashData.toString();
-            log.info("VNPAY Callback Raw signature string: {}", rawSigData);
             
             String calculatedHash = hmacSha512(rawSigData, properties.getVnpay().getHashSecret());
-            log.info("VNPAY Callback Calculated signature: {}, Received: {}", calculatedHash, secureHash);
+            log.debug("VNPAY callback signature compared: order={}, providedHashLength={}, calculatedHashLength={}",
+                    params.get("vnp_TxnRef"), secureHash.length(), calculatedHash.length());
 
             return calculatedHash.equalsIgnoreCase(secureHash);
 

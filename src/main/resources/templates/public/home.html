@@ -3,315 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="LumiNa — Where Academic Precision Meets Modern Learning Tools. Discover world-class courses from expert instructors.">
-    <title>LumiNa — Academic Precision Meets Modern Learning</title>
+    <meta name="description" content="LumiNa connects learners with approved courses, guided learning tools, and role-aware academic portals.">
+    <title>LumiNa - Modern Academic Learning</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/public/public.css}">
 </head>
-<body>
+<body class="lumina-page">
 
-<!-- ===== HEADER ===== -->
 <header th:replace="~{fragments/layout :: header('public')}"></header>
 
-<!-- ===== HERO ===== -->
-<section class="hero-section">
-    <div class="hero-content">
-        <div class="hero-eyebrow">✦ Institutional Academic Platform</div>
-        <h1 class="hero-title">Academic Precision<br>Meets Modern Tools</h1>
-        <p class="hero-subtitle">
-            LumiNa delivers a research-grade learning environment for ambitious academics, forward-thinking institutions, and industry innovators.
-        </p>
-        <div class="hero-cta-group">
-            <a th:href="@{/auth/register}" class="btn btn-lg" style="background:white;color:var(--lumina-blue);font-weight:700;" id="btn-hero-start">
-                Start Learning Free →
+<main>
+    <section class="hero-section public-hero" aria-labelledby="public-hero-title">
+        <div class="hero-content">
+            <div class="hero-eyebrow">LumiNa Learning Platform</div>
+            <h1 id="public-hero-title" class="hero-title">Learn with clarity. Teach with confidence.</h1>
+            <p class="hero-subtitle">
+                Explore approved courses, build progress through structured lessons, and move naturally into the student, teacher, or admin workspace that matches your account.
+            </p>
+            <div class="hero-cta-group" aria-label="Primary public actions">
+                <a th:href="@{/public/courses}" class="btn btn-lg btn-hero-primary" id="btn-hero-catalog">
+                    Browse Courses
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                </a>
+                <a th:href="@{/auth/register}" class="btn btn-lg btn-hero-secondary" id="btn-hero-start">
+                    Create Account
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="public-section" aria-labelledby="featured-courses-title">
+        <div class="section-header-row">
+            <div>
+                <div class="section-eyebrow">Approved Catalog</div>
+                <h2 id="featured-courses-title" class="section-heading">Featured Courses</h2>
+                <p class="section-lead">Recently approved courses from the LumiNa catalog.</p>
+            </div>
+            <a th:href="@{/public/courses}" class="btn btn-secondary" id="btn-view-all-courses">
+                View All
+                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
             </a>
-            <a th:href="@{/public/courses}" class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);" id="btn-hero-catalog">
-                Explore Catalog
-            </a>
         </div>
-        <div class="hero-stats-row">
-            <div class="hero-stat">
-                <div class="hstat-value">14k+</div>
-                <div class="hstat-label">Researchers</div>
-            </div>
-            <div class="hero-stat" style="border-left:1px solid rgba(255,255,255,0.15);padding-left:2rem;">
-                <div class="hstat-value">450+</div>
-                <div class="hstat-label">Institutions</div>
-            </div>
-            <div class="hero-stat" style="border-left:1px solid rgba(255,255,255,0.15);padding-left:2rem;">
-                <div class="hstat-value">98%</div>
-                <div class="hstat-label">Satisfaction</div>
-            </div>
-            <div class="hero-stat" style="border-left:1px solid rgba(255,255,255,0.15);padding-left:2rem;">
-                <div class="hstat-value">3.2k</div>
-                <div class="hstat-label">Courses</div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- ===== FEATURED COURSES ===== -->
-<section class="public-section">
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;">
-        <div>
-            <div class="section-eyebrow">✦ Curated Content</div>
-            <h2 class="section-heading">Featured <em>Courses</em></h2>
-            <p class="section-lead">Explore top-rated academic courses developed by world-class instructors.</p>
+        <div th:if="${#lists.isEmpty(featuredCourses)}" class="empty-state compact public-empty-state">
+            <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
+            <h3 class="empty-state-title">No approved courses yet</h3>
+            <p class="empty-state-desc">Approved courses will appear here as instructors publish them.</p>
+            <a th:href="@{/public/courses}" class="btn btn-primary">Open Catalog</a>
         </div>
-        <a th:href="@{/public/courses}" class="btn btn-secondary" id="btn-view-all-courses">View All →</a>
-    </div>
 
-    <div class="course-grid">
-        <div class="public-course-card">
-            <div class="course-img" style="background:linear-gradient(135deg,#0d1b4b,#1a3bb5);">
-                🔬
-                <div class="level-badge badge-advanced">Advanced Research</div>
-                <div class="price-badge">$199</div>
+        <div th:unless="${#lists.isEmpty(featuredCourses)}" class="course-grid featured-course-grid">
+            <article class="public-course-card" th:each="crs : ${featuredCourses}">
+                <a th:href="@{/public/courses/detail(id=${crs.id})}" class="course-card-link" th:attr="aria-label=${'View course ' + crs.title}">
+                    <div class="course-img">
+                        <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}"
+                             th:src="${crs.thumbnailUrl}"
+                             th:alt="${crs.title}">
+                        <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" class="course-img-fallback" aria-hidden="true">
+                            <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+                        </span>
+                        <span class="price-badge"
+                              th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}">Free</span>
+                    </div>
+                    <div class="course-body">
+                        <div class="dot-tags">
+                            <span class="badge badge-soft-primary" th:text="${crs.categoryName ?: 'Course'}">Course</span>
+                        </div>
+                        <h3 class="course-name" th:text="${crs.title}">Course title</h3>
+                        <p class="course-desc" th:text="${#strings.abbreviate(crs.description ?: 'Course details are available in the catalog.', 140)}">Course description</p>
+                        <div class="course-footer">
+                            <span th:if="${crs.instructorName != null && !crs.instructorName.isEmpty()}" class="course-instructor" th:text="${crs.instructorName}">Instructor</span>
+                            <span class="add-to-cart">
+                                View Detail
+                                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </article>
+        </div>
+    </section>
+
+    <section class="public-section-full benefits-section" aria-labelledby="benefits-title">
+        <div class="public-section-inner">
+            <div class="section-center">
+                <div class="section-eyebrow">Why LumiNa</div>
+                <h2 id="benefits-title" class="section-heading">A calmer path through online learning</h2>
+                <p class="section-lead">The public experience leads into real catalog, enrollment, learning, publishing, and governance workflows already present in the app.</p>
             </div>
-            <div class="course-body">
-                <div class="dot-tags">
-                    <span class="dot-tag" style="background:#6366f1;"></span>
-                    <span class="dot-tag" style="background:#22c55e;"></span>
+
+            <div class="features-grid">
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
+                    <h3 class="feature-title">Approved Courses</h3>
+                    <p class="feature-desc">Public learners browse courses that have passed the platform approval flow.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                    <h3 class="feature-title">Structured Progress</h3>
+                    <p class="feature-desc">Student work continues inside dashboards built for lessons, quizzes, certificates, and deadlines.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('create')}"></svg></div>
+                    <h3 class="feature-title">Instructor Tools</h3>
+                    <p class="feature-desc">Teachers manage course content, assessments, student progress, and publishing from one workspace.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
+                    <h3 class="feature-title">Certificate Verification</h3>
+                    <p class="feature-desc">Issued certificates can be verified through the public certificate verification route.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></div>
+                    <h3 class="feature-title">Published Writing</h3>
+                    <p class="feature-desc">Approved blog posts give learners and instructors a shared public knowledge space.</p>
+                </article>
+                <article class="feature-card">
+                    <div class="feature-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></div>
+                    <h3 class="feature-title">Role-Aware Access</h3>
+                    <p class="feature-desc">After authentication, LumiNa routes each account to its authorized portal.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section" aria-labelledby="faq-title">
+        <div class="section-center">
+            <div class="section-eyebrow">Common Questions</div>
+            <h2 id="faq-title" class="section-heading">Before you sign in</h2>
+        </div>
+
+        <div class="faq-list" data-accordion>
+            <article class="accordion-item">
+                <h3>
+                    <button type="button" class="accordion-header" id="faq-courses-trigger" aria-expanded="false" aria-controls="faq-courses" data-accordion-trigger>
+                        <span class="acc-title">Can I browse courses before creating an account?</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </button>
+                </h3>
+                <div id="faq-courses" class="accordion-body" role="region" aria-labelledby="faq-courses-trigger" hidden>
+                    Yes. The public catalog is available at the Courses link, and course details remain public for approved courses.
                 </div>
-                <div class="course-name">Quantum Algorithmic Structures</div>
-                <div class="course-desc">Master the foundations of quantum computing and tensor network algorithms in this comprehensive specialization.</div>
-                <div class="course-footer">
-                    <div class="star-rating"><span class="star">★</span> <span class="rating-value">4.9</span> <span style="color:var(--lumina-gray-400);font-size:0.75rem;">(2.1k reviews)</span></div>
-                    <button class="add-to-cart" id="btn-cart-quantum">🛒 Add to Cart</button>
+            </article>
+            <article class="accordion-item">
+                <h3>
+                    <button type="button" class="accordion-header" id="faq-account-trigger" aria-expanded="false" aria-controls="faq-account" data-accordion-trigger>
+                        <span class="acc-title">What role do new accounts receive?</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </button>
+                </h3>
+                <div id="faq-account" class="accordion-body" role="region" aria-labelledby="faq-account-trigger" hidden>
+                    Public registration creates a student account. Teacher and admin access stay controlled by the platform policy.
                 </div>
-            </div>
-        </div>
-
-        <div class="public-course-card">
-            <div class="course-img" style="background:linear-gradient(135deg,#134e4a,#0d9488);">
-                🧬
-                <div class="level-badge badge-intermediate">Intermediate</div>
-                <div class="price-badge">$89</div>
-            </div>
-            <div class="course-body">
-                <div class="dot-tags">
-                    <span class="dot-tag" style="background:#22c55e;"></span>
-                    <span class="dot-tag" style="background:#f59e0b;"></span>
+            </article>
+            <article class="accordion-item">
+                <h3>
+                    <button type="button" class="accordion-header" id="faq-oauth-trigger" aria-expanded="false" aria-controls="faq-oauth" data-accordion-trigger>
+                        <span class="acc-title">Can I use Google or GitHub to sign in?</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </button>
+                </h3>
+                <div id="faq-oauth" class="accordion-body" role="region" aria-labelledby="faq-oauth-trigger" hidden>
+                    Yes. The login page links to the configured OAuth2 authorization endpoints for Google and GitHub.
                 </div>
-                <div class="course-name">UI/UX Strategy Systems</div>
-                <div class="course-desc">Design thinking and advanced prototyping for scalable digital products.</div>
-                <div class="course-footer">
-                    <div class="star-rating"><span class="star">★</span> <span class="rating-value">4.7</span> <span style="color:var(--lumina-gray-400);font-size:0.75rem;">(1.4k reviews)</span></div>
-                    <button class="add-to-cart" id="btn-cart-uiux">🛒 Add to Cart</button>
+            </article>
+            <article class="accordion-item">
+                <h3>
+                    <button type="button" class="accordion-header" id="faq-blog-trigger" aria-expanded="false" aria-controls="faq-blog" data-accordion-trigger>
+                        <span class="acc-title">Where can I read public posts?</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </button>
+                </h3>
+                <div id="faq-blog" class="accordion-body" role="region" aria-labelledby="faq-blog-trigger" hidden>
+                    Published posts are available from the Blog link in the public navigation.
                 </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="cta-section" aria-labelledby="public-cta-title">
+        <div class="cta-content">
+            <h2 id="public-cta-title" class="cta-title">Ready to begin?</h2>
+            <p class="cta-sub">Start from the live catalog, or create a student account when you are ready to enroll.</p>
+            <div class="cta-actions">
+                <a th:href="@{/public/courses}" class="btn btn-lg btn-hero-primary" id="btn-cta-browse">
+                    Browse Courses
+                </a>
+                <a th:href="@{/auth/register}" class="btn btn-lg btn-hero-secondary" id="btn-cta-join">
+                    Create Account
+                </a>
             </div>
         </div>
+    </section>
+</main>
 
-        <div class="public-course-card">
-            <div class="course-img" style="background:linear-gradient(135deg,#1c1917,#44403c);">
-                💻
-                <div class="level-badge badge-beginner">Beginner</div>
-                <div class="price-badge">$150</div>
-            </div>
-            <div class="course-body">
-                <div class="dot-tags">
-                    <span class="dot-tag" style="background:#8b5cf6;"></span>
-                    <span class="dot-tag" style="background:#ef4444;"></span>
-                </div>
-                <div class="course-name">Systems Architecture</div>
-                <div class="course-desc">Scale complex applications with modern distributed principles and cloud-native design patterns.</div>
-                <div class="course-footer">
-                    <div class="star-rating"><span class="star">★</span> <span class="rating-value">4.8</span> <span style="color:var(--lumina-gray-400);font-size:0.75rem;">(980 reviews)</span></div>
-                    <button class="add-to-cart" id="btn-cart-sysarch">🛒 Add to Cart</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== FEATURES ===== -->
-<section class="public-section-full" style="background:var(--lumina-bg-alt);padding-top:4rem;padding-bottom:4rem;">
-    <div style="max-width:1200px;margin:0 auto;padding:0 2rem;">
-        <div style="text-align:center;margin-bottom:2rem;">
-            <div class="section-eyebrow" style="justify-content:center;">✦ Why LumiNa?</div>
-            <h2 class="section-heading">Everything you need to <em>excel</em></h2>
-            <p class="section-lead" style="margin:0.75rem auto 0;text-align:center;">A comprehensive platform built for serious learners and world-class educators.</p>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📚</div>
-                <h3 class="feature-title">Expert Instructors</h3>
-                <p class="feature-desc">Learn from industry professionals and academic researchers with verified credentials and real-world experience.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">💻</div>
-                <h3 class="feature-title">Hands-on Projects</h3>
-                <p class="feature-desc">Apply what you learn through practical, portfolio-worthy projects with auto-graded assessments and code environments.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🏆</div>
-                <h3 class="feature-title">Verified Certificates</h3>
-                <p class="feature-desc">Earn institution-backed certificates upon completion, recognized by leading organizations worldwide.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🤖</div>
-                <h3 class="feature-title">AI Academic Advisor</h3>
-                <p class="feature-desc">Personalized learning paths generated by our AI advisor based on your goals, pace, and academic history.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🌐</div>
-                <h3 class="feature-title">Global Community</h3>
-                <p class="feature-desc">Connect with 14,000+ researchers, students, and professionals across 450 institutions worldwide.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3 class="feature-title">Live Sessions</h3>
-                <p class="feature-desc">Join live virtual classrooms with real-time Q&amp;A, collaborative whiteboards, and session recordings.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== PRICING ===== -->
-<section class="pricing-section">
-    <div style="text-align:center;margin-bottom:2rem;">
-        <div class="section-eyebrow" style="justify-content:center;">✦ Transparent Pricing</div>
-        <h2 class="section-heading">Choose your <em>academic path</em></h2>
-    </div>
-
-    <div class="pricing-grid">
-        <div class="pricing-card">
-            <div class="plan-name">Explorer</div>
-            <div class="plan-price">Free</div>
-            <div class="plan-period">Forever</div>
-            <ul class="plan-features">
-                <li>5 free courses per month</li>
-                <li>Community forum access</li>
-                <li>Basic certificates</li>
-                <li>Mobile access</li>
-            </ul>
-            <a th:href="@{/auth/register}" class="btn btn-secondary btn-full" id="btn-plan-free">Get Started Free</a>
-        </div>
-
-        <div class="pricing-card popular">
-            <div class="popular-badge">Most Popular</div>
-            <div class="plan-name">Scholar</div>
-            <div class="plan-price">$29</div>
-            <div class="plan-period">per month, billed annually</div>
-            <ul class="plan-features">
-                <li>Unlimited course access</li>
-                <li>Priority support</li>
-                <li>Verified certificates</li>
-                <li>AI Academic Advisor</li>
-                <li>Live session recordings</li>
-            </ul>
-            <a th:href="@{/auth/register}" class="btn btn-primary btn-full" id="btn-plan-scholar">Start Scholar Plan →</a>
-        </div>
-
-        <div class="pricing-card">
-            <div class="plan-name">Institutional</div>
-            <div class="plan-price">Custom</div>
-            <div class="plan-period">contact for pricing</div>
-            <ul class="plan-features">
-                <li>Everything in Scholar</li>
-                <li>SSO &amp; LMS integration</li>
-                <li>Custom branding</li>
-                <li>Dedicated account manager</li>
-                <li>Analytics dashboard</li>
-            </ul>
-            <a href="#contact" class="btn btn-dark btn-full" id="btn-plan-enterprise">Contact Sales</a>
-        </div>
-    </div>
-</section>
-
-<!-- ===== FAQ ===== -->
-<section class="faq-section">
-    <div style="text-align:center;margin-bottom:2rem;">
-        <div class="section-eyebrow" style="justify-content:center;">✦ Common Questions</div>
-        <h2 class="section-heading">Frequently Asked <em>Questions</em></h2>
-    </div>
-
-    <div class="faq-list">
-        <div class="accordion-item open">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
-                <span class="acc-title">Can I access courses offline?</span>
-                <span class="acc-chevron">▼</span>
-            </div>
-            <div class="accordion-body" style="padding:0 1.5rem 1rem;font-size:0.9rem;color:var(--lumina-gray-600);display:block;">
-                Yes! Scholar and Institutional plan members can download lessons for offline viewing through the LumiNa mobile app.
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
-                <span class="acc-title">Are certificates recognized by employers?</span>
-                <span class="acc-chevron">▼</span>
-            </div>
-            <div class="accordion-body" style="padding:0 1.5rem 1rem;font-size:0.9rem;color:var(--lumina-gray-600);display:none;">
-                LumiNa certificates are backed by partner institutions and recognized by leading employers globally. Each certificate includes a verifiable credential ID.
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
-                <span class="acc-title">How do live sessions work?</span>
-                <span class="acc-chevron">▼</span>
-            </div>
-            <div class="accordion-body" style="padding:0 1.5rem 1rem;font-size:0.9rem;color:var(--lumina-gray-600);display:none;">
-                Live sessions are scheduled by instructors and accessible through the portal. All sessions are recorded and available for 30 days after the event.
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
-                <span class="acc-title">Can I become an instructor on LumiNa?</span>
-                <span class="acc-chevron">▼</span>
-            </div>
-            <div class="accordion-body" style="padding:0 1.5rem 1rem;font-size:0.9rem;color:var(--lumina-gray-600);display:none;">
-                Yes! Register as a Teacher, complete our instructor verification process, and start building courses using our Curriculum Builder tool.
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== CTA ===== -->
-<section class="cta-section">
-    <h2 class="cta-title">Ready to elevate your academic journey?</h2>
-    <p class="cta-sub">Join thousands of researchers and professionals accelerating their careers through LumiNa.</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-        <a th:href="@{/auth/register}" class="btn btn-lg" style="background:white;color:var(--lumina-blue);font-weight:700;" id="btn-cta-join">
-            Join LumiNa Free →
-        </a>
-        <a th:href="@{/public/courses}" class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);" id="btn-cta-browse">
-            Browse Courses
-        </a>
-    </div>
-</section>
-
-<!-- ===== FOOTER ===== -->
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script th:src="@{/js/public/public.js}"></script>
-<script>
-// Simple FAQ accordion
-document.querySelectorAll('.accordion-header').forEach(function(header) {
-    header.addEventListener('click', function() {
-        var item = this.closest('.accordion-item');
-        var body = item.querySelector('.accordion-body');
-        var isOpen = item.classList.contains('open');
-        // Close all
-        document.querySelectorAll('.accordion-item').forEach(function(i) {
-            i.classList.remove('open');
-            var b = i.querySelector('.accordion-body');
-            if(b) b.style.display = 'none';
-        });
-        // Open clicked
-        if(!isOpen) {
-            item.classList.add('open');
-            if(body) body.style.display = 'block';
-        }
-    });
-});
-// Initialize open ones
-document.querySelectorAll('.accordion-item.open .accordion-body').forEach(function(b) {
-    b.style.display = 'block';
-});
-</script>
 </body>
 </html>

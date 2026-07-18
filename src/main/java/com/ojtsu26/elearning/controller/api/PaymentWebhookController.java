@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -18,7 +19,7 @@ public class PaymentWebhookController {
 
     @PostMapping("/webhook")
     public ResponseEntity<?> handleMomoWebhook(@RequestBody Map<String, String> payload) {
-        log.info("Received MoMo webhook callback: {}", payload);
+        log.info("Received MoMo webhook callback: {}", callbackSummary(payload, "orderId", "transId", "signature"));
         try {
             paymentService.processWebhook(PaymentMethod.MOMO, payload);
             return ResponseEntity.ok(Map.of(
@@ -42,7 +43,7 @@ public class PaymentWebhookController {
 
     @GetMapping("/vnpay-ipn")
     public ResponseEntity<?> handleVnpayIpn(@RequestParam Map<String, String> params) {
-        log.info("Received VNPAY IPN callback: {}", params);
+        log.info("Received VNPAY IPN callback: {}", callbackSummary(params, "vnp_TxnRef", "vnp_TransactionNo", "vnp_SecureHash"));
         
         Map<String, String> normalizedParams = new java.util.HashMap<>();
         normalizedParams.put("orderId", params.get("vnp_TxnRef"));
@@ -75,5 +76,18 @@ public class PaymentWebhookController {
                     "Message", "Input Required"
             ));
         }
+    }
+
+    private Map<String, Object> callbackSummary(
+            Map<String, String> params,
+            String orderKey,
+            String transactionKey,
+            String signatureKey) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("orderId", params.get(orderKey));
+        summary.put("transactionPresent", params.containsKey(transactionKey));
+        summary.put("signaturePresent", params.containsKey(signatureKey));
+        summary.put("fieldCount", params.size());
+        return summary;
     }
 }

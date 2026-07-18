@@ -25,7 +25,8 @@
                     <p class="page-subtitle">Create, edit and manage course categories across the platform.</p>
                 </div>
                 <a th:href="@{/admin/categories/create}" class="btn btn-primary" id="btn-add-category">
-                    + Add Category
+                    <svg th:replace="~{fragments/icons :: icon('create')}"></svg>
+                    <span>Add Category</span>
                 </a>
             </div>
 
@@ -46,7 +47,7 @@
                         <input type="text" id="categorySearch" placeholder="Search categories..." oninput="filterTable(this.value)">
                     </div>
                 </div>
-                <table class="data-table" style="width:100%;border-collapse:collapse;">
+                <table class="data-table lumina-table admin-category-table" style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr>
                             <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">ID</th>
@@ -64,22 +65,29 @@
                             </td>
                             <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-600);max-width:400px;" th:text="${cat.description}">Description</td>
                             <td style="padding:1rem 1.5rem;">
-                                <div style="display:flex;gap:0.5rem;align-items:center;">
+                                <div class="table-action-cell admin-category-actions">
                                     <a th:href="@{'/admin/categories/edit/' + ${cat.id}}"
-                                       class="btn btn-secondary btn-sm"
-                                       th:id="'btn-edit-cat-' + ${cat.id}">Edit</a>
+                                       class="action-btn"
+                                       th:id="'btn-edit-cat-' + ${cat.id}">
+                                        <svg th:replace="~{fragments/icons :: icon('edit')}"></svg>
+                                        <span>Edit</span>
+                                    </a>
                                     <form th:action="@{'/admin/categories/delete/' + ${cat.id}}" method="post" style="display:inline;"
                                           onsubmit="return confirm('Are you sure you want to delete this category?');">
-                                        <button type="submit" class="btn btn-sm"
-                                                style="background:var(--lumina-danger-bg);color:var(--lumina-danger);border:1px solid #fca5a5;"
-                                                th:id="'btn-delete-cat-' + ${cat.id}">Delete</button>
+                                        <button type="submit" class="action-btn danger"
+                                                th:id="'btn-delete-cat-' + ${cat.id}">
+                                            <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
+                                            <span>Delete</span>
+                                        </button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(categories)}">
                             <td colspan="4" style="padding:3rem;text-align:center;color:var(--lumina-gray-400);font-style:italic;">
-                                No categories found. <a th:href="@{/admin/categories/create}" style="color:var(--lumina-blue);">Create your first category →</a>
+                                <span class="empty-state-icon admin-table-empty-icon"><svg th:replace="~{fragments/icons :: icon('categories')}"></svg></span>
+                                <div>No categories found.</div>
+                                <a th:href="@{/admin/categories/create}" style="color:var(--lumina-blue);">Create your first category</a>
                             </td>
                         </tr>
                     </tbody>

@@ -23,7 +23,10 @@
                     <h1 class="page-title">Blog Moderation Queue</h1>
                     <p class="page-subtitle">Approve or reject submitted blog posts.</p>
                 </div>
-                <a th:href="@{/admin/blogs}" class="btn btn-secondary">All Blogs</a>
+                <a th:href="@{/admin/blogs}" class="btn btn-secondary">
+                    <svg th:replace="~{fragments/icons :: icon('blog')}"></svg>
+                    <span>All Blogs</span>
+                </a>
             </div>
 
             <div th:if="${successMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#15803d;font-size:0.875rem;font-weight:500;" th:text="${successMessage}"></div>
@@ -51,22 +54,29 @@
                     <tr th:each="blog : ${blogs}" style="border-bottom:1px solid var(--lumina-gray-100);">
                         <td style="padding:1rem 1.25rem;">
                             <div style="font-weight:700;color:var(--lumina-gray-900);font-size:0.875rem;" th:text="${blog.title}">Title</div>
-                            <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-top:2px;" th:text="${#strings.abbreviate(blog.content, 180)}">Preview</div>
+                            <div class="admin-plain-excerpt"
+                                 th:text="${#strings.abbreviate(blog.content != null ? #strings.escapeXml(blog.content).replaceAll('&lt;[^&gt;]*&gt;', ' ') : '', 180)}">Preview</div>
                         </td>
                         <td style="padding:1rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-700);"
                             th:text="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}">Author</td>
                         <td style="padding:1rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-600);"
                             th:text="${blog.submittedAt == null ? 'Unknown' : #temporals.format(blog.submittedAt, 'dd/MM/yyyy HH:mm')}">Date</td>
                         <td style="padding:1rem 1.25rem;text-align:right;">
-                            <div style="display:flex;gap:0.5rem;justify-content:flex-end;flex-wrap:wrap;">
+                            <div class="table-action-cell admin-blog-actions">
                                 <form th:action="@{'/admin/blogs/approve/' + ${blog.id}}" method="post" style="display:inline;"
                                       data-loading-form
                                       onsubmit="return confirm('Approve and publish this blog?');">
-                                    <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                                    <button type="submit" class="action-btn primary">
+                                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                        <span>Approve</span>
+                                    </button>
                                 </form>
-                                <button type="button" class="btn btn-outline btn-sm"
+                                <button type="button" class="action-btn warning"
                                         th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                        onclick="openBlogRejectModal(this.dataset.modalId)">Reject</button>
+                                        onclick="openBlogRejectModal(this.dataset.modalId)">
+                                    <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+                                    <span>Reject</span>
+                                </button>
                             </div>
 
                             <div th:id="'reject-blog-modal-' + ${blog.id}"
@@ -78,9 +88,11 @@
                                             <h2 style="font-size:1.05rem;color:var(--lumina-gray-900);margin:0;">Reject Blog</h2>
                                             <p style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-top:0.25rem;" th:text="${blog.title}">Blog title</p>
                                         </div>
-                                        <button type="button" class="btn btn-outline btn-sm"
+                                        <button type="button" class="action-btn"
                                                 th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                                onclick="closeBlogRejectModal(this.dataset.modalId)">Close</button>
+                                                onclick="closeBlogRejectModal(this.dataset.modalId)">
+                                            <span>Close</span>
+                                        </button>
                                     </div>
                                     <form th:action="@{'/admin/blogs/reject/' + ${blog.id}}" method="post" data-loading-form>
                                         <label th:for="'reject-reason-' + ${blog.id}" style="display:block;font-size:0.8125rem;font-weight:600;color:var(--lumina-gray-700);margin-bottom:0.5rem;">Rejection reason <span style="color:var(--lumina-danger);">*</span></label>
@@ -90,8 +102,13 @@
                                         <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;">
                                             <button type="button" class="btn btn-secondary"
                                                     th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                                    onclick="closeBlogRejectModal(this.dataset.modalId)">Cancel</button>
-                                            <button type="submit" class="btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">Reject Blog</button>
+                                                    onclick="closeBlogRejectModal(this.dataset.modalId)">
+                                                <span>Cancel</span>
+                                            </button>
+                                            <button type="submit" class="btn btn-danger-soft">
+                                                <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+                                                <span>Reject Blog</span>
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
@@ -100,7 +117,8 @@
                     </tr>
                     <tr th:if="${#lists.isEmpty(blogs)}">
                         <td colspan="4" style="padding:4rem;text-align:center;color:var(--lumina-gray-400);">
-                            No blogs are waiting for review.
+                            <span class="empty-state-icon admin-table-empty-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
+                            <div>No blogs are waiting for review.</div>
                         </td>
                     </tr>
                     </tbody>

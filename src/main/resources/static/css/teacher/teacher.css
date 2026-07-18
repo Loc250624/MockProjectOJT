@@ -1153,3 +1153,263 @@ pre {
     grid-column: auto;
   }
 }
+
+.teacher-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.teacher-metric-card .metric-card-icon.success,
+.teacher-grading-summary-card .metric-card-icon.success {
+  color: var(--lumina-success);
+  background: var(--lumina-success-bg);
+  border-color: rgba(22, 163, 74, 0.16);
+}
+
+.teacher-metric-card .metric-card-icon.finance {
+  color: var(--lumina-blue-mid);
+  background: var(--lumina-surface-high);
+}
+
+.teacher-grading-summary-card .metric-card-icon.danger {
+  color: var(--lumina-danger);
+  background: var(--lumina-danger-bg);
+  border-color: rgba(220, 38, 38, 0.16);
+}
+
+.teacher-quick-card {
+  min-height: 100%;
+}
+
+.teacher-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.teacher-quick-action {
+  min-height: 116px;
+  padding: 1rem;
+  border: 1px solid var(--lumina-outline-soft);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--lumina-white), var(--lumina-surface));
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  color: var(--lumina-gray-700);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.teacher-quick-action:hover {
+  border-color: var(--lumina-blue-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.teacher-quick-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+  margin-bottom: 0.25rem;
+}
+
+.teacher-quick-title {
+  color: var(--lumina-gray-900);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.teacher-quick-helper {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.teacher-course-table {
+  min-width: 980px;
+}
+
+.teacher-course-thumb-icon {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+}
+
+.teacher-course-actions {
+  min-width: 360px;
+}
+
+.teacher-course-actions .action-btn {
+  min-height: 2.25rem;
+}
+
+.teacher-course-actions form {
+  display: inline-flex;
+}
+
+.action-btn.disabled,
+.action-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.teacher-form-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.teacher-course-form-shell {
+  max-width: 900px;
+}
+
+.teacher-course-form-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.teacher-form-section {
+  padding: 2rem;
+}
+
+.teacher-form-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--lumina-gray-200);
+}
+
+.teacher-form-section-head h2 {
+  margin: 0;
+  color: var(--lumina-gray-900);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.teacher-form-section-head p {
+  margin: 0.25rem 0 0;
+  color: var(--lumina-gray-500);
+  font-size: 0.8125rem;
+}
+
+.teacher-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 1.5rem;
+}
+
+.teacher-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  border-top: 1px solid var(--lumina-gray-200);
+  justify-content: flex-end;
+  background: var(--lumina-surface);
+}
+
+.teacher-grading-summary-card {
+  min-height: 112px;
+}
+
+.teacher-grading-summary-card .metric-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.teacher-grading-summary-card .metric-card-value {
+  display: block;
+  margin-top: 0;
+  color: var(--lumina-gray-900);
+  font-size: 1.75rem;
+}
+
+.teacher-grading-card {
+  border-color: var(--lumina-outline-soft);
+}
+
+.teacher-code-block {
+  border: 1px solid var(--lumina-gray-200);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  max-height: 360px;
+}
+
+.teacher-code-block.judge-output {
+  background: var(--lumina-gray-50);
+  color: var(--lumina-gray-800);
+}
+
+.assessment-actions.action-group {
+  justify-content: flex-start;
+}
+
+.assessment-pagination.pagination-nav {
+  justify-content: flex-end;
+}
+
+.teacher-empty-state .empty-state-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+  border-radius: var(--radius-md);
+  margin: 0 auto 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .teacher-header-actions,
+  .teacher-form-header,
+  .teacher-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-quick-actions,
+  .teacher-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-form-section,
+  .teacher-form-actions {
+    padding: 1.25rem;
+  }
+
+  .assessment-pagination.pagination-nav {
+    justify-content: stretch;
+  }
+
+  .assessment-pagination.pagination-nav .btn {
+    width: 100%;
+  }
+}

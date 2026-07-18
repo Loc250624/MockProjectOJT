@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sign in to LumiNa — your institutional academic portal for advanced learning.">
-    <title>Login — LumiNa E-Learning</title>
+    <meta name="description" content="Sign in to LumiNa to continue your learning, teaching, or administration work.">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="_csrf_parameter" th:content="${_csrf.parameterName}">
+    <title>Login - LumiNa E-Learning</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
@@ -12,151 +15,130 @@
     <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
 </head>
 <body>
+<div class="auth-page auth-page-refined">
+    <aside class="auth-hero" aria-label="LumiNa learning access">
+        <a th:href="@{/}" class="auth-hero-brand" aria-label="LumiNa home">
+            <span class="auth-logo-mark"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
+            <span>LumiNa</span>
+        </a>
 
-<div class="auth-page">
-
-    <!-- ===== LEFT: Hero Panel ===== -->
-    <div class="auth-hero">
-        <!-- Top brand mark -->
-        <div style="position:relative;z-index:1;">
-            <a href="/" class="auth-logo" style="color:white;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;">
-                <div class="logo-icon">🎓</div>
-                <span>LumiNa</span>
-            </a>
-        </div>
-
-        <!-- Center quote -->
         <div class="auth-hero-content">
-            <div class="auth-hero-badge">
-                🔒 Institutional Access
-            </div>
-            <p class="auth-hero-quote">
-                "The beautiful thing about learning is that no one can take it away from you."
+            <span class="auth-kicker">Institutional learning portal</span>
+            <h1 class="auth-hero-title">Continue where your course work left off.</h1>
+            <p class="auth-hero-copy">
+                Sign in with your LumiNa account to reach the student, teacher, or admin workspace assigned to your role.
             </p>
-            <p class="auth-hero-attr">— B.B. King</p>
+            <ul class="auth-hero-list" aria-label="Account protections">
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Spring Security session and JWT cookie flow</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Google and GitHub OAuth2 sign-in</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Role-based portal routing after sign-in</li>
+            </ul>
         </div>
+    </aside>
 
-        <!-- Bottom stat badges -->
-        <div class="auth-hero-stats" style="position:relative;z-index:1;">
-            <div class="auth-hero-stat">
-                <span class="stat-icon">🛡</span>
-                <div>
-                    <div class="stat-label">Secured by</div>
-                    <div class="stat-value">LumiNa S2</div>
-                </div>
+    <main class="auth-form-panel" aria-labelledby="login-title">
+        <div class="auth-form-shell">
+            <div class="auth-form-header">
+                <a th:href="@{/}" class="auth-logo" aria-label="LumiNa home">
+                    <span class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
+                    <span>LumiNa</span>
+                </a>
+                <p class="auth-greeting" id="login-title">Welcome back</p>
+                <p class="auth-subtext">Use the account issued for your learning role.</p>
             </div>
-            <div class="auth-hero-stat">
-                <span class="stat-icon">🌐</span>
-                <div>
-                    <div class="stat-label">Connected</div>
-                    <div class="stat-value">12k+ Nodes</div>
+
+            <nav class="auth-tabs" aria-label="Authentication">
+                <a th:href="@{/auth/login}" class="auth-tab active" aria-current="page">Login</a>
+                <a th:href="@{/auth/register}" class="auth-tab">Create Account</a>
+            </nav>
+
+            <section class="oauth-section oauth-section-primary" aria-labelledby="oauth-title">
+                <div class="divider" id="oauth-title">Sign in with</div>
+                <div class="oauth-buttons">
+                    <a th:if="${googleOAuthConfigured}" th:href="@{/oauth2/authorization/google}"
+                       class="oauth-btn oauth-btn-google" id="btn-google"
+                       data-oauth-provider="google" data-loading-label="Opening Google...">
+                        <span class="oauth-mark" aria-hidden="true">G</span>
+                        <span>Continue with Google</span>
+                    </a>
+                    <span th:unless="${googleOAuthConfigured}" class="oauth-btn oauth-btn-google oauth-btn-disabled"
+                          id="btn-google" role="link" aria-disabled="true"
+                          title="Google sign-in is not configured yet.">
+                        <span class="oauth-mark" aria-hidden="true">G</span>
+                        <span>Google unavailable</span>
+                    </span>
+                    <a th:if="${githubOAuthConfigured}" th:href="@{/oauth2/authorization/github}"
+                       class="oauth-btn oauth-btn-github" id="btn-github"
+                       data-oauth-provider="github" data-loading-label="Opening GitHub...">
+                        <span class="oauth-mark" aria-hidden="true">GH</span>
+                        <span>Continue with GitHub</span>
+                    </a>
+                    <span th:unless="${githubOAuthConfigured}" class="oauth-btn oauth-btn-github oauth-btn-disabled"
+                          id="btn-github" role="link" aria-disabled="true"
+                          title="GitHub sign-in is not configured yet.">
+                        <span class="oauth-mark" aria-hidden="true">GH</span>
+                        <span>GitHub unavailable</span>
+                    </span>
                 </div>
+                <p class="auth-oauth-note">
+                    First-time Google or GitHub sign-in asks you to add a local password before creating a student account.
+                </p>
+                <p th:unless="${oauthAnyProviderConfigured}" class="auth-oauth-note auth-oauth-note-muted" role="status">
+                    OAuth sign-in is not configured yet. Use email and password to continue.
+                </p>
+            </section>
+
+            <div th:if="${error}" class="auth-alert auth-alert-error" role="alert">
+                <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                <span th:text="${error}">Sign-in failed.</span>
             </div>
-        </div>
-    </div>
+            <div th:if="${message}" class="auth-alert auth-alert-success" role="status">
+                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                <span th:text="${message}">Success.</span>
+            </div>
 
-    <!-- ===== RIGHT: Form Panel ===== -->
-    <div class="auth-form-panel">
-
-        <!-- Brand + greeting -->
-        <div class="auth-form-header">
-            <a href="/" class="auth-logo" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;" id="logo-login-form">
-                <div class="logo-icon">🎓</div>
-                <span>LumiNa</span>
-            </a>
-            <p class="auth-greeting">Welcome Back</p>
-            <p class="auth-subtext">Please enter your academic credentials to proceed.</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="auth-tabs">
-            <a th:href="@{/auth/login}" class="auth-tab active" id="tab-login">Login</a>
-            <a th:href="@{/auth/register}" class="auth-tab" id="tab-register">Create Account</a>
-        </div>
-
-        <!-- Error / Success Messages -->
-        <div th:if="${error}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
-            ⚠ <span th:text="${error}">Invalid credentials.</span>
-        </div>
-        <div th:if="${message}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
-            ✓ <span th:text="${message}">Success.</span>
-        </div>
-
-        <!-- Login Form -->
-        <div class="auth-form-body">
-            <form id="loginForm">
+            <form id="loginForm" class="auth-form-body" novalidate>
+                <div class="auth-alert auth-alert-error auth-form-message" data-form-error role="alert" aria-live="assertive" hidden></div>
+                <div class="auth-alert auth-alert-success auth-form-message" data-form-status role="status" aria-live="polite" hidden></div>
 
                 <div class="form-group">
-                    <label class="form-label" for="email">Institutional Email</label>
+                    <label class="form-label" for="email">Email</label>
                     <div class="input-group">
-                        <span class="input-icon">@</span>
-                        <input type="email" id="email" name="email"
-                               class="form-control"
-                               placeholder="name@institution.edu"
-                               required autocomplete="email">
+                        <span class="input-icon" aria-hidden="true">@</span>
+                        <input type="email" id="email" name="email" class="form-control"
+                               placeholder="name@example.com" required autocomplete="email"
+                               aria-describedby="email-error">
                     </div>
+                    <p class="auth-field-error" id="email-error" data-error-for="email"></p>
                 </div>
 
                 <div class="form-group">
-                    <div class="form-row-split">
-                        <label class="form-label" for="password" style="margin-bottom:0;">Access Key</label>
-                        <a th:href="@{/auth/forgot-password}" class="forgot-link">Forgot Password?</a>
-                    </div>
+                    <label class="form-label" for="password">Password</label>
                     <div class="input-group">
-                        <span class="input-icon">🔑</span>
-                        <input type="password" id="password" name="password"
-                               class="form-control"
-                               placeholder="••••••••"
-                               required autocomplete="current-password">
-                        <button type="button" class="input-action" id="toggle-pw" title="Show/hide password">👁</button>
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('hide')}"></svg></span>
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Enter your password" required autocomplete="current-password"
+                               aria-describedby="password-error">
+                        <button type="button" class="input-action" data-toggle-password aria-label="Show password" aria-pressed="false">
+                            <svg th:replace="~{fragments/icons :: icon('view')}"></svg>
+                        </button>
                     </div>
+                    <p class="auth-field-error" id="password-error" data-error-for="password"></p>
                 </div>
 
-                <div class="form-check" style="margin-bottom:1rem;">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Remember this device</label>
-                </div>
-
-                <button type="submit" class="auth-submit" id="btn-login">
-                    Access Portal →
+                <button type="submit" class="auth-submit" id="btn-login" data-default-label="Access portal">
+                    <span>Access portal</span>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
                 </button>
             </form>
 
-            <!-- OAuth Section -->
-            <div class="oauth-section">
-                <div class="divider">or continue with</div>
-                <div class="oauth-buttons">
-                    <a th:href="@{/oauth2/authorization/google}" class="oauth-btn" id="btn-google">
-                        <span>G</span> Google
-                    </a>
-                    <a th:href="@{/oauth2/authorization/github}" class="oauth-btn" id="btn-github">
-                        <span>🐙</span> GitHub
-                    </a>
-                </div>
-            </div>
-
-            <!-- Security Footer -->
-            <div class="auth-security">
-                <span class="auth-security-badge"><span class="dot">✓</span> AES-256 Encrypted</span>
-                <span style="color:var(--lumina-gray-300);">•</span>
-                <span class="auth-security-badge">🌐 Global Node 04</span>
-            </div>
-
-            <p style="font-size:0.6875rem;color:var(--lumina-gray-300);text-align:center;margin-top:0.75rem;">
-                LumiNa Portal v2.4.0-Stable | © 2024 LumiNa E-Learning Systems
+            <p class="auth-helper">
+                New learners can create a student account. Teacher and admin access is assigned by an administrator.
             </p>
         </div>
-
-    </div>
+    </main>
 </div>
 
 <script th:src="@{/js/auth/auth.js}"></script>
-<script>
-    // Toggle password visibility
-    document.getElementById('toggle-pw')?.addEventListener('click', function() {
-        const pw = document.getElementById('password');
-        pw.type = pw.type === 'password' ? 'text' : 'password';
-    });
-</script>
 </body>
 </html>

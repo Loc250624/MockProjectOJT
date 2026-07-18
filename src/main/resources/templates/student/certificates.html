@@ -24,15 +24,20 @@
                     <h1 class="page-title">My Certificates</h1>
                     <p class="page-subtitle">Issued course credentials with public verification.</p>
                 </div>
-                <div class="stat-card" style="min-width:160px;">
+                <div class="stat-card student-metric-card" style="min-width:160px;">
+                    <div class="stat-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
                     <div class="stat-value" id="certificate-total">0</div>
                     <div class="stat-label">Certificates issued</div>
                 </div>
             </div>
 
             <div id="certificate-message" class="form-help" style="margin-bottom:1rem;"></div>
-            <div id="certificate-loading" class="card card-padded">Loading certificates...</div>
+            <div id="certificate-loading" class="card card-padded student-loading-state">
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                <span>Loading certificates...</span>
+            </div>
             <div id="certificate-empty" class="card card-padded" hidden>
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
                 <h2 class="card-title">No certificates yet</h2>
                 <p class="page-subtitle">Complete eligible courses and claim your certificate when the backend confirms all requirements.</p>
             </div>

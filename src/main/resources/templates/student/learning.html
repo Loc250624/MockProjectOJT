@@ -17,8 +17,14 @@
         <span>LumiNa</span>
     </a>
     <nav class="learning-header-actions" aria-label="Learning navigation">
-        <a th:href="@{/student/courses/detail(id=${learningCourse.courseId})}" class="btn btn-outline">Back to course</a>
-        <a th:href="@{/student/my-courses}" class="btn btn-primary">My Courses</a>
+        <a th:href="@{/student/courses/detail(id=${learningCourse.courseId})}" class="btn btn-outline">
+            <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+            <span>Back to course</span>
+        </a>
+        <a th:href="@{/student/my-courses}" class="btn btn-primary">
+            <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+            <span>My Courses</span>
+        </a>
         <a th:href="@{/student/dashboard}" class="learning-avatar-link" aria-label="Student dashboard">
             <span th:if="${#authentication?.principal?.user?.avatarUrl == null || #authentication?.principal?.user?.avatarUrl?.isEmpty()}"
                   class="learning-avatar-fallback"
@@ -78,6 +84,7 @@
                 <small th:text="${#lists.size(learningCourse.lessons)} + ' lessons'">0 lessons</small>
             </div>
             <div class="learning-empty" th:if="${#lists.isEmpty(learningCourse.lessons)}">
+                <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
                 <strong>No lessons yet</strong>
                 <span>This course has no published learning items.</span>
             </div>
@@ -100,6 +107,7 @@
 
         <section class="learning-content" aria-label="Active lesson">
             <div class="learning-empty" th:if="${learningCourse.activeLesson == null}">
+                <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
                 <strong>No lesson available</strong>
                 <span>There is no lesson to open for this course yet.</span>
             </div>
@@ -153,6 +161,7 @@
                 </div>
 
                 <div class="learning-video-missing" th:if="${learningCourse.activeLesson.type != null && learningCourse.activeLesson.type.name() == 'VIDEO' && !learningCourse.activeLesson.videoPlayable}">
+                    <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('videos')}"></svg></span>
                     <strong>Video unavailable</strong>
                     <span th:text="${learningCourse.activeLesson.videoUnavailableReason == null ? 'This lesson video is not available right now.' : learningCourse.activeLesson.videoUnavailableReason}">This lesson video is not available right now.</span>
                 </div>
@@ -162,6 +171,7 @@
                 </div>
 
                 <div class="learning-empty learning-empty-compact" th:if="${(learningCourse.activeLesson.sanitizedContent == null || learningCourse.activeLesson.sanitizedContent.isBlank()) && (learningCourse.activeLesson.videoUrl == null || learningCourse.activeLesson.videoUrl.isBlank())}">
+                    <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></span>
                     <strong>Lesson content missing</strong>
                     <span>This lesson does not have video or text content yet.</span>
                 </div>
@@ -176,25 +186,37 @@
                         <small id="quiz-state-label">Loading</small>
                     </div>
                     <div id="quiz-loading" class="learning-empty learning-empty-compact">
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></span>
                         <strong>Loading quiz</strong>
                         <span>Preparing your attempt.</span>
                     </div>
                     <div id="quiz-unavailable" class="learning-empty learning-empty-compact" hidden>
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></span>
                         <strong>Quiz unavailable</strong>
                         <span></span>
                     </div>
                     <form id="quiz-form" class="learning-assessment-form" hidden>
                         <div id="quiz-questions" class="learning-question-list"></div>
                         <div class="learning-assessment-actions">
-                            <button type="button" class="btn btn-outline" id="quiz-save-button">Save draft</button>
-                            <button type="submit" class="btn btn-primary" id="quiz-submit-button">Submit quiz</button>
+                            <button type="button" class="btn btn-outline" id="quiz-save-button">
+                                <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
+                                <span>Save draft</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="quiz-submit-button">
+                                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                <span>Submit quiz</span>
+                            </button>
                             <span id="quiz-message" class="learning-help"></span>
                         </div>
                     </form>
                     <div id="quiz-result" class="learning-empty learning-empty-compact" hidden>
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
                         <strong>Quiz submitted</strong>
                         <span></span>
-                        <button type="button" class="btn btn-outline" id="quiz-retake-button">Retake Quiz</button>
+                        <button type="button" class="btn btn-outline" id="quiz-retake-button">
+                            <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                            <span>Retake Quiz</span>
+                        </button>
                     </div>
                 </section>
 
@@ -208,10 +230,12 @@
                         <small id="code-state-label">Loading</small>
                     </div>
                     <div id="code-loading" class="learning-empty learning-empty-compact">
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></span>
                         <strong>Loading exercise</strong>
                         <span>Preparing your workspace.</span>
                     </div>
                     <div id="code-unavailable" class="learning-empty learning-empty-compact" hidden>
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></span>
                         <strong>Exercise unavailable</strong>
                         <span></span>
                     </div>
@@ -228,8 +252,14 @@
                         <label class="learning-code-editor-label" for="code-editor">Code</label>
                         <textarea id="code-editor" class="learning-code-editor" spellcheck="false"></textarea>
                         <div class="learning-assessment-actions">
-                            <button type="button" class="btn btn-outline" id="code-save-button">Save draft</button>
-                            <button type="submit" class="btn btn-primary" id="code-submit-button">Submit for review</button>
+                            <button type="button" class="btn btn-outline" id="code-save-button">
+                                <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
+                                <span>Save draft</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="code-submit-button">
+                                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                <span>Submit for review</span>
+                            </button>
                             <span id="code-message" class="learning-help"></span>
                         </div>
                     </form>
@@ -241,14 +271,23 @@
                         <small th:text="${#lists.size(learningCourse.activeLesson.resources)} + ' items'">0 items</small>
                     </div>
                     <div class="learning-empty learning-empty-compact" th:if="${#lists.isEmpty(learningCourse.activeLesson.resources)}">
+                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('archive')}"></svg></span>
                         <strong>No resources</strong>
                         <span>There are no downloadable materials for this lesson.</span>
                     </div>
                     <div class="learning-resource-list" th:unless="${#lists.isEmpty(learningCourse.activeLesson.resources)}">
                         <div class="learning-resource" th:each="resource : ${learningCourse.activeLesson.resources}">
                             <span th:text="${resource.name}">Resource</span>
-                            <a th:if="${resource.viewUrl != null}" th:href="${resource.viewUrl}" class="btn btn-outline">View</a>
-                            <a th:if="${resource.downloadable && resource.downloadUrl != null}" th:href="${resource.downloadUrl}" class="btn btn-primary">Download</a>
+                            <div class="action-group">
+                                <a th:if="${resource.viewUrl != null}" th:href="${resource.viewUrl}" class="btn btn-outline">
+                                    <svg th:replace="~{fragments/icons :: icon('view')}"></svg>
+                                    <span>View</span>
+                                </a>
+                                <a th:if="${resource.downloadable && resource.downloadUrl != null}" th:href="${resource.downloadUrl}" class="btn btn-primary">
+                                    <svg th:replace="~{fragments/icons :: icon('download')}"></svg>
+                                    <span>Download</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -261,7 +300,8 @@
                             th:data-course-id="${learningCourse.courseId}"
                             th:data-lesson-id="${learningCourse.activeLesson.id}"
                             th:disabled="${learningCourse.activeLesson.completed}">
-                        Mark complete
+                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                        <span>Mark complete</span>
                     </button>
                     <span id="lesson-complete-message" class="learning-help"></span>
                 </div>
@@ -270,7 +310,10 @@
                     <a class="btn btn-outline"
                        th:classappend="${learningCourse.activeLesson.previousLessonId == null ? ' disabled' : ''}"
                        th:href="${learningCourse.activeLesson.previousLessonId == null ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.previousLessonId}"
-                       th:aria-disabled="${learningCourse.activeLesson.previousLessonId == null}">Previous</a>
+                       th:aria-disabled="${learningCourse.activeLesson.previousLessonId == null}">
+                        <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+                        <span>Previous</span>
+                    </a>
                     <a class="btn btn-primary"
                        id="next-lesson-link"
                        th:data-course-id="${learningCourse.courseId}"
@@ -278,7 +321,10 @@
                        th:classappend="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true ? ' disabled' : ''}"
                        th:href="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true ? '#' : '/student/learning?courseId=' + learningCourse.courseId + '&lessonId=' + learningCourse.activeLesson.nextLessonId}"
                        th:aria-disabled="${learningCourse.activeLesson.nextLessonId == null || learningCourse.activeLesson.nextLessonAccessible != true}"
-                       th:title="${learningCourse.activeLesson.nextLessonLockReason}">Next lesson</a>
+                       th:title="${learningCourse.activeLesson.nextLessonLockReason}">
+                        <span>Next lesson</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </a>
                 </nav>
             </article>
         </section>

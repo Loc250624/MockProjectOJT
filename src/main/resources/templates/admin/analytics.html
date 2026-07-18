@@ -34,8 +34,14 @@
                             <option value="year">Year</option>
                         </select>
                     </label>
-                    <button class="btn btn-primary" type="submit">Apply</button>
-                    <button class="btn btn-secondary" type="button" data-reset-students>Reset</button>
+                    <button class="btn btn-primary" type="submit">
+                        <svg th:replace="~{fragments/icons :: icon('filter')}"></svg>
+                        <span>Apply</span>
+                    </button>
+                    <button class="btn btn-secondary" type="button" data-reset-students>
+                        <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                        <span>Reset</span>
+                    </button>
                 </form>
             </div>
 
@@ -50,30 +56,58 @@
 
             <section id="adminStudentsContent" hidden>
                 <div class="stats-grid-4">
-                    <div class="stat-card">
-                        <div class="stat-label">New Students</div>
-                        <div class="stat-value" data-students-new>0</div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">New Students</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('create')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-students-new>0</div>
                         <div class="stat-unit">students</div>
-                        <div class="stat-change stat-change-neutral">Role STUDENT by account creation date</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">Student accounts created in the selected period.</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Active Students</div>
-                        <div class="stat-value" data-students-active>0</div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Active Students</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-students-active>0</div>
                         <div class="stat-unit">students</div>
-                        <div class="stat-change stat-change-neutral">Distinct students with lesson progress activity</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">Students with learning activity in the selected period.</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Viewed Range</div>
-                        <div class="admin-method-text" data-students-period>Selected period</div>
-                        <div class="stat-change stat-change-neutral" data-students-timezone></div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Viewed Range</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg></div>
+                        </div>
+                        <div class="admin-method-text metric-card-value compact" data-students-period>Selected period</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral" data-students-timezone></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Active Definition</div>
-                        <div class="admin-method-text" data-students-method>Lesson progress activity</div>
+                    <div class="metric-card admin-metric-card admin-active-method-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Active Definition</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></div>
+                        </div>
+                        <div class="admin-method-text" data-students-method data-technical-method="">Students with learning activity in the selected period.</div>
+                        <div class="metric-card-helper admin-method-summary">
+                            <span class="info-popover admin-info-popover">
+                                <button type="button" class="icon-btn icon-only tooltip-trigger admin-info-trigger"
+                                        aria-label="How active students are calculated"
+                                        data-tooltip="Calculation details"
+                                        title="Calculation details"
+                                        aria-describedby="students-active-definition-info">
+                                    <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                                </button>
+                                <span id="students-active-definition-info" class="info-popover-panel" role="tooltip">
+                                    <span class="info-popover-title">How active students are calculated</span>
+                                    <span class="info-popover-body">Counts distinct student accounts with recorded lesson activity during the selected date range. Dates use the application's configured time zone.</span>
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 <div id="adminStudentsEmpty" class="empty-state" hidden>
+                    <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
                     <div class="empty-state-title">No student activity found.</div>
                     <div class="empty-state-desc">Try a wider date range or a different grouping.</div>
                 </div>

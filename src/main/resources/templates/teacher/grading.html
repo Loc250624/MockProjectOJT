@@ -28,21 +28,33 @@
                     <h1 class="page-title">Grading</h1>
                     <p class="page-subtitle">Review student submissions and publish assessment feedback.</p>
                 </div>
-                <a class="btn btn-secondary" th:href="@{/teacher/assignments}">View Assignments</a>
+                <a class="btn btn-secondary" th:href="@{/teacher/assignments}">
+                    <svg th:replace="~{fragments/icons :: icon('code')}"></svg>
+                    <span>View Assignments</span>
+                </a>
             </div>
 
             <section class="assessment-summary-grid" aria-label="Grading summary">
-                <article class="assessment-summary-card">
-                    <span>In queue</span>
-                    <strong th:text="${gradingSummary != null ? gradingSummary.pendingCount : 0}">0</strong>
+                <article class="metric-card assessment-summary-card teacher-grading-summary-card">
+                    <div class="metric-card-header">
+                        <span class="metric-card-label">In queue</span>
+                        <span class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('upload')}"></svg></span>
+                    </div>
+                    <strong class="metric-card-value" th:text="${gradingSummary != null ? gradingSummary.pendingCount : 0}">0</strong>
                 </article>
-                <article class="assessment-summary-card">
-                    <span>Graded</span>
-                    <strong th:text="${gradingSummary != null ? gradingSummary.gradedCount : 0}">0</strong>
+                <article class="metric-card assessment-summary-card teacher-grading-summary-card">
+                    <div class="metric-card-header">
+                        <span class="metric-card-label">Graded</span>
+                        <span class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                    </div>
+                    <strong class="metric-card-value" th:text="${gradingSummary != null ? gradingSummary.gradedCount : 0}">0</strong>
                 </article>
-                <article class="assessment-summary-card">
-                    <span>Returned / failed</span>
-                    <strong th:text="${gradingSummary != null ? gradingSummary.failedCount : 0}">0</strong>
+                <article class="metric-card assessment-summary-card teacher-grading-summary-card">
+                    <div class="metric-card-header">
+                        <span class="metric-card-label">Returned / failed</span>
+                        <span class="metric-card-icon danger"><svg th:replace="~{fragments/icons :: icon('reject')}"></svg></span>
+                    </div>
+                    <strong class="metric-card-value" th:text="${gradingSummary != null ? gradingSummary.failedCount : 0}">0</strong>
                 </article>
             </section>
 
@@ -89,7 +101,10 @@
                         <span>Search</span>
                         <input name="search" type="search" th:value="${search}" placeholder="Student, course, assignment">
                     </label>
-                    <button class="btn btn-secondary" type="submit">Filter</button>
+                    <button class="btn btn-secondary" type="submit">
+                        <svg th:replace="~{fragments/icons :: icon('filter')}"></svg>
+                        <span>Filter</span>
+                    </button>
                 </form>
 
                 <div class="assessment-list teacher-grading-list"
@@ -138,8 +153,8 @@
                             </div>
                         </dl>
 
-                        <pre th:if="${submission.codeContent != null}" th:text="${submission.codeContent}">Code</pre>
-                        <pre th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge output</pre>
+                        <pre class="teacher-code-block" th:if="${submission.codeContent != null}" th:text="${submission.codeContent}">Code</pre>
+                        <pre class="teacher-code-block judge-output" th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge output</pre>
                         <p class="teacher-submission-text"
                            th:if="${submission.contentText != null}"
                            th:text="${submission.contentText}">Submission text</p>
@@ -158,28 +173,44 @@
                                           th:text="${submission.feedback}"></textarea>
                             </label>
                             <div class="assessment-message" role="status"></div>
-                            <div class="assessment-actions">
-                                <button class="btn btn-secondary" type="submit" data-publish="false">Save Draft</button>
-                                <button class="btn btn-primary" type="submit" data-publish="true">Publish Final</button>
-                                <button class="btn btn-secondary judge-submission-btn" type="button">Run Judge</button>
+                            <div class="assessment-actions action-group">
+                                <button class="btn btn-secondary" type="submit" data-publish="false">
+                                    <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
+                                    <span>Save Draft</span>
+                                </button>
+                                <button class="btn btn-primary" type="submit" data-publish="true">
+                                    <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                                    <span>Publish Final</span>
+                                </button>
+                                <button class="btn btn-secondary judge-submission-btn" type="button">
+                                    <svg th:replace="~{fragments/icons :: icon('code')}"></svg>
+                                    <span>Run Judge</span>
+                                </button>
                             </div>
                         </form>
                     </article>
                 </div>
 
-                <nav class="assessment-pagination"
+                <nav class="assessment-pagination pagination-nav"
                      th:if="${submissionPage != null && submissionPage.totalPages > 1}">
                     <a class="btn btn-secondary"
                        th:classappend="${submissionPage.first} ? ' disabled'"
-                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number - 1},size=${submissionPage.size})}">Previous</a>
+                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number - 1},size=${submissionPage.size})}">
+                        <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+                        <span>Previous</span>
+                    </a>
                     <span th:text="${'Page ' + (submissionPage.number + 1) + ' of ' + submissionPage.totalPages}">Page</span>
                     <a class="btn btn-secondary"
                        th:classappend="${submissionPage.last} ? ' disabled'"
-                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number + 1},size=${submissionPage.size})}">Next</a>
+                       th:href="@{/teacher/grading(courseId=${selectedCourseId},assignmentId=${assignmentId},status=${selectedStatus},search=${search},page=${submissionPage.number + 1},size=${submissionPage.size})}">
+                        <span>Next</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </a>
                 </nav>
 
                 <div class="empty-state teacher-empty-state"
                      th:if="${submissions == null || #lists.isEmpty(submissions)}">
+                    <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
                     <strong>No submissions need attention.</strong>
                     <span>Submitted assignment work will appear here once students send it for review.</span>
                 </div>

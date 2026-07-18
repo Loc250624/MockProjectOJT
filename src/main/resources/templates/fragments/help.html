@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- ===== ROLE-AWARE HELP DRAWER ===== -->
+<div th:fragment="help-drawer(role, pageTitle)"
+     class="help-drawer-shell"
+     th:classappend="${' help-drawer-' + role}"
+     th:id="${'help-drawer-' + role}"
+     hidden
+     data-help-drawer
+     role="dialog"
+     aria-modal="true"
+     th:attr="aria-labelledby=${'help-title-' + role}, aria-describedby=${'help-desc-' + role}">
+    <button class="help-drawer-backdrop" type="button" data-help-close aria-label="Close Help and Guide"></button>
+    <section class="help-drawer-panel" tabindex="-1">
+        <header class="help-drawer-header">
+            <div>
+                <p class="help-eyebrow" th:text="${role == 'admin' ? 'Admin guide' : (role == 'teacher' ? 'Teacher guide' : 'Student guide')}">Portal guide</p>
+                <h2 th:id="${'help-title-' + role}">Help and Guide</h2>
+                <p th:id="${'help-desc-' + role}">
+                    <span>Current area:</span>
+                    <strong th:text="${pageTitle}">Dashboard</strong>
+                </p>
+            </div>
+            <button class="icon-btn tooltip-trigger" type="button" data-help-close
+                aria-label="Close Help and Guide" data-tooltip="Close" title="Close">
+                <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+            </button>
+        </header>
+
+        <div class="help-context-card">
+            <div class="help-context-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></div>
+            <div>
+                <h3>Contextual guide</h3>
+                <p th:if="${role == 'admin'}">Use this guide for governance tasks in the current admin area. Keep user, course, finance, and system actions within the permissions already available on the page.</p>
+                <p th:if="${role == 'teacher'}">Use this guide for instructor workflows in the current area. Start from the course context when creating lessons, assessments, videos, or progress reports.</p>
+                <p th:if="${role == 'student'}">Use this guide for learning workflows in the current area. Follow course, payment, assessment, certificate, and notification actions shown in your student portal.</p>
+            </div>
+        </div>
+
+        <div class="help-topic-tabs" role="tablist" aria-label="Quick help topics">
+            <button type="button" role="tab" aria-selected="true" data-help-topic="overview">
+                <svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg>
+                <span>Overview</span>
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-help-topic="workflow">
+                <svg th:replace="~{fragments/icons :: icon('progress')}"></svg>
+                <span>Workflow</span>
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-help-topic="support">
+                <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
+                <span>Support</span>
+            </button>
+        </div>
+
+        <div class="help-topic-panel" role="tabpanel" data-help-topic-panel="overview">
+            <h3>Quick topics</h3>
+            <ul th:if="${role == 'admin'}">
+                <li>Review users from User Management before changing status or account details.</li>
+                <li>Use Course Management for course records, approval queues, and categories.</li>
+                <li>Use Content &amp; Finance for moderation, comments, payments, and transactions.</li>
+                <li>Use System for analytics, platform settings, and your admin profile.</li>
+            </ul>
+            <ul th:if="${role == 'teacher'}">
+                <li>Use My Courses to manage course shells, lessons, videos, and related content.</li>
+                <li>Use Assignments and Grading for assessments, submissions, test cases, and feedback.</li>
+                <li>Use Analytics and Progress Report to review learning and revenue signals.</li>
+                <li>Use Profile to update instructor account details.</li>
+            </ul>
+            <ul th:if="${role == 'student'}">
+                <li>Use My Courses to continue learning and track lesson progress.</li>
+                <li>Use Browse Catalog for course discovery, checkout, and payment history.</li>
+                <li>Use Certificates, Blogs, and Notifications for account activity and learning records.</li>
+                <li>Use My Profile to update your student account details.</li>
+            </ul>
+        </div>
+
+        <div class="help-topic-panel" role="tabpanel" data-help-topic-panel="workflow" hidden>
+            <h3>Recommended flow</h3>
+            <ol th:if="${role == 'admin'}">
+                <li>Confirm the current page and filters before taking an action.</li>
+                <li>Open detail views when available instead of acting from partial table data.</li>
+                <li>Use moderation and approval controls only after reviewing the visible context.</li>
+            </ol>
+            <ol th:if="${role == 'teacher'}">
+                <li>Choose or create a course before adding lessons, videos, quizzes, or assignments.</li>
+                <li>Review submissions and grading states before publishing feedback.</li>
+                <li>Check analytics or progress reports after course activity changes.</li>
+            </ol>
+            <ol th:if="${role == 'student'}">
+                <li>Start from Dashboard or My Courses to resume active learning.</li>
+                <li>Use lesson navigation and save/submit controls shown inside each activity.</li>
+                <li>Check Notifications, Results, and Certificates after completing work.</li>
+            </ol>
+        </div>
+
+        <div class="help-topic-panel" role="tabpanel" data-help-topic-panel="support" hidden>
+            <h3>Support guidance</h3>
+            <p>No support phone number, email address, or service-level promise is configured in this application. Use the official support channel provided by your institution or platform administrator.</p>
+            <p th:if="${role == 'admin'}">For platform configuration concerns, verify settings and logs through existing admin tools before escalating.</p>
+            <p th:if="${role == 'teacher'}">For course or student access issues, collect the course name, learner account, and page where the issue occurs.</p>
+            <p th:if="${role == 'student'}">For enrollment, payment, or course access issues, keep the course name and any visible transaction or result status ready.</p>
+        </div>
+    </section>
+    <script th:src="@{/js/help.js}" defer></script>
+</div>
+
+</html>

@@ -34,8 +34,14 @@
                             <option value="year">Year</option>
                         </select>
                     </label>
-                    <button class="btn btn-primary" type="submit">Apply</button>
-                    <button class="btn btn-secondary" type="button" data-reset-revenue>Reset</button>
+                    <button class="btn btn-primary" type="submit">
+                        <svg th:replace="~{fragments/icons :: icon('filter')}"></svg>
+                        <span>Apply</span>
+                    </button>
+                    <button class="btn btn-secondary" type="button" data-reset-revenue>
+                        <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                        <span>Reset</span>
+                    </button>
                 </form>
             </div>
 
@@ -50,30 +56,43 @@
 
             <section id="adminRevenueContent" hidden>
                 <div class="stats-grid-4">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Revenue</div>
-                        <div class="stat-value" data-revenue-total>$0.00</div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Total Revenue</div>
+                            <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-revenue-total>$0.00</div>
                         <div class="stat-unit" data-revenue-currency>USD</div>
-                        <div class="stat-change stat-change-neutral">Sum of chart and table revenue</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">Sum of chart and table revenue</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Valid Transactions</div>
-                        <div class="stat-value" data-revenue-orders>0</div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Valid Transactions</div>
+                            <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('transactions')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-revenue-orders>0</div>
                         <div class="stat-unit">paid orders</div>
-                        <div class="stat-change stat-change-neutral">Distinct orders with status PAID</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">Distinct orders with status PAID</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Period</div>
-                        <div class="admin-method-text" data-revenue-period></div>
-                        <div class="stat-change stat-change-neutral" data-revenue-timezone></div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Period</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg></div>
+                        </div>
+                        <div class="admin-method-text metric-card-value compact" data-revenue-period></div>
+                        <div class="metric-card-helper stat-change stat-change-neutral" data-revenue-timezone></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Revenue Basis</div>
+                    <div class="metric-card admin-metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Revenue Basis</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></div>
+                        </div>
                         <div class="admin-method-text" data-revenue-method>Paid order items by order creation date</div>
                     </div>
                 </div>
 
                 <div id="adminRevenueEmpty" class="empty-state" hidden>
+                    <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></span>
                     <div class="empty-state-title">No paid revenue found.</div>
                     <div class="empty-state-desc">Pending, failed, cancelled, expired, and refunded orders are excluded.</div>
                 </div>

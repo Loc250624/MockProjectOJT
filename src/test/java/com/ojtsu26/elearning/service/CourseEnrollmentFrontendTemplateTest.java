@@ -78,6 +78,7 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(layout.contains("data-notification-bell=\"true\""));
         assertTrue(layout.contains("data-notification-count"));
         assertTrue(layout.contains("data-notification-popover"));
+        assertTrue(layout.contains("/js/csrf-fetch.js"));
         assertTrue(layout.contains("/js/notifications.js"));
 
         assertTrue(script.contains("/api/notifications/unread-count"));
@@ -89,5 +90,17 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(studentCenter.contains("data-notification-center-list"));
         assertTrue(studentCenter.contains("data-notification-load-more"));
         assertFalse(studentCenter.contains("Midterm Assessment Deadline Approaching"));
+    }
+
+    @Test
+    void portalFetchAddsCsrfToSameOriginMutatingRequests() throws Exception {
+        String script = Files.readString(Path.of("src/main/resources/static/js/csrf-fetch.js"));
+
+        assertTrue(script.contains("window.fetch = function"));
+        assertTrue(script.contains("POST: true"));
+        assertTrue(script.contains("PATCH: true"));
+        assertTrue(script.contains("isSameOrigin"));
+        assertTrue(script.contains("XSRF-TOKEN"));
+        assertTrue(script.contains("data-csrf-token"));
     }
 }

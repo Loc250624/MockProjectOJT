@@ -34,8 +34,14 @@
                     th:text="${iter.index + 1}"
                     th:attr="data-question-index=${iter.index}">1</button>
         </div>
-        <button class="btn btn-secondary assessment-wide" type="button" id="save-quiz-btn">Save draft</button>
-        <button class="btn btn-primary assessment-wide" type="button" id="submit-quiz-btn">Submit quiz</button>
+        <button class="btn btn-secondary assessment-wide" type="button" id="save-quiz-btn">
+            <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
+            <span>Save draft</span>
+        </button>
+        <button class="btn btn-primary assessment-wide" type="button" id="submit-quiz-btn">
+            <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+            <span>Submit quiz</span>
+        </button>
         <div class="assessment-message" id="quiz-message"></div>
     </aside>
 
@@ -60,14 +66,23 @@
             </div>
         </div>
         <div class="quiz-footer">
-            <button type="button" class="btn btn-secondary" id="previous-question-btn">Previous</button>
-            <button type="button" class="btn btn-primary" id="next-question-btn">Next</button>
+            <button type="button" class="btn btn-secondary" id="previous-question-btn">
+                <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+                <span>Previous</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="next-question-btn">
+                <span>Next</span>
+                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+            </button>
         </div>
     </section>
 </main>
 
 <main class="assessment-shell" th:unless="${quiz != null}">
-    <section class="empty-state">Quiz data is unavailable.</section>
+    <section class="empty-state">
+        <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></div>
+        <div class="empty-title">Quiz data is unavailable.</div>
+    </section>
 </main>
 
 <script th:src="@{/js/student/student.js}"></script>

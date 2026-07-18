@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -105,6 +106,7 @@ class AssessmentGradingIntegrationTest {
 
         mockMvc.perform(post("/api/student/assignments/{assignmentId}/submissions/submit", assignment.getId())
                         .with(user(principal(student)))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"contentText\":\"student solution\",\"codeLanguage\":\"Java\",\"codeContent\":\"class Solution {}\"}"))
                 .andExpect(status().isOk())
@@ -123,12 +125,14 @@ class AssessmentGradingIntegrationTest {
 
         mockMvc.perform(post("/api/teacher/submissions/{submissionId}/grade", submission.getId())
                         .with(user(principal(otherTeacher)))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\":84.50,\"feedback\":\"Other feedback\",\"publish\":true}"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/teacher/submissions/{submissionId}/grade", submission.getId())
                         .with(user(principal(teacher)))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\":84.50,\"feedback\":\"Draft feedback\",\"publish\":false}"))
                 .andExpect(status().isOk())
@@ -148,6 +152,7 @@ class AssessmentGradingIntegrationTest {
 
         mockMvc.perform(post("/api/teacher/submissions/{submissionId}/grade", submission.getId())
                         .with(user(principal(teacher)))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\":84.50,\"feedback\":\"Final feedback\",\"publish\":true}"))
                 .andExpect(status().isOk())

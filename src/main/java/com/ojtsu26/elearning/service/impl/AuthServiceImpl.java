@@ -15,6 +15,7 @@ import com.ojtsu26.elearning.security.JwtUtils;
 import com.ojtsu26.elearning.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -39,27 +41,33 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
+                .fullName(request.getFullName().trim())
+                .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.STUDENT)
                 .authProvider(AuthProvider.LOCAL)
                 .status(UserStatus.ACTIVE)
                 .build();
 
-        userRepository.save(user);
-        log.info("User registered successfully: {}", request.getEmail());
+        try {
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+        log.info("User registered successfully with role {}", user.getRole());
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(email, request.getPassword()));
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
+        String redirectUrl = resolveRedirectUrl(user.getRole());
 
         return AuthResponseDTO.builder()
                 .token(jwt)
@@ -67,25 +75,28 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
+                .redirectUrl(redirectUrl)
                 .build();
     }
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO request) {
+        String email = normalizeEmail(request.getEmail());
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
+        String redirectUrl = resolveRedirectUrl(user.getRole());
 
         // Update last login timestamp on every successful login
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        log.info("User logged in successfully: {}", request.getEmail());
+        log.info("User logged in successfully with role {}", user.getRole());
 
         return AuthResponseDTO.builder()
                 .token(jwt)
@@ -93,6 +104,23 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
+                .redirectUrl(redirectUrl)
                 .build();
+    }
+
+    private String resolveRedirectUrl(Role role) {
+        if (role == null) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Account role is not supported");
+        }
+
+        return switch (role) {
+            case STUDENT -> "/student/dashboard";
+            case TEACHER -> "/teacher/dashboard";
+            case ADMIN -> "/admin/dashboard";
+        };
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

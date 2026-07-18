@@ -22,9 +22,13 @@
 
             <div class="card card-padded">
                 <div class="student-empty-state" th:if="${#lists.isEmpty(deadlines)}">
+                    <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg></div>
                     <h3>No upcoming deadlines</h3>
                     <p>You have no upcoming assignment deadlines.</p>
-                    <a th:href="@{/student/my-courses}" class="btn btn-primary">Back to My Courses</a>
+                    <a th:href="@{/student/my-courses}" class="btn btn-primary">
+                        <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+                        <span>Back to My Courses</span>
+                    </a>
                 </div>
 
                 <div style="display:flex;flex-direction:column;gap:1rem;" th:unless="${#lists.isEmpty(deadlines)}">

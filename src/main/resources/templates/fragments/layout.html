@@ -11,21 +11,33 @@
 <!-- ===== PUBLIC HEADER ===== -->
 <header th:fragment="header(role)" class="lumina-header">
     <a th:href="@{/}" class="logo">
-        <div class="logo-icon">🎓</div>
+        <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
         <span>LumiNa</span>
     </a>
 
-    <nav>
-        <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Dashboard</a>
+    <button type="button"
+            class="public-nav-toggle"
+            aria-label="Open public navigation"
+            aria-expanded="false"
+            aria-controls="public-navigation"
+            data-public-nav-toggle>
+        <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
+    </button>
+
+    <nav id="public-navigation" data-public-nav>
+        <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Home</a>
         <a th:href="@{/public/courses}" th:classappend="${role == 'courses'} ? 'active' : ''">Courses</a>
-        <a th:href="@{/blogs}">Blog</a>
+        <a th:href="@{/blogs}" th:classappend="${role == 'blogs'} ? 'active' : ''">Blog</a>
     </nav>
 
     <div class="header-actions">
-        <div class="header-search">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">🔍</span>
-            <input type="text" placeholder="Find a course...">
-        </div>
+        <form class="header-search" th:action="@{/public/courses}" method="get" role="search">
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
+            <input type="search" name="keyword" placeholder="Find a course..." aria-label="Search courses">
+            <button type="submit" class="header-search-submit" aria-label="Search courses">
+                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+            </button>
+        </form>
 
         <!-- Anonymous Users -->
         <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
@@ -74,219 +86,264 @@
 </header>
 
 <!-- ===== ADMIN SIDEBAR ===== -->
-<aside th:fragment="sidebar-admin" class="lumina-sidebar">
+<aside th:fragment="sidebar-admin" class="lumina-sidebar sidebar-admin" data-sidebar-role="admin">
     <div class="sidebar-brand">
-        <a th:href="@{/}"
-            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}" class="sidebar-brand-link">
             <div class="sidebar-logo">
-                <div class="logo-icon">🎓</div>
+                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></div>
             </div>
-            <div>
+            <div class="sidebar-brand-copy">
                 <div class="brand-name">LumiNa Portal</div>
                 <div class="brand-sub">Admin Governance</div>
             </div>
         </a>
     </div>
 
-    <div class="sidebar-section-label">Dashboard</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/admin/dashboard}" id="nav-admin-dashboard">
-            <span class="nav-icon">📊</span> Dashboard
-        </a>
-    </nav>
+    <div class="sidebar-menu" role="navigation" aria-label="Admin navigation">
+        <div class="sidebar-section-label">Dashboard</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/admin/dashboard}" id="nav-admin-dashboard" data-nav-match="/admin/dashboard">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg></span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">User Management</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/admin/users}" id="nav-admin-users">
-            <span class="nav-icon">👥</span> All Users
-        </a>
-    </nav>
+        <div class="sidebar-section-label">User Management</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/admin/users}" id="nav-admin-users" data-nav-match="/admin/users">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('users')}"></svg></span>
+                <span class="nav-label">All Users</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Course Management</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/admin/courses}" id="nav-admin-courses">
-            <span class="nav-icon">📚</span> All Courses
-        </a>
-        <a th:href="@{/admin/courses/approval}" id="nav-admin-approval">
-            <span class="nav-icon">✅</span> Course Approval
-        </a>
-        <a th:href="@{/admin/categories}" id="nav-admin-categories">
-            <span class="nav-icon">🏷️</span> Categories
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Course Management</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/admin/courses}" id="nav-admin-courses" data-nav-match="/admin/courses">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
+                <span class="nav-label">All Courses</span>
+            </a>
+            <a th:href="@{/admin/courses/approval}" id="nav-admin-approval" data-nav-match="/admin/courses/approval">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                <span class="nav-label">Course Approval</span>
+            </a>
+            <a th:href="@{/admin/categories}" id="nav-admin-categories" data-nav-match="/admin/categories">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('categories')}"></svg></span>
+                <span class="nav-label">Categories</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Content &amp; Finance</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/admin/blogs/moderation}" id="nav-admin-blogs">
-            <span class="nav-icon">📝</span> Blog Moderation
-        </a>
-        <a th:href="@{/admin/comments}" id="nav-admin-comments">
-            <span class="nav-icon">C</span> Comments
-        </a>
-        <a th:href="@{/admin/payments}" id="nav-admin-payments">
-            <span class="nav-icon">💳</span> Payments
-        </a>
-        <a th:href="@{/admin/transactions}" id="nav-admin-transactions">
-            <span class="nav-icon">📋</span> Transactions
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Content &amp; Finance</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/admin/blogs/moderation}" id="nav-admin-blogs" data-nav-match="/admin/blogs,/admin/blogs/moderation">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
+                <span class="nav-label">Blog Moderation</span>
+            </a>
+            <a th:href="@{/admin/comments}" id="nav-admin-comments" data-nav-match="/admin/comments">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('comments')}"></svg></span>
+                <span class="nav-label">Comments</span>
+            </a>
+            <a th:href="@{/admin/payments}" id="nav-admin-payments" data-nav-match="/admin/payments,/admin/refunds">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></span>
+                <span class="nav-label">Payments</span>
+            </a>
+            <a th:href="@{/admin/transactions}" id="nav-admin-transactions" data-nav-match="/admin/transactions">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('transactions')}"></svg></span>
+                <span class="nav-label">Transactions</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">System</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/admin/analytics}" id="nav-admin-reports">
-            <span class="nav-icon">📈</span> Analytics
-        </a>
-        <a th:href="@{/admin/settings}" id="nav-admin-settings">
-            <span class="nav-icon">⚙</span> Settings
-        </a>
-        <a th:href="@{/admin/profile}" id="nav-admin-profile">
-            <span class="nav-icon">👤</span> Profile
-        </a>
-    </nav>
+        <div class="sidebar-section-label">System</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/admin/analytics}" id="nav-admin-reports" data-nav-match="/admin/analytics,/admin/statistics/students,/admin/reports/revenue">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('analytics')}"></svg></span>
+                <span class="nav-label">Analytics</span>
+            </a>
+            <a th:href="@{/admin/settings}" id="nav-admin-settings" data-nav-match="/admin/settings,/admin/system-settings">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></span>
+                <span class="nav-label">Settings</span>
+            </a>
+            <a th:href="@{/admin/profile}" id="nav-admin-profile" data-nav-match="/admin/profile">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('profile')}"></svg></span>
+                <span class="nav-label">Profile</span>
+            </a>
+        </nav>
+    </div>
 
-    <div class="sidebar-divider"></div>
-
-    <div class="sidebar-support-links">
-        <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-            <span class="nav-icon">🚪</span> Sign Out
-        </a>
+    <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-support-links">
+            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
+                <span class="nav-label">Sign Out</span>
+            </a>
+        </div>
     </div>
 </aside>
 
 <!-- ===== TEACHER SIDEBAR ===== -->
-<aside th:fragment="sidebar-teacher" class="lumina-sidebar">
+<aside th:fragment="sidebar-teacher" class="lumina-sidebar sidebar-teacher" data-sidebar-role="teacher">
     <div class="sidebar-brand">
-        <a th:href="@{/}"
-            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}" class="sidebar-brand-link">
             <div class="sidebar-logo">
-                <div class="logo-icon">🎓</div>
+                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
             </div>
-            <div>
+            <div class="sidebar-brand-copy">
                 <div class="brand-name">LumiNa Portal</div>
                 <div class="brand-sub">Instructor Portal</div>
             </div>
         </a>
     </div>
 
-    <div class="sidebar-section-label">Overview</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/teacher/dashboard}" id="nav-teacher-overview">
-            <span class="nav-icon">📊</span> Dashboard
-        </a>
-    </nav>
+    <div class="sidebar-menu" role="navigation" aria-label="Teacher navigation">
+        <div class="sidebar-section-label">Overview</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/teacher/dashboard}" id="nav-teacher-overview" data-nav-match="/teacher/dashboard,/instructor/dashboard">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg></span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Course Builder</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/teacher/courses}" id="nav-teacher-courses">
-            <span class="nav-icon">📚</span> My Courses
-        </a>
-        <a th:href="@{/teacher/courses/create}" id="nav-teacher-new-course">
-            <span class="nav-icon">➕</span> Create Course
-        </a>
-        <a th:href="@{/teacher/roadmap}" id="nav-teacher-roadmap">
-            <span class="nav-icon">🗺️</span> Roadmaps
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Course Builder</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/teacher/courses}" id="nav-teacher-courses" data-nav-match="/teacher/courses,/teacher/lessons,/teacher/videos">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
+                <span class="nav-label">My Courses</span>
+            </a>
+            <a th:href="@{/teacher/courses/create}" id="nav-teacher-new-course" data-nav-match="/teacher/courses/create,/teacher/course-form">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('create')}"></svg></span>
+                <span class="nav-label">Create Course</span>
+            </a>
+            <a th:href="@{/teacher/roadmap}" id="nav-teacher-roadmap" data-nav-match="/teacher/roadmap">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
+                <span class="nav-label">Roadmaps</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Students &amp; Content</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/teacher/grading}" id="nav-teacher-grading">
-            <span class="nav-icon">⭐</span> Grading
-        </a>
-        <a th:href="@{/teacher/assignments}" id="nav-teacher-assignments">
-            <span class="nav-icon">📋</span> Assignments
-        </a>
-        <a th:href="@{/teacher/blogs}" id="nav-teacher-blog">
-            <span class="nav-icon">📝</span> Blog
-        </a>
-        <a th:href="@{/teacher/analytics}" id="nav-teacher-analytics">
-            <span class="nav-icon">📈</span> Analytics
-        </a>
-        <a th:href="@{/teacher/reports/progress}" id="nav-teacher-progress-report">
-            <span class="nav-icon">📊</span> Progress Report
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Students &amp; Content</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/teacher/grading}" id="nav-teacher-grading" data-nav-match="/teacher/grading,/teacher/students">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                <span class="nav-label">Grading</span>
+            </a>
+            <a th:href="@{/teacher/assignments}" id="nav-teacher-assignments" data-nav-match="/teacher/assignments,/teacher/quizzes,/teacher/testcases">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></span>
+                <span class="nav-label">Assignments</span>
+            </a>
+            <a th:href="@{/teacher/blogs}" id="nav-teacher-blog" data-nav-match="/teacher/blogs">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
+                <span class="nav-label">Blog</span>
+            </a>
+            <a th:href="@{/teacher/analytics}" id="nav-teacher-analytics" data-nav-match="/teacher/analytics,/instructor/analytics">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('analytics')}"></svg></span>
+                <span class="nav-label">Analytics</span>
+            </a>
+            <a th:href="@{/teacher/reports/progress}" id="nav-teacher-progress-report" data-nav-match="/teacher/reports/progress">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></span>
+                <span class="nav-label">Progress Report</span>
+            </a>
+        </nav>
+    </div>
 
-    <div class="sidebar-divider"></div>
-
-    <div class="sidebar-support-links">
-        <a th:href="@{/teacher/profile}" id="nav-teacher-profile">
-            <span class="nav-icon">👤</span> Profile
-        </a>
-        <a th:href="@{/teacher/profile}" id="nav-teacher-settings" style="display:none;">
-            <span class="nav-icon">⚙</span> Settings
-        </a>
-        <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-            <span class="nav-icon">🚪</span> Sign Out
-        </a>
+    <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-support-links">
+            <a th:href="@{/teacher/profile}" id="nav-teacher-profile" data-nav-match="/teacher/profile">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('profile')}"></svg></span>
+                <span class="nav-label">Profile</span>
+            </a>
+            <a th:href="@{/teacher/profile}" id="nav-teacher-settings" data-nav-match="/teacher/profile" style="display:none;">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></span>
+                <span class="nav-label">Settings</span>
+            </a>
+            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
+                <span class="nav-label">Sign Out</span>
+            </a>
+        </div>
     </div>
 </aside>
 
 <!-- ===== STUDENT SIDEBAR ===== -->
-<aside th:fragment="sidebar-student" class="lumina-sidebar">
+<aside th:fragment="sidebar-student" class="lumina-sidebar sidebar-student" data-sidebar-role="student">
     <div class="sidebar-brand">
-        <a th:href="@{/}"
-            style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; width: 100%;">
+        <a th:href="@{/}" class="sidebar-brand-link">
             <div class="sidebar-logo">
-                <div class="logo-icon">🎓</div>
+                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
             </div>
-            <div>
+            <div class="sidebar-brand-copy">
                 <div class="brand-name">Student Portal</div>
                 <div class="brand-sub">Academic Excellence</div>
             </div>
         </a>
     </div>
 
-    <div class="sidebar-section-label">Home</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/student/dashboard}" id="nav-student-dashboard">
-            <span class="nav-icon">📊</span> Dashboard
-        </a>
-    </nav>
+    <div class="sidebar-menu" role="navigation" aria-label="Student navigation">
+        <div class="sidebar-section-label">Home</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/student/dashboard}" id="nav-student-dashboard" data-nav-match="/student/dashboard,/student/deadlines">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg></span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Learning</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/student/my-courses}" id="nav-student-courses">
-            <span class="nav-icon">🎓</span> My Courses
-        </a>
-        <a th:href="@{/student/courses}" id="nav-student-marketplace">
-            <span class="nav-icon">🛒</span> Browse Catalog
-        </a>
-        <a th:href="@{/public/courses}" id="nav-student-public-catalog">
-            <span class="nav-icon">🌐</span> Public Catalog
-        </a>
-        <a th:href="@{/student/dashboard}" id="nav-student-assignments" style="display:none;">
-            <span class="nav-icon">📋</span> Assignments
-        </a>
-        <a th:href="@{/student/certificates}" id="nav-student-certificates">
-            <span class="nav-icon">🏆</span> Certificates
-        </a>
-        <a th:href="@{/student/blogs}" id="nav-student-blogs">
-            <span class="nav-icon">B</span> My Blogs
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Learning</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/student/my-courses}" id="nav-student-courses" data-nav-match="/student/my-courses,/student/learning,/student/lessons,/student/quiz,/student/results,/student/quizzes,/student/code-assignment,/student/assignments,/student/submissions,/student/courses/*/quizzes">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
+                <span class="nav-label">My Courses</span>
+            </a>
+            <a th:href="@{/student/courses}" id="nav-student-marketplace" data-nav-match="=/student/courses,/student/courses/detail,/student/checkout,/student/payment-result,/student/payment-history">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
+                <span class="nav-label">Browse Catalog</span>
+            </a>
+            <a th:href="@{/public/courses}" id="nav-student-public-catalog" data-nav-match="/public/courses,/courses">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('view')}"></svg></span>
+                <span class="nav-label">Public Catalog</span>
+            </a>
+            <a th:href="@{/student/dashboard}" id="nav-student-assignments" data-nav-match="/student/dashboard" style="display:none;">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
+                <span class="nav-label">Assignments</span>
+            </a>
+            <a th:href="@{/student/certificates}" id="nav-student-certificates" data-nav-match="/student/certificates">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                <span class="nav-label">Certificates</span>
+            </a>
+            <a th:href="@{/student/blogs}" id="nav-student-blogs" data-nav-match="/student/blogs">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
+                <span class="nav-label">My Blogs</span>
+            </a>
+        </nav>
 
-    <div class="sidebar-section-label">Account</div>
-    <nav class="sidebar-nav">
-        <a th:href="@{/student/profile}" id="nav-student-profile">
-            <span class="nav-icon">👤</span> My Profile
-        </a>
-        <a th:href="@{/student/notifications}" id="nav-student-notifications">
-            <span class="nav-icon">🔔</span> Notifications
-        </a>
-    </nav>
+        <div class="sidebar-section-label">Account</div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/student/profile}" id="nav-student-profile" data-nav-match="/student/profile">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('profile')}"></svg></span>
+                <span class="nav-label">My Profile</span>
+            </a>
+            <a th:href="@{/student/notifications}" id="nav-student-notifications" data-nav-match="/student/notifications">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
+                <span class="nav-label">Notifications</span>
+            </a>
+        </nav>
+    </div>
 
-    <div class="sidebar-divider"></div>
-
-    <div class="sidebar-support-links">
-        <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-            <span class="nav-icon">🚪</span> Sign Out
-        </a>
+    <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-support-links">
+            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
+                <span class="nav-label">Sign Out</span>
+            </a>
+        </div>
     </div>
 </aside>
 
 <!-- ===== PORTAL TOPBAR (Admin) ===== -->
 <div th:fragment="topbar-admin(pageTitle)" class="portal-topbar">
+    <button class="icon-btn sidebar-mobile-toggle tooltip-trigger" type="button" aria-label="Open navigation"
+        aria-expanded="false" data-sidebar-toggle data-tooltip="Navigation" title="Navigation">
+        <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
+    </button>
     <div class="breadcrumb">
         <span>Admin Portal</span>
         <span class="sep">›</span>
@@ -294,15 +351,15 @@
     </div>
     <div class="topbar-search">
         <div class="search-input-wrap">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">🔍</span>
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
             <input type="text" placeholder="Global Administrative Search...">
         </div>
     </div>
     <div class="topbar-right">
         <span class="badge badge-success badge-dot" style="font-size:0.75rem;"> System Healthy</span>
-        <button class="icon-btn notification-bell" id="btn-topbar-notif" type="button" data-notification-bell="true"
-            aria-label="Open notifications" aria-expanded="false">
-            <span aria-hidden="true">🔔</span>
+        <button class="icon-btn notification-bell tooltip-trigger" id="btn-topbar-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
+            <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
         <div class="notification-popover" data-notification-popover hidden>
@@ -315,7 +372,12 @@
             </div>
             <a class="notification-view-all" href="/admin/dashboard">Open dashboard</a>
         </div>
-        <button class="icon-btn" id="btn-topbar-help">?</button>
+        <button class="help-trigger tooltip-trigger" id="btn-topbar-help" type="button"
+            aria-label="Open Admin Help and Guide" aria-haspopup="dialog" aria-expanded="false"
+            aria-controls="help-drawer-admin" data-help-trigger data-tooltip="Help and Guide" title="Help and Guide">
+            <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
+            <span>Help</span>
+        </button>
         <a class="user-chip" th:href="@{/admin/profile}" style="text-decoration:none;">
             <div class="user-info">
                 <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Admin'}">Admin</div>
@@ -329,10 +391,15 @@
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
+    <div th:replace="~{fragments/help :: help-drawer('admin', ${pageTitle})}"></div>
 </div>
 
 <!-- ===== PORTAL TOPBAR (Teacher) ===== -->
 <div th:fragment="topbar-teacher(pageTitle)" class="portal-topbar">
+    <button class="icon-btn sidebar-mobile-toggle tooltip-trigger" type="button" aria-label="Open navigation"
+        aria-expanded="false" data-sidebar-toggle data-tooltip="Navigation" title="Navigation">
+        <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
+    </button>
     <div class="breadcrumb">
         <span>Teacher Portal</span>
         <span class="sep">›</span>
@@ -340,14 +407,14 @@
     </div>
     <div class="topbar-search">
         <div class="search-input-wrap">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">🔍</span>
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
             <input type="text" placeholder="Search courses, students, or resources...">
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn notification-bell" id="btn-teacher-notif" type="button" data-notification-bell="true"
-            aria-label="Open notifications" aria-expanded="false">
-            <span aria-hidden="true">🔔</span>
+        <button class="icon-btn notification-bell tooltip-trigger" id="btn-teacher-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
+            <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
         <div class="notification-popover" data-notification-popover hidden>
@@ -360,7 +427,12 @@
             </div>
             <a class="notification-view-all" href="/teacher/dashboard">Open dashboard</a>
         </div>
-        <button class="icon-btn" id="btn-teacher-help">?</button>
+        <button class="help-trigger tooltip-trigger" id="btn-teacher-help" type="button"
+            aria-label="Open Teacher Help and Guide" aria-haspopup="dialog" aria-expanded="false"
+            aria-controls="help-drawer-teacher" data-help-trigger data-tooltip="Help and Guide" title="Help and Guide">
+            <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
+            <span>Help</span>
+        </button>
         <a class="user-chip" th:href="@{/teacher/profile}" style="text-decoration:none;">
             <div class="user-info">
                 <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Instructor'}">
@@ -375,10 +447,15 @@
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
+    <div th:replace="~{fragments/help :: help-drawer('teacher', ${pageTitle})}"></div>
 </div>
 
 <!-- ===== PORTAL TOPBAR (Student) ===== -->
 <div th:fragment="topbar-student(pageTitle)" class="portal-topbar">
+    <button class="icon-btn sidebar-mobile-toggle tooltip-trigger" type="button" aria-label="Open navigation"
+        aria-expanded="false" data-sidebar-toggle data-tooltip="Navigation" title="Navigation">
+        <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
+    </button>
     <div class="breadcrumb">
         <a th:href="@{/student/dashboard}">Student Portal</a>
         <span class="sep">›</span>
@@ -386,14 +463,14 @@
     </div>
     <div class="topbar-search">
         <div class="search-input-wrap">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">🔍</span>
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
             <input type="text" placeholder="Search courses, files, grades...">
         </div>
     </div>
     <div class="topbar-right">
-        <button class="icon-btn notification-bell" id="btn-student-notif" type="button" data-notification-bell="true"
-            aria-label="Open notifications" aria-expanded="false">
-            <span aria-hidden="true">🔔</span>
+        <button class="icon-btn notification-bell tooltip-trigger" id="btn-student-notif" type="button" data-notification-bell="true"
+            aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
+            <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
             <span class="notification-count" data-notification-count hidden>0</span>
         </button>
         <div class="notification-popover" data-notification-popover hidden>
@@ -406,7 +483,12 @@
             </div>
             <a class="notification-view-all" href="/student/notifications">View all</a>
         </div>
-        <button class="icon-btn" id="btn-student-help">?</button>
+        <button class="help-trigger tooltip-trigger" id="btn-student-help" type="button"
+            aria-label="Open Student Help and Guide" aria-haspopup="dialog" aria-expanded="false"
+            aria-controls="help-drawer-student" data-help-trigger data-tooltip="Help and Guide" title="Help and Guide">
+            <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
+            <span>Help</span>
+        </button>
         <a class="user-chip" th:href="@{/student/profile}" style="text-decoration:none;">
             <div class="user-info">
                 <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Student'}">Student
@@ -421,24 +503,31 @@
         </a>
     </div>
     <script th:src="@{/js/notifications.js}" defer></script>
+    <div th:replace="~{fragments/help :: help-drawer('student', ${pageTitle})}"></div>
 </div>
 
 <!-- ===== FOOTER ===== -->
 <footer th:fragment="footer" class="lumina-footer">
     <div>
         <span class="footer-brand">LumiNa</span>
-        <span class="footer-copy"> | © 2024 LumiNa E-Learning Systems. All rights reserved.</span>
+        <span class="footer-copy"> | LumiNa Academic Systems</span>
     </div>
     <div class="footer-links">
-        <a th:href="@{/privacy}">Privacy Policy</a>
-        <a th:href="@{/terms}">Terms of Service</a>
-        <a th:href="@{/accessibility}">Accessibility</a>
-        <a th:href="@{/contact}">Contact</a>
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/public/courses}">Courses</a>
+        <a th:href="@{/blogs}">Blog</a>
+        <a sec:authorize="isAnonymous()" th:href="@{/auth/login}">Login</a>
+        <a sec:authorize="isAnonymous()" th:href="@{/auth/register}">Register</a>
     </div>
 </footer>
 
 <!-- ===== PORTAL FOOTER ===== -->
 <div th:fragment="portal-footer" class="portal-footer">
+    <span hidden
+          data-csrf-token
+          th:data-csrf-token="${_csrf.token}"
+          th:data-csrf-header="${_csrf.headerName}"
+          th:data-csrf-parameter="${_csrf.parameterName}"></span>
     <div>
         <div class="footer-brand">LumiNa</div>
         <div class="footer-copy">© 2024 LumiNa Academic Systems. All Rights Reserved.</div>
@@ -449,6 +538,7 @@
         <a href="#">Institutional Access</a>
         <a href="#">Support</a>
     </div>
+    <script th:src="@{/js/csrf-fetch.js}"></script>
     <script th:src="@{/js/auth/auth.js}"></script>
 </div>
 

@@ -70,16 +70,18 @@
 
                 <!-- Success State -->
                 <th:block th:if="${paymentSuccess}">
-                    <div class="result-icon">✅</div>
+                    <div class="result-icon success"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
                     <h1 class="result-title success">Payment Successful!</h1>
                     <p class="result-message" th:text="${paymentMessage}">Your enrollment has been activated.</p>
                     <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
                     <div class="action-buttons">
                         <a th:href="@{/student/my-courses}" class="btn btn-primary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
-                            🎓 Go to My Courses
+                            <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+                            <span>Go to My Courses</span>
                         </a>
                         <a th:href="@{/student/dashboard}" class="btn btn-secondary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
-                            Dashboard
+                            <svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg>
+                            <span>Dashboard</span>
                         </a>
                     </div>
                     <p class="redirect-notice">
@@ -89,16 +91,18 @@
 
                 <!-- Failure / Cancelled State -->
                 <th:block th:unless="${paymentSuccess}">
-                    <div class="result-icon">❌</div>
+                    <div class="result-icon failure"><svg th:replace="~{fragments/icons :: icon('reject')}"></svg></div>
                     <h1 class="result-title failure">Payment Failed</h1>
                     <p class="result-message" th:text="${paymentMessage}">Your payment was not completed.</p>
                     <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
                     <div class="action-buttons">
                         <a th:href="@{/student/courses}" class="btn btn-primary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
-                            🔍 Browse Courses
+                            <svg th:replace="~{fragments/icons :: icon('search')}"></svg>
+                            <span>Browse Courses</span>
                         </a>
                         <a th:href="@{/student/dashboard}" class="btn btn-secondary" style="text-decoration:none; border-radius:8px; padding: 0.75rem 1.5rem;">
-                            Dashboard
+                            <svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg>
+                            <span>Dashboard</span>
                         </a>
                     </div>
                 </th:block>

@@ -57,16 +57,22 @@
                             Last lesson: <span th:text="${course.lastAccessedLessonTitle}" style="color: #0f172a; font-weight: 600;">Introduction</span>
                         </p>
                     </div>
-                    <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary student-course-action" style="margin-top: 0.5rem; display: block; text-align: center; text-decoration: none; border-radius: 6px;">Continue Learning</a>
+                    <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary student-course-action" style="margin-top: 0.5rem; display: block; text-align: center; text-decoration: none; border-radius: 6px;">
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                        <span>Continue Learning</span>
+                    </a>
                 </div>
             </div>
 
             <!-- Empty state -->
             <div th:if="${#lists.isEmpty(courseCards)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid #eee; margin-top:2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">🎓</div>
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">No Enrolled Courses</h3>
                 <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.875rem;">You haven't enrolled in any courses yet. Explore our catalog to get started!</p>
-                <a th:href="@{/student/courses}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; border-radius: 6px;">Browse Catalog</a>
+                <a th:href="@{/student/courses}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; border-radius: 6px;">
+                    <svg th:replace="~{fragments/icons :: icon('search')}"></svg>
+                    <span>Browse Catalog</span>
+                </a>
             </div>
 
         </main>

@@ -43,7 +43,12 @@ public class PublicController {
     private final BlogCommentService blogCommentService;
 
     @GetMapping("/")
-    public String homePage() {
+    public String homePage(Model model) {
+        List<CourseResponseDTO> featuredCourses = courseService.findApprovedCourses(null, null, "newest")
+                .stream()
+                .limit(3)
+                .toList();
+        model.addAttribute("featuredCourses", featuredCourses);
         return "public/home";
     }
 

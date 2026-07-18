@@ -198,7 +198,7 @@
 .admin-analytics-chart {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(44px, 1fr);
+  grid-auto-columns: minmax(52px, 1fr);
   align-items: end;
   gap: 0.7rem;
   min-height: 220px;
@@ -259,6 +259,23 @@
   background: var(--lumina-danger-bg);
 }
 
+.admin-chart-state-empty::before,
+.admin-chart-state-error::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--lumina-blue-pale);
+  border: 1px solid rgba(0, 80, 203, 0.12);
+}
+
+.admin-chart-state-error::before {
+  background: var(--lumina-danger-bg);
+  border-color: rgba(220, 38, 38, 0.18);
+}
+
 .admin-analytics-chart-tall {
   min-height: 300px;
 }
@@ -268,7 +285,7 @@
   grid-template-rows: 1fr auto;
   align-items: end;
   gap: 0.55rem;
-  min-width: 44px;
+  min-width: 52px;
   height: 220px;
 }
 
@@ -310,7 +327,10 @@
   color: var(--lumina-gray-500);
   font-size: 0.68rem;
   font-weight: 700;
+  max-width: 5.5rem;
+  overflow: hidden;
   text-align: center;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -804,5 +824,180 @@
 
   .transaction-detail-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.admin-metric-card {
+  min-width: 0;
+}
+
+.admin-metric-card .metric-card-icon.success {
+  color: var(--lumina-success);
+  background: var(--lumina-success-bg);
+}
+
+.admin-metric-card .metric-card-icon.finance {
+  color: var(--lumina-blue-mid);
+  background: var(--lumina-surface-high);
+}
+
+.admin-metric-card .metric-card-value.compact,
+.admin-metric-card .admin-method-text.metric-card-value {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.admin-dashboard-page [data-overview-money],
+.admin-revenue-report-page [data-revenue-total] {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.admin-metric-card .stat-unit {
+  color: var(--lumina-gray-600);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: -0.25rem;
+}
+
+.admin-active-method-card {
+  position: relative;
+}
+
+.admin-method-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.admin-info-popover .info-popover-panel {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.25rem);
+  transition: opacity var(--transition), transform var(--transition), visibility var(--transition);
+  visibility: hidden;
+}
+
+.admin-info-popover:hover .info-popover-panel,
+.admin-info-popover:focus-within .info-popover-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.admin-info-trigger {
+  width: var(--btn-height);
+  min-width: var(--btn-height);
+  height: var(--btn-height);
+  min-height: var(--btn-height);
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+}
+
+.admin-card-link {
+  color: var(--lumina-blue);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-card-link:hover {
+  text-decoration: underline;
+}
+
+.admin-filter-count {
+  margin-left: 0.3rem;
+  min-height: 1.25rem;
+  padding: 0.1rem 0.45rem;
+}
+
+.admin-course-actions,
+.admin-blog-actions,
+.admin-category-actions {
+  justify-content: flex-end;
+}
+
+.admin-course-actions form,
+.admin-blog-actions form,
+.admin-category-actions form {
+  display: inline-flex;
+}
+
+.admin-plain-excerpt {
+  color: var(--lumina-gray-500);
+  display: -webkit-box;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+  max-width: 38rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-comment-status {
+  gap: 0.35rem;
+}
+
+.admin-comment-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-comment-actions details {
+  max-width: 20rem;
+}
+
+.admin-comment-actions details form {
+  margin-top: 0.5rem;
+}
+
+.admin-comment-actions summary.action-btn {
+  width: max-content;
+  list-style: none;
+}
+
+.admin-comment-actions summary.action-btn::-webkit-details-marker {
+  display: none;
+}
+
+.admin-comment-status-terminal {
+  width: max-content;
+}
+
+.admin-table-empty-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+  border-radius: var(--radius-md);
+  margin: 0 auto 0.5rem;
+}
+
+.admin-category-table {
+  min-width: 720px;
+}
+
+@media (max-width: 760px) {
+  .admin-course-actions,
+  .admin-blog-actions,
+  .admin-category-actions {
+    justify-content: flex-start;
+  }
+
+  .admin-info-popover .info-popover-panel {
+    left: 0;
+    right: auto;
+  }
+
+  .admin-comment-actions details {
+    max-width: none;
   }
 }

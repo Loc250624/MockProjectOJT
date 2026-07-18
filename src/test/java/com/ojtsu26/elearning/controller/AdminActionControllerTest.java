@@ -51,6 +51,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -223,7 +224,8 @@ class AdminActionControllerTest {
         User target = findByEmail("alice.student@example.com");
 
         mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(target.getId()))
                 .andExpect(jsonPath("$.data.status").value("BLOCKED"));
@@ -236,7 +238,8 @@ class AdminActionControllerTest {
         User target = findByEmail("david.blocked@example.com");
 
         mockMvc.perform(patch("/api/admin/users/{id}/unblock", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(target.getId()))
                 .andExpect(jsonPath("$.data.status").value("ACTIVE"));
@@ -247,7 +250,8 @@ class AdminActionControllerTest {
     @Test
     void blockMissingUserReturnsNotFound() throws Exception {
         mockMvc.perform(patch("/api/admin/users/{id}/block", 999_999)
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("User does not exist"));
     }
@@ -257,7 +261,8 @@ class AdminActionControllerTest {
         User admin = findByEmail("carla.admin@example.com");
 
         mockMvc.perform(patch("/api/admin/users/{id}/block", admin.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Admin cannot modify their own account"));
 
@@ -269,7 +274,8 @@ class AdminActionControllerTest {
         User target = findByEmail("david.blocked@example.com");
 
         mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("User is already blocked"));
     }
@@ -279,7 +285,8 @@ class AdminActionControllerTest {
         User target = findByEmail("alice.student@example.com");
 
         mockMvc.perform(patch("/api/admin/users/{id}/unblock", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("User is not blocked"));
     }
@@ -289,7 +296,8 @@ class AdminActionControllerTest {
     void studentCannotBlockUser() throws Exception {
         User target = findByEmail("alice.student@example.com");
 
-        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId()))
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
@@ -298,16 +306,27 @@ class AdminActionControllerTest {
     void teacherCannotBlockUser() throws Exception {
         User target = findByEmail("alice.student@example.com");
 
-        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId()))
+        mockMvc.perform(patch("/api/admin/users/{id}/block", target.getId())
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void blockedUserCannotLoginLocally() throws Exception {
         mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
                         .contentType("application/json")
                         .content("{\"email\":\"frank.teacher@example.com\",\"password\":\"secret-hash\"}"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(cookie().doesNotExist("jwt_token"));
+    }
+
+    @Test
+    void localLoginWithoutCsrfIsRejectedBeforeAuthentication() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("{\"email\":\"frank.teacher@example.com\",\"password\":\"secret-hash\"}"))
+                .andExpect(status().isForbidden())
                 .andExpect(cookie().doesNotExist("jwt_token"));
     }
 
@@ -333,7 +352,7 @@ class AdminActionControllerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         OAuth2User principal = new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority("ROLE_STUDENT")),
-                Map.of("email", blocked.getEmail(), "name", blocked.getFullName()),
+                Map.of("email", blocked.getEmail(), "name", blocked.getFullName(), "sub", "blocked-google-sub"),
                 "email");
         OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                 principal,
@@ -353,7 +372,8 @@ class AdminActionControllerTest {
         User target = findByEmail("alice.student@example.com");
 
         mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User account has been soft-deleted. Historical data remains preserved."))
                 .andExpect(jsonPath("$.data.id").value(target.getId()))
@@ -367,7 +387,8 @@ class AdminActionControllerTest {
         User target = findByEmail("david.blocked@example.com");
 
         mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(target.getId()))
                 .andExpect(jsonPath("$.data.status").value("DELETED"));
@@ -380,7 +401,8 @@ class AdminActionControllerTest {
         User admin = findByEmail("carla.admin@example.com");
 
         mockMvc.perform(delete("/api/admin/users/{id}", admin.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Admin cannot soft-delete their own account"));
 
@@ -390,7 +412,8 @@ class AdminActionControllerTest {
     @Test
     void softDeleteMissingUserReturnsNotFound() throws Exception {
         mockMvc.perform(delete("/api/admin/users/{id}", 999_999)
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("User does not exist"));
     }
@@ -401,12 +424,14 @@ class AdminActionControllerTest {
         long countBefore = userRepository.count();
 
         mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("DELETED"));
 
         mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("DELETED"));
 
@@ -447,7 +472,8 @@ class AdminActionControllerTest {
                 .build());
 
         mockMvc.perform(delete("/api/admin/users/{id}", student.getId())
-                        .with(adminPrincipal()))
+                        .with(adminPrincipal())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("DELETED"));
 
@@ -465,6 +491,7 @@ class AdminActionControllerTest {
         userRepository.save(target);
 
         mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
                         .contentType("application/json")
                         .content("{\"email\":\"alice.student@example.com\",\"password\":\"secret-hash\"}"))
                 .andExpect(status().isUnauthorized())
@@ -493,7 +520,7 @@ class AdminActionControllerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         OAuth2User principal = new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority("ROLE_TEACHER")),
-                Map.of("email", deleted.getEmail(), "name", deleted.getFullName()),
+                Map.of("email", deleted.getEmail(), "name", deleted.getFullName(), "sub", "deleted-google-sub"),
                 "email");
         OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                 principal,
@@ -526,7 +553,8 @@ class AdminActionControllerTest {
     void studentCannotSoftDeleteUser() throws Exception {
         User target = findByEmail("alice.student@example.com");
 
-        mockMvc.perform(delete("/api/admin/users/{id}", target.getId()))
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
@@ -535,7 +563,8 @@ class AdminActionControllerTest {
     void teacherCannotSoftDeleteUser() throws Exception {
         User target = findByEmail("alice.student@example.com");
 
-        mockMvc.perform(delete("/api/admin/users/{id}", target.getId()))
+        mockMvc.perform(delete("/api/admin/users/{id}", target.getId())
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

@@ -16,7 +16,10 @@
                 <p class="eyebrow">Assignment</p>
                 <h1 th:text="${submission.assignmentTitle}">Assignment</h1>
             </div>
-            <a class="btn btn-secondary" th:href="@{/student/results}">Results</a>
+            <a class="btn btn-secondary" th:href="@{/student/results}">
+                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                <span>Results</span>
+            </a>
         </div>
         <form id="assignment-submit-form" class="assessment-form">
             <label>
@@ -36,13 +39,22 @@
                 <input name="filePath" th:value="${submission.filePath}" placeholder="/uploads/submissions/file.zip">
             </label>
             <div class="assessment-actions">
-                <button class="btn btn-secondary" type="button" id="save-assignment-draft">Save draft</button>
-                <button class="btn btn-primary" type="submit">Submit</button>
+                <button class="btn btn-secondary" type="button" id="save-assignment-draft">
+                    <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
+                    <span>Save draft</span>
+                </button>
+                <button class="btn btn-primary" type="submit">
+                    <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                    <span>Submit</span>
+                </button>
             </div>
             <div class="assessment-message" id="assignment-message"></div>
         </form>
     </section>
-    <section class="empty-state" th:unless="${submission != null}">Assignment data is unavailable.</section>
+    <section class="empty-state" th:unless="${submission != null}">
+        <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></div>
+        <div class="empty-title">Assignment data is unavailable.</div>
+    </section>
 </main>
 <script th:src="@{/js/student/student.js}"></script>
 </body>

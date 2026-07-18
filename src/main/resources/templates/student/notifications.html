@@ -25,7 +25,10 @@
                     <p class="page-subtitle">Stay updated on your academic progress and system announcements.</p>
                 </div>
                 <div class="notification-center-actions">
-                    <button class="btn btn-secondary btn-sm" type="button" data-notification-center-mark-all>Mark all as read</button>
+                    <button class="btn btn-secondary btn-sm" type="button" data-notification-center-mark-all>
+                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                        <span>Mark all as read</span>
+                    </button>
                 </div>
             </div>
 
@@ -33,7 +36,10 @@
                 <div class="notification-center-list" data-notification-center-list>
                     <div class="notification-state">Loading notifications...</div>
                 </div>
-                <button class="btn btn-secondary btn-sm" type="button" data-notification-load-more hidden>Load more</button>
+                <button class="btn btn-secondary btn-sm" type="button" data-notification-load-more hidden>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    <span>Load more</span>
+                </button>
             </div>
 
         </main>

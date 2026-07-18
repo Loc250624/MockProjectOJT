@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete your LumiNa OAuth registration with a local password.">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="_csrf_parameter" th:content="${_csrf.parameterName}">
+    <title>Complete Registration - LumiNa E-Learning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
+</head>
+<body>
+<div class="auth-page auth-page-refined">
+    <aside class="auth-hero auth-hero-register" aria-label="Complete OAuth registration">
+        <a th:href="@{/}" class="auth-hero-brand" aria-label="LumiNa home">
+            <span class="auth-logo-mark"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
+            <span>LumiNa</span>
+        </a>
+
+        <div class="auth-hero-content">
+            <span class="auth-kicker">Verified provider sign-up</span>
+            <h1 class="auth-hero-title">Finish your student account.</h1>
+            <p class="auth-hero-copy">
+                Your provider verified the email below. Add a local password so you can sign in with either method later.
+            </p>
+            <ul class="auth-hero-list" aria-label="OAuth registration protections">
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Provider identity is linked server-side</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Verified email cannot be edited here</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> New OAuth registrations become student accounts</li>
+            </ul>
+        </div>
+    </aside>
+
+    <main class="auth-form-panel" aria-labelledby="oauth-complete-title">
+        <div class="auth-form-shell">
+            <div class="auth-form-header">
+                <a th:href="@{/}" class="auth-logo" aria-label="LumiNa home">
+                    <span class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
+                    <span>LumiNa</span>
+                </a>
+                <p class="auth-greeting" id="oauth-complete-title">Complete registration</p>
+                <p class="auth-subtext">Create a password for your verified OAuth account.</p>
+            </div>
+
+            <section class="oauth-complete-profile" aria-labelledby="verified-provider-title">
+                <div class="oauth-complete-avatar" aria-hidden="true">
+                    <img th:if="${avatarUrl}" th:src="${avatarUrl}" alt="">
+                    <span th:unless="${avatarUrl}" th:text="${#strings.substring(provider, 0, 1)}">G</span>
+                </div>
+                <div>
+                    <p class="oauth-complete-label" id="verified-provider-title">
+                        <span th:text="${provider}">GOOGLE</span> verified account
+                    </p>
+                    <p class="oauth-complete-name" th:text="${fullName ?: email}">Verified Learner</p>
+                    <p class="oauth-complete-email" th:text="${email}">learner@example.com</p>
+                </div>
+            </section>
+
+            <div th:if="${error}" class="auth-alert auth-alert-error" role="alert">
+                <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                <span th:text="${error}">Registration could not be completed.</span>
+            </div>
+
+            <form id="oauthCompleteForm" class="auth-form-body" novalidate>
+                <div class="auth-alert auth-alert-error auth-form-message" data-form-error role="alert" aria-live="assertive" hidden></div>
+                <div class="auth-alert auth-alert-success auth-form-message" data-form-status role="status" aria-live="polite" hidden></div>
+
+                <div class="form-group">
+                    <label class="form-label" for="verifiedEmail">Verified email</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true">@</span>
+                        <input type="email" id="verifiedEmail" name="verifiedEmail" class="form-control"
+                               th:value="${email}" readonly aria-readonly="true"
+                               autocomplete="email" aria-describedby="verifiedEmail-help">
+                    </div>
+                    <p class="auth-field-help" id="verifiedEmail-help">This email came from your verified provider profile.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">New password</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('hide')}"></svg></span>
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="At least 6 characters" required autocomplete="new-password"
+                               minlength="6" aria-describedby="password-error password-help">
+                        <button type="button" class="input-action" data-toggle-password aria-label="Show password" aria-pressed="false">
+                            <svg th:replace="~{fragments/icons :: icon('view')}"></svg>
+                        </button>
+                    </div>
+                    <p class="auth-field-error" id="password-error" data-error-for="password"></p>
+                    <p class="auth-field-help" id="password-help">Use at least 6 characters.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm password</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                               placeholder="Repeat your password" required autocomplete="new-password"
+                               aria-describedby="confirmPassword-error">
+                    </div>
+                    <p class="auth-field-error" id="confirmPassword-error" data-error-for="confirmPassword"></p>
+                </div>
+
+                <button type="submit" class="auth-submit" id="btn-oauth-complete"
+                        data-default-label="Complete registration"
+                        data-loading-label="Completing registration..."
+                        data-status-message="Creating your student account...">
+                    <span>Complete registration</span>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                </button>
+            </form>
+
+            <p class="auth-helper">
+                Need to use another provider?
+                <a th:href="@{/auth/login}">Back to login</a>
+            </p>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/auth/auth.js}"></script>
+</body>
+</html>

@@ -36,7 +36,10 @@
                 <div class="action-bar" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
                     <div class="search-bar" style="display: flex; flex: 1; min-width: 250px; gap: 0.5rem;">
                         <input type="text" name="keyword" th:value="${keyword}" placeholder="Search courses..." class="form-control" style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
-                        <button type="submit" class="btn btn-primary">Search</button>
+                        <button type="submit" class="btn btn-primary">
+                            <svg th:replace="~{fragments/icons :: icon('search')}"></svg>
+                            <span>Search</span>
+                        </button>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
                         <select name="categoryId" onchange="this.form.submit()" class="form-select" style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; cursor:pointer;">
@@ -59,7 +62,7 @@
                         <!-- Thumbnail -->
                         <div style="height: 160px; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; position:relative; border: 1px solid #f1f5f9;">
                             <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" th:src="${crs.thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
-                            <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" style="font-size: 3rem;">📚</span>
+                            <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" class="student-course-thumb-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
                         </div>
                         <h3 th:text="${crs.title}" style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.4;">Java Programming Masterclass</h3>
                         <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;"><strong>Instructor:</strong> <span th:text="${crs.instructorName}" style="color: #334155; font-weight: 500;">Tran Van B</span></p>
@@ -73,32 +76,44 @@
                         <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>
                     </div>
                     <div style="margin-top: 1.25rem;">
-                        <a th:href="@{/student/courses/detail(id=${crs.id})}" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none; border-radius: 6px;">View Detail →</a>
+                        <a th:href="@{/student/courses/detail(id=${crs.id})}" class="btn btn-primary student-course-action" style="display: block; text-align: center; text-decoration: none; border-radius: 6px;">
+                            <svg th:replace="~{fragments/icons :: icon('view')}"></svg>
+                            <span>View Detail</span>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <nav th:if="${totalPages > 1}" aria-label="Catalog pages" style="margin-top: 2.5rem; display: flex; gap: 1rem; align-items: center; justify-content: center;">
+            <nav th:if="${totalPages > 1}" class="pagination-nav student-pagination" aria-label="Catalog pages" style="margin-top: 2.5rem; display: flex; gap: 1rem; align-items: center; justify-content: center;">
                 <a class="btn btn-secondary btn-sm"
                    th:classappend="${currentPage == 0 ? 'disabled' : ''}"
                    th:styleappend="${currentPage == 0 ? 'pointer-events: none; opacity: 0.5;' : ''}"
                    th:href="@{/student/courses(categoryId=${selectedCategoryId},keyword=${keyword},sortBy=${sortBy},page=${currentPage - 1})}"
-                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">Previous</a>
+                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">
+                    <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+                    <span>Previous</span>
+                </a>
                 <span th:text="${'Page ' + (currentPage + 1) + ' of ' + totalPages}" style="font-size: 0.9rem; font-weight: 600; color: #475569;">Page 1 of 1</span>
                 <a class="btn btn-secondary btn-sm"
                    th:classappend="${currentPage + 1 >= totalPages ? 'disabled' : ''}"
                    th:styleappend="${currentPage + 1 >= totalPages ? 'pointer-events: none; opacity: 0.5;' : ''}"
                    th:href="@{/student/courses(categoryId=${selectedCategoryId},keyword=${keyword},sortBy=${sortBy},page=${currentPage + 1})}"
-                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">Next</a>
+                   style="text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; color: #333;">
+                    <span>Next</span>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                </a>
             </nav>
 
             <!-- Empty state -->
             <div th:if="${#lists.isEmpty(courses)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid #eee; margin-top:2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">No Courses Found</h3>
                 <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.875rem;">We couldn't find any courses matching your search. Try resetting filters.</p>
-                <a th:href="@{/student/courses}" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; border-radius: 6px;">Reset Filters</a>
+                <a th:href="@{/student/courses}" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; border-radius: 6px;">
+                    <svg th:replace="~{fragments/icons :: icon('filter')}"></svg>
+                    <span>Reset Filters</span>
+                </a>
             </div>
 
         </main>

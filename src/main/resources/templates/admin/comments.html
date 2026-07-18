@@ -23,7 +23,10 @@
                     <h1 class="page-title">Comments</h1>
                     <p class="page-subtitle">Hide or delete inappropriate blog comments while keeping moderation history.</p>
                 </div>
-                <a th:href="@{/admin/blogs}" class="btn btn-secondary">Manage Blogs</a>
+                <a th:href="@{/admin/blogs}" class="btn btn-secondary">
+                    <svg th:replace="~{fragments/icons :: icon('blog')}"></svg>
+                    <span>Manage Blogs</span>
+                </a>
             </div>
 
             <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
@@ -59,37 +62,52 @@
                         <td style="padding:1rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-700);"
                             th:text="${comment.authorName != null ? comment.authorName : 'User #' + comment.authorId}">Author</td>
                         <td style="padding:1rem 1.25rem;">
-                            <span class="badge"
+                            <span class="badge admin-comment-status"
                                   th:classappend="${comment.status.name() == 'VISIBLE' ? 'badge-success' : (comment.status.name() == 'HIDDEN' ? 'badge-warning' : 'badge-danger')}"
                                   th:text="${comment.status.name()}">VISIBLE</span>
                         </td>
                         <td style="padding:1rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-600);"
                             th:text="${comment.createdAt == null ? 'Unknown' : #temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">Created</td>
                         <td style="padding:1rem 1.25rem;min-width:240px;">
-                            <details th:if="${comment.status.name() == 'VISIBLE'}" style="margin-bottom:0.5rem;">
-                                <summary class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer;">Hide</summary>
-                                <form th:action="@{'/admin/comments/hide/' + ${comment.id}}" method="post" data-loading-form style="margin-top:0.5rem;">
+                            <div class="admin-comment-actions">
+                            <details th:if="${comment.status.name() == 'VISIBLE'}">
+                                <summary class="action-btn warning">
+                                    <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
+                                    <span>Hide</span>
+                                </summary>
+                                <form th:action="@{'/admin/comments/hide/' + ${comment.id}}" method="post" data-loading-form>
                                     <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for hiding"
                                               style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="btn btn-secondary btn-sm" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Hide this comment from public pages?');">Confirm Hide</button>
+                                    <button type="submit" class="action-btn warning" style="margin-top:0.4rem;"
+                                            onclick="return confirm('Hide this comment from public pages?');">
+                                        <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
+                                        <span>Confirm Hide</span>
+                                    </button>
                                 </form>
                             </details>
                             <details th:if="${comment.status.name() != 'DELETED'}">
-                                <summary class="btn btn-danger btn-sm" style="display:inline-flex;cursor:pointer;">Delete</summary>
-                                <form th:action="@{'/admin/comments/delete/' + ${comment.id}}" method="post" data-loading-form style="margin-top:0.5rem;">
+                                <summary class="action-btn danger">
+                                    <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
+                                    <span>Delete</span>
+                                </summary>
+                                <form th:action="@{'/admin/comments/delete/' + ${comment.id}}" method="post" data-loading-form>
                                     <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for deleting"
                                               style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="btn btn-danger btn-sm" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Delete this comment from public pages?');">Confirm Delete</button>
+                                    <button type="submit" class="action-btn danger" style="margin-top:0.4rem;"
+                                            onclick="return confirm('Delete this comment from public pages?');">
+                                        <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
+                                        <span>Confirm Delete</span>
+                                    </button>
                                 </form>
                             </details>
-                            <span th:if="${comment.status.name() == 'DELETED'}" style="font-size:0.8125rem;color:var(--lumina-gray-500);">Deleted</span>
+                            <span th:if="${comment.status.name() == 'DELETED'}" class="badge badge-neutral admin-comment-status-terminal">Deleted</span>
+                            </div>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(comments)}">
                         <td colspan="6" style="padding:4rem;text-align:center;color:var(--lumina-gray-400);">
-                            No blog comments have been posted yet.
+                            <span class="empty-state-icon admin-table-empty-icon"><svg th:replace="~{fragments/icons :: icon('comments')}"></svg></span>
+                            <div>No blog comments have been posted yet.</div>
                         </td>
                     </tr>
                     </tbody>

@@ -25,26 +25,26 @@
             </div>
 
             <div class="stats-grid-4">
-                <div class="stat-card">
-                    <div class="stat-icon">&#128218;</div>
+                <div class="stat-card student-metric-card">
+                    <div class="stat-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
                     <div class="stat-label">Enrolled Courses</div>
                     <div class="stat-value" th:text="${enrolledCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Total lifetime</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">&#10003;</div>
+                <div class="stat-card student-metric-card">
+                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
                     <div class="stat-label">Completed</div>
                     <div class="stat-value" th:text="${completedCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Finished courses</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-warning-bg);color:var(--lumina-warning);">&#9203;</div>
+                <div class="stat-card student-metric-card">
+                    <div class="stat-icon" style="background:var(--lumina-warning-bg);color:var(--lumina-warning);"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
                     <div class="stat-label">In Progress</div>
                     <div class="stat-value" th:text="${inProgressCourseCount}">0</div>
                     <div class="stat-change stat-change-neutral">Active learning</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">&#127942;</div>
+                <div class="stat-card student-metric-card">
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
                     <div class="stat-label">Certificates</div>
                     <div class="stat-value" th:text="${dashboardStats.activeCertificates}">0</div>
                     <div class="stat-change"
@@ -79,14 +79,21 @@
                                 </div>
                             </div>
                             <div class="pc-actions">
-                                <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary btn-sm btn-full">Continue Learning</a>
+                                <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary btn-sm btn-full">
+                                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                                    <span>Continue Learning</span>
+                                </a>
                             </div>
                         </div>
                     </div>
                     <div class="student-empty-state" th:if="${#lists.isEmpty(courseCards)}">
+                        <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
                         <h3>No active courses</h3>
                         <p>Your enrolled courses will appear here after you join a course.</p>
-                        <a th:href="@{/student/courses}" class="btn btn-primary">Browse Catalog</a>
+                        <a th:href="@{/student/courses}" class="btn btn-primary">
+                            <svg th:replace="~{fragments/icons :: icon('search')}"></svg>
+                            <span>Browse Catalog</span>
+                        </a>
                     </div>
                 </div>
 
@@ -97,6 +104,7 @@
 
                     <div class="card card-padded-sm">
                         <div class="student-empty-state" th:if="${#lists.isEmpty(upcomingDeadlines)}">
+                            <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg></div>
                             <h3>No upcoming deadlines</h3>
                             <p>You have no upcoming assignment deadlines.</p>
                         </div>
@@ -116,7 +124,10 @@
                             </div>
                         </a>
 
-                        <a th:href="@{/student/deadlines}" class="btn btn-ghost btn-sm btn-full mt-sm">View Full Calendar</a>
+                        <a th:href="@{/student/deadlines}" class="btn btn-ghost btn-sm btn-full mt-sm">
+                            <svg th:replace="~{fragments/icons :: icon('calendar')}"></svg>
+                            <span>View Full Calendar</span>
+                        </a>
                     </div>
                 </div>
             </div>

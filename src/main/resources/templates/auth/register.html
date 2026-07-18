@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Create your LumiNa academic profile and join the elite learning community.">
-    <title>Create Account — LumiNa E-Learning</title>
+    <meta name="description" content="Create a LumiNa student account. Teacher and admin roles are assigned by administrators.">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="_csrf_parameter" th:content="${_csrf.parameterName}">
+    <title>Create Account - LumiNa E-Learning</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
@@ -12,142 +15,124 @@
     <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
 </head>
 <body>
-
-<div class="auth-page-simple">
-
-    <!-- Header -->
-    <header class="auth-simple-header">
-        <a th:href="@{/}" class="auth-logo" style="text-decoration:none;">
-            <div class="logo-icon">🎓</div>
+<div class="auth-page auth-page-refined">
+    <aside class="auth-hero auth-hero-register" aria-label="Create a LumiNa student account">
+        <a th:href="@{/}" class="auth-hero-brand" aria-label="LumiNa home">
+            <span class="auth-logo-mark"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
             <span>LumiNa</span>
         </a>
-        <a th:href="@{/auth/login}" class="btn btn-sm btn-secondary">Support</a>
-    </header>
 
-    <!-- Body -->
-    <div class="auth-simple-body">
-        <div class="auth-simple-card">
+        <div class="auth-hero-content">
+            <span class="auth-kicker">Student registration</span>
+            <h1 class="auth-hero-title">Start with a student workspace.</h1>
+            <p class="auth-hero-copy">
+                Public registration creates a student account. Teacher and admin roles are reviewed and assigned separately.
+            </p>
+            <ul class="auth-hero-list" aria-label="Registration rules">
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> New accounts are created as students</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Passwords are stored with BCrypt</li>
+                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> OAuth2 remains available from login</li>
+            </ul>
+        </div>
+    </aside>
 
-            <h1 class="card-heading">Join the Elite</h1>
-            <p class="card-sub">Create your academic profile to access LumiNa.</p>
-
-            <!-- Error / Success -->
-            <div th:if="${error}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
-                ⚠ <span th:text="${error}">Error.</span>
+    <main class="auth-form-panel" aria-labelledby="register-title">
+        <div class="auth-form-shell">
+            <div class="auth-form-header">
+                <a th:href="@{/}" class="auth-logo" aria-label="LumiNa home">
+                    <span class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
+                    <span>LumiNa</span>
+                </a>
+                <p class="auth-greeting" id="register-title">Create account</p>
+                <p class="auth-subtext">Register a student account with your email and password.</p>
             </div>
-            <div th:if="${message}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;">
-                ✓ <span th:text="${message}">Success.</span>
+
+            <nav class="auth-tabs" aria-label="Authentication">
+                <a th:href="@{/auth/login}" class="auth-tab">Login</a>
+                <a th:href="@{/auth/register}" class="auth-tab active" aria-current="page">Create Account</a>
+            </nav>
+
+            <div th:if="${error}" class="auth-alert auth-alert-error" role="alert">
+                <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                <span th:text="${error}">Registration failed.</span>
+            </div>
+            <div th:if="${message}" class="auth-alert auth-alert-success" role="status">
+                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                <span th:text="${message}">Success.</span>
             </div>
 
-            <form id="registerForm">
+            <form id="registerForm" class="auth-form-body" novalidate>
+                <div class="auth-alert auth-alert-error auth-form-message" data-form-error role="alert" aria-live="assertive" hidden></div>
+                <div class="auth-alert auth-alert-success auth-form-message" data-form-status role="status" aria-live="polite" hidden></div>
 
                 <div class="form-group">
-                    <label class="form-label" for="fullName">Full Name</label>
+                    <label class="form-label" for="fullName">Full name</label>
                     <div class="input-group">
-                        <span class="input-icon">👤</span>
-                        <input type="text" id="fullName" name="fullName"
-                               class="form-control"
-                               placeholder="Johnathan Miller"
-                               required autocomplete="name">
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('profile')}"></svg></span>
+                        <input type="text" id="fullName" name="fullName" class="form-control"
+                               placeholder="Your full name" required autocomplete="name"
+                               aria-describedby="fullName-error">
                     </div>
+                    <p class="auth-field-error" id="fullName-error" data-error-for="fullName"></p>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="email">Institutional Email</label>
+                    <label class="form-label" for="email">Email</label>
                     <div class="input-group">
-                        <span class="input-icon">✉</span>
-                        <input type="email" id="email" name="email"
-                               class="form-control"
-                               placeholder="name@institution.edu"
-                               required autocomplete="email">
+                        <span class="input-icon" aria-hidden="true">@</span>
+                        <input type="email" id="email" name="email" class="form-control"
+                               placeholder="name@example.com" required autocomplete="email"
+                               aria-describedby="email-error">
                     </div>
+                    <p class="auth-field-error" id="email-error" data-error-for="email"></p>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
                     <div class="input-group">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" id="password" name="password"
-                               class="form-control"
-                               placeholder="••••••••"
-                               required autocomplete="new-password"
-                               minlength="6">
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('hide')}"></svg></span>
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="At least 6 characters" required autocomplete="new-password"
+                               minlength="6" aria-describedby="password-error password-help">
+                        <button type="button" class="input-action" data-toggle-password aria-label="Show password" aria-pressed="false">
+                            <svg th:replace="~{fragments/icons :: icon('view')}"></svg>
+                        </button>
                     </div>
-                    <div class="password-strength-bar">
-                        <div class="password-strength-fill" id="strength-fill"></div>
-                    </div>
-                    <div class="strength-labels">
-                        <span>Security Level</span>
-                        <span>Min. 6 chars</span>
-                    </div>
+                    <p class="auth-field-error" id="password-error" data-error-for="password"></p>
+                    <p class="auth-field-help" id="password-help">Use at least 6 characters.</p>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="confirmPassword">Confirm Password</label>
+                    <label class="form-label" for="confirmPassword">Confirm password</label>
                     <div class="input-group">
-                        <span class="input-icon">🛡</span>
-                        <input type="password" id="confirmPassword" name="confirmPassword"
-                               class="form-control"
-                               placeholder="••••••••"
-                               required autocomplete="new-password">
+                        <span class="input-icon" aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                               placeholder="Repeat your password" required autocomplete="new-password"
+                               aria-describedby="confirmPassword-error">
                     </div>
+                    <p class="auth-field-error" id="confirmPassword-error" data-error-for="confirmPassword"></p>
                 </div>
 
-                <div class="form-check" style="margin-bottom:1.25rem;">
-                    <input type="checkbox" id="terms" name="terms" required>
-                    <label for="terms">
-                        I agree to the <a href="#">Academic Honor Code</a> and <a href="#">Privacy Policy</a> of LumiNa Systems.
-                    </label>
+                <div class="form-check auth-consent">
+                    <input type="checkbox" id="terms" name="terms" required aria-describedby="terms-error">
+                    <label for="terms">I understand this creates a student account and agree to follow LumiNa course policies.</label>
                 </div>
+                <p class="auth-field-error" id="terms-error" data-error-for="terms"></p>
 
-                <button type="submit" class="auth-submit" id="btn-register">
-                    Create Account →
+                <button type="submit" class="auth-submit" id="btn-register" data-default-label="Create account">
+                    <span>Create account</span>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
                 </button>
             </form>
 
-            <hr class="divider-line" style="margin-top:1.5rem;">
-
-            <p style="text-align:center;font-size:0.875rem;color:var(--lumina-gray-500);padding-top:0.5rem;">
+            <p class="auth-helper">
                 Already registered?
-                <a th:href="@{/auth/login}" style="color:var(--lumina-blue);font-weight:700;">Back to Login</a>
+                <a th:href="@{/auth/login}">Back to login</a>
             </p>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="auth-center-footer">
-        <div>
-            <span class="footer-brand">LumiNa</span>
-            <span style="color:var(--lumina-gray-400);font-size:0.8125rem;"> | © 2024 LumiNa E-Learning Systems. All rights reserved.</span>
-        </div>
-        <div class="footer-links">
-            <a th:href="@{/privacy}">Privacy Policy</a>
-            <a th:href="@{/terms}">Terms of Service</a>
-            <a th:href="@{/accessibility}">Accessibility</a>
-            <a th:href="@{/contact}">Contact</a>
-        </div>
-    </footer>
-
+    </main>
 </div>
 
 <script th:src="@{/js/auth/auth.js}"></script>
-<script>
-    // Password strength meter
-    const pw = document.getElementById('password');
-    const fill = document.getElementById('strength-fill');
-    const colors = ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
-    if(pw && fill) {
-        pw.addEventListener('input', function() {
-            const val = pw.value;
-            let score = 0;
-            if(val.length >= 6) score++;
-            if(/[A-Z]/.test(val)) score++;
-            if(/[0-9]/.test(val)) score++;
-            if(/[^A-Za-z0-9]/.test(val)) score++;
-            fill.style.width = (score * 25) + '%';
-            fill.style.background = colors[score] || '#ef4444';
-        });
-    }
-</script>
 </body>
 </html>

@@ -24,35 +24,47 @@
                     <h1 class="page-title">Welcome back, <span th:text="${#authentication?.name ?: 'teacher'}">teacher</span></h1>
                     <p class="page-subtitle">Here's what's happening in your academic environment today.</p>
                 </div>
-                <div style="display:flex;gap:0.75rem;">
-                    <a th:href="@{/teacher/analytics}" class="btn btn-secondary">View Full Report</a>
-                    <a th:href="@{/teacher/courses/create}" class="btn btn-primary">+ New Course</a>
+                <div class="teacher-header-actions">
+                    <a th:href="@{/teacher/analytics}" class="btn btn-secondary">
+                        <svg th:replace="~{fragments/icons :: icon('analytics')}"></svg>
+                        <span>View Full Report</span>
+                    </a>
+                    <a th:href="@{/teacher/courses/create}" class="btn btn-primary">
+                        <svg th:replace="~{fragments/icons :: icon('create')}"></svg>
+                        <span>New Course</span>
+                    </a>
                 </div>
             </div>
 
             <div class="stats-grid-3">
-                <div class="stat-card">
-                    <div class="stat-icon">&#128101;</div>
-                    <div class="stat-label">Total Active Students</div>
-                    <div class="stat-value" th:text="${#numbers.formatInteger(dashboardStats.activeStudents, 0, 'COMMA')}">0</div>
-                    <div class="stat-change"
+                <div class="metric-card teacher-metric-card">
+                    <div class="metric-card-header">
+                        <div class="metric-card-label">Total Active Students</div>
+                        <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
+                    </div>
+                    <div class="metric-card-value" th:text="${#numbers.formatInteger(dashboardStats.activeStudents, 0, 'COMMA')}">0</div>
+                    <div class="metric-card-helper stat-change"
                          th:classappend="${dashboardStats.activeStudentsChangeClass}"
                          th:text="${dashboardStats.activeStudentsChangeText}">No change from last month</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:var(--lumina-success-bg);color:var(--lumina-success);">&#128200;</div>
-                    <div class="stat-label">Avg. Completion Rate</div>
-                    <div class="stat-value" th:text="${#numbers.formatDecimal(dashboardStats.averageCompletionRate, 1, 'COMMA', 1, 'POINT') + '%'}">0.0%</div>
-                    <div class="stat-change"
+                <div class="metric-card teacher-metric-card">
+                    <div class="metric-card-header">
+                        <div class="metric-card-label">Avg. Completion Rate</div>
+                        <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                    </div>
+                    <div class="metric-card-value" th:text="${#numbers.formatDecimal(dashboardStats.averageCompletionRate, 1, 'COMMA', 1, 'POINT') + '%'}">0.0%</div>
+                    <div class="metric-card-helper stat-change"
                          th:classappend="${dashboardStats.completionRateChangeClass}"
                          th:text="${dashboardStats.completionRateChangeText}">No previous-month completion data</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">&#128176;</div>
-                    <div class="stat-label">Total Revenue (MTD)</div>
-                    <div class="stat-value"
+                <div class="metric-card teacher-metric-card">
+                    <div class="metric-card-header">
+                        <div class="metric-card-label">Total Revenue (MTD)</div>
+                        <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
+                    </div>
+                    <div class="metric-card-value"
                          th:text="${#strings.isEmpty(dashboardStats.revenueCurrencyCode) ? #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT') : dashboardStats.revenueCurrencyCode + ' ' + #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT')}">0.00</div>
-                    <div class="stat-change"
+                    <div class="metric-card-helper stat-change"
                          th:classappend="${dashboardStats.revenueChangeClass}"
                          th:text="${dashboardStats.revenueChangeText}">No paid revenue last month</div>
                 </div>
@@ -125,26 +137,30 @@
                     </div>
                 </div>
 
-                <div class="card card-padded">
+                <div class="card card-padded teacher-quick-card">
                     <div class="card-header">
                         <h2 class="card-title">Quick Actions</h2>
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                        <a th:href="@{/teacher/courses}" class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
-                            <span style="font-size:1.5rem;margin-bottom:4px;">Quiz</span>
-                            <span style="font-size:0.8125rem;">Create Quiz</span>
+                    <div class="teacher-quick-actions">
+                        <a th:href="@{/teacher/courses}" class="teacher-quick-action">
+                            <span class="teacher-quick-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></span>
+                            <span class="teacher-quick-title">Create Quiz</span>
+                            <span class="teacher-quick-helper">Choose a course and add assessment work.</span>
                         </a>
-                        <a th:href="@{/teacher/courses}" class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;" title="Select a course before creating an announcement.">
-                            <span style="font-size:1.5rem;margin-bottom:4px;">Post</span>
-                            <span style="font-size:0.8125rem;">Announce</span>
+                        <a th:href="@{/teacher/courses}" class="teacher-quick-action" title="Select a course before creating an announcement.">
+                            <span class="teacher-quick-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
+                            <span class="teacher-quick-title">Announce</span>
+                            <span class="teacher-quick-helper">Start from a course context.</span>
                         </a>
-                        <a th:href="@{/teacher/videos}" class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
-                            <span style="font-size:1.5rem;margin-bottom:4px;">Video</span>
-                            <span style="font-size:0.8125rem;">Upload Video</span>
+                        <a th:href="@{/teacher/videos}" class="teacher-quick-action">
+                            <span class="teacher-quick-icon"><svg th:replace="~{fragments/icons :: icon('videos')}"></svg></span>
+                            <span class="teacher-quick-title">Upload Video</span>
+                            <span class="teacher-quick-helper">Attach lessons to course modules.</span>
                         </a>
-                        <a th:href="@{/teacher/profile}" class="btn btn-secondary" style="height:80px;flex-direction:column;justify-content:center;">
-                            <span style="font-size:1.5rem;margin-bottom:4px;">Profile</span>
-                            <span style="font-size:0.8125rem;">Settings</span>
+                        <a th:href="@{/teacher/profile}" class="teacher-quick-action">
+                            <span class="teacher-quick-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></span>
+                            <span class="teacher-quick-title">Settings</span>
+                            <span class="teacher-quick-helper">Update instructor profile details.</span>
                         </a>
                     </div>
                 </div>

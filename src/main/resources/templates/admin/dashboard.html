@@ -33,8 +33,14 @@
                         <span>To</span>
                         <input name="to" type="date">
                     </label>
-                    <button class="btn btn-primary" type="submit">Apply</button>
-                    <button class="btn btn-secondary" type="button" data-reset-dashboard>Reset</button>
+                    <button class="btn btn-primary" type="submit">
+                        <svg th:replace="~{fragments/icons :: icon('filter')}"></svg>
+                        <span>Apply</span>
+                    </button>
+                    <button class="btn btn-secondary" type="button" data-reset-dashboard>
+                        <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                        <span>Reset</span>
+                    </button>
                 </form>
             </div>
 
@@ -66,60 +72,104 @@
                 </div>
 
                 <div id="dashboardOverviewContent" class="stats-grid-4 admin-overview-grid" hidden>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/users}">
-                        <div class="stat-label">Total Users</div>
-                        <div class="stat-value" data-overview="totalUsers">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/users}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Total Users</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('users')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="totalUsers">0</div>
                         <div class="stat-unit">users</div>
-                        <div class="stat-change stat-change-neutral">All registered accounts</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All registered accounts</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/users(role='STUDENT')}">
-                        <div class="stat-label">Students</div>
-                        <div class="stat-value" data-overview="totalStudents">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/users(role='STUDENT')}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Students</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="totalStudents">0</div>
                         <div class="stat-unit">students</div>
-                        <div class="stat-change stat-change-neutral">All student accounts</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All student accounts</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/users(role='TEACHER')}">
-                        <div class="stat-label">Teachers</div>
-                        <div class="stat-value" data-overview="totalTeachers">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/users(role='TEACHER')}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Teachers</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('profile')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="totalTeachers">0</div>
                         <div class="stat-unit">teachers</div>
-                        <div class="stat-change stat-change-neutral">All teacher accounts</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All teacher accounts</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/courses}">
-                        <div class="stat-label">Courses</div>
-                        <div class="stat-value" data-overview="totalCourses">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/courses}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Courses</div>
+                            <div class="metric-card-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="totalCourses">0</div>
                         <div class="stat-unit">courses</div>
-                        <div class="stat-change stat-change-neutral">All course records</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All course records</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/courses}">
-                        <div class="stat-label">Enrollments</div>
-                        <div class="stat-value" data-overview="totalEnrollments">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/courses}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Enrollments</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="totalEnrollments">0</div>
                         <div class="stat-unit">enrollments</div>
-                        <div class="stat-change stat-change-neutral">All course enrollments</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All course enrollments</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/transactions}">
-                        <div class="stat-label">Paid Orders</div>
-                        <div class="stat-value" data-overview="paidOrderCount">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/transactions}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Paid Orders</div>
+                            <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('transactions')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="paidOrderCount">0</div>
                         <div class="stat-unit">orders</div>
-                        <div class="stat-change stat-change-neutral">All-time PAID orders</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All-time PAID orders</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics/revenue}">
-                        <div class="stat-label">Total Revenue</div>
-                        <div class="stat-value" data-overview-money="totalRevenue">$0.00</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/analytics/revenue}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Total Revenue</div>
+                            <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview-money="totalRevenue">$0.00</div>
                         <div class="stat-unit" data-dashboard-currency>USD</div>
-                        <div class="stat-change stat-change-neutral">All-time paid order items</div>
+                        <div class="metric-card-helper stat-change stat-change-neutral">All-time paid order items</div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics}">
-                        <div class="stat-label">New Students</div>
-                        <div class="stat-value" data-overview="newStudents">0</div>
+                    <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/analytics}">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">New Students</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('create')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="newStudents">0</div>
                         <div class="stat-unit">students</div>
-                        <div class="stat-change stat-change-neutral" data-overview-period></div>
+                        <div class="metric-card-helper stat-change stat-change-neutral" data-overview-period></div>
                     </a>
-                    <a class="stat-card admin-stat-link" th:href="@{/admin/analytics}">
-                        <div class="stat-label">Active Students</div>
-                        <div class="stat-value" data-overview="activeStudents">0</div>
+                    <article class="metric-card admin-stat-link admin-metric-card admin-active-method-card">
+                        <div class="metric-card-header">
+                            <div class="metric-card-label">Active Students</div>
+                            <div class="metric-card-icon success"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
+                        </div>
+                        <div class="metric-card-value" data-overview="activeStudents">0</div>
                         <div class="stat-unit">students</div>
-                        <div class="stat-change stat-change-neutral" data-overview-active-method>Lesson activity based</div>
-                    </a>
+                        <div class="metric-card-helper stat-change stat-change-neutral admin-method-summary">
+                            <span data-overview-active-period>Selected period</span>
+                            <span data-overview-active-method data-technical-method="">Students with learning activity in the selected period.</span>
+                            <span class="info-popover admin-info-popover">
+                                <button type="button" class="icon-btn icon-only tooltip-trigger admin-info-trigger"
+                                        aria-label="How active students are calculated"
+                                        data-tooltip="Calculation details"
+                                        title="Calculation details"
+                                        aria-describedby="dashboard-active-students-info">
+                                    <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                                </button>
+                                <span id="dashboard-active-students-info" class="info-popover-panel" role="tooltip">
+                                    <span class="info-popover-title">How active students are calculated</span>
+                                    <span class="info-popover-body">Counts distinct student accounts with recorded lesson activity during the selected date range. Dates use the application's configured time zone.</span>
+                                </span>
+                            </span>
+                        </div>
+                        <a class="admin-card-link" th:href="@{/admin/analytics}">Open Analytics</a>
+                    </article>
                 </div>
 
                 <div class="grid-main-aside admin-dashboard-panels">
@@ -129,7 +179,10 @@
                                 <h2 class="card-title">Student Growth</h2>
                                 <p class="card-subtitle">New and active students in the selected period.</p>
                             </div>
-                            <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics}">Open Analytics</a>
+                            <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics}">
+                                <svg th:replace="~{fragments/icons :: icon('analytics')}"></svg>
+                                <span>Open Analytics</span>
+                            </a>
                         </div>
                         <div class="admin-chart-meta" aria-hidden="true">
                             <span><i class="admin-chart-key admin-chart-key-primary"></i>New students</span>
@@ -145,7 +198,10 @@
                                 <h2 class="card-title">Revenue Trend</h2>
                                 <p class="card-subtitle">Paid orders only.</p>
                             </div>
-                            <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics/revenue}">Open Report</a>
+                            <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics/revenue}">
+                                <svg th:replace="~{fragments/icons :: icon('payments')}"></svg>
+                                <span>Open Report</span>
+                            </a>
                         </div>
                         <div class="admin-chart-meta" aria-hidden="true">
                             <span><i class="admin-chart-key admin-chart-key-primary"></i>Revenue, <span data-dashboard-revenue-currency>USD</span></span>

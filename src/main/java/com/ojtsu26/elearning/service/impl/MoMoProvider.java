@@ -89,9 +89,8 @@ public class MoMoProvider implements PaymentProvider {
 
         String signature;
         try {
-            log.info("MoMo RAW SIGNATURE: {}", rawSignature);
             signature = HmacUtils.hmacSha256(rawSignature, secretKey);
-            log.info("MoMo GENERATED SIGNATURE: {}", signature);
+            log.debug("MoMo request signed: orderId={}, signatureLength={}", orderId, signature.length());
         } catch (Exception e) {
             log.error("Failed to sign MoMo request", e);
             return PaymentResponse.builder()
@@ -122,13 +121,7 @@ public class MoMoProvider implements PaymentProvider {
             // Log final amount immediately before sending API request
             log.info("Sending request to MoMo: orderId={}, final amount={}", orderId, amountLong);
             
-            // Log generated JSON request sent to MoMo
-            try {
-                String jsonRequest = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(body);
-                log.info("MoMo Request JSON payload: {}", jsonRequest);
-            } catch (Exception jsonEx) {
-                log.warn("Failed to serialize MoMo request body to JSON for logging", jsonEx);
-            }
+            log.debug("MoMo request prepared: orderId={}, requestId={}, amount={}", orderId, requestId, amountLong);
 
             ResponseEntity<Map> responseEntity = restTemplate.postForEntity(endpoint, body, Map.class);
             Map<String, Object> responseBody = responseEntity.getBody();

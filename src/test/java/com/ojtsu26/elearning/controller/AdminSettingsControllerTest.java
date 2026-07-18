@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -120,6 +121,7 @@ class AdminSettingsControllerTest {
     void adminCanUpdateEditableSetting() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.name")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"OJTSU26 Learning Hub\"}"))
@@ -133,6 +135,7 @@ class AdminSettingsControllerTest {
     void invalidTypeValueIsRejected() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.maintenanceMode")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"sometimes\"}"))
@@ -153,6 +156,7 @@ class AdminSettingsControllerTest {
 
         mockMvc.perform(put("/api/admin/settings/system.buildVersion")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"2.0.0\"}"))
@@ -178,6 +182,7 @@ class AdminSettingsControllerTest {
     void decimalOutsideRangeIsRejected() throws Exception {
         mockMvc.perform(put("/api/admin/settings/commerce.teacherCommissionRate")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"1.25\"}"))
@@ -189,6 +194,7 @@ class AdminSettingsControllerTest {
     void enumOutsideOptionsIsRejected() throws Exception {
         mockMvc.perform(put("/api/admin/settings/commerce.currency")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"EUR\"}"))
@@ -200,6 +206,7 @@ class AdminSettingsControllerTest {
     void bulkUpdateOnlyAcceptsWhitelistedKeys() throws Exception {
         mockMvc.perform(post("/api/admin/settings/bulk")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"values\":{\"site.name\":\"Safe Name\",\"payment.gateway.secret\":\"dont-store\"}}"))
@@ -211,6 +218,7 @@ class AdminSettingsControllerTest {
     void bulkValidUpdateUpdatesAuditMetadata() throws Exception {
         mockMvc.perform(post("/api/admin/settings/bulk")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"values\":{\"site.supportEmail\":\"HELP@LUMINA.EDU.VN\",\"commerce.currency\":\"USD\"}}"))
@@ -224,6 +232,7 @@ class AdminSettingsControllerTest {
     void updateWithoutSettingsRequestVerificationHeaderIsRejected() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.name")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"No Header\"}"))
                 .andExpect(status().isForbidden());
@@ -233,6 +242,7 @@ class AdminSettingsControllerTest {
     void bulkUpdateWithoutSettingsRequestVerificationHeaderIsRejected() throws Exception {
         mockMvc.perform(post("/api/admin/settings/bulk")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"values\":{\"site.name\":\"No Header\"}}"))
                 .andExpect(status().isForbidden());
@@ -242,6 +252,7 @@ class AdminSettingsControllerTest {
     @WithMockUser(roles = "TEACHER")
     void teacherCannotModifySettings() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.name")
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"Teacher Change\"}"))
@@ -252,6 +263,7 @@ class AdminSettingsControllerTest {
     void settingStringRejectsScriptValueAndOverlongValue() throws Exception {
         mockMvc.perform(put("/api/admin/settings/site.name")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"<script>alert(1)</script>\"}"))
@@ -259,6 +271,7 @@ class AdminSettingsControllerTest {
 
         mockMvc.perform(put("/api/admin/settings/site.name")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"" + "A".repeat(121) + "\"}"))
@@ -306,6 +319,7 @@ class AdminSettingsControllerTest {
     void legacySystemSettingsPlaceholderNoLongerReturnsSuccessfulUpdate() throws Exception {
         mockMvc.perform(patch("/api/admin/system-settings")
                         .with(adminPrincipal())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"anything\":\"value\"}"))
                 .andExpect(status().isGone())

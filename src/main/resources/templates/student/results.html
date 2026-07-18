@@ -15,7 +15,10 @@
         <h1>Assessment Results</h1>
         <section class="assessment-panel">
             <h2>Quizzes</h2>
-            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.quizAttempts)}">No quiz results yet.</div>
+            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.quizAttempts)}">
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
+                <div class="empty-title">No quiz results yet.</div>
+            </div>
             <div class="assessment-list" th:unless="${results == null || #lists.isEmpty(results.quizAttempts)}">
                 <a class="result-row" th:each="attempt : ${results.quizAttempts}" th:href="@{/student/quizzes/{id}/result(id=${attempt.id})}">
                     <span th:text="${attempt.quiz.title}">Quiz</span>
@@ -25,7 +28,10 @@
         </section>
         <section class="assessment-panel">
             <h2>Assignments</h2>
-            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.submissions)}">No assignment submissions yet.</div>
+            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.submissions)}">
+                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></div>
+                <div class="empty-title">No assignment submissions yet.</div>
+            </div>
             <div class="assessment-list" th:unless="${results == null || #lists.isEmpty(results.submissions)}">
                 <a class="result-row" th:each="submission : ${results.submissions}" th:href="@{/student/submissions/{id}/result(id=${submission.id})}">
                     <span th:text="${submission.assignmentTitle}">Assignment</span>

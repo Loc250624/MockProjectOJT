@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment History - Student - OJTSU26 E-Learning</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
 <body>
@@ -33,7 +34,12 @@
                         <td th:text="${#temporals.format(ord.createdAt, 'yyyy-MM-dd HH:mm')}">2026-06-25 15:30</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(orders)}">
-                        <td colspan="6" style="text-align: center; color: var(--lumina-gray-500);">No payment history found.</td>
+                        <td colspan="6" style="text-align: center; color: var(--lumina-gray-500);">
+                            <div class="student-table-empty">
+                                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
+                                <div>No payment history found.</div>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>

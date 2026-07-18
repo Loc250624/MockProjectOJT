@@ -1,15 +1,153 @@
 'use strict';
 document.addEventListener('DOMContentLoaded', function() {
-    var currentPath = window.location.pathname;
-    var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
-    sidebarLinks.forEach(function(link) {
-        var linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname;
-        if (linkPath === currentPath || (linkPath === '/teacher/analytics' && currentPath === '/instructor/analytics')) {
-            link.classList.add('active');
-        }
-    });
+    initPortalSidebarNav();
+    initPortalSidebarDrawer();
     initTeacherAssessments();
 });
+
+function initPortalSidebarNav() {
+    var currentPath = normalizePortalPath(window.location.pathname);
+    var sidebarLinks = document.querySelectorAll('.sidebar-nav a, .sidebar-support-links a');
+    var activeLink = null;
+    var activeScore = -1;
+
+    sidebarLinks.forEach(function(link) {
+        link.classList.remove('active');
+        link.removeAttribute('aria-current');
+
+        getPortalNavPatterns(link).forEach(function(pattern) {
+            var score = scorePortalPath(pattern, currentPath);
+            if (score > activeScore) {
+                activeScore = score;
+                activeLink = link;
+            }
+        });
+    });
+
+    if (activeLink) {
+        activeLink.classList.add('active');
+        activeLink.setAttribute('aria-current', 'page');
+    }
+}
+
+function getPortalNavPatterns(link) {
+    var raw = link.getAttribute('data-nav-match') || link.getAttribute('href') || '';
+    return raw.split(',')
+        .map(function(value) {
+            var clean = value.trim();
+            if (!clean) {
+                return null;
+            }
+            var exact = clean.charAt(0) === '=';
+            if (exact) {
+                clean = clean.substring(1);
+            }
+            try {
+                return { path: normalizePortalPath(new URL(clean, window.location.origin).pathname), exact: exact };
+            } catch (error) {
+                return { path: normalizePortalPath(clean), exact: exact };
+            }
+        })
+        .filter(Boolean);
+}
+
+function normalizePortalPath(path) {
+    var clean = String(path || '/').split('?')[0].replace(/\/+$/, '');
+    return clean || '/';
+}
+
+function scorePortalPath(pattern, currentPath) {
+    var patternPath = pattern && pattern.path;
+    if (!patternPath || patternPath === '/auth/logout') {
+        return -1;
+    }
+    if (patternPath.indexOf('*') !== -1) {
+        return wildcardPortalPathMatch(patternPath, currentPath) ? patternPath.length + 5000 : -1;
+    }
+    if (patternPath === currentPath) {
+        return patternPath.length + 10000;
+    }
+    if (!pattern.exact && patternPath !== '/' && currentPath.indexOf(patternPath + '/') === 0) {
+        return patternPath.length;
+    }
+    return -1;
+}
+
+function wildcardPortalPathMatch(patternPath, currentPath) {
+    var escaped = patternPath.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]+');
+    return new RegExp('^' + escaped + '(?:/.*)?$').test(currentPath);
+}
+
+function initPortalSidebarDrawer() {
+    var portal = document.querySelector('.lumina-portal');
+    var sidebar = portal ? portal.querySelector('.lumina-sidebar') : null;
+    var toggle = document.querySelector('[data-sidebar-toggle]');
+    if (!portal || !sidebar || !toggle) {
+        return;
+    }
+
+    var mediaQuery = window.matchMedia('(max-width: 768px)');
+    var backdrop = portal.querySelector('[data-sidebar-backdrop]');
+    if (!backdrop) {
+        backdrop = document.createElement('button');
+        backdrop.type = 'button';
+        backdrop.className = 'sidebar-backdrop';
+        backdrop.setAttribute('data-sidebar-backdrop', 'true');
+        backdrop.setAttribute('aria-label', 'Close navigation');
+        portal.appendChild(backdrop);
+    }
+
+    function setOpen(isOpen) {
+        portal.classList.toggle('sidebar-open', isOpen);
+        document.body.classList.toggle('sidebar-drawer-open', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (mediaQuery.matches) {
+            sidebar.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        } else {
+            sidebar.removeAttribute('aria-hidden');
+        }
+        if (isOpen) {
+            var focusTarget = sidebar.querySelector('[aria-current="page"], .sidebar-nav a, .sidebar-support-links a');
+            if (focusTarget) {
+                focusTarget.focus();
+            }
+        }
+    }
+
+    toggle.addEventListener('click', function() {
+        setOpen(!portal.classList.contains('sidebar-open'));
+    });
+    backdrop.addEventListener('click', function() {
+        setOpen(false);
+    });
+    sidebar.addEventListener('click', function(event) {
+        if (mediaQuery.matches && event.target.closest('a')) {
+            setOpen(false);
+        }
+    });
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && portal.classList.contains('sidebar-open')) {
+            setOpen(false);
+            toggle.focus();
+        }
+    });
+
+    function syncMode() {
+        if (!mediaQuery.matches) {
+            setOpen(false);
+            sidebar.removeAttribute('aria-hidden');
+        } else if (!portal.classList.contains('sidebar-open')) {
+            sidebar.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', syncMode);
+    } else if (mediaQuery.addListener) {
+        mediaQuery.addListener(syncMode);
+    }
+    syncMode();
+}
 
 function teacherAssessmentJson(response, fallbackMessage) {
     return response.json().catch(function() {

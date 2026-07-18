@@ -65,7 +65,7 @@
             <input type="hidden" name="categoryId" th:value="${selectedCategoryId}" />
             <div class="catalog-search-row">
                 <div class="search-wrap" style="display:flex;align-items:center;flex:1;">
-                    <span style="color:var(--lumina-gray-400);margin-right:0.5rem;">🔍</span>
+                    <span style="color:var(--lumina-gray-400);margin-right:0.5rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
                     <input type="text" name="keyword" th:value="${keyword}" placeholder="Search courses, instructors, topics..." style="border:none;outline:none;width:100%;font-family:inherit;">
                 </div>
                 <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem; border: none; margin-left:0.5rem; cursor:pointer;">Search</button>
@@ -87,7 +87,9 @@
             <div class="public-course-card" th:each="crs : ${courses}">
                 <div class="course-img" style="background:linear-gradient(135deg,#0d1b4b,#1a3bb5); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
                     <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" th:src="${crs.thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
-                    <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" style="font-size: 3rem; color: rgba(255,255,255,0.7);">📚</span>
+                    <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" class="course-img-fallback" aria-hidden="true">
+                        <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+                    </span>
                     <div class="price-badge" th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}">$199.00</div>
                 </div>
                 <div class="course-body" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -102,7 +104,7 @@
                         <div style="font-size: 0.75rem; color: var(--lumina-gray-500);">
                             Instructor: <strong th:text="${crs.instructorName}">Dr. Vance</strong>
                         </div>
-                        <a th:href="@{/public/courses/detail(id=${crs.id})}" class="add-to-cart" style="text-decoration: none; font-size:0.8125rem;">View Detail →</a>
+                        <a th:href="@{/public/courses/detail(id=${crs.id})}" class="add-to-cart" style="text-decoration: none; font-size:0.8125rem;">View Detail <svg th:replace="~{fragments/icons :: icon('next')}"></svg></a>
                     </div>
                 </div>
             </div>
@@ -111,7 +113,7 @@
 
         <!-- Empty state -->
         <div th:if="${#lists.isEmpty(courses)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid var(--lumina-gray-200);">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+            <div class="empty-state-icon" style="margin:0 auto 1rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></div>
             <h3 style="font-weight:700; color:var(--lumina-gray-800);">No Courses Found</h3>
             <p style="color: var(--lumina-gray-500); margin-top: 0.5rem; font-size: 0.875rem;">We couldn't find any courses matching your criteria. Try adjusting your filters or search term.</p>
             <a th:href="@{/public/courses}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none; font-size:0.875rem; padding:0.5rem 1.5rem; border-radius:8px;">Reset Filters</a>

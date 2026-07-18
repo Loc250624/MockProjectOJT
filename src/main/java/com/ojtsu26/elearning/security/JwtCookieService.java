@@ -22,7 +22,11 @@ public class JwtCookieService {
     private boolean cookieSecure;
 
     public void addJwtCookie(HttpServletResponse response, String email) {
-        ResponseCookie cookie = ResponseCookie.from("jwt_token", jwtUtils.generateTokenFromEmail(email))
+        addJwtCookieFromToken(response, jwtUtils.generateTokenFromEmail(email));
+    }
+
+    public void addJwtCookieFromToken(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from("jwt_token", token)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")

@@ -67,7 +67,6 @@ class OAuth2RegistrationVerificationTest {
         assertThat(google).as("Google ClientRegistration must exist").isNotNull();
 
         String clientId = google.getClientId();
-        System.out.println("[VERIFY] google.client-id  = " + clientId);
         System.out.println("[VERIFY] google.scope       = " + google.getScopes());
         System.out.println("[VERIFY] google.redirectUri = " + google.getRedirectUri());
         System.out.println("[VERIFY] google.authUri     = "
@@ -107,7 +106,6 @@ class OAuth2RegistrationVerificationTest {
         assertThat(github).as("GitHub ClientRegistration must exist").isNotNull();
 
         String clientId = github.getClientId();
-        System.out.println("[VERIFY] github.client-id  = " + clientId);
         System.out.println("[VERIFY] github.scope       = " + github.getScopes());
         System.out.println("[VERIFY] github.redirectUri = " + github.getRedirectUri());
         System.out.println("[VERIFY] github.authUri     = "

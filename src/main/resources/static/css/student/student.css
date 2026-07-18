@@ -957,6 +957,225 @@ pre {
   color: var(--lumina-gray-500);
 }
 
+/* Phase 05: Student/shared icon, action, and empty-state ergonomics */
+.header-search span,
+.search-input-wrap span,
+.checkout-header .logo,
+.checkout-secure,
+.sec-item,
+.cd-hero .meta-item,
+.enroll-card .includes-list li .check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-search .lumina-icon,
+.search-input-wrap .lumina-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.student-metric-card .stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-metric-card .stat-icon .lumina-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.student-course-thumb-icon,
+.student-table-empty,
+.student-loading-state,
+.result-icon {
+  display: grid;
+  place-items: center;
+}
+
+.student-course-thumb-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: var(--lumina-blue);
+}
+
+.student-course-thumb-icon .lumina-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.btn svg,
+.btn .lumina-icon,
+.btn-enroll .lumina-icon,
+.btn-try .lumina-icon,
+.continue-btn .lumina-icon {
+  flex: 0 0 auto;
+}
+
+.student-course-action.btn,
+.assessment-wide.btn,
+.quiz-footer .btn,
+.learning-header-actions .btn,
+.learning-assessment-actions .btn,
+.learning-complete-actions .btn,
+.learning-nav-actions .btn,
+.notification-center-actions .btn,
+[data-notification-load-more].btn,
+.action-buttons .btn,
+.continue-btn,
+.btn-enroll,
+.btn-try {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  line-height: 1.2;
+}
+
+.student-course-action.btn,
+.assessment-wide.btn,
+.continue-btn,
+.btn-enroll,
+.btn-try {
+  min-height: 2.75rem;
+}
+
+.student-empty-state .empty-state-icon,
+.empty-state .empty-state-icon,
+.learning-empty .empty-state-icon,
+.learning-video-missing .empty-state-icon,
+.student-table-empty .empty-state-icon,
+.student-loading-state .empty-state-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto 0.9rem;
+  border-radius: 12px;
+  background: var(--lumina-blue-pale);
+  color: var(--lumina-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-empty-state .empty-state-icon .lumina-icon,
+.empty-state .empty-state-icon .lumina-icon,
+.learning-empty .empty-state-icon .lumina-icon,
+.learning-video-missing .empty-state-icon .lumina-icon,
+.student-table-empty .empty-state-icon .lumina-icon,
+.student-loading-state .empty-state-icon .lumina-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.learning-empty .empty-state-icon,
+.learning-video-missing .empty-state-icon {
+  margin: 0 0 0.25rem;
+}
+
+.learning-resource > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+  color: var(--lumina-gray-700);
+}
+
+.learning-resource .action-group {
+  flex: 0 0 auto;
+}
+
+.student-pagination {
+  row-gap: 0.75rem;
+}
+
+.student-pagination .btn {
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.q-nav-btn {
+  min-width: var(--hit-target);
+  min-height: var(--hit-target);
+}
+
+.quiz-footer {
+  gap: 0.75rem;
+}
+
+.assessment-actions {
+  flex-wrap: wrap;
+}
+
+.checkout-header .logo {
+  gap: 0.45rem;
+  text-decoration: none;
+}
+
+.checkout-secure .lumina-icon,
+.sec-item .lumina-icon,
+.cd-hero .meta-item .lumina-icon,
+.enroll-card .includes-list li .check .lumina-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.payment-method-card .pay-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: var(--lumina-blue);
+}
+
+.security-bar .sec-item {
+  min-height: 2rem;
+}
+
+.result-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 18px;
+  background: var(--lumina-success-bg);
+  color: var(--lumina-success);
+  font-size: 1rem;
+}
+
+.result-icon.failure {
+  background: var(--lumina-danger-bg);
+  color: var(--lumina-danger);
+}
+
+.result-icon .lumina-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.lesson-icon span,
+.lesson-icon .lumina-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lesson-icon .lumina-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.student-table-empty {
+  gap: 0.45rem;
+  color: var(--lumina-gray-500);
+}
+
 .cert-card::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(135deg, rgba(26,59,181,0.05) 0%, rgba(255,255,255,0) 50%, rgba(22,163,74,0.05) 100%);
@@ -1809,5 +2028,64 @@ pre {
   .student-progress {
     grid-column: 1 / -1;
     text-align: left;
+  }
+}
+
+@media (max-width: 760px) {
+  .action-bar,
+  .search-bar,
+  .student-pagination,
+  .action-buttons,
+  .security-bar {
+    align-items: stretch !important;
+  }
+
+  .search-bar,
+  .student-pagination,
+  .action-buttons,
+  .learning-assessment-actions,
+  .learning-complete-actions,
+  .assessment-actions,
+  .quiz-footer {
+    flex-direction: column;
+  }
+
+  .search-bar .btn,
+  .student-pagination .btn,
+  .action-buttons .btn,
+  .learning-assessment-actions .btn,
+  .learning-complete-actions .btn,
+  .assessment-actions .btn,
+  .quiz-footer .btn,
+  [data-notification-load-more].btn {
+    width: 100%;
+  }
+
+  .learning-resource .action-group {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .learning-resource .action-group .btn {
+    flex: 1 1 10rem;
+  }
+
+  .checkout-header {
+    height: auto !important;
+    min-height: 56px;
+    padding: 0.75rem 1rem !important;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .checkout-breadcrumb {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .student-table-empty {
+    min-width: 12rem;
   }
 }

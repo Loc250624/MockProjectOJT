@@ -80,13 +80,13 @@
         <h1 th:text="${course.title}">Quantum Cryptography: Advanced Course</h1>
         <p style="color:rgba(255,255,255,0.7);font-size:0.9375rem;margin-bottom:0.875rem;line-height:1.6;" th:text="${course.description}">Master the cutting-edge science of quantum encryption and post-quantum cryptographic algorithms.</p>
         <div class="meta-row">
-            <span class="meta-item">⭐ <strong style="color:white;">4.9</strong> (2.1k reviews)</span>
-            <span class="meta-item">👥 12,450 students</span>
-            <span class="meta-item">⏱ 42 hours</span>
-            <span class="meta-item">📅 Last updated Oct 2023</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> <strong style="color:white;">4.9</strong> (2.1k reviews)</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('students')}"></svg> 12,450 students</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg> 42 hours</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg> Last updated Oct 2023</span>
         </div>
         <div class="meta-item" style="margin-top:0.5rem;">
-            👤 Instructor: <strong style="color:white;margin-left:4px;" th:text="${course.instructorName}">Dr. Elena Vance</strong>
+            <svg th:replace="~{fragments/icons :: icon('profile')}"></svg> Instructor: <strong style="color:white;margin-left:4px;" th:text="${course.instructorName}">Dr. Elena Vance</strong>
         </div>
     </div>
 </div>
@@ -126,17 +126,18 @@
                 <div class="module-lessons" style="display:block;">
                     <div class="lesson-item" th:each="lsn : ${lessons}">
                         <div class="lesson-icon" th:classappend="${lsn.type.name() == 'VIDEO' ? 'lesson-video' : (lsn.type.name() == 'QUIZ' ? 'lesson-quiz' : 'lesson-read')}">
-                            <span th:if="${lsn.type.name() == 'VIDEO'}">▶</span>
-                            <span th:if="${lsn.type.name() == 'QUIZ'}">✏</span>
-                            <span th:if="${lsn.type.name() == 'CODING'}">💻</span>
+                            <span th:if="${lsn.type.name() == 'VIDEO'}"><svg th:replace="~{fragments/icons :: icon('videos')}"></svg></span>
+                            <span th:if="${lsn.type.name() == 'QUIZ'}"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                            <span th:if="${lsn.type.name() == 'CODING'}"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></span>
                         </div>
                         <div>
                             <div class="lesson-name" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1.1 Introduction</div>
                             <div class="lesson-meta" th:text="${lsn.type.name()} + ' LESSON (Metadata only)'">VIDEO LESSON</div>
                         </div>
                     </div>
-                    <div th:if="${#lists.isEmpty(lessons)}" style="text-align:center; padding:1.5rem; color:var(--lumina-gray-400); font-style:italic;">
-                        No lessons in this course curriculum yet.
+                    <div th:if="${#lists.isEmpty(lessons)}" class="student-table-empty" style="text-align:center; padding:1.5rem; color:var(--lumina-gray-400); font-style:italic;">
+                        <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></div>
+                        <div>No lessons in this course curriculum yet.</div>
                     </div>
                 </div>
             </div>
@@ -192,35 +193,53 @@
                th:href="@{/student/learning(courseId=${course.id})}"
                class="btn-enroll"
                id="btn-enroll-now"
-               data-enrollment-action="continue">Continue learning</a>
+               data-enrollment-action="continue">
+                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                <span>Continue learning</span>
+            </a>
 
             <button th:if="${enrollmentState.action == 'ENROLL_FREE'}"
                     type="button"
                     class="btn-enroll"
                     id="btn-enroll-now"
                     th:data-course-id="${course.id}"
-                    data-enrollment-action="free">Enroll for free</button>
+                    data-enrollment-action="free">
+                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                <span>Enroll for free</span>
+            </button>
 
             <a th:if="${enrollmentState.action == 'BUY_COURSE'}"
                th:href="@{/student/checkout(courseId=${course.id})}"
                class="btn-enroll"
                id="btn-enroll-now"
-               data-enrollment-action="buy">Buy course</a>
+               data-enrollment-action="buy">
+                <svg th:replace="~{fragments/icons :: icon('payments')}"></svg>
+                <span>Buy course</span>
+            </a>
 
             <button th:if="${enrollmentState.action == 'PAYMENT_PENDING'}"
                     type="button"
                     class="btn-enroll"
                     id="btn-enroll-now"
                     disabled
-                    data-enrollment-action="pending">Payment pending</button>
+                    data-enrollment-action="pending">
+                <svg th:replace="~{fragments/icons :: icon('progress')}"></svg>
+                <span>Payment pending</span>
+            </button>
 
             <button th:if="${enrollmentState.action == 'UNAVAILABLE'}"
                     type="button"
                     class="btn-enroll"
                     id="btn-enroll-now"
                     disabled
-                    data-enrollment-action="unavailable">Course unavailable</button>
-            <button class="btn-try" id="btn-try-free">Try First Lesson Free</button>
+                    data-enrollment-action="unavailable">
+                <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
+                <span>Course unavailable</span>
+            </button>
+            <button class="btn-try" id="btn-try-free">
+                <svg th:replace="~{fragments/icons :: icon('videos')}"></svg>
+                <span>Try First Lesson Free</span>
+            </button>
 
             <p style="font-size:0.75rem;color:var(--lumina-gray-400);text-align:center;margin-top:0.75rem;">30-Day Money-Back Guarantee</p>
 
@@ -228,9 +247,9 @@
 
             <h4 style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">This Course Includes</h4>
             <ul class="includes-list">
-                <li><span class="check">✓</span> Full curriculum access</li>
-                <li><span class="check">✓</span> Access on mobile &amp; desktop</li>
-                <li><span class="check">✓</span> Certificate of completion</li>
+                <li><span class="check"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span> Full curriculum access</li>
+                <li><span class="check"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span> Access on mobile &amp; desktop</li>
+                <li><span class="check"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span> Certificate of completion</li>
             </ul>
         </div>
     </div>
