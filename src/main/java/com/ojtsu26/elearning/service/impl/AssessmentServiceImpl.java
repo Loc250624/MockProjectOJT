@@ -12,6 +12,7 @@ import com.ojtsu26.elearning.repository.*;
 import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.CodeJudgeAdapter;
 import com.ojtsu26.elearning.service.CurrentUserService;
+import com.ojtsu26.elearning.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     private final CourseEnrollmentRepository enrollmentRepository;
     private final CurrentUserService currentUserService;
     private final CodeJudgeAdapter codeJudgeAdapter;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private static final List<SubmissionStatus> PENDING_GRADE_STATUSES = List.of(
             SubmissionStatus.SUBMITTED,
@@ -98,12 +100,6 @@ public class AssessmentServiceImpl implements AssessmentService {
                 quizId, student.getId(), QuizAttemptStatus.DRAFT);
         if (existingDraft.isPresent()) {
             return toAttemptView(existingDraft.get(), false);
-        }
-        int maxAttempts = quiz.getMaxAttempts() == null || quiz.getMaxAttempts() < 1 ? 1 : quiz.getMaxAttempts();
-        long usedAttempts = quizAttemptRepository.countByQuizIdAndStudentIdAndStatusIn(
-                quizId, student.getId(), List.of(QuizAttemptStatus.SUBMITTED, QuizAttemptStatus.GRADED));
-        if (usedAttempts >= maxAttempts) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Maximum attempts reached");
         }
         QuizAttempt attempt = QuizAttempt.builder()
                 .quiz(quiz)
@@ -178,13 +174,34 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<AssignmentView> getStudentAssignments(Integer courseId) {
+        User student = currentUserService.getCurrentUser();
+        return codingAssignmentRepository.findPublishedAssignmentsForStudent(student.getId(), courseId).stream()
+                .map(assignment -> toAssignmentView(assignment, null))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public SubmissionView getAssignmentForSubmission(Integer assignmentId) {
         User student = currentUserService.getCurrentUser();
         CodingAssignment assignment = getAssignment(assignmentId);
-        requireEnrollment(student.getId(), assignment.getLesson().getCourse().getId());
+        requireStudentAssignmentAccess(student.getId(), assignment);
         return submissionRepository.findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(assignmentId, student.getId())
-                .map(this::toSubmissionView)
+                .map(this::toStudentAssignmentEditingView)
                 .orElseGet(() -> toAssignmentShell(assignment));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubmissionView> getStudentAssignmentHistory(Integer assignmentId) {
+        User student = currentUserService.getCurrentUser();
+        CodingAssignment assignment = getAssignment(assignmentId);
+        requireStudentAssignmentAccess(student.getId(), assignment);
+        return submissionRepository.findByAssignmentIdAndStudentIdOrderByAttemptNoDescIdDesc(assignmentId, student.getId())
+                .stream()
+                .map(this::toStudentSubmissionView)
+                .toList();
     }
 
     @Override
@@ -193,8 +210,29 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    public SubmissionView runSubmission(Integer assignmentId, AssignmentSubmissionPayload payload) {
+        Submission submission = saveSubmissionEntity(assignmentId, payload, SubmissionStatus.DRAFT);
+        if (assignmentType(submission.getAssignment()) != AssignmentType.CODING) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Only coding assignments can be run");
+        }
+        return judgeSubmissionInternal(submission, false);
+    }
+
+    @Override
     public SubmissionView submitAssignment(Integer assignmentId, AssignmentSubmissionPayload payload) {
-        return saveSubmission(assignmentId, payload, SubmissionStatus.SUBMITTED);
+        Submission submission = saveSubmissionEntity(assignmentId, payload, SubmissionStatus.SUBMITTED);
+        AssignmentType type = assignmentType(submission.getAssignment());
+        if (type == AssignmentType.MCQ) {
+            gradeAssignmentMcqSubmission(submission);
+        } else if (type == AssignmentType.CODING) {
+            SubmissionView view = judgeSubmissionInternal(submission, true);
+            createTeacherSubmissionNotification(submission);
+            return view;
+        } else {
+            submission.setStatus(SubmissionStatus.PENDING_REVIEW);
+        }
+        createTeacherSubmissionNotification(submission);
+        return toSubmissionView(submission);
     }
 
     @Override
@@ -215,7 +253,10 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (payload.getStatus() == QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Create quiz as draft, then publish after adding questions");
         }
-        Lesson lesson = requireLessonForTeacher(payload.getLessonId(), courseId, teacher.getId());
+        Lesson lesson = requireLessonForTeacher(payload.getLessonId(), courseId, teacher.getId(), LessonType.QUIZ);
+        if (quizRepository.existsByLessonId(lesson.getId())) {
+            throw new BusinessException(ErrorCode.ASSESSMENT_CONTENT_ALREADY_EXISTS, "This quiz lesson already has a quiz");
+        }
         Quiz quiz = Quiz.builder()
                 .title(payload.getTitle().trim())
                 .description(trim(payload.getDescription()))
@@ -238,7 +279,13 @@ public class AssessmentServiceImpl implements AssessmentService {
             validateQuizCanPublish(quiz);
         }
         if (payload.getLessonId() != null && !payload.getLessonId().equals(quiz.getLesson().getId())) {
-            Lesson lesson = requireLessonForTeacher(payload.getLessonId(), quiz.getLesson().getCourse().getId(), teacher.getId());
+            Lesson lesson = requireLessonForTeacher(payload.getLessonId(), quiz.getLesson().getCourse().getId(), teacher.getId(), LessonType.QUIZ);
+            quizRepository.findByLessonId(lesson.getId())
+                    .filter(existing -> !existing.getId().equals(quiz.getId()))
+                    .ifPresent(existing -> {
+                        throw new BusinessException(ErrorCode.ASSESSMENT_CONTENT_ALREADY_EXISTS,
+                                "This quiz lesson already has a quiz");
+                    });
             quiz.setLesson(lesson);
         }
         quiz.setTitle(payload.getTitle().trim());
@@ -251,14 +298,22 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
-    public void deleteTeacherQuiz(Integer quizId) {
+    public void archiveTeacherQuiz(Integer quizId) {
         User teacher = currentUserService.getCurrentUser();
         Quiz quiz = requireTeacherQuiz(quizId, teacher.getId());
+        quiz.setStatus(QuizStatus.ARCHIVED);
+    }
+
+    @Override
+    public void deleteTeacherQuiz(Integer quizId) {
+        User teacher = currentUserService.getCurrentUser();
         if (quizAttemptRepository.countByQuizId(quizId) > 0) {
-            quiz.setStatus(QuizStatus.ARCHIVED);
-            return;
+            throw new BusinessException(ErrorCode.BAD_REQUEST,
+                    "Quiz has attempt history; archive it instead of deleting it");
         }
-        quizRepository.delete(quiz);
+        requireTeacherQuiz(quizId, teacher.getId());
+        quizRepository.deleteById(quizId);
+        quizRepository.flush();
     }
 
     @Override
@@ -352,6 +407,132 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public AssignmentView getTeacherAssignment(Integer assignmentId) {
+        User teacher = currentUserService.getCurrentUser();
+        CodingAssignment assignment = getAssignment(assignmentId);
+        requireTeacherCourse(assignment.getLesson().getCourse().getId(), teacher.getId());
+        return toAssignmentView(assignment, assignmentStats(List.of(assignment)).get(assignment.getId()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AssignmentView getTeacherAssignmentForLesson(Integer courseId, Integer lessonId) {
+        User teacher = currentUserService.getCurrentUser();
+        Lesson lesson = requireLessonForTeacher(lessonId, courseId, teacher.getId(), LessonType.CODING);
+        return codingAssignmentRepository.findByLessonId(lesson.getId())
+                .map(assignment -> toAssignmentView(assignment, assignmentStats(List.of(assignment)).get(assignment.getId())))
+                .orElse(null);
+    }
+
+    @Override
+    public AssignmentView createTeacherAssignment(Integer courseId, AssignmentPayload payload) {
+        User teacher = currentUserService.getCurrentUser();
+        Course course = requireTeacherCourseEntity(courseId, teacher.getId());
+        validateAssignmentPayload(payload);
+        CodingAssignment assignment = CodingAssignment.builder()
+                .course(course)
+                .build();
+        if (payload.getLessonId() != null) {
+            Lesson lesson = requireLessonForTeacher(payload.getLessonId(), courseId, teacher.getId(), LessonType.CODING);
+            if (codingAssignmentRepository.existsByLessonId(lesson.getId())) {
+                throw new BusinessException(ErrorCode.ASSESSMENT_CONTENT_ALREADY_EXISTS,
+                        "This coding lesson already has a coding exercise");
+            }
+            assignment.setLesson(lesson);
+        }
+        applyAssignmentPayload(assignment, payload);
+        applyAssignmentQuestions(assignment, payload.getQuestions());
+        applyAssignees(assignment, payload.getAssigneeStudentIds());
+        CodingAssignment saved = codingAssignmentRepository.save(assignment);
+        createStudentAssignedNotifications(saved);
+        return toAssignmentView(saved, null);
+    }
+
+    @Override
+    public AssignmentView updateTeacherAssignment(Integer assignmentId, AssignmentPayload payload) {
+        User teacher = currentUserService.getCurrentUser();
+        CodingAssignment assignment = getAssignment(assignmentId);
+        requireTeacherCourse(courseOf(assignment).getId(), teacher.getId());
+        validateAssignmentPayload(payload);
+        if (payload.getLessonId() != null && (assignment.getLesson() == null
+                || !payload.getLessonId().equals(assignment.getLesson().getId()))) {
+            Lesson lesson = requireLessonForTeacher(payload.getLessonId(), courseOf(assignment).getId(),
+                    teacher.getId(), LessonType.CODING);
+            codingAssignmentRepository.findByLessonId(lesson.getId())
+                    .filter(existing -> !existing.getId().equals(assignment.getId()))
+                    .ifPresent(existing -> {
+                        throw new BusinessException(ErrorCode.ASSESSMENT_CONTENT_ALREADY_EXISTS,
+                                "This coding lesson already has a coding exercise");
+                    });
+            assignment.setLesson(lesson);
+        } else if (payload.getLessonId() == null && assignment.getCourse() != null) {
+            assignment.setLesson(null);
+        }
+        applyAssignmentPayload(assignment, payload);
+        applyAssignmentQuestions(assignment, payload.getQuestions());
+        applyAssignees(assignment, payload.getAssigneeStudentIds());
+        createStudentAssignedNotifications(assignment);
+        return toAssignmentView(assignment, assignmentStats(List.of(assignment)).get(assignment.getId()));
+    }
+
+    @Override
+    public void deleteTeacherAssignment(Integer assignmentId) {
+        User teacher = currentUserService.getCurrentUser();
+        CodingAssignment assignment = getAssignment(assignmentId);
+        requireTeacherCourse(courseOf(assignment).getId(), teacher.getId());
+        if (submissionRepository.countByAssignmentId(assignmentId) > 0) {
+            assignment.setStatus("ARCHIVED");
+            return;
+        }
+        codingAssignmentRepository.delete(assignment);
+    }
+
+    @Override
+    public QuestionView createTeacherAssignmentQuestion(Integer assignmentId, QuestionPayload payload) {
+        User teacher = currentUserService.getCurrentUser();
+        CodingAssignment assignment = getAssignment(assignmentId);
+        requireTeacherCourse(courseOf(assignment).getId(), teacher.getId());
+        if (assignmentType(assignment) != AssignmentType.MCQ) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Only MCQ assignments can have questions");
+        }
+        validateQuestionPayload(payload);
+        Question question = Question.builder().assignment(assignment).build();
+        applyQuestion(question, payload);
+        return toQuestionView(questionRepository.save(question), true);
+    }
+
+    @Override
+    public QuestionView updateTeacherAssignmentQuestion(Integer questionId, QuestionPayload payload) {
+        User teacher = currentUserService.getCurrentUser();
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Question not found"));
+        if (question.getAssignment() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Question does not belong to an assignment");
+        }
+        requireTeacherCourse(courseOf(question.getAssignment()).getId(), teacher.getId());
+        validateQuestionPayload(payload);
+        applyQuestion(question, payload);
+        return toQuestionView(question, true);
+    }
+
+    @Override
+    public void deleteTeacherAssignmentQuestion(Integer questionId) {
+        User teacher = currentUserService.getCurrentUser();
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Question not found"));
+        if (question.getAssignment() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Question does not belong to an assignment");
+        }
+        requireTeacherCourse(courseOf(question.getAssignment()).getId(), teacher.getId());
+        if (quizAnswerRepository.countByQuestionId(questionId) > 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST,
+                    "Question has submitted answers and cannot be deleted without losing history");
+        }
+        questionRepository.delete(question);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<SubmissionView> getTeacherSubmissions(Integer courseId, Integer assignmentId, SubmissionStatus status,
                                                       String search, Pageable pageable) {
         User teacher = currentUserService.getCurrentUser();
@@ -387,6 +568,13 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public SubmissionView getTeacherSubmission(Integer submissionId) {
+        User teacher = currentUserService.getCurrentUser();
+        return toSubmissionView(requireTeacherSubmission(submissionId, teacher.getId()));
+    }
+
+    @Override
     public SubmissionView gradeSubmission(Integer submissionId, GradePayload payload) {
         User teacher = currentUserService.getCurrentUser();
         Submission submission = requireTeacherSubmission(submissionId, teacher.getId());
@@ -403,6 +591,9 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .feedback(payload.getFeedback().trim())
                 .build();
         gradeFeedbackRepository.save(feedback);
+        if (Boolean.TRUE.equals(payload.getPublish())) {
+            createStudentGradeNotification(submission);
+        }
         return toSubmissionView(submission);
     }
 
@@ -459,6 +650,10 @@ public class AssessmentServiceImpl implements AssessmentService {
     public SubmissionView judgeSubmission(Integer submissionId) {
         User teacher = currentUserService.getCurrentUser();
         Submission submission = requireTeacherSubmission(submissionId, teacher.getId());
+        return judgeSubmissionInternal(submission, true);
+    }
+
+    private SubmissionView judgeSubmissionInternal(Submission submission, boolean updateSubmissionStatus) {
         CodingAssignment assignment = submission.getAssignment();
         List<Testcase> testcases = testcaseRepository.findByAssignmentIdOrderByIdAsc(assignment.getId());
         CodingAssignment judgeAssignment = CodingAssignment.builder()
@@ -490,7 +685,7 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .executionTimeMs(outcome.executionTimeMs())
                 .build();
         codeJudgeResultRepository.save(result);
-        if (outcome.status() == CodeJudgeStatus.PASSED || outcome.status() == CodeJudgeStatus.FAILED) {
+        if (updateSubmissionStatus && (outcome.status() == CodeJudgeStatus.PASSED || outcome.status() == CodeJudgeStatus.FAILED)) {
             submission.setStatus(outcome.status() == CodeJudgeStatus.PASSED
                     ? SubmissionStatus.AUTO_GRADED
                     : SubmissionStatus.RETURNED);
@@ -500,25 +695,57 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     private SubmissionView saveSubmission(Integer assignmentId, AssignmentSubmissionPayload payload, SubmissionStatus status) {
+        return toSubmissionView(saveSubmissionEntity(assignmentId, payload, status));
+    }
+
+    private Submission saveSubmissionEntity(Integer assignmentId, AssignmentSubmissionPayload payload, SubmissionStatus status) {
         User student = currentUserService.getCurrentUser();
         CodingAssignment assignment = getAssignment(assignmentId);
-        requireEnrollment(student.getId(), assignment.getLesson().getCourse().getId());
-        Submission submission = submissionRepository.findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(assignmentId, student.getId())
-                .filter(s -> s.getStatus() == SubmissionStatus.DRAFT)
+        requireStudentAssignmentAccess(student.getId(), assignment);
+        Submission submission = submissionRepository.findTopByAssignmentIdAndStudentIdAndStatusOrderByUpdatedAtDesc(
+                        assignmentId, student.getId(), SubmissionStatus.DRAFT)
+                .filter(s -> status == SubmissionStatus.DRAFT || s.getAttemptNo() != null)
                 .orElseGet(() -> Submission.builder()
                         .assignment(assignment)
                         .lesson(assignment.getLesson())
                         .student(student)
+                        .attemptNo(submissionRepository.findMaxAttemptNo(assignmentId, student.getId()) + 1)
                         .build());
         submission.setSubmittedContent(trim(payload.getContentText()));
         submission.setCodeLanguage(trim(payload.getCodeLanguage()));
         submission.setCodeContent(trim(payload.getCodeContent()));
         submission.setFilePath(trim(payload.getFilePath()));
         submission.setStatus(status);
+        if (assignmentType(assignment) == AssignmentType.MCQ) {
+            persistAssignmentAnswers(submission, payload);
+        }
         if (status == SubmissionStatus.SUBMITTED) {
             submission.setSubmittedAt(LocalDateTime.now());
         }
-        return toSubmissionView(submissionRepository.save(submission));
+        return submissionRepository.save(submission);
+    }
+
+    private void createTeacherSubmissionNotification(Submission submission) {
+        if (submission == null || submission.getId() == null || submission.getAssignment() == null
+                || courseOf(submission.getAssignment()) == null
+                || courseOf(submission.getAssignment()).getInstructor() == null) {
+            return;
+        }
+        CodingAssignment assignment = submission.getAssignment();
+        Course course = courseOf(assignment);
+        User teacher = course.getInstructor();
+        String studentName = submission.getStudent() == null || submission.getStudent().getFullName() == null
+                ? "A student"
+                : submission.getStudent().getFullName();
+        notificationService.createNotification(
+                teacher,
+                NotificationType.ASSIGNMENT_SUBMITTED,
+                "New assignment submission",
+                studentName + " submitted " + assignment.getTitle() + ".",
+                "/teacher/grading?courseId=" + course.getId()
+                        + "&assignmentId=" + assignment.getId()
+                        + "&submissionId=" + submission.getId(),
+                "TEACHER_ASSIGNMENT_SUBMISSION:submission:" + submission.getId());
     }
 
     private void persistAnswers(QuizAttempt attempt, QuizDraftPayload payload) {
@@ -543,13 +770,64 @@ public class AssessmentServiceImpl implements AssessmentService {
         }
     }
 
+    private void persistAssignmentAnswers(Submission submission, AssignmentSubmissionPayload payload) {
+        Submission savedSubmission = submission.getId() == null ? submissionRepository.save(submission) : submission;
+        Map<Integer, QuizAnswer> existing = quizAnswerRepository.findBySubmissionId(savedSubmission.getId()).stream()
+                .collect(Collectors.toMap(a -> a.getQuestion().getId(), Function.identity()));
+        Set<Integer> questionIds = questionRepository.findByAssignmentIdOrderByDisplayOrderAscIdAsc(submission.getAssignment().getId()).stream()
+                .map(Question::getId)
+                .collect(Collectors.toSet());
+        for (AnswerPayload answerPayload : Optional.ofNullable(payload.getAnswers()).orElse(List.of())) {
+            if (!questionIds.contains(answerPayload.getQuestionId())) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "Question does not belong to this assignment");
+            }
+            Question question = questionRepository.findById(answerPayload.getQuestionId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Question not found"));
+            QuizAnswer answer = existing.getOrDefault(question.getId(), QuizAnswer.builder()
+                    .submission(savedSubmission)
+                    .question(question)
+                    .build());
+            answer.setSelectedOptionsJson(writeJson(Optional.ofNullable(answerPayload.getSelectedOptionIds()).orElse(List.of())));
+            answer.setAnswerText(trim(answerPayload.getAnswerText()));
+            quizAnswerRepository.save(answer);
+        }
+    }
+
+    private void gradeAssignmentMcqSubmission(Submission submission) {
+        List<Question> questions = questionRepository.findByAssignmentIdOrderByDisplayOrderAscIdAsc(submission.getAssignment().getId());
+        if (questions.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "MCQ assignment has no questions");
+        }
+        Map<Integer, QuizAnswer> answers = quizAnswerRepository.findBySubmissionId(submission.getId()).stream()
+                .collect(Collectors.toMap(a -> a.getQuestion().getId(), Function.identity()));
+        BigDecimal earned = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
+        for (Question question : questions) {
+            total = total.add(points(question));
+            Set<Integer> selected = new HashSet<>(readIntegerList(answers.get(question.getId()) == null
+                    ? null
+                    : answers.get(question.getId()).getSelectedOptionsJson()));
+            Set<Integer> correct = new HashSet<>(AssessmentOptionCodec.correctIndexes(question, objectMapper));
+            if (!correct.isEmpty() && selected.equals(correct)) {
+                earned = earned.add(points(question));
+            }
+        }
+        BigDecimal maxScore = Optional.ofNullable(submission.getAssignment().getMaxScore())
+                .filter(value -> value.compareTo(BigDecimal.ZERO) > 0)
+                .orElse(new BigDecimal("100.00"));
+        submission.setScore(total.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : earned.multiply(maxScore).divide(total, 2, RoundingMode.HALF_UP));
+        submission.setStatus(SubmissionStatus.AUTO_GRADED);
+    }
+
     private BigDecimal gradeAttempt(QuizAttempt attempt) {
         Map<Integer, QuizAnswer> answers = quizAnswerRepository.findByAttemptId(attempt.getId()).stream()
                 .collect(Collectors.toMap(a -> a.getQuestion().getId(), Function.identity()));
         BigDecimal earned = BigDecimal.ZERO;
         for (Question question : questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(attempt.getQuiz().getId())) {
             Set<Integer> selected = new HashSet<>(readIntegerList(answers.get(question.getId()) == null ? null : answers.get(question.getId()).getSelectedOptionsJson()));
-            Set<Integer> correct = new HashSet<>(correctOptionIndexes(question));
+            Set<Integer> correct = new HashSet<>(AssessmentOptionCodec.correctIndexes(question, objectMapper));
             if (!correct.isEmpty() && selected.equals(correct)) {
                 earned = earned.add(points(question));
             }
@@ -563,9 +841,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         question.setPoints(payload.getPoints() == null ? BigDecimal.ONE : payload.getPoints());
         question.setDisplayOrder(payload.getDisplayOrder());
         question.setOptionsJson(writeJson(payload.getOptions()));
-        question.setCorrectAnswer(correctOptionIndexes(payload.getOptions()).stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(",")));
+        question.setCorrectAnswer(AssessmentOptionCodec.correctAnswerValue(payload.getOptions()));
     }
 
     private void validateQuizPayload(QuizPayload payload) {
@@ -586,6 +862,114 @@ public class AssessmentServiceImpl implements AssessmentService {
                 || payload.getPassingScore().compareTo(new BigDecimal("100")) > 0)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Passing score must be between 0 and 100");
         }
+    }
+
+    private void validateAssignmentPayload(AssignmentPayload payload) {
+        if (payload == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Assignment payload is required");
+        }
+        if (payload.getTitle() == null || payload.getTitle().trim().isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Assignment title is required");
+        }
+        if (payload.getMaxScore() == null || payload.getMaxScore().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Max score must be greater than zero");
+        }
+        AssignmentType type = payload.getType() == null ? AssignmentType.CODING : payload.getType();
+        if (type == AssignmentType.CODING) {
+            if (payload.getProblemStatement() == null || payload.getProblemStatement().trim().isBlank()) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "Problem statement is required");
+            }
+            if (payload.getAllowedLanguages() == null || payload.getAllowedLanguages().trim().isBlank()) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "Allowed languages are required");
+            }
+            if (payload.getTimeLimitMs() == null || payload.getTimeLimitMs() < 1) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "Time limit must be greater than zero");
+            }
+        } else if (type == AssignmentType.MCQ) {
+            Optional.ofNullable(payload.getQuestions()).orElse(List.of()).forEach(this::validateQuestionPayload);
+        } else if (payload.getInstructions() == null || payload.getInstructions().trim().isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Essay instructions are required");
+        }
+        String status = normalizeAssignmentStatus(payload.getStatus());
+        if (!Set.of("DRAFT", "PUBLISHED", "ARCHIVED").contains(status)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Invalid assignment status");
+        }
+    }
+
+    private void applyAssignmentPayload(CodingAssignment assignment, AssignmentPayload payload) {
+        assignment.setTitle(payload.getTitle().trim());
+        assignment.setType(payload.getType() == null ? AssignmentType.CODING : payload.getType());
+        assignment.setInstructions(trim(payload.getInstructions()));
+        assignment.setProblemStatement(trim(payload.getProblemStatement()));
+        assignment.setStarterCode(trim(payload.getStarterCode()));
+        assignment.setAllowedLanguages(trim(payload.getAllowedLanguages()));
+        assignment.setTimeLimitMs(payload.getTimeLimitMs());
+        assignment.setMaxScore(payload.getMaxScore());
+        assignment.setDueDate(payload.getDueDate());
+        assignment.setStatus(normalizeAssignmentStatus(payload.getStatus()));
+    }
+
+    private void applyAssignmentQuestions(CodingAssignment assignment, List<QuestionPayload> payloads) {
+        if (assignmentType(assignment) != AssignmentType.MCQ || payloads == null) {
+            return;
+        }
+        if (assignment.getQuestions() == null) {
+            assignment.setQuestions(new ArrayList<>());
+        }
+        Map<Integer, Question> existingById = assignment.getQuestions().stream()
+                .filter(question -> question.getId() != null)
+                .collect(Collectors.toMap(Question::getId, Function.identity()));
+        Set<Integer> retainedIds = new HashSet<>();
+        for (QuestionPayload payload : payloads) {
+            Question question = payload.getId() == null ? Question.builder().assignment(assignment).build()
+                    : Optional.ofNullable(existingById.get(payload.getId()))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST,
+                            "Question does not belong to this assignment"));
+            applyQuestion(question, payload);
+            if (question.getId() != null) {
+                retainedIds.add(question.getId());
+            } else {
+                assignment.getQuestions().add(question);
+            }
+        }
+        assignment.getQuestions().removeIf(question -> question.getId() != null && !retainedIds.contains(question.getId()));
+    }
+
+    private void applyAssignees(CodingAssignment assignment, List<Integer> assigneeStudentIds) {
+        if (assigneeStudentIds == null) {
+            return;
+        }
+        if (assignment.getAssignees() == null) {
+            assignment.setAssignees(new ArrayList<>());
+        }
+        Course course = courseOf(assignment);
+        Map<Integer, AssignmentAssignee> existingByStudentId = assignment.getAssignees().stream()
+                .filter(assignee -> assignee.getStudent() != null && assignee.getStudent().getId() != null)
+                .collect(Collectors.toMap(assignee -> assignee.getStudent().getId(), Function.identity(), (left, right) -> left));
+        Set<Integer> requestedIds = assigneeStudentIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (Integer studentId : requestedIds) {
+            CourseEnrollment enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, course.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST,
+                            "Assigned student must be enrolled in the course"));
+            existingByStudentId.computeIfAbsent(studentId, ignored -> {
+                AssignmentAssignee assignee = AssignmentAssignee.builder()
+                        .assignment(assignment)
+                        .student(enrollment.getStudent())
+                        .status("ASSIGNED")
+                        .build();
+                assignment.getAssignees().add(assignee);
+                return assignee;
+            });
+        }
+        assignment.getAssignees().removeIf(assignee -> assignee.getStudent() == null
+                || !requestedIds.contains(assignee.getStudent().getId()));
+    }
+
+    private String normalizeAssignmentStatus(String status) {
+        String normalized = normalize(status);
+        return normalized == null ? "DRAFT" : normalized.toUpperCase(Locale.ROOT);
     }
 
     private void validateQuizCanPublish(Quiz quiz) {
@@ -636,9 +1020,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     private boolean questionContentOrScoringChanged(Question question, QuestionPayload payload) {
         QuestionType type = payload.getQuestionType() == null ? QuestionType.SINGLE_CHOICE : payload.getQuestionType();
         BigDecimal points = payload.getPoints() == null ? BigDecimal.ONE : payload.getPoints();
-        String correct = correctOptionIndexes(payload.getOptions()).stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
+        String correct = AssessmentOptionCodec.correctAnswerValue(payload.getOptions());
         return !Objects.equals(question.getQuestionText(), payload.getContent().trim())
                 || !Objects.equals(question.getQuestionType() == null ? QuestionType.SINGLE_CHOICE : question.getQuestionType(), type)
                 || points(question).compareTo(points) != 0
@@ -675,14 +1057,14 @@ public class AssessmentServiceImpl implements AssessmentService {
     private Submission requireTeacherSubmission(Integer submissionId, Integer teacherId) {
         Submission submission = submissionRepository.findByIdWithAssignmentCourse(submissionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Submission not found"));
-        requireTeacherCourse(submission.getAssignment().getLesson().getCourse().getId(), teacherId);
+        requireTeacherCourse(courseOf(submission.getAssignment()).getId(), teacherId);
         return submission;
     }
 
     private Testcase requireTeacherTestcase(Integer testcaseId, Integer teacherId) {
         Testcase testcase = testcaseRepository.findByIdWithAssignmentCourse(testcaseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Testcase not found"));
-        requireTeacherCourse(testcase.getAssignment().getLesson().getCourse().getId(), teacherId);
+        requireTeacherCourse(courseOf(testcase.getAssignment()).getId(), teacherId);
         return testcase;
     }
 
@@ -692,23 +1074,96 @@ public class AssessmentServiceImpl implements AssessmentService {
         return quiz;
     }
 
-    private Lesson requireLessonForTeacher(Integer lessonId, Integer courseId, Integer teacherId) {
+    private Lesson requireLessonForTeacher(Integer lessonId, Integer courseId, Integer teacherId, LessonType expectedType) {
         if (lessonId == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Lesson is required");
         }
-        Lesson lesson = lessonRepository.findById(lessonId)
+        Lesson lesson = lessonRepository.findByIdWithCourseAndAssessment(lessonId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Lesson not found"));
         if (lesson.getCourse() == null || !lesson.getCourse().getId().equals(courseId)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Lesson does not belong to this course");
         }
         requireTeacherCourse(courseId, teacherId);
+        if (expectedType != null && lesson.getType() != expectedType) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST,
+                    "Lesson type must be " + expectedType + " for this assessment");
+        }
         return lesson;
     }
 
     private void requireTeacherCourse(Integer courseId, Integer teacherId) {
-        courseRepository.findById(courseId)
+        requireTeacherCourseEntity(courseId, teacherId);
+    }
+
+    private Course requireTeacherCourseEntity(Integer courseId, Integer teacherId) {
+        if (courseId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Course is required");
+        }
+        return courseRepository.findById(courseId)
                 .filter(course -> course.getInstructor() != null && course.getInstructor().getId().equals(teacherId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCESS_DENIED, "Teacher can only manage their own course"));
+    }
+
+    private void requireStudentAssignmentAccess(Integer studentId, CodingAssignment assignment) {
+        Course course = courseOf(assignment);
+        requireEnrollment(studentId, course.getId());
+        String status = normalizeAssignmentStatus(assignment.getStatus());
+        if (!"PUBLISHED".equals(status)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Assignment is not published");
+        }
+        List<AssignmentAssignee> assignees = Optional.ofNullable(assignment.getAssignees()).orElse(List.of());
+        if (!assignees.isEmpty() && assignees.stream()
+                .noneMatch(assignee -> assignee.getStudent() != null && assignee.getStudent().getId().equals(studentId))) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Assignment is not assigned to this student");
+        }
+    }
+
+    private Course courseOf(CodingAssignment assignment) {
+        if (assignment == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "Assignment not found");
+        }
+        if (assignment.getCourse() != null) {
+            return assignment.getCourse();
+        }
+        if (assignment.getLesson() != null && assignment.getLesson().getCourse() != null) {
+            return assignment.getLesson().getCourse();
+        }
+        throw new BusinessException(ErrorCode.BAD_REQUEST, "Assignment is not attached to a course");
+    }
+
+    private AssignmentType assignmentType(CodingAssignment assignment) {
+        return assignment == null || assignment.getType() == null ? AssignmentType.CODING : assignment.getType();
+    }
+
+    private void createStudentGradeNotification(Submission submission) {
+        if (submission == null || submission.getStudent() == null || submission.getAssignment() == null) {
+            return;
+        }
+        notificationService.createNotification(
+                submission.getStudent(),
+                NotificationType.ASSIGNMENT_GRADED,
+                "Assignment graded",
+                submission.getAssignment().getTitle() + " has been graded.",
+                "/student/submissions/" + submission.getId() + "/result",
+                "STUDENT_ASSIGNMENT_GRADED:submission:" + submission.getId());
+    }
+
+    private void createStudentAssignedNotifications(CodingAssignment assignment) {
+        if (assignment == null || assignment.getId() == null || !"PUBLISHED".equals(normalizeAssignmentStatus(assignment.getStatus()))) {
+            return;
+        }
+        for (AssignmentAssignee assignee : Optional.ofNullable(assignment.getAssignees()).orElse(List.of())) {
+            if (assignee.getStudent() != null) {
+                notificationService.createNotification(
+                        assignee.getStudent(),
+                        NotificationType.ASSIGNMENT_ASSIGNED,
+                        "New assignment",
+                        assignment.getTitle() + " is now available.",
+                        "/student/assignments/" + assignment.getId() + "/submit",
+                        "STUDENT_ASSIGNMENT_ASSIGNED:assignment:" + assignment.getId()
+                                + ":student:" + assignee.getStudent().getId());
+            }
+        }
     }
 
     private void validateTeacherSubmissionFilters(Integer courseId, Integer assignmentId, Integer teacherId) {
@@ -717,8 +1172,8 @@ public class AssessmentServiceImpl implements AssessmentService {
         }
         if (assignmentId != null) {
             CodingAssignment assignment = getAssignment(assignmentId);
-            requireTeacherCourse(assignment.getLesson().getCourse().getId(), teacherId);
-            if (courseId != null && !assignment.getLesson().getCourse().getId().equals(courseId)) {
+            requireTeacherCourse(courseOf(assignment).getId(), teacherId);
+            if (courseId != null && !courseOf(assignment).getId().equals(courseId)) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "Assignment does not belong to this course");
             }
         }
@@ -885,9 +1340,18 @@ public class AssessmentServiceImpl implements AssessmentService {
         SubmissionView view = new SubmissionView();
         view.setAssignmentId(assignment.getId());
         view.setAssignmentTitle(assignment.getTitle());
-        view.setLessonId(assignment.getLesson().getId());
-        view.setCourseId(assignment.getLesson().getCourse().getId());
-        view.setCourseTitle(assignment.getLesson().getCourse().getTitle());
+        view.setAssignmentType(assignmentType(assignment).name());
+        if (assignment.getLesson() != null) {
+            view.setLessonId(assignment.getLesson().getId());
+        }
+        Course course = courseOf(assignment);
+        view.setCourseId(course.getId());
+        view.setCourseTitle(course.getTitle());
+        if (assignmentType(assignment) == AssignmentType.MCQ && assignment.getId() != null) {
+            view.setAnswers(questionRepository.findByAssignmentIdOrderByDisplayOrderAscIdAsc(assignment.getId()).stream()
+                    .map(question -> toQuestionView(question, false))
+                    .toList());
+        }
         return view;
     }
 
@@ -906,7 +1370,16 @@ public class AssessmentServiceImpl implements AssessmentService {
             view.setFeedback(null);
             view.setGradedAt(null);
             view.setGradedByName(null);
+            view.getAnswers().forEach(question ->
+                    question.getOptions().forEach(option -> option.setCorrect(null)));
         }
+        return view;
+    }
+
+    private SubmissionView toStudentAssignmentEditingView(Submission submission) {
+        SubmissionView view = toSubmissionView(submission);
+        view.getAnswers().forEach(question ->
+                question.getOptions().forEach(option -> option.setCorrect(null)));
         return view;
     }
 
@@ -915,11 +1388,16 @@ public class AssessmentServiceImpl implements AssessmentService {
                 ? toAssignmentShell(submission.getAssignment())
                 : toLegacySubmissionShell(submission);
         view.setId(submission.getId());
+        view.setAttemptNo(submission.getAttemptNo());
         view.setStudentName(submission.getStudent() == null ? null : submission.getStudent().getFullName());
         view.setContentText(submission.getSubmittedContent());
         view.setCodeLanguage(submission.getCodeLanguage());
         view.setCodeContent(submission.getCodeContent());
         view.setFilePath(submission.getFilePath());
+        if (submission.getAssignment() != null && assignmentType(submission.getAssignment()) == AssignmentType.MCQ
+                && submission.getId() != null) {
+            view.setAnswers(toAssignmentAnswerViews(submission));
+        }
         view.setStatus(submission.getStatus());
         view.setScore(submission.getScore());
         view.setMaxScore(Optional.ofNullable(submission.getAssignment())
@@ -942,6 +1420,21 @@ public class AssessmentServiceImpl implements AssessmentService {
             view.setOutputLog(latestResult.getOutputLog());
         }
         return view;
+    }
+
+    private List<QuestionView> toAssignmentAnswerViews(Submission submission) {
+        Map<Integer, QuizAnswer> answerByQuestionId = quizAnswerRepository.findBySubmissionId(submission.getId()).stream()
+                .collect(Collectors.toMap(answer -> answer.getQuestion().getId(), Function.identity(), (left, right) -> left));
+        return questionRepository.findByAssignmentIdOrderByDisplayOrderAscIdAsc(submission.getAssignment().getId()).stream()
+                .map(question -> {
+                    QuestionView view = toQuestionView(question, true);
+                    QuizAnswer answer = answerByQuestionId.get(question.getId());
+                    if (answer != null) {
+                        view.setSelectedOptionIds(readIntegerList(answer.getSelectedOptionsJson()));
+                    }
+                    return view;
+                })
+                .toList();
     }
 
     private boolean isReleasedSubmission(Submission submission) {
@@ -970,17 +1463,35 @@ public class AssessmentServiceImpl implements AssessmentService {
         AssignmentView view = new AssignmentView();
         view.setId(assignment.getId());
         view.setTitle(assignment.getTitle());
-        view.setType("Coding");
+        view.setProblemStatement(assignment.getProblemStatement());
+        view.setInstructions(assignment.getInstructions());
+        view.setStarterCode(assignment.getStarterCode());
+        view.setAllowedLanguages(assignment.getAllowedLanguages());
+        view.setTimeLimitMs(assignment.getTimeLimitMs());
+        view.setType(assignmentType(assignment).name());
         view.setDueDate(assignment.getDueDate());
         view.setStatus(assignment.getStatus());
         view.setMaxScore(assignment.getMaxScore());
+        List<AssignmentAssignee> assignees = Optional.ofNullable(assignment.getAssignees()).orElse(List.of());
+        view.setAssigneeStudentIds(assignees.stream()
+                .map(AssignmentAssignee::getStudent)
+                .filter(Objects::nonNull)
+                .map(User::getId)
+                .filter(Objects::nonNull)
+                .toList());
+        view.setAssigneeCount(view.getAssigneeStudentIds().size());
+        if (assignmentType(assignment) == AssignmentType.MCQ && assignment.getId() != null) {
+            view.setQuestions(questionRepository.findByAssignmentIdOrderByDisplayOrderAscIdAsc(assignment.getId()).stream()
+                    .map(question -> toQuestionView(question, true))
+                    .toList());
+        }
         if (assignment.getLesson() != null) {
             view.setLessonId(assignment.getLesson().getId());
-            if (assignment.getLesson().getCourse() != null) {
-                view.setCourseId(assignment.getLesson().getCourse().getId());
-                view.setCourseTitle(assignment.getLesson().getCourse().getTitle());
-            }
+            view.setLessonTitle(assignment.getLesson().getTitle());
         }
+        Course course = courseOf(assignment);
+        view.setCourseId(course.getId());
+        view.setCourseTitle(course.getTitle());
         view.setSubmissionCount(stats == null || stats.getSubmissionCount() == null ? 0L : stats.getSubmissionCount());
         view.setPendingCount(stats == null || stats.getPendingCount() == null ? 0L : stats.getPendingCount());
         return view;
@@ -1035,60 +1546,8 @@ public class AssessmentServiceImpl implements AssessmentService {
         return question.getPoints() == null ? BigDecimal.ONE : question.getPoints();
     }
 
-    private List<Integer> correctOptionIndexes(Question question) {
-        if (question.getCorrectAnswer() == null || question.getCorrectAnswer().isBlank()) {
-            return readOptions(question).stream().filter(ParsedOption::correct).map(ParsedOption::id).toList();
-        }
-        List<Integer> indexes = new ArrayList<>();
-        for (String part : question.getCorrectAnswer().split(",")) {
-            try {
-                indexes.add(Integer.parseInt(part.trim()));
-            } catch (NumberFormatException ignored) {
-                List<ParsedOption> options = readOptions(question);
-                for (ParsedOption option : options) {
-                    if (option.content().equalsIgnoreCase(part.trim())) {
-                        indexes.add(option.id());
-                    }
-                }
-            }
-        }
-        return indexes;
-    }
-
-    private List<Integer> correctOptionIndexes(List<OptionPayload> options) {
-        List<Integer> indexes = new ArrayList<>();
-        for (int i = 0; i < options.size(); i++) {
-            if (Boolean.TRUE.equals(options.get(i).getCorrect())) {
-                indexes.add(i);
-            }
-        }
-        return indexes;
-    }
-
-    private List<ParsedOption> readOptions(Question question) {
-        if (question.getOptionsJson() == null || question.getOptionsJson().isBlank()) {
-            return List.of();
-        }
-        try {
-            List<OptionPayload> payloads = objectMapper.readValue(question.getOptionsJson(), new TypeReference<>() {});
-            List<Integer> correct = question.getCorrectAnswer() == null ? List.of() : correctOptionIndexes(question);
-            List<ParsedOption> parsed = new ArrayList<>();
-            for (int i = 0; i < payloads.size(); i++) {
-                parsed.add(new ParsedOption(i, payloads.get(i).getContent(), Boolean.TRUE.equals(payloads.get(i).getCorrect()) || correct.contains(i)));
-            }
-            return parsed;
-        } catch (Exception ignored) {
-            try {
-                List<String> values = objectMapper.readValue(question.getOptionsJson(), new TypeReference<>() {});
-                List<ParsedOption> parsed = new ArrayList<>();
-                for (int i = 0; i < values.size(); i++) {
-                    parsed.add(new ParsedOption(i, values.get(i), values.get(i).equalsIgnoreCase(Optional.ofNullable(question.getCorrectAnswer()).orElse(""))));
-                }
-                return parsed;
-            } catch (Exception ex) {
-                return List.of();
-            }
-        }
+    private List<AssessmentOptionCodec.ParsedOption> readOptions(Question question) {
+        return AssessmentOptionCodec.readOptions(question, objectMapper);
     }
 
     private List<Integer> readIntegerList(String json) {
@@ -1119,6 +1578,4 @@ public class AssessmentServiceImpl implements AssessmentService {
         return trimmed == null || trimmed.isBlank() ? null : trimmed;
     }
 
-    private record ParsedOption(Integer id, String content, Boolean correct) {
-    }
 }

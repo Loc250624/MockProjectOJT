@@ -206,6 +206,14 @@ public class StudentViewController {
     @GetMapping("/code-assignment")
     public String codeAssignment() { return "student/code-assignment"; }
 
+    @GetMapping("/assignments")
+    public String assignments(@RequestParam(required = false) Integer courseId, Model model) {
+        model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
+        model.addAttribute("assignments", assessmentService.getStudentAssignments(courseId));
+        model.addAttribute("selectedCourseId", courseId);
+        return "student/assignments";
+    }
+
     @GetMapping("/assignments/{assignmentId}/submit")
     public String submitAssignment(@PathVariable Integer assignmentId, Model model) {
         model.addAttribute("submission", assessmentService.getAssignmentForSubmission(assignmentId));

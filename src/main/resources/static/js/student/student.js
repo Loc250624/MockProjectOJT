@@ -582,6 +582,7 @@ function initQuizPanel(panel) {
     var saveButton = document.getElementById('quiz-save-button');
     var submitButton = document.getElementById('quiz-submit-button');
     var result = document.getElementById('quiz-result');
+    var review = document.getElementById('quiz-review');
     var retakeButton = document.getElementById('quiz-retake-button');
     var stateLabel = document.getElementById('quiz-state-label');
     var attempt = null;
@@ -593,7 +594,18 @@ function initQuizPanel(panel) {
     function parseOptions(question) {
         try {
             var parsed = JSON.parse(question.optionsJson || '[]');
-            return Array.isArray(parsed) ? parsed : [];
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed.map(function(option) {
+                if (option && typeof option === 'object') {
+                    return {
+                        content: String(option.content || ''),
+                        correct: option.correct === true
+                    };
+                }
+                return { content: String(option), correct: null };
+            }).filter(function(option) { return option.content; });
         } catch (error) {
             return [];
         }
@@ -622,8 +634,11 @@ function initQuizPanel(panel) {
             retakeButton.hidden = false;
         }
         var score = data.score == null ? 'Not scored' : data.score + '%';
-        var status = data.passed ? 'Passed' : 'Not passed';
+        var status = data.passed ? 'Passed' : 'Failed';
         result.querySelector('span').textContent = status + '. Score: ' + score + '.';
+        result.classList.toggle('passed', data.passed === true);
+        result.classList.toggle('failed', data.passed !== true);
+        renderQuizReview(data);
         if (stateLabel) {
             stateLabel.textContent = data.status || 'Submitted';
         }
@@ -634,6 +649,29 @@ function initQuizPanel(panel) {
                 lessonStatus.classList.add('completed');
             }
         }
+        applyLearningProgress(data.learningProgress);
+    }
+
+    function renderQuizReview(data) {
+        if (!review) {
+            return;
+        }
+        review.replaceChildren();
+        (data.questions || []).forEach(function(question, index) {
+            var item = document.createElement('div');
+            item.className = 'learning-result-item';
+            item.appendChild(createTextElement('strong', null, (index + 1) + '. ' + (question.questionText || 'Question')));
+            var selected = data.answers && data.answers[question.id] ? String(data.answers[question.id]) : 'No answer';
+            var options = parseOptions(question);
+            var selectedOption = options.filter(function(option) { return option.content === selected; })[0];
+            if (selectedOption && selectedOption.correct === true) {
+                item.classList.add('correct');
+            } else if (selectedOption && selectedOption.correct === false) {
+                item.classList.add('wrong');
+            }
+            item.appendChild(createTextElement('span', null, 'Selected: ' + selected));
+            review.appendChild(item);
+        });
     }
 
     function renderQuiz(data) {
@@ -668,18 +706,24 @@ function initQuizPanel(panel) {
             if (!options.length) {
                 block.appendChild(createTextElement('p', 'learning-help', 'No options are configured for this question.'));
             }
-            options.forEach(function (option) {
+            options.slice(0, 4).forEach(function (option) {
                 var label = document.createElement('label');
                 label.className = 'learning-answer-option';
                 var input = document.createElement('input');
                 input.type = 'radio';
                 input.name = 'quiz-question-' + question.id;
-                input.value = String(option);
-                if (data.answers && data.answers[question.id] === String(option)) {
+                input.value = option.content;
+                if (data.answers && data.answers[question.id] === option.content) {
                     input.checked = true;
+                    label.classList.add('selected');
                 }
                 label.appendChild(input);
-                label.appendChild(createTextElement('span', null, String(option)));
+                label.appendChild(createTextElement('span', null, option.content));
+                input.addEventListener('change', function() {
+                    block.querySelectorAll('.learning-answer-option').forEach(function(optionLabel) {
+                        optionLabel.classList.toggle('selected', optionLabel.querySelector('input:checked') !== null);
+                    });
+                });
                 block.appendChild(label);
             });
             questionsWrap.appendChild(block);
@@ -790,7 +834,9 @@ function initCodePanel(panel) {
     var examples = document.getElementById('code-examples');
     var timeLimit = document.getElementById('code-time-limit');
     var saveButton = document.getElementById('code-save-button');
+    var runButton = document.getElementById('code-run-button');
     var submitButton = document.getElementById('code-submit-button');
+    var codeResult = document.getElementById('code-result');
     var stateLabel = document.getElementById('code-state-label');
     var assignment = null;
 
@@ -829,22 +875,38 @@ function initCodePanel(panel) {
             item.appendChild(createTextElement('pre', null, example.inputData || ''));
             examples.appendChild(item);
         });
+        editor.readOnly = false;
+        languageSelect.disabled = false;
+        saveButton.disabled = false;
+        if (runButton) runButton.disabled = false;
+        submitButton.disabled = false;
         if (data.submitted) {
-            editor.readOnly = true;
-            languageSelect.disabled = true;
-            saveButton.disabled = true;
-            submitButton.disabled = true;
-            setPanelMessage('code-message', data.status === 'PENDING_REVIEW' ? 'Submitted for review.' : 'Submission reviewed.', false);
-        } else {
-            editor.readOnly = false;
-            languageSelect.disabled = false;
-            saveButton.disabled = false;
-            submitButton.disabled = false;
+            setPanelMessage('code-message', data.status || data.submissionState || 'Submitted', false);
         }
+        renderCodeResult(data);
         if (stateLabel) {
             stateLabel.textContent = data.status || data.submissionState || 'Draft';
         }
         form.hidden = false;
+    }
+
+    function renderCodeResult(data) {
+        if (!codeResult) {
+            return;
+        }
+        var hasResult = data.judgeStatus || data.outputLog || data.totalTests != null;
+        codeResult.hidden = !hasResult;
+        if (!hasResult) {
+            return;
+        }
+        codeResult.classList.toggle('passed', data.judgeStatus === 'PASSED');
+        codeResult.classList.toggle('failed', data.judgeStatus && data.judgeStatus !== 'PASSED');
+        var summary = data.judgeStatus || 'Run complete';
+        if (data.totalTests != null) {
+            summary += ' - ' + (data.passedTests || 0) + ' / ' + data.totalTests + ' tests';
+        }
+        codeResult.querySelector('span').textContent = summary;
+        codeResult.querySelector('pre').textContent = data.outputLog || '';
     }
 
     function codePayload() {
@@ -867,7 +929,9 @@ function initCodePanel(panel) {
         }).then(function (apiResponse) {
             assignment = apiResponse.data;
             renderAssignment(assignment);
-            setPanelMessage('code-message', action === '/submit' ? 'Submitted for review.' : 'Draft saved.', false);
+            applyLearningProgress(assignment && assignment.learningProgress);
+            setPanelMessage('code-message', (apiResponse.data && (apiResponse.data.status || apiResponse.data.submissionState))
+                || (action === '/run' ? 'Code run complete.' : 'Draft saved.'), false);
         });
     }
 
@@ -893,9 +957,19 @@ function initCodePanel(panel) {
                     setPanelMessage('code-message', error.message, true);
                 })
                 .finally(function () {
-                    if (!assignment || !assignment.submitted) {
-                        saveButton.disabled = false;
-                    }
+                    saveButton.disabled = false;
+                });
+        });
+    }
+    if (runButton) {
+        runButton.addEventListener('click', function() {
+            runButton.disabled = true;
+            sendCode('/run', 'Running code...')
+                .catch(function(error) {
+                    setPanelMessage('code-message', error.message, true);
+                })
+                .finally(function() {
+                    runButton.disabled = false;
                 });
         });
     }
@@ -1055,22 +1129,74 @@ function initAssessmentSubmission() {
     }
     var page = document.querySelector('.assessment-page[data-assignment-id]');
     var assignmentId = page && page.dataset.assignmentId;
+    var assignmentType = page && page.dataset.assignmentType ? page.dataset.assignmentType : 'CODING';
     var message = document.getElementById('assignment-message');
     var draftButton = document.getElementById('save-assignment-draft');
+    var runButton = document.getElementById('run-assignment-code');
+    var runResult = document.getElementById('assignment-run-result');
+
+    function fieldValue(name) {
+        return form.elements[name] ? form.elements[name].value.trim() : '';
+    }
+
+    function mcqAnswers() {
+        return Array.prototype.slice.call(form.querySelectorAll('[data-assignment-answer]')).map(function(question) {
+            return {
+                questionId: Number(question.dataset.assignmentAnswer),
+                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked'))
+                    .map(function(input) { return Number(input.value); })
+                    .filter(function(value) { return !Number.isNaN(value); })
+            };
+        });
+    }
 
     function payload() {
         return {
-            contentText: form.elements.contentText.value.trim(),
-            codeLanguage: form.elements.codeLanguage.value.trim(),
-            codeContent: form.elements.codeContent.value.trim(),
-            filePath: form.elements.filePath.value.trim()
+            contentText: fieldValue('contentText'),
+            codeLanguage: fieldValue('codeLanguage'),
+            codeContent: fieldValue('codeContent'),
+            filePath: fieldValue('filePath'),
+            answers: assignmentType === 'MCQ' ? mcqAnswers() : []
         };
+    }
+
+    function renderRunResult(data) {
+        if (!runResult || !data) {
+            return;
+        }
+        var hasResult = data.judgeStatus || data.outputLog || data.totalTests != null;
+        runResult.hidden = !hasResult;
+        if (!hasResult) {
+            return;
+        }
+        runResult.classList.toggle('passed', data.judgeStatus === 'PASSED');
+        runResult.classList.toggle('failed', data.judgeStatus && data.judgeStatus !== 'PASSED');
+        var summary = data.judgeStatus || 'Run complete';
+        if (data.totalTests != null) {
+            summary += ' - ' + (data.passedTests || 0) + ' / ' + data.totalTests + ' tests';
+        }
+        runResult.querySelector('span').textContent = summary;
+        runResult.querySelector('pre').textContent = data.outputLog || '';
     }
 
     function send(kind) {
         var body = payload();
-        if (kind === 'submit' && !body.contentText && !body.codeContent && !body.filePath) {
-            setAssessmentMessage(message, 'Please provide text, code, or a file path before submitting.', 'error');
+        if (kind === 'run' && assignmentType !== 'CODING') {
+            setAssessmentMessage(message, 'Only coding assignments can be run.', 'error');
+            return Promise.resolve();
+        }
+        if (kind === 'submit' && assignmentType === 'MCQ' && body.answers.some(function(answer) {
+            return !answer.selectedOptionIds.length;
+        })) {
+            setAssessmentMessage(message, 'Please answer every MCQ question before submitting.', 'error');
+            return Promise.resolve();
+        }
+        if (kind === 'submit' && assignmentType === 'ESSAY' && !body.contentText && !body.filePath) {
+            setAssessmentMessage(message, 'Please provide an essay response or file path before submitting.', 'error');
+            return Promise.resolve();
+        }
+        if (kind === 'submit' && assignmentType === 'CODING' && !body.codeContent && !body.filePath) {
+            setAssessmentMessage(message, 'Please provide code or a file path before submitting.', 'error');
             return Promise.resolve();
         }
         return fetch('/api/student/assignments/' + encodeURIComponent(assignmentId) + '/submissions/' + kind, {
@@ -1082,6 +1208,7 @@ function initAssessmentSubmission() {
             return assessmentJson(response, 'Unable to save submission');
         }).then(function (apiResponse) {
             setAssessmentMessage(message, apiResponse.message, 'success');
+            renderRunResult(apiResponse.data);
             if (kind === 'submit' && apiResponse.data && apiResponse.data.id) {
                 window.location.href = '/student/submissions/' + encodeURIComponent(apiResponse.data.id) + '/result';
             }
@@ -1092,6 +1219,14 @@ function initAssessmentSubmission() {
 
     if (draftButton) {
         draftButton.addEventListener('click', function () { send('draft'); });
+    }
+    if (runButton) {
+        runButton.addEventListener('click', function() {
+            runButton.disabled = true;
+            send('run').finally(function() {
+                runButton.disabled = false;
+            });
+        });
     }
     form.addEventListener('submit', function (event) {
         event.preventDefault();

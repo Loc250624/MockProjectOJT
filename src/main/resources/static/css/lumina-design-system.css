@@ -403,7 +403,8 @@ a { text-decoration: none; color: inherit; }
 }
 
 .sidebar-nav a .nav-icon,
-.sidebar-support-links a .nav-icon {
+.sidebar-support-links a .nav-icon,
+.sidebar-support-links .logout-btn .nav-icon {
   width: 18px;
   font-size: 1rem;
   flex-shrink: 0;
@@ -448,18 +449,27 @@ a { text-decoration: none; color: inherit; }
   padding: var(--space-sm) 0;
 }
 
-.sidebar-support-links a {
+.sidebar-support-links a,
+.sidebar-support-links .logout-btn {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  width: 100%;
   padding: 0.45rem var(--space-md);
   border-radius: var(--radius-md);
   color: var(--sidebar-text);
   font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
   transition: all var(--transition);
 }
 
-.sidebar-support-links a:hover {
+.sidebar-support-links a:hover,
+.sidebar-support-links .logout-btn:hover {
   color: var(--lumina-white);
   background: rgba(255,255,255,0.07);
 }

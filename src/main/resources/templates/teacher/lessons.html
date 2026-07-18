@@ -77,6 +77,17 @@
                                 <div style="display:flex;gap:0.5rem;align-items:center;">
                                     <a th:href="@{'/teacher/lessons/edit/' + ${lsn.id} + '?courseId=' + ${selectedCourseId}}"
                                        class="btn btn-secondary btn-sm">Edit</a>
+                                    <a th:if="${lsn.type != null && lsn.type.name() == 'QUIZ'}"
+                                       th:href="@{/teacher/quizzes(courseId=${selectedCourseId},lessonId=${lsn.id})}"
+                                       class="btn btn-secondary btn-sm"
+                                       th:text="${lsn.hasQuiz ? 'Manage Quiz' : 'Create Quiz'}">Create Quiz</a>
+                                    <a th:if="${lsn.type != null && lsn.type.name() == 'CODING'}"
+                                       th:href="@{/teacher/assignments(courseId=${selectedCourseId},lessonId=${lsn.id})}"
+                                       class="btn btn-secondary btn-sm"
+                                       th:text="${lsn.hasCodingAssignment ? 'Manage Coding' : 'Create Coding'}">Create Coding</a>
+                                    <a th:if="${lsn.type != null && lsn.type.name() == 'VIDEO'}"
+                                       th:href="@{/teacher/videos(courseId=${selectedCourseId},lessonId=${lsn.id})}"
+                                       class="btn btn-secondary btn-sm">Manage Video</a>
                                     <form th:action="@{'/teacher/lessons/delete/' + ${lsn.id}}" method="post" style="display:inline;"
                                           onsubmit="return confirm('Are you sure you want to delete this lesson?');">
                                         <input type="hidden" name="courseId" th:value="${selectedCourseId}" />

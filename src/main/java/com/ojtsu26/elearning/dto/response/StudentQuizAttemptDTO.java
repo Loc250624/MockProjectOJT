@@ -28,4 +28,5 @@ public class StudentQuizAttemptDTO {
     private List<StudentQuizQuestionDTO> questions;
     private Map<Integer, String> answers;
     private LocalDateTime submittedAt;
+    private LearningProgressDTO learningProgress;
 }

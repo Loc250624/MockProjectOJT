@@ -11,5 +11,6 @@ public interface StudentAssessmentService {
     StudentQuizAttemptDTO submitQuiz(Integer courseId, Integer lessonId, StudentQuizSubmissionRequestDTO request);
     StudentCodingAssignmentDTO getCodingAssignment(Integer courseId, Integer lessonId);
     StudentCodingAssignmentDTO saveCodeDraft(Integer courseId, Integer lessonId, StudentCodeSubmissionRequestDTO request);
+    StudentCodingAssignmentDTO runCode(Integer courseId, Integer lessonId, StudentCodeSubmissionRequestDTO request);
     StudentCodingAssignmentDTO submitCode(Integer courseId, Integer lessonId, StudentCodeSubmissionRequestDTO request);
 }

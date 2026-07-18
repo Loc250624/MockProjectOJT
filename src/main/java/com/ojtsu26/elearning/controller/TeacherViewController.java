@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
 import com.ojtsu26.elearning.dto.response.RoadmapResponseDTO;
 import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.enums.AssignmentType;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
@@ -213,8 +214,11 @@ public class TeacherViewController {
     public String lessonEdit(@PathVariable Integer id, @RequestParam Integer courseId, Model model, @AuthenticationPrincipal CustomUserDetails userDetails, RedirectAttributes redirectAttributes) {
         Integer instructorId = (userDetails != null && userDetails.getUser() != null) ? userDetails.getUser().getId() : null;
         try {
+            LessonResponseDTO res = lessonService.findById(id, instructorId);
+            if (!res.getCourseId().equals(courseId)) {
+                throw new RuntimeException("Lesson does not belong to this course");
+            }
             if (!model.containsAttribute("lesson")) {
-                LessonResponseDTO res = lessonService.findById(id);
                 LessonRequestDTO req = new LessonRequestDTO();
                 req.setTitle(res.getTitle());
                 req.setContent(res.getContent());
@@ -226,6 +230,7 @@ public class TeacherViewController {
             model.addAttribute("editMode", true);
             model.addAttribute("lessonId", id);
             model.addAttribute("courseId", courseId);
+            model.addAttribute("existingLesson", res);
             model.addAttribute("selectedCourse", courseService.findById(courseId));
             model.addAttribute("lessons", lessonService.findByCourseId(courseId, instructorId));
             model.addAttribute("lessonTypes", LessonType.values());
@@ -399,6 +404,7 @@ public class TeacherViewController {
 
     @GetMapping("/quizzes")
     public String quizzes(@RequestParam(required = false) Integer courseId,
+                          @RequestParam(required = false) Integer lessonId,
                           Model model,
                           @AuthenticationPrincipal CustomUserDetails userDetails) {
         Integer instructorId = (userDetails != null && userDetails.getUser() != null)
@@ -409,10 +415,14 @@ public class TeacherViewController {
         }
         if (courseId != null) {
             try {
+                List<LessonResponseDTO> lessons = lessonService.findByCourseId(courseId, instructorId);
                 model.addAttribute("courseId", courseId);
                 model.addAttribute("selectedCourseId", courseId);
                 model.addAttribute("selectedCourse", courseService.findById(courseId));
-                model.addAttribute("lessons", lessonService.findByCourseId(courseId, instructorId));
+                model.addAttribute("lessons", lessons.stream()
+                        .filter(lesson -> lesson.getType() == LessonType.QUIZ)
+                        .toList());
+                model.addAttribute("selectedLessonId", lessonId);
                 model.addAttribute("quizzes", assessmentService.getTeacherCourseQuizzes(courseId));
             } catch (RuntimeException e) {
                 model.addAttribute("errorMessage", e.getMessage());
@@ -426,17 +436,29 @@ public class TeacherViewController {
     public String courseQuizzes(@PathVariable Integer courseId,
                                 Model model,
                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return quizzes(courseId, model, userDetails);
+        return quizzes(courseId, null, model, userDetails);
     }
 
     @GetMapping("/quizzes/create")
-    public String quizCreate() { return "teacher/quiz-form"; }
+    public String quizCreate(@RequestParam(required = false) Integer courseId,
+                             @RequestParam(required = false) Integer lessonId) {
+        String redirect = "redirect:/teacher/quizzes";
+        if (courseId != null) {
+            redirect += "?courseId=" + courseId;
+            if (lessonId != null) {
+                redirect += "&lessonId=" + lessonId;
+            }
+        }
+        return redirect;
+    }
 
     @GetMapping("/quizzes/edit")
-    public String quizEdit() { return "teacher/quiz-form"; }
+    public String quizEdit(@RequestParam(required = false) Integer courseId) {
+        return courseId == null ? "redirect:/teacher/quizzes" : "redirect:/teacher/quizzes?courseId=" + courseId;
+    }
 
     @GetMapping("/testcases")
-    public String testcases() { return "teacher/testcases"; }
+    public String testcases() { return "redirect:/teacher/assignments"; }
 
     @GetMapping("/assignments/{assignmentId}/testcases")
     public String assignmentTestcases(@PathVariable Integer assignmentId, Model model) {
@@ -447,6 +469,8 @@ public class TeacherViewController {
 
     @GetMapping("/assignments")
     public String assignments(@RequestParam(required = false) Integer courseId,
+                              @RequestParam(required = false) Integer lessonId,
+                              @RequestParam(required = false) Integer assignmentId,
                               @RequestParam(required = false) String status,
                               @RequestParam(required = false) String search,
                               @RequestParam(required = false) Integer page,
@@ -459,15 +483,49 @@ public class TeacherViewController {
         if (instructorId != null) {
             model.addAttribute("courses", courseService.findByInstructorId(instructorId));
         }
+        if (courseId != null) {
+            try {
+                List<LessonResponseDTO> lessons = lessonService.findByCourseId(courseId, instructorId);
+                model.addAttribute("selectedCourse", courseService.findById(courseId));
+                model.addAttribute("codingLessons", lessons.stream()
+                        .filter(lesson -> lesson.getType() == LessonType.CODING)
+                        .toList());
+                model.addAttribute("enrolledStudents", teacherCourseStudentService.findStudentsForCurrentTeacherCourse(
+                        courseId, null, null, null, null, null, "name", "asc", 0, 200).getStudents());
+                if (lessonId != null) {
+                    LessonResponseDTO selectedLesson = lessons.stream()
+                            .filter(lesson -> lesson.getId().equals(lessonId))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("Lesson does not belong to this course"));
+                    if (selectedLesson.getType() != LessonType.CODING) {
+                        throw new RuntimeException("Coding exercise requires a CODING lesson");
+                    }
+                    model.addAttribute("selectedLessonId", lessonId);
+                    model.addAttribute("selectedLesson", selectedLesson);
+                    model.addAttribute("assignmentForLesson",
+                            assessmentService.getTeacherAssignmentForLesson(courseId, lessonId));
+                }
+                if (assignmentId != null) {
+                    model.addAttribute("assignmentForEdit", assessmentService.getTeacherAssignment(assignmentId));
+                } else if (lessonId != null && model.containsAttribute("assignmentForLesson")) {
+                    model.addAttribute("assignmentForEdit", model.getAttribute("assignmentForLesson"));
+                }
+            } catch (RuntimeException e) {
+                model.addAttribute("errorMessage", e.getMessage());
+            }
+        }
         Page<com.ojtsu26.elearning.dto.assessment.AssessmentDtos.AssignmentView> assignmentPage =
                 assessmentService.getTeacherAssignments(courseId, status, search,
                         PageRequest.of(safePage(page), safeSize(size, 12)));
         model.addAttribute("assignmentPage", assignmentPage);
         model.addAttribute("assignments", assignmentPage.getContent());
         model.addAttribute("selectedCourseId", courseId);
+        model.addAttribute("selectedAssignmentId", assignmentId);
         model.addAttribute("selectedStatus", status);
         model.addAttribute("search", search);
         model.addAttribute("assignmentStatuses", List.of("DRAFT", "PUBLISHED", "ARCHIVED"));
+        model.addAttribute("assignmentTypes", AssignmentType.values());
+        model.addAttribute("emptyQuestions", List.of());
         return "teacher/assignments";
     }
 

@@ -18,4 +18,12 @@ public class LessonResponseDTO {
     private java.time.LocalDateTime createdAt;
 
     private Integer courseId;
+
+    private Integer quizId;
+
+    private Integer codingAssignmentId;
+
+    private Boolean hasQuiz;
+
+    private Boolean hasCodingAssignment;
 }

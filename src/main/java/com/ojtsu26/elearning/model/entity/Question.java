@@ -43,6 +43,10 @@ public class Question {
     @JsonBackReference("question-quiz")
     private Quiz quiz;
 
+    @ManyToOne
+    @JoinColumn(name = "assignment_id")
+    private CodingAssignment assignment;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizAnswer> answers;
 }

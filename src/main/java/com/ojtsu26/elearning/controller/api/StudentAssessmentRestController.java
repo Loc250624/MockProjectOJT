@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/student")
 @RequiredArgsConstructor
@@ -40,9 +42,20 @@ public class StudentAssessmentRestController {
         return ResponseEntity.ok(ApiResponse.success(assessmentService.saveSubmissionDraft(assignmentId, payload), "Draft saved"));
     }
 
+    @PostMapping("/assignments/{assignmentId}/submissions/run")
+    public ResponseEntity<ApiResponse<SubmissionView>> runAssignment(@PathVariable Integer assignmentId,
+                                                                     @Valid @RequestBody AssignmentSubmissionPayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(assessmentService.runSubmission(assignmentId, payload), "Code judge finished"));
+    }
+
     @PostMapping("/assignments/{assignmentId}/submissions/submit")
     public ResponseEntity<ApiResponse<SubmissionView>> submitAssignment(@PathVariable Integer assignmentId,
                                                                        @Valid @RequestBody AssignmentSubmissionPayload payload) {
         return ResponseEntity.ok(ApiResponse.success(assessmentService.submitAssignment(assignmentId, payload), "Submission sent"));
+    }
+
+    @GetMapping("/assignments/{assignmentId}/submissions")
+    public ResponseEntity<ApiResponse<List<SubmissionView>>> assignmentHistory(@PathVariable Integer assignmentId) {
+        return ResponseEntity.ok(ApiResponse.success(assessmentService.getStudentAssignmentHistory(assignmentId)));
     }
 }

@@ -17,6 +17,7 @@ public enum ErrorCode {
     // Business Errors
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "User does not exist"),
     USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists"),
+    ASSESSMENT_CONTENT_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Assessment content already exists"),
     EMAIL_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Email already exists"),
     COURSE_NOT_FOUND(404, HttpStatus.NOT_FOUND, "Course does not exist"),
     COURSE_UNAVAILABLE(409, HttpStatus.CONFLICT, "Course is not available"),

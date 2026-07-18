@@ -194,7 +194,10 @@
                     <div id="quiz-result" class="learning-empty learning-empty-compact" hidden>
                         <strong>Quiz submitted</strong>
                         <span></span>
-                        <button type="button" class="btn btn-outline" id="quiz-retake-button">Retake Quiz</button>
+                        <div id="quiz-review" class="learning-result-review"></div>
+                        <div class="learning-assessment-actions">
+                            <button type="button" class="btn btn-outline" id="quiz-retake-button">Retake Quiz</button>
+                        </div>
                     </div>
                 </section>
 
@@ -227,8 +230,14 @@
                         <div id="code-examples" class="learning-code-examples"></div>
                         <label class="learning-code-editor-label" for="code-editor">Code</label>
                         <textarea id="code-editor" class="learning-code-editor" spellcheck="false"></textarea>
+                        <div id="code-result" class="learning-code-result" hidden>
+                            <strong>Run result</strong>
+                            <span></span>
+                            <pre></pre>
+                        </div>
                         <div class="learning-assessment-actions">
                             <button type="button" class="btn btn-outline" id="code-save-button">Save draft</button>
+                            <button type="button" class="btn btn-outline" id="code-run-button">Run</button>
                             <button type="submit" class="btn btn-primary" id="code-submit-button">Submit for review</button>
                             <span id="code-message" class="learning-help"></span>
                         </div>

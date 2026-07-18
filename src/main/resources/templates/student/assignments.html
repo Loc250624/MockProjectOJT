@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments - Student Portal | LumiNa</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-student}"></aside>
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-student('Assignments')}"></div>
+        <main class="lumina-portal-main assessment-content">
+            <div class="page-header">
+                <h1 class="page-title">Assignments</h1>
+                <p class="page-subtitle">Course assignments live here, separate from lesson content.</p>
+            </div>
+
+            <section class="assessment-panel">
+                <form class="student-assignment-filter" method="get" th:action="@{/student/assignments}">
+                    <label>
+                        <span>Course</span>
+                        <select name="courseId">
+                            <option value="">All enrolled courses</option>
+                            <option th:each="course : ${courseCards}"
+                                    th:value="${course.courseId}"
+                                    th:selected="${selectedCourseId != null && selectedCourseId == course.courseId}"
+                                    th:text="${course.courseTitle}">Course</option>
+                        </select>
+                    </label>
+                    <button class="btn btn-secondary" type="submit">Filter</button>
+                </form>
+
+                <div class="assessment-list student-assignment-list"
+                     th:if="${assignments != null && !#lists.isEmpty(assignments)}">
+                    <article class="student-assignment-card"
+                             th:each="assignment : ${assignments}">
+                        <div>
+                            <p class="eyebrow" th:text="${assignment.type}">Type</p>
+                            <h2 th:text="${assignment.title}">Assignment</h2>
+                            <p th:text="${assignment.courseTitle}">Course</p>
+                            <small th:text="${assignment.dueDate != null ? 'Due ' + #temporals.format(assignment.dueDate, 'MMM d, yyyy HH:mm') : 'No due date'}">Due</small>
+                        </div>
+                        <a class="btn btn-primary"
+                           th:href="@{/student/assignments/{id}/submit(id=${assignment.id})}">Open</a>
+                    </article>
+                </div>
+
+                <div class="empty-state" th:if="${assignments == null || #lists.isEmpty(assignments)}">
+                    No published assignments are available for the selected course.
+                </div>
+            </section>
+        </main>
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
+    </div>
+</div>
+<script th:src="@{/js/student/student.js}"></script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import com.ojtsu26.elearning.security.JwtAuthFilter;
 import com.ojtsu26.elearning.security.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +19,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -104,7 +105,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .requireCsrfProtectionMatcher(this::requiresTeacherCsrfProtection)
+            )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception
                     .authenticationEntryPoint(unauthorizedHandler)
@@ -189,6 +193,16 @@ public class SecurityConfig {
         return http.build();
     }
 
+    private boolean requiresTeacherCsrfProtection(HttpServletRequest request) {
+        String method = request.getMethod();
+        if (HttpMethod.GET.matches(method) || HttpMethod.HEAD.matches(method)
+                || HttpMethod.TRACE.matches(method) || HttpMethod.OPTIONS.matches(method)) {
+            return false;
+        }
+        String path = request.getServletPath();
+        return path != null && (path.startsWith("/teacher/") || path.startsWith("/api/teacher/"));
+    }
+
     private void logOAuth2Failure(String requestUri, AuthenticationException exception) {
         String errorCode = null;
         if (exception instanceof OAuth2AuthenticationException oauth2Exception
@@ -214,7 +228,8 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration
-                .setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+                .setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
+                        "X-CSRF-TOKEN", "X-XSRF-TOKEN"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

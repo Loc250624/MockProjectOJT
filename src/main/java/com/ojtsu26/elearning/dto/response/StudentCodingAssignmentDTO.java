@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.dto.response;
 
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
+import com.ojtsu26.elearning.model.enums.CodeJudgeStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,4 +29,9 @@ public class StudentCodingAssignmentDTO {
     private Boolean unavailable;
     private String unavailableMessage;
     private LocalDateTime submittedAt;
+    private CodeJudgeStatus judgeStatus;
+    private Integer totalTests;
+    private Integer passedTests;
+    private String outputLog;
+    private LearningProgressDTO learningProgress;
 }

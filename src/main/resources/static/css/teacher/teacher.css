@@ -927,6 +927,111 @@
   display: block;
 }
 
+.compact-heading {
+  margin-bottom: 0.75rem;
+}
+
+.assignment-type-panel[hidden] {
+  display: none;
+}
+
+.teacher-assignment-question-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.teacher-question-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.teacher-assignment-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.teacher-assignment-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assignment-assignee-fieldset {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.assignment-assignee-fieldset legend {
+  padding: 0 0.35rem;
+  color: #334155;
+  font-weight: 800;
+}
+
+.assignment-assignee-fieldset p {
+  margin: 0;
+  color: #64748b;
+}
+
+.teacher-assignee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.65rem;
+}
+
+.teacher-assignee-grid .assessment-checkbox {
+  align-items: flex-start;
+  padding: 0.65rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.teacher-assignee-grid small {
+  display: block;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+
+.teacher-mcq-answer-list,
+.teacher-viewer-answer {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.teacher-mcq-answer-list {
+  margin-top: 0.75rem;
+}
+
+.teacher-mcq-answer-list article,
+.teacher-viewer-answer {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.teacher-mcq-answer-list ul,
+.teacher-viewer-answer ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #475569;
+}
+
+.teacher-mcq-answer-list li.selected,
+.teacher-viewer-answer li.selected {
+  color: #0f172a;
+  font-weight: 800;
+}
+
 .teacher-assessment-header {
   display: flex;
   align-items: flex-end;
@@ -1042,6 +1147,46 @@
   color: #64748b;
 }
 
+.teacher-submission-viewer {
+  display: grid;
+  gap: 1rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.teacher-submission-viewer[hidden] {
+  display: none;
+}
+
+.teacher-viewer-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.teacher-viewer-section strong {
+  color: #0f172a;
+}
+
+.teacher-viewer-section pre,
+.teacher-grading-card pre {
+  overflow-x: auto;
+  max-height: 340px;
+  margin: 0;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.teacher-viewer-section p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.55;
+}
+
 .teacher-grading-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1100,6 +1245,98 @@
   font-weight: 700;
 }
 
+.assessment-form label small {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.teacher-option-editor {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.teacher-option-editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.teacher-option-editor-head small {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.teacher-option-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) minmax(110px, auto);
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.55rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.teacher-option-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.teacher-option-correct {
+  justify-content: flex-start;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.quiz-preview-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.quiz-preview-panel[hidden] {
+  display: none;
+}
+
+.quiz-preview-question {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.quiz-preview-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.quiz-preview-options span {
+  padding: 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #334155;
+}
+
 .teacher-empty-state {
   display: grid;
   gap: 0.35rem;
@@ -1107,6 +1344,22 @@
 
 .teacher-empty-state strong {
   color: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .assessment-grid-4,
+  .teacher-grading-meta,
+  .quiz-preview-options {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-option-row {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .teacher-option-correct {
+    grid-column: 2;
+  }
 }
 
 .empty-state {

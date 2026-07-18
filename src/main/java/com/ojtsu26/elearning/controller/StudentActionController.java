@@ -226,6 +226,13 @@ public class StudentActionController {
         return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.saveCodeDraft(courseId, lessonId, request)));
     }
 
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/run")
+    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> runCode(@PathVariable Integer courseId,
+                                                                           @PathVariable Integer lessonId,
+                                                                           @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.runCode(courseId, lessonId, request)));
+    }
+
     @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/submit")
     public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> submitCode(@PathVariable Integer courseId,
                                                                               @PathVariable Integer lessonId,

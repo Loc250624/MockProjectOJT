@@ -42,7 +42,19 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
     @Query("select count(s) from Submission s where s.lesson.course.instructor.id = :instructorId and s.status = :status")
     long countByInstructorIdAndStatus(Integer instructorId, SubmissionStatus status);
 
-    @Query("select count(distinct s.lesson.id) from Submission s where s.student.id = :studentId and s.lesson.course.id = :courseId and s.status = com.ojtsu26.elearning.model.enums.SubmissionStatus.PASSED and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ or s.lesson.quiz is not null or s.lesson.codingassignment is not null)")
+    @Query("""
+            select count(distinct s.lesson.id)
+            from Submission s
+            where s.student.id = :studentId
+              and s.lesson.course.id = :courseId
+              and s.status in (
+                  com.ojtsu26.elearning.model.enums.SubmissionStatus.PASSED,
+                  com.ojtsu26.elearning.model.enums.SubmissionStatus.AUTO_GRADED
+              )
+              and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ
+                   or s.lesson.quiz is not null
+                   or s.lesson.codingassignment is not null)
+            """)
     long countPassedRequiredAssessmentLessons(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
 
     @Query("select count(distinct s.lesson.id) from Submission s where s.student.id = :studentId and s.lesson.course.id = :courseId and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ or s.lesson.quiz is not null or s.lesson.codingassignment is not null)")
@@ -75,6 +87,16 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
 
     Optional<Submission> findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(Integer assignmentId, Integer studentId);
 
+    Optional<Submission> findTopByAssignmentIdAndStudentIdAndStatusOrderByUpdatedAtDesc(Integer assignmentId, Integer studentId,
+                                                                                       SubmissionStatus status);
+
+    List<Submission> findByAssignmentIdAndStudentIdOrderByAttemptNoDescIdDesc(Integer assignmentId, Integer studentId);
+
+    @Query("select coalesce(max(s.attemptNo), 0) from Submission s where s.assignment.id = :assignmentId and s.student.id = :studentId")
+    int findMaxAttemptNo(@Param("assignmentId") Integer assignmentId, @Param("studentId") Integer studentId);
+
+    long countByAssignmentId(Integer assignmentId);
+
     @Query("""
             select distinct s.assignment.id
             from Submission s
@@ -96,7 +118,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
     List<Integer> findCompletedAssignmentIdsForStudent(@Param("studentId") Integer studentId,
                                                        @Param("completedStatuses") Collection<SubmissionStatus> completedStatuses);
 
-    @Query("select s from Submission s join fetch s.assignment a join fetch a.lesson l join fetch l.course c left join fetch c.instructor where s.id = :submissionId")
+    @Query("""
+            select s
+            from Submission s
+            join fetch s.assignment a
+            left join fetch a.course ac
+            left join fetch ac.instructor
+            left join fetch a.lesson l
+            left join fetch l.course lc
+            left join fetch lc.instructor
+            where s.id = :submissionId
+            """)
     Optional<Submission> findByIdWithAssignmentCourse(@Param("submissionId") Integer submissionId);
 
     @Query("""
@@ -116,7 +148,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
     List<Submission> findLatestByAssignmentIdsAndStudentId(@Param("assignmentIds") Collection<Integer> assignmentIds,
                                                            @Param("studentId") Integer studentId);
 
-    @Query("select s from Submission s join fetch s.student join fetch s.assignment a join fetch a.lesson l where a.id = :assignmentId order by s.submittedAt desc")
+    @Query("select s from Submission s join fetch s.student join fetch s.assignment a left join fetch a.lesson l left join fetch a.course where a.id = :assignmentId order by s.submittedAt desc")
     List<Submission> findByAssignmentIdWithStudent(@Param("assignmentId") Integer assignmentId);
 
     @Query("""
@@ -136,18 +168,21 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             from Submission s
             join fetch s.student st
             join fetch s.assignment a
-            join fetch a.lesson l
-            join fetch l.course c
-            left join fetch c.instructor
-            where c.instructor.id = :teacherId
-            and (:courseId is null or c.id = :courseId)
+            left join fetch a.course ac
+            left join fetch ac.instructor
+            left join fetch a.lesson l
+            left join fetch l.course lc
+            left join fetch lc.instructor
+            where (ac.instructor.id = :teacherId or lc.instructor.id = :teacherId)
+            and (:courseId is null or ac.id = :courseId or lc.id = :courseId)
             and (:assignmentId is null or a.id = :assignmentId)
             and (:status is null or s.status = :status)
             and (:search is null
                 or lower(st.fullName) like lower(concat('%', :search, '%'))
                 or lower(st.email) like lower(concat('%', :search, '%'))
                 or lower(a.title) like lower(concat('%', :search, '%'))
-                or lower(c.title) like lower(concat('%', :search, '%')))
+                or lower(ac.title) like lower(concat('%', :search, '%'))
+                or lower(lc.title) like lower(concat('%', :search, '%')))
             order by s.submittedAt desc, s.updatedAt desc, s.id desc
             """,
             countQuery = """
@@ -155,17 +190,19 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             from Submission s
             join s.student st
             join s.assignment a
-            join a.lesson l
-            join l.course c
-            where c.instructor.id = :teacherId
-            and (:courseId is null or c.id = :courseId)
+            left join a.course ac
+            left join a.lesson l
+            left join l.course lc
+            where (ac.instructor.id = :teacherId or lc.instructor.id = :teacherId)
+            and (:courseId is null or ac.id = :courseId or lc.id = :courseId)
             and (:assignmentId is null or a.id = :assignmentId)
             and (:status is null or s.status = :status)
             and (:search is null
                 or lower(st.fullName) like lower(concat('%', :search, '%'))
                 or lower(st.email) like lower(concat('%', :search, '%'))
                 or lower(a.title) like lower(concat('%', :search, '%'))
-                or lower(c.title) like lower(concat('%', :search, '%')))
+                or lower(ac.title) like lower(concat('%', :search, '%'))
+                or lower(lc.title) like lower(concat('%', :search, '%')))
             """)
     Page<Submission> findTeacherSubmissions(@Param("teacherId") Integer teacherId,
                                             @Param("courseId") Integer courseId,
@@ -179,17 +216,19 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             from Submission s
             join s.student st
             join s.assignment a
-            join a.lesson l
-            join l.course c
-            where c.instructor.id = :teacherId
-            and (:courseId is null or c.id = :courseId)
+            left join a.course ac
+            left join a.lesson l
+            left join l.course lc
+            where (ac.instructor.id = :teacherId or lc.instructor.id = :teacherId)
+            and (:courseId is null or ac.id = :courseId or lc.id = :courseId)
             and (:assignmentId is null or a.id = :assignmentId)
             and s.status in :statuses
             and (:search is null
                 or lower(st.fullName) like lower(concat('%', :search, '%'))
                 or lower(st.email) like lower(concat('%', :search, '%'))
                 or lower(a.title) like lower(concat('%', :search, '%'))
-                or lower(c.title) like lower(concat('%', :search, '%')))
+                or lower(ac.title) like lower(concat('%', :search, '%'))
+                or lower(lc.title) like lower(concat('%', :search, '%')))
             """)
     long countTeacherSubmissionsByStatuses(@Param("teacherId") Integer teacherId,
                                            @Param("courseId") Integer courseId,
@@ -207,9 +246,10 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             from Submission s
             join s.student st
             join s.assignment a
-            join a.lesson l
-            join l.course c
-            where c.instructor.id = :teacherId
+            left join a.course ac
+            left join a.lesson l
+            left join l.course lc
+            where (ac.instructor.id = :teacherId or lc.instructor.id = :teacherId)
             order by case when s.status in :reviewStatuses then 0 else 1 end,
                      s.submittedAt desc,
                      s.id desc

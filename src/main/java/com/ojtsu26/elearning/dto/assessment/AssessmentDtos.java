@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.dto.assessment;
 
 import com.ojtsu26.elearning.model.enums.CodeJudgeStatus;
+import com.ojtsu26.elearning.model.enums.AssignmentType;
 import com.ojtsu26.elearning.model.enums.QuestionType;
 import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
@@ -48,12 +49,34 @@ public final class AssessmentDtos {
         @NotBlank
         private String title;
         private String description;
+        @NotNull
         private Integer lessonId;
         private Integer durationMinutes = 30;
         @Positive
         private Integer maxAttempts = 1;
         private BigDecimal passingScore = new BigDecimal("70.00");
         private QuizStatus status = QuizStatus.DRAFT;
+    }
+
+    @Data
+    public static class AssignmentPayload {
+        @NotBlank
+        private String title;
+        private String problemStatement;
+        private String instructions;
+        private String starterCode;
+        private String allowedLanguages;
+        @Positive
+        private Integer timeLimitMs = 1000;
+        @DecimalMin(value = "0.0", inclusive = false)
+        private BigDecimal maxScore = new BigDecimal("100.00");
+        private LocalDateTime dueDate;
+        private String status = "DRAFT";
+        private Integer lessonId;
+        private AssignmentType type = AssignmentType.CODING;
+        @Valid
+        private List<QuestionPayload> questions = new ArrayList<>();
+        private List<Integer> assigneeStudentIds = new ArrayList<>();
     }
 
     @Data
@@ -76,6 +99,8 @@ public final class AssessmentDtos {
         private String codeLanguage;
         private String codeContent;
         private String filePath;
+        @Valid
+        private List<AnswerPayload> answers = new ArrayList<>();
     }
 
     @Data
@@ -153,13 +178,16 @@ public final class AssessmentDtos {
         private Integer assignmentId;
         private Integer lessonId;
         private Integer courseId;
+        private Integer attemptNo;
         private String courseTitle;
         private String assignmentTitle;
+        private String assignmentType;
         private String studentName;
         private String contentText;
         private String codeLanguage;
         private String codeContent;
         private String filePath;
+        private List<QuestionView> answers = new ArrayList<>();
         private SubmissionStatus status;
         private BigDecimal score;
         private BigDecimal maxScore;
@@ -173,6 +201,7 @@ public final class AssessmentDtos {
         private Integer totalTests;
         private Integer passedTests;
         private String outputLog;
+        private List<SubmissionView> history = new ArrayList<>();
     }
 
     @Data
@@ -181,13 +210,22 @@ public final class AssessmentDtos {
         private Integer lessonId;
         private Integer courseId;
         private String courseTitle;
+        private String lessonTitle;
         private String title;
+        private String problemStatement;
+        private String instructions;
+        private String starterCode;
+        private String allowedLanguages;
+        private Integer timeLimitMs;
         private String type;
         private LocalDateTime dueDate;
         private String status;
         private BigDecimal maxScore;
+        private List<Integer> assigneeStudentIds = new ArrayList<>();
+        private long assigneeCount;
         private long submissionCount;
         private long pendingCount;
+        private List<QuestionView> questions = new ArrayList<>();
     }
 
     @Data

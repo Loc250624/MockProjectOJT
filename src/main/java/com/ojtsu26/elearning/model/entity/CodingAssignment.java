@@ -44,10 +44,28 @@ public class CodingAssignment {
 
     private String status;
 
+    @Convert(converter = com.ojtsu26.elearning.model.enums.AssignmentTypeConverter.class)
+    private AssignmentType type;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    @JsonBackReference("assignment-course")
+    private Course course;
+
     @OneToOne
     @JoinColumn(name = "lesson_id")
     @JsonBackReference("codingassignment-lesson")
     private Lesson lesson;
+
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AssignmentAssignee> assignees;
+
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Question> questions;
 
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("testcase-assignment")
