@@ -44,6 +44,9 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(template.contains("No resources"));
         assertTrue(template.contains("learning-player-page"));
         assertTrue(template.contains("learning-player-header"));
+        assertTrue(template.contains("data-csrf-token"));
+        assertTrue(template.contains("/js/csrf-fetch.js"));
+        assertTrue(template.indexOf("/js/csrf-fetch.js") < template.indexOf("/js/student/student.js"));
         assertFalse(template.contains("sidebar-student"));
         assertFalse(template.contains("layout-container"));
         assertFalse(template.contains("main-content"));

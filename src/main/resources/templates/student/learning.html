@@ -331,6 +331,12 @@
     </div>
 </main>
 
+<span hidden
+      data-csrf-token
+      th:data-csrf-token="${_csrf.token}"
+      th:data-csrf-header="${_csrf.headerName}"
+      th:data-csrf-parameter="${_csrf.parameterName}"></span>
+<script th:src="@{/js/csrf-fetch.js}"></script>
 <script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>
