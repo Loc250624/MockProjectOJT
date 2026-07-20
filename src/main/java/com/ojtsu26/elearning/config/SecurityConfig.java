@@ -231,7 +231,14 @@ public class SecurityConfig {
             return false;
         }
         String path = request.getServletPath();
-        return path != null && (path.startsWith("/teacher/") || path.startsWith("/api/teacher/"));
+        if (path == null) {
+            return false;
+        }
+        // Exclude payment webhooks/IPN from CSRF check
+        if (path.startsWith("/api/payment/")) {
+            return false;
+        }
+        return true;
     }
 
     private void logOAuth2Failure(String requestUri, AuthenticationException exception) {

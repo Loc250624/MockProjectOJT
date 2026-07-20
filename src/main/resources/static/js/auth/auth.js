@@ -199,22 +199,21 @@ function initPasswordToggles() {
 }
 
 function initLogoutForms() {
-    document.querySelectorAll('.logout-btn, #logoutBtn').forEach(function (button) {
-        button.addEventListener('click', function (event) {
-            event.preventDefault();
-
-            var token = getCsrfToken();
-            var parameterName = getCsrfParameterName();
-            var form = document.createElement('form');
+    // Legacy anchor logout handler. Sidebar logout is a server-rendered POST form.
+    const logoutLinks = document.querySelectorAll('a.logout-btn[href$="/auth/logout"], a[data-logout-link="true"]');
+    logoutLinks.forEach(link => {
+        link.addEventListener("click", function(e) {
+            e.preventDefault();
+            const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/auth/logout';
-
-            if (token) {
-                var csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = parameterName;
-                csrfInput.value = token;
-                form.appendChild(csrfInput);
+            const csrfInput = document.querySelector('input[name="_csrf"], meta[name="_csrf"]');
+            if (csrfInput) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = csrfInput.getAttribute('name') || '_csrf';
+                input.value = csrfInput.value || csrfInput.getAttribute('content') || '';
+                form.appendChild(input);
             }
             document.body.appendChild(form);
             form.submit();

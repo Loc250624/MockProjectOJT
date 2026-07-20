@@ -556,13 +556,14 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                     return progress != null && Boolean.TRUE.equals(progress.getIsCompleted());
                 })
                 .count();
-        BigDecimal percentage = total == 0
+        boolean alreadyCompleted = Boolean.TRUE.equals(enrollment.getIsCompleted());
+        BigDecimal percentage = alreadyCompleted ? BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP) : (total == 0
                 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        boolean completedCourse = total > 0 && completed == total;
-        boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
+                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP));
+        boolean completedCourse = alreadyCompleted || (total > 0 && completed == total);
+        boolean newlyCompleted = !alreadyCompleted && completedCourse;
         enrollment.setProgressPercentage(percentage);
         enrollment.setIsCompleted(completedCourse);
         enrollmentRepository.save(enrollment);
@@ -590,13 +591,14 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                     return progress != null && Boolean.TRUE.equals(progress.getIsCompleted());
                 })
                 .count();
-        BigDecimal percentage = total == 0
+        boolean alreadyCompleted = Boolean.TRUE.equals(enrollment.getIsCompleted());
+        BigDecimal percentage = alreadyCompleted ? BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP) : (total == 0
                 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        boolean completedCourse = total > 0 && completed == total;
-        boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
+                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP));
+        boolean completedCourse = alreadyCompleted || (total > 0 && completed == total);
+        boolean newlyCompleted = !alreadyCompleted && completedCourse;
         enrollment.setProgressPercentage(percentage);
         enrollment.setIsCompleted(completedCourse);
         enrollmentRepository.save(enrollment);
