@@ -32,9 +32,9 @@
             </div>
 
             <div id="certificate-message" class="form-help" style="margin-bottom:1rem;"></div>
-            <div id="certificate-loading" class="card card-padded student-loading-state">
+            <div id="certificate-loading" class="card card-padded student-loading-state" role="status" aria-live="polite">
                 <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></div>
-                <span>Loading certificates...</span>
+                <span id="certificate-loading-text">Loading certificates...</span>
             </div>
             <div id="certificate-empty" class="card card-padded" hidden>
                 <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
@@ -42,7 +42,7 @@
                 <p class="page-subtitle">Complete eligible courses and claim your certificate when the backend confirms all requirements.</p>
             </div>
 
-            <div id="certificate-grid" class="grid-2-col" style="margin-bottom:2rem;"></div>
+            <div id="certificate-grid" class="grid-2-col" style="margin-bottom:2rem;" hidden></div>
 
             <div class="card" id="certificate-history-card" hidden>
                 <div class="card-header" style="padding:1.5rem 1.5rem 0;">

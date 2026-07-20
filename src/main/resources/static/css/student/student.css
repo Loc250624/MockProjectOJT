@@ -1181,6 +1181,10 @@ pre {
   height: 1.25rem;
 }
 
+#student-certificates-page [hidden] {
+  display: none !important;
+}
+
 .student-course-thumb-icon,
 .student-table-empty,
 .student-loading-state,
@@ -1228,6 +1232,10 @@ pre {
   justify-content: center;
   gap: 0.5rem;
   line-height: 1.2;
+}
+
+[data-notification-load-more].btn[hidden] {
+  display: none !important;
 }
 
 .student-course-action.btn,

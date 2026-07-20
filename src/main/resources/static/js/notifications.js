@@ -67,13 +67,17 @@
 
         if (markAll) {
             markAll.addEventListener('click', function() {
+                setButtonBusy(markAll, true, 'Marking...');
                 api('/api/notifications/read-all', { method: 'POST' })
                     .then(function(data) {
-                        updateCount(countBadge, data && data.unreadCount);
+                        updateAllCounts(data && data.unreadCount);
                         loadPreview(list, countBadge);
                     })
                     .catch(function(error) {
                         renderState(list, error.message);
+                    })
+                    .finally(function() {
+                        setButtonBusy(markAll, false);
                     });
             });
         }
@@ -85,15 +89,23 @@
     }
 
     function refreshUnreadCount(countBadge) {
-        if (!countBadge) {
-            return;
-        }
-        api('/api/notifications/unread-count')
+        return api('/api/notifications/unread-count')
             .then(function(data) {
-                updateCount(countBadge, data && data.unreadCount);
+                var count = data && data.unreadCount;
+                if (countBadge) {
+                    updateCount(countBadge, count);
+                } else {
+                    updateAllCounts(count);
+                }
+                return Number(count || 0);
             })
             .catch(function() {
-                updateCount(countBadge, 0);
+                if (countBadge) {
+                    updateCount(countBadge, 0);
+                } else {
+                    updateAllCounts(0);
+                }
+                return 0;
             });
     }
 
@@ -104,6 +116,12 @@
         var value = Number(count || 0);
         countBadge.textContent = value > 99 ? '99+' : String(value);
         countBadge.hidden = value <= 0;
+    }
+
+    function updateAllCounts(count) {
+        document.querySelectorAll('[data-notification-count]').forEach(function(countBadge) {
+            updateCount(countBadge, count);
+        });
     }
 
     function loadPreview(list, countBadge) {
@@ -126,31 +144,62 @@
         var page = 0;
         var size = Number(center.dataset.pageSize || 10);
         var loading = false;
+        var markingAll = false;
+        var unreadCount = 0;
+
+        function syncMarkAllState() {
+            if (markAll) {
+                markAll.disabled = loading || markingAll || unreadCount <= 0;
+            }
+        }
+
+        function refreshCenterUnreadCount() {
+            return refreshUnreadCount()
+                .then(function(count) {
+                    unreadCount = count;
+                    syncMarkAllState();
+                    return count;
+                });
+        }
 
         function load(reset) {
             if (loading) {
                 return;
             }
             loading = true;
+            syncMarkAllState();
             if (reset) {
                 page = 0;
                 renderState(list, 'Loading...');
+                if (loadMore) {
+                    loadMore.hidden = true;
+                }
+            } else if (loadMore) {
+                setButtonBusy(loadMore, true, 'Loading...');
             }
             api('/api/notifications?page=' + page + '&size=' + size)
                 .then(function(data) {
                     renderNotifications(list, data.items || [], false, function() {
-                        load(true);
+                        refreshCenterUnreadCount().then(function() {
+                            load(true);
+                        });
                     }, !reset);
                     if (loadMore) {
                         loadMore.hidden = !data.hasNext;
                     }
-                    page += 1;
+                    page = Number(data.page || page) + 1;
                 })
                 .catch(function(error) {
-                    renderState(list, error.message);
+                    if (reset) {
+                        renderState(list, error.message);
+                    }
                 })
                 .finally(function() {
                     loading = false;
+                    if (loadMore) {
+                        setButtonBusy(loadMore, false);
+                    }
+                    syncMarkAllState();
                 });
         }
 
@@ -161,15 +210,27 @@
         }
         if (markAll) {
             markAll.addEventListener('click', function() {
+                markingAll = true;
+                syncMarkAllState();
+                setButtonBusy(markAll, true, 'Marking...');
                 api('/api/notifications/read-all', { method: 'POST' })
-                    .then(function() {
+                    .then(function(data) {
+                        unreadCount = Number(data && data.unreadCount || 0);
+                        updateAllCounts(unreadCount);
                         load(true);
                     })
                     .catch(function(error) {
                         renderState(list, error.message);
+                    })
+                    .finally(function() {
+                        markingAll = false;
+                        setButtonBusy(markAll, false);
+                        syncMarkAllState();
                     });
             });
         }
+        syncMarkAllState();
+        refreshCenterUnreadCount();
         load(true);
     }
 
@@ -242,6 +303,20 @@
         state.className = 'notification-state';
         state.textContent = message;
         list.appendChild(state);
+    }
+
+    function setButtonBusy(button, isBusy, busyLabel) {
+        if (!button) {
+            return;
+        }
+        var label = button.querySelector('span');
+        if (label && !button.dataset.defaultLabel) {
+            button.dataset.defaultLabel = label.textContent;
+        }
+        if (label) {
+            label.textContent = isBusy ? busyLabel : button.dataset.defaultLabel;
+        }
+        button.disabled = isBusy;
     }
 
     function iconForType(type) {

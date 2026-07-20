@@ -76,6 +76,7 @@ class CourseEnrollmentFrontendTemplateTest {
     void notificationTopbarsUseSharedAuthenticatedComponent() throws Exception {
         String layout = Files.readString(Path.of("src/main/resources/templates/fragments/layout.html"));
         String script = Files.readString(Path.of("src/main/resources/static/js/notifications.js"));
+        String studentCss = Files.readString(Path.of("src/main/resources/static/css/student/student.css"));
         String studentCenter = Files.readString(Path.of("src/main/resources/templates/student/notifications.html"));
 
         assertTrue(layout.contains("data-notification-bell=\"true\""));
@@ -86,6 +87,9 @@ class CourseEnrollmentFrontendTemplateTest {
 
         assertTrue(script.contains("/api/notifications/unread-count"));
         assertTrue(script.contains("/api/notifications/read-all"));
+        assertTrue(script.contains("updateAllCounts"));
+        assertTrue(script.contains("data.hasNext"));
+        assertTrue(script.contains("setButtonBusy(loadMore"));
         assertTrue(script.contains("textContent"));
         assertFalse(script.contains("innerHTML = item.message"));
 
@@ -93,6 +97,7 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(studentCenter.contains("data-notification-center-list"));
         assertTrue(studentCenter.contains("data-notification-load-more"));
         assertFalse(studentCenter.contains("Midterm Assessment Deadline Approaching"));
+        assertTrue(studentCss.contains("[data-notification-load-more].btn[hidden]"));
     }
 
     @Test

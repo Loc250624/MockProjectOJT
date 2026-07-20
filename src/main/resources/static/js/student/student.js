@@ -1709,10 +1709,12 @@ function initStudentCertificates() {
     var grid = document.getElementById('certificate-grid');
     var tableBody = document.getElementById('certificate-history-body');
     var loading = document.getElementById('certificate-loading');
+    var loadingText = document.getElementById('certificate-loading-text');
     var empty = document.getElementById('certificate-empty');
     var total = document.getElementById('certificate-total');
     var message = document.getElementById('certificate-message');
     var historyCard = document.getElementById('certificate-history-card');
+    var slowNetworkTimer = null;
 
     function setMessage(text, isError) {
         if (!message) {
@@ -1720,6 +1722,25 @@ function initStudentCertificates() {
         }
         message.textContent = text || '';
         message.style.color = isError ? 'var(--lumina-danger)' : 'var(--lumina-gray-600)';
+    }
+
+    function setLoading(isLoading) {
+        page.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+        if (loading) {
+            loading.hidden = !isLoading;
+        }
+        if (loadingText) {
+            loadingText.textContent = 'Loading certificates...';
+        }
+        if (slowNetworkTimer) {
+            window.clearTimeout(slowNetworkTimer);
+            slowNetworkTimer = null;
+        }
+        if (isLoading && loadingText) {
+            slowNetworkTimer = window.setTimeout(function () {
+                loadingText.textContent = 'Still loading certificates...';
+            }, 3500);
+        }
     }
 
     function parseJsonResponse(response, fallbackMessage) {
@@ -1839,14 +1860,30 @@ function initStudentCertificates() {
     }
 
     function renderCertificates(items, totalElements) {
-        grid.replaceChildren();
-        tableBody.replaceChildren();
-        total.textContent = String(totalElements || items.length);
-        empty.hidden = items.length > 0;
-        historyCard.hidden = items.length === 0;
-        items.forEach(function (certificate) {
-            grid.appendChild(renderCard(certificate));
-            tableBody.appendChild(renderRow(certificate));
+        var certificates = Array.isArray(items) ? items : [];
+        if (grid) {
+            grid.replaceChildren();
+            grid.hidden = certificates.length === 0;
+        }
+        if (tableBody) {
+            tableBody.replaceChildren();
+        }
+        if (total) {
+            total.textContent = String(totalElements || certificates.length);
+        }
+        if (empty) {
+            empty.hidden = certificates.length > 0;
+        }
+        if (historyCard) {
+            historyCard.hidden = certificates.length === 0;
+        }
+        certificates.forEach(function (certificate) {
+            if (grid) {
+                grid.appendChild(renderCard(certificate));
+            }
+            if (tableBody) {
+                tableBody.appendChild(renderRow(certificate));
+            }
         });
     }
 
@@ -1877,6 +1914,18 @@ function initStudentCertificates() {
         });
     }
 
+    setLoading(true);
+    setMessage('', false);
+    if (grid) {
+        grid.hidden = true;
+    }
+    if (empty) {
+        empty.hidden = true;
+    }
+    if (historyCard) {
+        historyCard.hidden = true;
+    }
+
     fetch('/api/student/certificates', {
         credentials: 'same-origin'
     }).then(function (response) {
@@ -1886,9 +1935,24 @@ function initStudentCertificates() {
         renderCertificates(data.content || [], data.totalElements || 0);
         setMessage('', false);
     }).catch(function (error) {
+        if (grid) {
+            grid.replaceChildren();
+            grid.hidden = true;
+        }
+        if (tableBody) {
+            tableBody.replaceChildren();
+        }
+        if (total) {
+            total.textContent = '0';
+        }
+        if (historyCard) {
+            historyCard.hidden = true;
+        }
         setMessage(error.message, true);
-        empty.hidden = false;
+        if (empty) {
+            empty.hidden = false;
+        }
     }).finally(function () {
-        loading.hidden = true;
+        setLoading(false);
     });
 }
