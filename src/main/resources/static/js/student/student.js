@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initTeacherStudentFilters();
     initCourseEnrollmentCta();
     initLearningProgress();
+    initAiTutor();
     initStudentCertificates();
     initAssessmentQuiz();
     initAssessmentSubmission();
@@ -263,6 +264,179 @@ function parseLearningJson(response, fallbackMessage) {
             }
             return body;
         });
+}
+
+function initAiTutor() {
+    var root = document.querySelector('[data-ai-tutor]');
+    if (!root) {
+        return;
+    }
+
+    var lessonId = root.dataset.lessonId;
+    var toggle = root.querySelector('[data-ai-tutor-toggle]');
+    var panel = root.querySelector('[data-ai-tutor-panel]');
+    var closeButton = root.querySelector('[data-ai-tutor-close]');
+    var messages = root.querySelector('[data-ai-tutor-messages]');
+    var form = root.querySelector('[data-ai-tutor-form]');
+    var input = root.querySelector('[data-ai-tutor-input]');
+    var sendButton = root.querySelector('[data-ai-tutor-send]');
+    var status = root.querySelector('[data-ai-tutor-status]');
+    var quickActions = Array.from(root.querySelectorAll('[data-ai-tutor-action]'));
+    var history = [];
+    var sending = false;
+
+    if (!lessonId || !toggle || !panel || !form || !input || !messages) {
+        return;
+    }
+
+    appendMessage('assistant', 'I am ready to help with this lesson. Would you like a summary, a simpler explanation, an example, or a quick check?');
+
+    toggle.addEventListener('click', function () {
+        setPanelOpen(panel.hidden);
+    });
+    if (closeButton) {
+        closeButton.addEventListener('click', function () {
+            setPanelOpen(false);
+            toggle.focus();
+        });
+    }
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !panel.hidden) {
+            setPanelOpen(false);
+            toggle.focus();
+        }
+    });
+
+    quickActions.forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (sending) {
+                return;
+            }
+            var action = button.dataset.aiTutorAction || '';
+            sendChat(button.textContent.trim(), action);
+        });
+    });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (sending) {
+            return;
+        }
+        sendChat(input.value, '');
+    });
+
+    input.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            form.requestSubmit();
+        }
+    });
+
+    function setPanelOpen(isOpen) {
+        panel.hidden = !isOpen;
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) {
+            input.focus();
+            scrollMessages();
+        }
+    }
+
+    function setLoading(isLoading) {
+        sending = isLoading;
+        input.disabled = isLoading;
+        if (sendButton) {
+            sendButton.disabled = isLoading;
+        }
+        quickActions.forEach(function (button) {
+            button.disabled = isLoading;
+        });
+        if (isLoading) {
+            setStatus('Thinking...', false);
+        }
+    }
+
+    function setStatus(text, isError) {
+        if (!status) {
+            return;
+        }
+        status.textContent = text || '';
+        status.classList.toggle('error', Boolean(isError));
+    }
+
+    function sendChat(rawMessage, action) {
+        var message = String(rawMessage || '').trim();
+        if (!message) {
+            setStatus('Enter a question about the current lesson.', true);
+            input.focus();
+            return;
+        }
+        if (message.length > 1200) {
+            setStatus('Your question is too long. Please shorten it.', true);
+            input.focus();
+            return;
+        }
+
+        setPanelOpen(true);
+        var requestHistory = history.slice(-6);
+        appendMessage('user', message);
+        history.push({ role: 'user', content: message });
+        input.value = '';
+        setLoading(true);
+
+        fetch('/api/student/ai-tutor/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                lessonId: Number(lessonId),
+                message: message,
+                action: action || '',
+                history: requestHistory
+            })
+        }).then(function (response) {
+            return response.json()
+                .catch(function () {
+                    return { message: 'AI Tutor could not respond. Please try again later.' };
+                })
+                .then(function (body) {
+                    if (!response.ok) {
+                        throw new Error(body.message || 'AI Tutor could not respond. Please try again later.');
+                    }
+                    return body;
+                });
+        }).then(function (apiResponse) {
+            var data = apiResponse.data || {};
+            var answer = data.answer || 'AI Tutor does not have an answer yet.';
+            appendMessage('assistant', answer);
+            history.push({ role: 'assistant', content: answer });
+            history = history.slice(-8);
+            setStatus(data.refused ? 'Outside the current lesson scope.' : '', Boolean(data.refused));
+        }).catch(function (error) {
+            history = history.slice(0, -1);
+            setStatus(error.message || 'AI Tutor could not respond. Please try again later.', true);
+        }).finally(function () {
+            setLoading(false);
+            input.focus();
+        });
+    }
+
+    function appendMessage(role, text) {
+        var item = document.createElement('div');
+        item.className = 'ai-tutor-message ' + (role === 'user' ? 'user' : 'assistant');
+        var label = document.createElement('strong');
+        label.textContent = role === 'user' ? 'You' : 'AI Tutor';
+        var bubble = document.createElement('div');
+        bubble.className = 'ai-tutor-bubble';
+        bubble.textContent = text || '';
+        item.appendChild(label);
+        item.appendChild(bubble);
+        messages.appendChild(item);
+        scrollMessages();
+    }
+
+    function scrollMessages() {
+        messages.scrollTop = messages.scrollHeight;
+    }
 }
 
 function applyLearningProgress(progress) {

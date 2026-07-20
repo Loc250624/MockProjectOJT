@@ -343,6 +343,48 @@
     </div>
 </main>
 
+<section class="ai-tutor"
+         th:if="${learningCourse.activeLesson != null}"
+         data-ai-tutor
+         th:data-lesson-id="${learningCourse.activeLesson.id}"
+         aria-label="AI Tutor">
+    <button type="button"
+            class="ai-tutor-toggle"
+            data-ai-tutor-toggle
+            aria-controls="ai-tutor-panel"
+            aria-expanded="false">
+        <svg th:replace="~{fragments/icons :: icon('comments')}"></svg>
+        <span>AI Tutor</span>
+    </button>
+    <div class="ai-tutor-panel" id="ai-tutor-panel" data-ai-tutor-panel hidden>
+        <header class="ai-tutor-header">
+            <div>
+                <strong>AI Tutor</strong>
+                <span th:text="${learningCourse.activeLesson.title}">Lesson</span>
+            </div>
+            <button type="button" class="ai-tutor-icon-button" data-ai-tutor-close aria-label="Close AI Tutor">
+                <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+            </button>
+        </header>
+        <div class="ai-tutor-quick-actions" aria-label="Quick AI Tutor actions">
+            <button type="button" data-ai-tutor-action="SUMMARY">Summarize</button>
+            <button type="button" data-ai-tutor-action="EXPLAIN_SIMPLY">Explain simply</button>
+            <button type="button" data-ai-tutor-action="EXAMPLE">Give an example</button>
+            <button type="button" data-ai-tutor-action="QUIZ_ME">Quiz me</button>
+        </div>
+        <div class="ai-tutor-messages" data-ai-tutor-messages role="log" aria-live="polite" aria-relevant="additions"></div>
+        <p class="ai-tutor-status" data-ai-tutor-status aria-live="polite"></p>
+        <form class="ai-tutor-form" data-ai-tutor-form>
+            <label class="sr-only" for="ai-tutor-input">Message AI Tutor</label>
+            <textarea id="ai-tutor-input" data-ai-tutor-input rows="2" maxlength="1200" placeholder="Ask about this lesson"></textarea>
+            <button type="submit" data-ai-tutor-send aria-label="Send message">
+                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                <span>Send</span>
+            </button>
+        </form>
+    </div>
+</section>
+
 <span hidden
       data-csrf-token
       th:data-csrf-token="${_csrf.token}"
