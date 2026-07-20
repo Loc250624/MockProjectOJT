@@ -7,6 +7,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -43,7 +45,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String registrationId = authToken.getAuthorizedClientRegistrationId();
         AuthProvider authProvider = resolveAuthProvider(registrationId);
         if (authProvider == null) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 login attempted with unsupported provider: {}", registrationId);
             response.sendRedirect("/auth/login?error=oauth2");
             return;
@@ -51,7 +53,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String email = oAuth2User.getAttribute("email");
         if (!StringUtils.hasText(email)) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 user from provider '{}' has no email; cannot authenticate", registrationId);
             response.sendRedirect("/auth/login?error=oauth2_no_email");
             return;
@@ -68,7 +70,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         try {
             loginResult = oAuth2AccountService.loginOrStartRegistration(profile);
         } catch (OAuth2AuthenticationException e) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 account resolution failed: provider={}, errorCode={}",
                     registrationId,
                     e.getError() != null ? e.getError().getErrorCode() : null);
@@ -77,7 +79,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         }
 
         if (loginResult.isPending()) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
+            jwtCookieService.clearJwtCookie(response);
             request.getSession(true).setAttribute(
                     PENDING_OAUTH_SESSION_ATTRIBUTE,
                     loginResult.pendingRegistrationToken());
@@ -88,27 +91,36 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         User user = loginResult.user();
         if (user.getStatus() == UserStatus.DELETED) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 login attempt by deleted account: {}", user.getEmail());
             response.sendRedirect("/auth/login?error=deleted");
             return;
         }
         if (user.getStatus() != UserStatus.ACTIVE) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 login attempt by inactive account: {}", user.getEmail());
             response.sendRedirect("/auth/login?error=blocked");
             return;
         }
         if (user.getRole() == null) {
-            SecurityContextHolder.clearContext();
+            clearSavedAuthentication(request);
             log.warn("OAuth2 login attempt by account without role: {}", user.getEmail());
             response.sendRedirect("/auth/login?error=role");
             return;
         }
 
         jwtCookieService.addJwtCookie(response, user.getEmail());
+        clearSavedAuthentication(request);
         log.info("OAuth2 login success: provider={}, email={}, role={}", registrationId, user.getEmail(), user.getRole());
         response.sendRedirect(resolveRedirectUrl(user.getRole()));
+    }
+
+    private void clearSavedAuthentication(HttpServletRequest request) {
+        SecurityContextHolder.clearContext();
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        }
     }
 
     private AuthProvider resolveAuthProvider(String registrationId) {

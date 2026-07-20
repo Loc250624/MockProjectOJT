@@ -83,7 +83,7 @@
             <p style="font-size:0.75rem; color:var(--lumina-danger); font-weight:600; margin-top:2px;">⏰ Special pricing available</p>
 
             <!-- Login to Enroll button (Anonymous) -->
-            <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-blue); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Login to Enroll</a>
+            <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-blue); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Login to Enroll</a>
             
             <!-- Student enrollment state -->
             <th:block sec:authorize="hasRole('STUDENT')">
@@ -95,7 +95,7 @@
             </th:block>
             
             <!-- Disabled button (Teacher/Admin) -->
-            <button sec:authorize="!isAnonymous() and !hasRole('STUDENT')" disabled class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-gray-400); color:white; border-radius:10px; font-weight:700; font-size:1rem; cursor:not-allowed; border:none; width:100%;">Students Only</button>
+            <button sec:authorize="hasAnyRole('TEACHER','ADMIN')" disabled class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-gray-400); color:white; border-radius:10px; font-weight:700; font-size:1rem; cursor:not-allowed; border:none; width:100%;">Students Only</button>
             
             <p style="font-size:0.75rem; color:var(--lumina-gray-400); text-align:center; margin-top:0.75rem;">30-Day Money-Back Guarantee</p>
             <hr style="border:none; border-top:1px solid var(--lumina-gray-200); margin:1.25rem 0;">
