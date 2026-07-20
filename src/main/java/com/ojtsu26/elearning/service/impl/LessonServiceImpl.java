@@ -45,15 +45,25 @@ public class LessonServiceImpl implements LessonService {
         if (instructorId != null) {
             verifyCourseOwnership(courseId, instructorId);
         }
-        return lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
+        return lessonRepository.findByCourseIdWithAssessmentOrderByOrderIndexAsc(courseId).stream()
                 .map(lessonMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public LessonResponseDTO findById(Integer id) {
-        Lesson entity = lessonRepository.findById(id)
+        Lesson entity = lessonRepository.findByIdWithCourseAndAssessment(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        return lessonMapper.toDto(entity);
+    }
+
+    @Override
+    public LessonResponseDTO findById(Integer id, Integer instructorId) {
+        Lesson entity = lessonRepository.findByIdWithCourseAndAssessment(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        if (instructorId != null && entity.getCourse() != null) {
+            verifyCourseOwnership(entity.getCourse().getId(), instructorId);
+        }
         return lessonMapper.toDto(entity);
     }
 
@@ -90,6 +100,12 @@ public class LessonServiceImpl implements LessonService {
         
         existing.setTitle(requestDTO.getTitle());
         existing.setContent(requestDTO.getContent());
+        if (requestDTO.getType() != existing.getType()
+                && ((existing.getQuiz() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.QUIZ)
+                || (existing.getCodingassignment() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.CODING)
+                || (existing.getVideo() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.VIDEO))) {
+            throw new RuntimeException("Cannot change lesson type while matching lesson content exists");
+        }
         existing.setType(requestDTO.getType());
         
         if (oldIndex != newIndex) {

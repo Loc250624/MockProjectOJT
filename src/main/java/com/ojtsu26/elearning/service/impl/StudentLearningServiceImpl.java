@@ -252,25 +252,26 @@ public class StudentLearningServiceImpl implements StudentLearningService {
             return requestedLessonId;
         }
 
+        Set<Integer> completedLessonIds = progresses.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsCompleted()) && p.getLesson() != null)
+                .map(p -> p.getLesson().getId())
+                .collect(Collectors.toSet());
+
         Optional<LessonProgress> lastAccessed = progresses.stream()
                 .filter(p -> p.getLastAccessedAt() != null && p.getLesson() != null)
                 .max(Comparator.comparing(LessonProgress::getLastAccessedAt));
-                
+
         if (lastAccessed.isPresent()) {
             Lesson lastLesson = lastAccessed.get().getLesson();
             LessonAccessState state = accessByLesson.get(lastLesson.getId());
             if (lessons.stream().anyMatch(l -> Objects.equals(l.getId(), lastLesson.getId()))
                     && state != null
-                    && state.accessible()) {
+                    && state.accessible()
+                    && !completedLessonIds.contains(lastLesson.getId())) {
                 return lastLesson.getId();
             }
         }
-        
-        Set<Integer> completedLessonIds = progresses.stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsCompleted()) && p.getLesson() != null)
-                .map(p -> p.getLesson().getId())
-                .collect(Collectors.toSet());
-                
+
         return requiredLessons(lessons).stream()
                 .filter(lesson -> {
                     LessonAccessState state = accessByLesson.get(lesson.getId());
@@ -279,6 +280,14 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .filter(lesson -> !completedLessonIds.contains(lesson.getId()))
                 .map(Lesson::getId)
                 .findFirst()
+                .or(() -> lastAccessed
+                        .map(LessonProgress::getLesson)
+                        .filter(lastLesson -> lessons.stream().anyMatch(l -> Objects.equals(l.getId(), lastLesson.getId())))
+                        .filter(lastLesson -> {
+                            LessonAccessState state = accessByLesson.get(lastLesson.getId());
+                            return state != null && state.accessible();
+                        })
+                        .map(Lesson::getId))
                 .orElseGet(() -> lessons.stream()
                         .filter(lesson -> {
                             LessonAccessState state = accessByLesson.get(lesson.getId());
@@ -552,17 +561,10 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        if (Boolean.TRUE.equals(enrollment.getIsCompleted())) {
-            percentage = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
-        }
-        boolean completedCourse = (total > 0 && completed == total) || Boolean.TRUE.equals(enrollment.getIsCompleted());
+        boolean completedCourse = total > 0 && completed == total;
         boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
         enrollment.setProgressPercentage(percentage);
-        if (newlyCompleted) {
-            enrollment.setIsCompleted(true);
-        } else if (enrollment.getIsCompleted() == null) {
-            enrollment.setIsCompleted(false);
-        }
+        enrollment.setIsCompleted(completedCourse);
         enrollmentRepository.save(enrollment);
         if (newlyCompleted) {
             notificationService.createCourseCompletedNotification(enrollment);
@@ -593,17 +595,10 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 : BigDecimal.valueOf(completed)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
-        if (Boolean.TRUE.equals(enrollment.getIsCompleted())) {
-            percentage = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
-        }
-        boolean completedCourse = (total > 0 && completed == total) || Boolean.TRUE.equals(enrollment.getIsCompleted());
+        boolean completedCourse = total > 0 && completed == total;
         boolean newlyCompleted = !Boolean.TRUE.equals(enrollment.getIsCompleted()) && completedCourse;
         enrollment.setProgressPercentage(percentage);
-        if (newlyCompleted) {
-            enrollment.setIsCompleted(true);
-        } else if (enrollment.getIsCompleted() == null) {
-            enrollment.setIsCompleted(false);
-        }
+        enrollment.setIsCompleted(completedCourse);
         enrollmentRepository.save(enrollment);
         if (newlyCompleted) {
             notificationService.createCourseCompletedNotification(enrollment);

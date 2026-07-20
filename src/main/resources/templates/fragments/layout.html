@@ -172,11 +172,9 @@
     <div class="sidebar-footer">
         <div class="sidebar-divider"></div>
         <div class="sidebar-support-links">
-            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
-                <span class="nav-label">Sign Out</span>
-            </a>
+            <th:block th:replace="~{fragments/layout :: logout-form}"></th:block>
         </div>
+    </div>
     </div>
 </aside>
 
@@ -255,11 +253,9 @@
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></span>
                 <span class="nav-label">Settings</span>
             </a>
-            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
-                <span class="nav-label">Sign Out</span>
-            </a>
+            <th:block th:replace="~{fragments/layout :: logout-form}"></th:block>
         </div>
+    </div>
     </div>
 </aside>
 
@@ -300,7 +296,7 @@
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('view')}"></svg></span>
                 <span class="nav-label">Public Catalog</span>
             </a>
-            <a th:href="@{/student/dashboard}" id="nav-student-assignments" data-nav-match="/student/dashboard" style="display:none;">
+            <a th:href="@{/student/assignments}" id="nav-student-assignments" data-nav-match="/student/assignments">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
                 <span class="nav-label">Assignments</span>
             </a>
@@ -330,13 +326,25 @@
     <div class="sidebar-footer">
         <div class="sidebar-divider"></div>
         <div class="sidebar-support-links">
-            <a th:href="@{/auth/logout}" id="logoutBtn" class="logout-btn" style="color: #ef4444;">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
-                <span class="nav-label">Sign Out</span>
-            </a>
+            <th:block th:replace="~{fragments/layout :: logout-form}"></th:block>
         </div>
     </div>
+    </div>
 </aside>
+
+<form th:fragment="logout-form"
+      class="logout-form"
+      th:action="@{/auth/logout}"
+      method="post">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+           th:value="${_csrf != null ? _csrf.token : ''}">
+    <button class="logout-btn" type="submit" data-logout-submit="true" style="color: #ef4444;">
+        <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('sign-out')}"></svg></span>
+        <span class="nav-label">Sign Out</span>
+    </button>
+</form>
 
 <!-- ===== PORTAL TOPBAR (Admin) ===== -->
 <div th:fragment="topbar-admin(pageTitle)" class="portal-topbar">

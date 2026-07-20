@@ -213,10 +213,13 @@
                         <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
                         <strong>Quiz submitted</strong>
                         <span></span>
-                        <button type="button" class="btn btn-outline" id="quiz-retake-button">
-                            <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
-                            <span>Retake Quiz</span>
-                        </button>
+                        <div id="quiz-review" class="learning-result-review"></div>
+                        <div class="learning-assessment-actions">
+                            <button type="button" class="btn btn-outline" id="quiz-retake-button">
+                                <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
+                                <span>Retake Quiz</span>
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -251,10 +254,19 @@
                         <div id="code-examples" class="learning-code-examples"></div>
                         <label class="learning-code-editor-label" for="code-editor">Code</label>
                         <textarea id="code-editor" class="learning-code-editor" spellcheck="false"></textarea>
+                        <div id="code-result" class="learning-code-result" hidden>
+                            <strong>Run result</strong>
+                            <span></span>
+                            <pre></pre>
+                        </div>
                         <div class="learning-assessment-actions">
                             <button type="button" class="btn btn-outline" id="code-save-button">
                                 <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
                                 <span>Save draft</span>
+                            </button>
+                            <button type="button" class="btn btn-outline" id="code-run-button">
+                                <svg th:replace="~{fragments/icons :: icon('code')}"></svg>
+                                <span>Run</span>
                             </button>
                             <button type="submit" class="btn btn-primary" id="code-submit-button">
                                 <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>

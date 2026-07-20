@@ -24,7 +24,25 @@
         <p class="eyebrow"
            th:if="${submission.released == true && submission.gradedAt != null}"
            th:text="${'Published ' + #temporals.format(submission.gradedAt, 'MMM d, yyyy HH:mm')}">Published</p>
-        <pre th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge log</pre>
+        <div class="learning-code-result"
+             th:if="${submission.judgeStatus != null || submission.outputLog != null || submission.totalTests != null}"
+             th:classappend="${submission.judgeStatus != null && submission.judgeStatus.name() == 'PASSED' ? ' passed' : (submission.judgeStatus != null ? ' failed' : '')}">
+            <strong th:text="${submission.judgeStatus != null ? submission.judgeStatus : 'Judge result'}">Judge result</strong>
+            <span th:text="${submission.totalTests != null ? submission.passedTests + ' / ' + submission.totalTests + ' tests' : 'No test summary'}">Tests</span>
+            <pre th:if="${submission.outputLog != null}" th:text="${submission.outputLog}">Judge log</pre>
+        </div>
+        <div class="student-mcq-list"
+             th:if="${submission.answers != null && !#lists.isEmpty(submission.answers)}">
+            <fieldset class="student-mcq-question" th:each="answer : ${submission.answers}">
+                <legend th:text="${answer.content}">Question</legend>
+                <div class="student-answer-option"
+                     th:each="option : ${answer.options}"
+                     th:classappend="${answer.selectedOptionIds != null && #lists.contains(answer.selectedOptionIds, option.id)} ? ' selected'">
+                    <span th:text="${option.content}">Option</span>
+                    <strong th:if="${answer.selectedOptionIds != null && #lists.contains(answer.selectedOptionIds, option.id)}">Selected</strong>
+                </div>
+            </fieldset>
+        </div>
     </section>
 </main>
 </body>

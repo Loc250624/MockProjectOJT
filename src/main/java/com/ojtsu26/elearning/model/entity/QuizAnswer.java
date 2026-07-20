@@ -16,8 +16,12 @@ public class QuizAnswer {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "attempt_id", nullable = false)
+    @JoinColumn(name = "attempt_id")
     private QuizAttempt attempt;
+
+    @ManyToOne
+    @JoinColumn(name = "submission_id")
+    private Submission submission;
 
     @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)

@@ -216,7 +216,6 @@ function initLogoutForms() {
                 csrfInput.value = token;
                 form.appendChild(csrfInput);
             }
-
             document.body.appendChild(form);
             form.submit();
         });

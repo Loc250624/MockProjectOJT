@@ -7,12 +7,14 @@ import com.ojtsu26.elearning.dto.request.StudentCodeSubmissionRequestDTO;
 import com.ojtsu26.elearning.dto.request.StudentQuizSubmissionRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentCodeExampleDTO;
 import com.ojtsu26.elearning.dto.response.StudentCodingAssignmentDTO;
+import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningLessonDTO;
 import com.ojtsu26.elearning.dto.response.StudentQuizAttemptDTO;
 import com.ojtsu26.elearning.dto.response.StudentQuizQuestionDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.model.entity.CodingAssignment;
+import com.ojtsu26.elearning.model.entity.CodeJudgeResult;
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
 import com.ojtsu26.elearning.model.entity.Lesson;
 import com.ojtsu26.elearning.model.entity.LessonProgress;
@@ -22,7 +24,9 @@ import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.entity.Testcase;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
+import com.ojtsu26.elearning.model.enums.NotificationType;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
+import com.ojtsu26.elearning.repository.CodeJudgeResultRepository;
 import com.ojtsu26.elearning.repository.CodingAssignmentRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.LessonProgressRepository;
@@ -32,6 +36,8 @@ import com.ojtsu26.elearning.repository.QuizRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.TestcaseRepository;
 import com.ojtsu26.elearning.service.CurrentUserService;
+import com.ojtsu26.elearning.service.CodeJudgeAdapter;
+import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.StudentAssessmentService;
 import com.ojtsu26.elearning.service.StudentLearningService;
 import lombok.RequiredArgsConstructor;
@@ -67,8 +73,11 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     private final CodingAssignmentRepository codingAssignmentRepository;
     private final TestcaseRepository testcaseRepository;
     private final SubmissionRepository submissionRepository;
+    private final CodeJudgeResultRepository codeJudgeResultRepository;
     private final LessonProgressRepository lessonProgressRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
+    private final CodeJudgeAdapter codeJudgeAdapter;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -130,10 +139,8 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                 "answers", answers
         )));
         submissionRepository.save(attempt);
-        if (passed) {
-            markAssessmentProgressCompleted(courseId, lesson);
-        }
-        return toQuizDto(courseId, lessonId, quiz, questions, attempt);
+        LearningProgressDTO learningProgress = passed ? markAssessmentProgressCompleted(courseId, lesson) : null;
+        return toQuizDto(courseId, lessonId, quiz, questions, attempt, learningProgress);
     }
 
     @Override
@@ -149,8 +156,10 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
             return unavailableAssignment(courseId, lessonId, "This coding exercise has no allowed languages yet.");
         }
         Submission submission = submissionRepository
-                .findTopByStudentIdAndLessonIdOrderByIdDesc(currentUserService.getCurrentUser().getId(), lessonId)
-                .orElse(null);
+                .findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(assignment.getId(), currentUserService.getCurrentUser().getId())
+                .orElseGet(() -> submissionRepository
+                        .findTopByStudentIdAndLessonIdOrderByIdDesc(currentUserService.getCurrentUser().getId(), lessonId)
+                        .orElse(null));
         return toCodingDto(courseId, lessonId, assignment, submission, false, null);
     }
 
@@ -160,10 +169,23 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.CODING);
         CodingAssignment assignment = requireAssignment(lessonId);
         String language = validateCodeRequest(assignment, request);
-        Submission submission = writableCodeSubmission(request.getSubmissionId(), lesson, false);
-        submission.setSubmittedContent(writeCodePayload(language, request.getCode(), STATE_DRAFT));
+        Submission submission = writableCodeSubmission(request.getSubmissionId(), assignment, false);
+        applyCodeSubmission(submission, assignment, language, request.getCode(), STATE_DRAFT, SubmissionStatus.DRAFT);
         submissionRepository.save(submission);
         return toCodingDto(courseId, lessonId, assignment, submission, false, null);
+    }
+
+    @Override
+    @Transactional
+    public StudentCodingAssignmentDTO runCode(Integer courseId, Integer lessonId, StudentCodeSubmissionRequestDTO request) {
+        Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.CODING);
+        CodingAssignment assignment = requireAssignment(lessonId);
+        String language = validateCodeRequest(assignment, request);
+        Submission submission = writableCodeSubmission(request.getSubmissionId(), assignment, true);
+        applyCodeSubmission(submission, assignment, language, request.getCode(), STATE_DRAFT, SubmissionStatus.DRAFT);
+        Submission saved = submissionRepository.save(submission);
+        CodeJudgeResult result = judge(saved, assignment);
+        return toCodingDto(courseId, lessonId, assignment, saved, false, null, result);
     }
 
     @Override
@@ -172,15 +194,16 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.CODING);
         CodingAssignment assignment = requireAssignment(lessonId);
         String language = validateCodeRequest(assignment, request);
-        Submission submission = writableCodeSubmission(request.getSubmissionId(), lesson, true);
+        Submission submission = writableCodeSubmission(request.getSubmissionId(), assignment, true);
         if (STATE_SUBMITTED.equals(payloadState(submission)) && submission.getStatus() == SubmissionStatus.PENDING_REVIEW) {
             return toCodingDto(courseId, lessonId, assignment, submission, false, null);
         }
-        submission.setSubmittedContent(writeCodePayload(language, request.getCode(), STATE_SUBMITTED));
-        submission.setStatus(SubmissionStatus.PENDING_REVIEW);
-        submission.setScore(null);
-        submissionRepository.save(submission);
-        return toCodingDto(courseId, lessonId, assignment, submission, false, null);
+        applyCodeSubmission(submission, assignment, language, request.getCode(), STATE_SUBMITTED, SubmissionStatus.PENDING_REVIEW);
+        Submission saved = submissionRepository.save(submission);
+        createTeacherSubmissionNotification(saved);
+        CodeJudgeResult result = judge(saved, assignment);
+        LearningProgressDTO learningProgress = applyStudentJudgeOutcome(courseId, lesson, saved, result);
+        return toCodingDto(courseId, lessonId, assignment, saved, false, null, result, learningProgress);
     }
 
     private Lesson requireAccessibleLesson(Integer courseId, Integer lessonId, LessonType expectedType) {
@@ -278,9 +301,9 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     private BigDecimal scoreQuiz(Map<Integer, String> answers, List<Question> questions) {
         long correct = questions.stream()
                 .filter(question -> {
-                    String expected = question.getCorrectAnswer() == null ? "" : question.getCorrectAnswer().trim();
                     String actual = answers.getOrDefault(question.getId(), "").trim();
-                    return !expected.isEmpty() && expected.equalsIgnoreCase(actual);
+                    return !actual.isEmpty() && correctAnswerTokens(question).stream()
+                            .anyMatch(expected -> expected.equalsIgnoreCase(actual));
                 })
                 .count();
         return BigDecimal.valueOf(correct)
@@ -288,11 +311,29 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                 .divide(BigDecimal.valueOf(questions.size()), 2, RoundingMode.HALF_UP);
     }
 
+    private Set<String> correctAnswerTokens(Question question) {
+        List<AssessmentOptionCodec.ParsedOption> options = AssessmentOptionCodec.readOptions(question, objectMapper);
+        Set<String> tokens = options.stream()
+                .filter(AssessmentOptionCodec.ParsedOption::correct)
+                .flatMap(option -> java.util.stream.Stream.of(String.valueOf(option.id()), option.content()))
+                .collect(Collectors.toSet());
+        String rawCorrect = question.getCorrectAnswer();
+        if (rawCorrect != null && !rawCorrect.isBlank()) {
+            for (String part : rawCorrect.split(",")) {
+                String token = part == null ? "" : part.trim();
+                if (!token.isEmpty()) {
+                    tokens.add(token);
+                }
+            }
+        }
+        return tokens;
+    }
+
     private BigDecimal defaultPassingScore(Quiz quiz) {
         return quiz.getPassingScore() == null ? BigDecimal.ZERO : quiz.getPassingScore();
     }
 
-    private void markAssessmentProgressCompleted(Integer courseId, Lesson lesson) {
+    private LearningProgressDTO markAssessmentProgressCompleted(Integer courseId, Lesson lesson) {
         User student = currentUserService.getCurrentUser();
         CourseEnrollment enrollment = enrollmentRepository.findByStudentIdAndCourseIdForUpdate(student.getId(), courseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course."));
@@ -312,6 +353,29 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         }
         progress.setLastAccessedAt(LocalDateTime.now());
         lessonProgressRepository.save(progress);
+        return assessmentLearningProgress(courseId, lesson, progress);
+    }
+
+    private LearningProgressDTO assessmentLearningProgress(Integer courseId, Lesson lesson, LessonProgress progress) {
+        StudentLearningLessonDTO lessonState = studentLearningService.openLesson(courseId, lesson.getId());
+        LearningProgressDTO courseProgress = lessonState == null ? null : lessonState.getCourseProgress();
+        return LearningProgressDTO.builder()
+                .courseId(courseId)
+                .lessonId(lesson.getId())
+                .enrollmentId(progress.getEnrollment() == null ? null : progress.getEnrollment().getId())
+                .completedLessons(courseProgress == null ? null : courseProgress.getCompletedLessons())
+                .totalLessons(courseProgress == null ? null : courseProgress.getTotalLessons())
+                .progressPercentage(courseProgress == null ? null : courseProgress.getProgressPercentage())
+                .completed(Boolean.TRUE.equals(progress.getIsCompleted()))
+                .lessonCompleted(Boolean.TRUE.equals(progress.getIsCompleted()))
+                .courseCompleted(courseProgress == null ? null : courseProgress.getCourseCompleted())
+                .courseStatus(courseProgress == null ? null : courseProgress.getCourseStatus())
+                .nextLessonId(lessonState == null ? null : lessonState.getNextLessonId())
+                .nextLessonAccessible(lessonState == null ? null : lessonState.getNextLessonAccessible())
+                .nextLessonLockReason(lessonState == null ? null : lessonState.getNextLessonLockReason())
+                .completedAt(progress.getCompletedAt())
+                .lastAccessedAt(progress.getLastAccessedAt())
+                .build();
     }
 
     private StudentQuizAttemptDTO unavailableQuiz(Integer courseId, Integer lessonId, String message) {
@@ -327,6 +391,11 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     }
 
     private StudentQuizAttemptDTO toQuizDto(Integer courseId, Integer lessonId, Quiz quiz, List<Question> questions, Submission attempt) {
+        return toQuizDto(courseId, lessonId, quiz, questions, attempt, null);
+    }
+
+    private StudentQuizAttemptDTO toQuizDto(Integer courseId, Integer lessonId, Quiz quiz, List<Question> questions,
+                                            Submission attempt, LearningProgressDTO learningProgress) {
         Map<String, Object> payload = readPayload(attempt.getSubmittedContent());
         Map<Integer, String> answers = readAnswers(payload);
         boolean submitted = attempt.getStatus() != SubmissionStatus.PENDING_REVIEW || STATE_SUBMITTED.equals(payloadState(payload));
@@ -347,12 +416,28 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                         .map(question -> StudentQuizQuestionDTO.builder()
                                 .id(question.getId())
                                 .questionText(question.getQuestionText())
-                                .optionsJson(question.getOptionsJson())
+                                .optionsJson(studentQuizOptionsJson(question, submitted))
                                 .build())
                         .toList())
                 .answers(answers)
                 .submittedAt(attempt.getSubmittedAt())
+                .learningProgress(learningProgress)
                 .build();
+    }
+
+    private String studentQuizOptionsJson(Question question, boolean includeCorrect) {
+        if (!includeCorrect) {
+            return AssessmentOptionCodec.studentOptionsJson(question, objectMapper);
+        }
+        List<Map<String, Object>> options = AssessmentOptionCodec.readOptions(question, objectMapper).stream()
+                .map(option -> {
+                    Map<String, Object> view = new LinkedHashMap<>();
+                    view.put("content", option.content());
+                    view.put("correct", option.correct());
+                    return view;
+                })
+                .toList();
+        return AssessmentOptionCodec.writeJson(options, objectMapper);
     }
 
     private CodingAssignment requireAssignment(Integer lessonId) {
@@ -387,8 +472,9 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                 .orElse(language);
     }
 
-    private Submission writableCodeSubmission(Integer requestedSubmissionId, Lesson lesson, boolean allowSubmittedReturn) {
+    private Submission writableCodeSubmission(Integer requestedSubmissionId, CodingAssignment assignment, boolean allowSubmittedReturn) {
         User student = currentUserService.getCurrentUser();
+        Lesson lesson = assignment.getLesson();
         Submission submission;
         if (requestedSubmissionId != null) {
             submission = submissionRepository
@@ -396,22 +482,121 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.ACCESS_DENIED, "Coding submission is not available."));
         } else {
             submission = submissionRepository
-                    .findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(student.getId(), lesson.getId(), SubmissionStatus.PENDING_REVIEW)
+                    .findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(assignment.getId(), student.getId())
+                    .filter(existing -> existing.getStatus() == SubmissionStatus.DRAFT
+                            || existing.getStatus() == SubmissionStatus.PENDING_REVIEW)
                     .orElseGet(() -> Submission.builder()
+                            .assignment(assignment)
                             .student(student)
                             .lesson(lesson)
-                            .status(SubmissionStatus.PENDING_REVIEW)
+                            .status(SubmissionStatus.DRAFT)
                             .build());
         }
 
         boolean submitted = STATE_SUBMITTED.equals(payloadState(submission));
-        if (submission.getStatus() != SubmissionStatus.PENDING_REVIEW) {
+        if (submission.getAssignment() == null) {
+            submission.setAssignment(assignment);
+        }
+        if (submission.getStatus() != SubmissionStatus.PENDING_REVIEW && submission.getStatus() != SubmissionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "This coding submission has already been graded.");
         }
         if (submitted && !allowSubmittedReturn) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "This coding submission has already been submitted.");
         }
         return submission;
+    }
+
+    private void applyCodeSubmission(Submission submission, CodingAssignment assignment, String language, String code,
+                                     String state, SubmissionStatus status) {
+        submission.setAssignment(assignment);
+        submission.setLesson(assignment.getLesson());
+        submission.setStudent(currentUserService.getCurrentUser());
+        submission.setSubmittedContent(writeCodePayload(language, code, state));
+        submission.setCodeLanguage(language);
+        submission.setCodeContent(code);
+        submission.setStatus(status);
+        if (STATE_SUBMITTED.equals(state)) {
+            submission.setScore(null);
+        }
+    }
+
+    private CodeJudgeResult judge(Submission submission, CodingAssignment assignment) {
+        List<Testcase> testcases = testcaseRepository.findByAssignmentIdOrderByIdAsc(assignment.getId());
+        CodeJudgeAdapter.JudgeOutcome outcome;
+        if (testcases.isEmpty()) {
+            outcome = new CodeJudgeAdapter.JudgeOutcome(
+                    com.ojtsu26.elearning.model.enums.CodeJudgeStatus.ERROR,
+                    0,
+                    0,
+                    List.of(),
+                    "No testcases are configured for this assignment.",
+                    0L);
+        } else {
+            CodingAssignment judgeAssignment = CodingAssignment.builder()
+                    .id(assignment.getId())
+                    .title(assignment.getTitle())
+                    .timeLimitMs(assignment.getTimeLimitMs())
+                    .maxScore(assignment.getMaxScore())
+                    .testcases(testcases)
+                    .build();
+            outcome = codeJudgeAdapter.judge(judgeAssignment, submission);
+        }
+        CodeJudgeResult result = CodeJudgeResult.builder()
+                .submission(submission)
+                .status(outcome.status())
+                .totalTests(outcome.totalTests())
+                .passedTests(outcome.passedTests())
+                .outputLog(outcome.outputLog())
+                .executionTimeMs(outcome.executionTimeMs())
+                .build();
+        return codeJudgeResultRepository.save(result);
+    }
+
+    private LearningProgressDTO applyStudentJudgeOutcome(Integer courseId, Lesson lesson, Submission submission, CodeJudgeResult result) {
+        if (result == null || result.getStatus() == null) {
+            return null;
+        }
+        if (result.getStatus() == com.ojtsu26.elearning.model.enums.CodeJudgeStatus.PASSED) {
+            submission.setStatus(SubmissionStatus.PASSED);
+            submission.setScore(BigDecimal.valueOf(100));
+            return markAssessmentProgressCompleted(courseId, lesson);
+        } else if (result.getStatus() == com.ojtsu26.elearning.model.enums.CodeJudgeStatus.FAILED) {
+            submission.setStatus(SubmissionStatus.FAILED);
+            submission.setScore(judgePercent(result));
+        }
+        return null;
+    }
+
+    private BigDecimal judgePercent(CodeJudgeResult result) {
+        if (result.getTotalTests() == null || result.getTotalTests() <= 0 || result.getPassedTests() == null) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(result.getPassedTests())
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(result.getTotalTests()), 2, RoundingMode.HALF_UP);
+    }
+
+    private void createTeacherSubmissionNotification(Submission submission) {
+        if (submission == null || submission.getId() == null || submission.getAssignment() == null
+                || submission.getAssignment().getLesson() == null
+                || submission.getAssignment().getLesson().getCourse() == null
+                || submission.getAssignment().getLesson().getCourse().getInstructor() == null) {
+            return;
+        }
+        CodingAssignment assignment = submission.getAssignment();
+        User teacher = assignment.getLesson().getCourse().getInstructor();
+        String studentName = submission.getStudent() == null || submission.getStudent().getFullName() == null
+                ? "A student"
+                : submission.getStudent().getFullName();
+        notificationService.createNotification(
+                teacher,
+                NotificationType.COURSE_SUBMITTED_FOR_REVIEW,
+                "New coding submission",
+                studentName + " submitted " + assignment.getTitle() + ".",
+                "/teacher/grading?courseId=" + assignment.getLesson().getCourse().getId()
+                        + "&assignmentId=" + assignment.getId()
+                        + "&submissionId=" + submission.getId(),
+                "TEACHER_CODING_SUBMISSION:submission:" + submission.getId());
     }
 
     private String writeCodePayload(String language, String code, String state) {
@@ -437,8 +622,29 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
 
     private StudentCodingAssignmentDTO toCodingDto(Integer courseId, Integer lessonId, CodingAssignment assignment,
                                                    Submission submission, boolean unavailable, String unavailableMessage) {
+        return toCodingDto(courseId, lessonId, assignment, submission, unavailable, unavailableMessage,
+                submission == null || submission.getId() == null
+                        ? null
+                        : codeJudgeResultRepository.findTopBySubmissionIdOrderByCreatedAtDesc(submission.getId()).orElse(null));
+    }
+
+    private StudentCodingAssignmentDTO toCodingDto(Integer courseId, Integer lessonId, CodingAssignment assignment,
+                                                   Submission submission, boolean unavailable, String unavailableMessage,
+                                                   CodeJudgeResult latestResult) {
+        return toCodingDto(courseId, lessonId, assignment, submission, unavailable, unavailableMessage, latestResult, null);
+    }
+
+    private StudentCodingAssignmentDTO toCodingDto(Integer courseId, Integer lessonId, CodingAssignment assignment,
+                                                   Submission submission, boolean unavailable, String unavailableMessage,
+                                                   CodeJudgeResult latestResult, LearningProgressDTO learningProgress) {
         Map<String, Object> payload = submission == null ? Map.of() : readPayload(submission.getSubmittedContent());
         String state = payloadState(payload);
+        String submittedLanguage = submission != null && submission.getCodeLanguage() != null
+                ? submission.getCodeLanguage()
+                : stringValue(payload.get("language"));
+        String submittedCode = submission != null && submission.getCodeContent() != null
+                ? submission.getCodeContent()
+                : stringValue(payload.get("code"));
         return StudentCodingAssignmentDTO.builder()
                 .courseId(courseId)
                 .lessonId(lessonId)
@@ -450,15 +656,31 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                 .timeLimitMs(assignment.getTimeLimitMs())
                 .examples(visibleExamples(assignment.getId()))
                 .submissionId(submission == null ? null : submission.getId())
-                .submittedLanguage(stringValue(payload.get("language")))
-                .submittedCode(stringValue(payload.get("code")))
+                .submittedLanguage(submittedLanguage)
+                .submittedCode(submittedCode)
                 .status(submission == null ? null : submission.getStatus())
                 .submissionState(state)
-                .submitted(STATE_SUBMITTED.equals(state) || (submission != null && submission.getStatus() != SubmissionStatus.PENDING_REVIEW))
+                .submitted(STATE_SUBMITTED.equals(state) || (submission != null
+                        && submission.getStatus() != SubmissionStatus.PENDING_REVIEW
+                        && submission.getStatus() != SubmissionStatus.DRAFT))
                 .unavailable(unavailable)
                 .unavailableMessage(unavailableMessage)
                 .submittedAt(submission == null ? null : submission.getSubmittedAt())
+                .judgeStatus(latestResult == null ? null : latestResult.getStatus())
+                .totalTests(latestResult == null ? null : latestResult.getTotalTests())
+                .passedTests(latestResult == null ? null : latestResult.getPassedTests())
+                .outputLog(studentJudgeSummary(latestResult))
+                .learningProgress(learningProgress)
                 .build();
+    }
+
+    private String studentJudgeSummary(CodeJudgeResult result) {
+        if (result == null || result.getStatus() == null) {
+            return null;
+        }
+        int passed = result.getPassedTests() == null ? 0 : result.getPassedTests();
+        int total = result.getTotalTests() == null ? 0 : result.getTotalTests();
+        return "Judge status: " + result.getStatus() + ". Passed " + passed + " of " + total + " tests.";
     }
 
     private List<String> allowedLanguages(CodingAssignment assignment) {

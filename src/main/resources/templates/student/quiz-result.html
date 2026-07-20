@@ -15,14 +15,29 @@
             <div>
                 <p class="eyebrow">Quiz result</p>
                 <h1 th:text="${attempt.quiz.title}">Quiz</h1>
+                <p th:text="${attempt.submittedAt != null ? 'Submitted ' + #temporals.format(attempt.submittedAt, 'MMM d, yyyy HH:mm') : 'Latest attempt'}">Submitted</p>
             </div>
-            <strong class="score-pill" th:text="${attempt.score} + '%'">0%</strong>
+            <div class="quiz-result-summary">
+                <strong class="score-pill" th:text="${attempt.score} + '%'">0%</strong>
+                <span class="assessment-status-badge"
+                      th:text="${attempt.score != null && attempt.quiz.passingScore != null && attempt.score.compareTo(attempt.quiz.passingScore) >= 0 ? 'Passed' : 'Failed'}">Passed</span>
+            </div>
         </div>
         <div class="assessment-list">
-            <div class="result-row" th:each="question : ${attempt.quiz.questions}">
-                <span th:text="${question.content}">Question</span>
-                <small th:text="'Selected: ' + ${question.selectedOptionIds}">Selected</small>
+            <div class="result-row quiz-review-row" th:each="question, stat : ${attempt.quiz.questions}">
+                <div>
+                    <strong th:text="${stat.count + '. ' + question.content}">Question</strong>
+                    <small th:text="${question.selectedOptionIds == null || #lists.isEmpty(question.selectedOptionIds) ? 'No answer selected' : 'Selected answers are highlighted'}">Selected</small>
+                </div>
+                <div class="quiz-review-options">
+                    <span th:each="option : ${question.options}"
+                          th:classappend="${option.correct == true ? ' correct' : (question.selectedOptionIds != null and question.selectedOptionIds.contains(option.id) ? ' wrong' : '')}"
+                          th:text="${option.content}">Option</span>
+                </div>
             </div>
+        </div>
+        <div class="assessment-actions">
+            <a class="btn btn-primary" th:href="@{/student/learning(courseId=${attempt.quiz.courseId})}">Retake</a>
         </div>
     </section>
 </main>

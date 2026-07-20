@@ -3,50 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Assignment</title>
+    <title>Assignment</title>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
-<body class="lumina-bg assessment-page" th:attr="data-assignment-id=${submission != null ? submission.assignmentId : ''}">
+<body class="lumina-bg assessment-page"
+      th:attr="data-assignment-id=${submission != null ? submission.assignmentId : ''},data-assignment-type=${submission != null ? submission.assignmentType : ''}">
 <header th:replace="~{fragments/layout :: header('student')}"></header>
 <main class="assessment-shell single">
     <section class="assessment-panel" th:if="${submission != null}">
         <div class="assessment-heading">
             <div>
-                <p class="eyebrow">Assignment</p>
+                <p class="eyebrow" th:text="${submission.assignmentType != null ? submission.assignmentType + ' Assignment' : 'Assignment'}">Assignment</p>
                 <h1 th:text="${submission.assignmentTitle}">Assignment</h1>
+                <p th:text="${submission.courseTitle}">Course</p>
+            </div>
+            <div class="assessment-actions">
+                <span class="assessment-status-badge" th:text="${submission.status != null ? submission.status : 'DRAFT'}">Draft</span>
+                <a class="btn btn-secondary" th:href="@{/student/assignments(courseId=${submission.courseId})}">Assignments</a>
             </div>
             <a class="btn btn-secondary" th:href="@{/student/results}">
                 <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                 <span>Results</span>
             </a>
         </div>
+
         <form id="assignment-submit-form" class="assessment-form">
-            <label>
-                Notes or answer
-                <textarea name="contentText" rows="5" th:text="${submission.contentText}" placeholder="Describe your approach or paste your written answer."></textarea>
-            </label>
-            <label>
-                Language
-                <input name="codeLanguage" th:value="${submission.codeLanguage}" placeholder="Java, Python, JavaScript">
-            </label>
-            <label>
-                Code
-                <textarea name="codeContent" rows="12" th:text="${submission.codeContent}" placeholder="Paste code here for code assignments."></textarea>
-            </label>
-            <label>
-                File URL or path
-                <input name="filePath" th:value="${submission.filePath}" placeholder="/uploads/submissions/file.zip">
-            </label>
+            <section class="student-assignment-section"
+                     th:if="${submission.assignmentType == 'MCQ'}">
+                <div class="student-mcq-list">
+                    <fieldset class="student-mcq-question"
+                              th:each="question : ${submission.answers}"
+                              th:attr="data-assignment-answer=${question.id},data-question-type=${question.questionType}">
+                        <legend th:text="${question.content}">Question</legend>
+                        <label class="student-answer-option"
+                               th:each="option : ${question.options}">
+                            <input th:type="${question.questionType != null && question.questionType.name() == 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}"
+                                   th:name="${'answer-' + question.id}"
+                                   th:value="${option.id}"
+                                   th:checked="${question.selectedOptionIds != null && #lists.contains(question.selectedOptionIds, option.id)}">
+                            <span th:text="${option.content}">Option</span>
+                        </label>
+                    </fieldset>
+                </div>
+            </section>
+
+            <section class="student-assignment-section"
+                     th:if="${submission.assignmentType == 'ESSAY'}">
+                <label>
+                    Essay response
+                    <textarea name="contentText" rows="12"
+                              th:text="${submission.contentText}"
+                              placeholder="Write or revise your essay response."></textarea>
+                </label>
+                <label>
+                    File URL or path
+                    <input name="filePath" th:value="${submission.filePath}" placeholder="/uploads/submissions/file.pdf">
+                </label>
+            </section>
+
+            <section class="student-assignment-section"
+                     th:if="${submission.assignmentType == 'CODING'}">
+                <label th:if="${submission.contentText != null}">
+                    Notes
+                    <textarea name="contentText" rows="4" th:text="${submission.contentText}" placeholder="Optional notes for your teacher."></textarea>
+                </label>
+                <label>
+                    Language
+                    <input name="codeLanguage" th:value="${submission.codeLanguage}" placeholder="Java, Python, JavaScript">
+                </label>
+                <label>
+                    Code
+                    <textarea name="codeContent" rows="14" th:text="${submission.codeContent}" placeholder="Paste code here."></textarea>
+                </label>
+                <div id="assignment-run-result" class="learning-code-result"
+                     th:hidden="${submission.judgeStatus == null && submission.outputLog == null && submission.totalTests == null}"
+                     th:classappend="${submission.judgeStatus != null && submission.judgeStatus.name() == 'PASSED' ? ' passed' : (submission.judgeStatus != null ? ' failed' : '')}">
+                    <strong>Run result</strong>
+                    <span th:text="${submission.judgeStatus != null ? submission.judgeStatus : 'Run complete'}">Run complete</span>
+                    <pre th:text="${submission.outputLog != null ? submission.outputLog : ''}"></pre>
+                </div>
+                <label>
+                    File URL or path
+                    <input name="filePath" th:value="${submission.filePath}" placeholder="/uploads/submissions/file.zip">
+                </label>
+            </section>
+
             <div class="assessment-actions">
                 <button class="btn btn-secondary" type="button" id="save-assignment-draft">
                     <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
                     <span>Save draft</span>
                 </button>
+                <button class="btn btn-secondary" type="button" id="run-assignment-code"
+                        th:if="${submission.assignmentType == 'CODING'}">
+                    <svg th:replace="~{fragments/icons :: icon('code')}"></svg>
+                    <span>Run</span>
+                </button>
                 <button class="btn btn-primary" type="submit">
                     <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                     <span>Submit</span>
                 </button>
+                <a class="btn btn-secondary" th:href="@{/student/results}">
+                    <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                    <span>Results</span>
+                </a>
             </div>
             <div class="assessment-message" id="assignment-message"></div>
         </form>

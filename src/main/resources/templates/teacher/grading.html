@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}">
     <title>Grading - Teacher Portal | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,7 +64,7 @@
                 <div class="assessment-heading inline">
                     <div>
                         <h2>Submission Queue</h2>
-                        <p>Open a submission to review code, feedback, and score.</p>
+                        <p>Open a submission to review MCQ answers, essays, coding output, feedback, and score.</p>
                     </div>
                 </div>
 
@@ -119,11 +121,18 @@
                                     <span th:text="${submission.courseTitle}">Course</span>
                                     <span> / </span>
                                     <span th:text="${submission.assignmentTitle}">Assignment</span>
+                                    <span th:if="${submission.assignmentType != null}"
+                                          th:text="${' / ' + submission.assignmentType}">Type</span>
+                                    <span th:if="${submission.attemptNo != null}"
+                                          th:text="${' / attempt ' + submission.attemptNo}">Attempt</span>
                                     <span th:if="${submission.submittedAt != null}"
                                           th:text="${' · ' + #temporals.format(submission.submittedAt, 'MMM d, yyyy HH:mm')}">Submitted</span>
                                 </p>
                             </div>
-                            <span class="assessment-status-badge" th:text="${submission.status}">Status</span>
+                            <div class="assessment-actions">
+                                <button class="btn btn-secondary view-submission-btn" type="button">View</button>
+                                <span class="assessment-status-badge" th:text="${submission.status}">Status</span>
+                            </div>
                         </div>
 
                         <dl class="teacher-grading-meta">
@@ -144,6 +153,14 @@
                                 <dd th:text="${submission.gradedAt != null ? #temporals.format(submission.gradedAt, 'MMM d, yyyy HH:mm') : 'Not graded'}">Not graded</dd>
                             </div>
                             <div>
+                                <dt>Type</dt>
+                                <dd th:text="${submission.assignmentType != null ? submission.assignmentType : 'Assignment'}">Type</dd>
+                            </div>
+                            <div>
+                                <dt>Attempt</dt>
+                                <dd th:text="${submission.attemptNo != null ? submission.attemptNo : 1}">1</dd>
+                            </div>
+                            <div>
                                 <dt>Judge status</dt>
                                 <dd th:text="${submission.judgeStatus != null ? submission.judgeStatus : 'Not run'}">Not run</dd>
                             </div>
@@ -158,6 +175,17 @@
                         <p class="teacher-submission-text"
                            th:if="${submission.contentText != null}"
                            th:text="${submission.contentText}">Submission text</p>
+                        <div class="teacher-mcq-answer-list"
+                             th:if="${submission.answers != null && !#lists.isEmpty(submission.answers)}">
+                            <article th:each="answer : ${submission.answers}">
+                                <strong th:text="${answer.content}">Question</strong>
+                                <ul>
+                                    <li th:each="option : ${answer.options}"
+                                        th:classappend="${answer.selectedOptionIds != null && #lists.contains(answer.selectedOptionIds, option.id)} ? ' selected'"
+                                        th:text="${option.content + ((answer.selectedOptionIds != null && #lists.contains(answer.selectedOptionIds, option.id)) ? ' (selected)' : '')}">Option</li>
+                                </ul>
+                            </article>
+                        </div>
 
                         <form class="teacher-grade-form assessment-form compact">
                             <label>
@@ -182,7 +210,8 @@
                                     <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                                     <span>Publish Final</span>
                                 </button>
-                                <button class="btn btn-secondary judge-submission-btn" type="button">
+                                <button class="btn btn-secondary judge-submission-btn" type="button"
+                                        th:if="${submission.assignmentType == 'CODING'}">
                                     <svg th:replace="~{fragments/icons :: icon('code')}"></svg>
                                     <span>Run Judge</span>
                                 </button>
@@ -215,6 +244,35 @@
                     <span>Submitted assignment work will appear here once students send it for review.</span>
                 </div>
             </section>
+
+            <aside class="teacher-submission-viewer" id="teacher-submission-viewer" hidden>
+                <div class="assessment-heading inline">
+                    <div>
+                        <p class="eyebrow">Submission viewer</p>
+                        <h2 data-viewer-title>Submission</h2>
+                        <p data-viewer-meta>Select a submission to inspect answers, output, and feedback.</p>
+                    </div>
+                    <button class="btn btn-secondary" type="button" data-viewer-close>Close</button>
+                </div>
+                <dl class="teacher-grading-meta" data-viewer-stats></dl>
+                <div class="teacher-viewer-section">
+                    <strong>MCQ answers</strong>
+                    <div data-viewer-answers>No MCQ answers.</div>
+                </div>
+                <div class="teacher-viewer-section">
+                    <strong>Code</strong>
+                    <pre data-viewer-code>No code submitted.</pre>
+                </div>
+                <div class="teacher-viewer-section">
+                    <strong>Judge output</strong>
+                    <pre data-viewer-output>No judge output yet.</pre>
+                </div>
+                <div class="teacher-viewer-section">
+                    <strong>Written answer</strong>
+                    <p data-viewer-text>No written answer.</p>
+                </div>
+                <div class="assessment-message" data-viewer-message></div>
+            </aside>
         </main>
 
         <div th:replace="~{fragments/layout :: portal-footer}"></div>

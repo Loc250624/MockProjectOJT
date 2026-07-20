@@ -298,6 +298,89 @@
   font: inherit;
 }
 
+.student-assignment-filter {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.student-assignment-filter label,
+.student-assignment-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.student-assignment-filter select {
+  width: 100%;
+  border: 1px solid var(--lumina-gray-300);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font: inherit;
+}
+
+.student-assignment-list {
+  gap: 0.85rem;
+}
+
+.student-assignment-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.student-assignment-card h2,
+.student-assignment-card p {
+  margin: 0.15rem 0;
+}
+
+.student-assignment-card small,
+.result-row small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--lumina-gray-500);
+}
+
+.student-mcq-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.student-mcq-question {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+}
+
+.student-mcq-question legend {
+  padding: 0 0.35rem;
+  color: var(--lumina-gray-900);
+  font-weight: 800;
+}
+
+.student-answer-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+}
+
+.student-answer-option input {
+  width: auto;
+}
+
 .quiz-question {
   display: none;
 }
@@ -331,6 +414,58 @@
   color: var(--lumina-blue);
 }
 
+.quiz-result-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.assessment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--lumina-gray-300);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--lumina-gray-700);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.quiz-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 1.2fr);
+  align-items: start;
+}
+
+.quiz-review-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.quiz-review-options span {
+  padding: 0.65rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  color: var(--lumina-gray-700);
+}
+
+.quiz-review-options span.correct {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.quiz-review-options span.wrong {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .empty-state {
   padding: 2rem;
   border: 1px dashed var(--lumina-gray-300);
@@ -359,6 +494,12 @@ pre {
     align-items: flex-start;
     flex-direction: column;
     padding: 1rem;
+  }
+  .quiz-result-summary {
+    justify-content: flex-start;
+  }
+  .quiz-review-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -786,6 +927,12 @@ pre {
   cursor: pointer;
 }
 
+.learning-answer-option.selected {
+  border-color: var(--lumina-blue);
+  background: var(--lumina-blue-pale);
+  color: var(--lumina-blue);
+}
+
 .learning-answer-option input {
   width: 18px;
   height: 18px;
@@ -849,6 +996,53 @@ pre {
   padding: 1rem;
   resize: vertical;
   line-height: 1.5;
+}
+
+.learning-result-review,
+.learning-code-result {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.learning-result-item,
+.learning-code-result {
+  padding: 0.75rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--lumina-gray-700);
+}
+
+.learning-result-item {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.learning-result-item.correct,
+.learning-code-result.passed,
+#quiz-result.passed {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.learning-result-item.wrong,
+.learning-code-result.failed,
+#quiz-result.failed {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.learning-code-result pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
 }
 
 .learning-assessment-actions {

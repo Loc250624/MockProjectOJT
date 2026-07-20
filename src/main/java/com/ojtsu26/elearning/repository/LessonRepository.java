@@ -13,6 +13,12 @@ import java.util.Optional;
 public interface LessonRepository extends JpaRepository<Lesson, Integer> {
     List<Lesson> findByCourseIdOrderByOrderIndexAsc(Integer courseId);
 
+    @Query("select l from Lesson l left join fetch l.quiz left join fetch l.codingassignment where l.course.id = :courseId order by l.orderIndex asc")
+    List<Lesson> findByCourseIdWithAssessmentOrderByOrderIndexAsc(@Param("courseId") Integer courseId);
+
+    @Query("select l from Lesson l left join fetch l.quiz left join fetch l.codingassignment left join fetch l.course c left join fetch c.instructor where l.id = :lessonId")
+    Optional<Lesson> findByIdWithCourseAndAssessment(@Param("lessonId") Integer lessonId);
+
     @Query("select l from Lesson l left join fetch l.video where l.course.id = :courseId order by l.orderIndex asc")
     List<Lesson> findByCourseIdWithVideoOrderByOrderIndexAsc(@Param("courseId") Integer courseId);
 

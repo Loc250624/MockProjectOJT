@@ -106,6 +106,24 @@
                     <a th:href="@{'/teacher/lessons?courseId=' + ${courseId}}" class="btn btn-outline" style="flex:1;text-align:center;">Cancel</a>
                 </div>
             </form>
+
+            <div th:if="${editMode != null && editMode && existingLesson != null}" class="assessment-panel" style="margin-top:1rem;padding:1rem;">
+                <h3 style="font-size:1rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">Lesson Content</h3>
+                <p style="font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:1rem;">Create or manage the content attached to this lesson type.</p>
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                    <a th:if="${existingLesson.type != null && existingLesson.type.name() == 'QUIZ'}"
+                       th:href="@{/teacher/quizzes(courseId=${courseId},lessonId=${lessonId})}"
+                       class="btn btn-secondary"
+                       th:text="${existingLesson.hasQuiz ? 'Manage Quiz' : 'Create Quiz'}">Create Quiz</a>
+                    <a th:if="${existingLesson.type != null && existingLesson.type.name() == 'CODING'}"
+                       th:href="@{/teacher/assignments(courseId=${courseId},lessonId=${lessonId})}"
+                       class="btn btn-secondary"
+                       th:text="${existingLesson.hasCodingAssignment ? 'Manage Coding Exercise' : 'Create Coding Exercise'}">Create Coding Exercise</a>
+                    <a th:if="${existingLesson.type != null && existingLesson.type.name() == 'VIDEO'}"
+                       th:href="@{/teacher/videos(courseId=${courseId},lessonId=${lessonId})}"
+                       class="btn btn-secondary">Manage Video</a>
+                </div>
+            </div>
         </div>
 
     </div>

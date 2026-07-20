@@ -8,9 +8,11 @@ import com.ojtsu26.elearning.dto.request.RoadmapRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.request.VideoRequestDTO;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
+import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
+import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
 import com.ojtsu26.elearning.service.BlogPostService;
@@ -387,8 +389,17 @@ public class TeacherActionController {
             return "redirect:/teacher/lessons/create?courseId=" + requestDTO.getCourseId();
         }
         try {
-            lessonService.create(requestDTO, instructorId);
+            LessonResponseDTO lesson = lessonService.create(requestDTO, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Lesson created successfully!");
+            if (lesson.getType() == LessonType.QUIZ) {
+                return "redirect:/teacher/quizzes?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
+            }
+            if (lesson.getType() == LessonType.CODING) {
+                return "redirect:/teacher/assignments?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
+            }
+            if (lesson.getType() == LessonType.VIDEO) {
+                return "redirect:/teacher/videos/create?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
+            }
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             redirectAttributes.addFlashAttribute("lesson", requestDTO);

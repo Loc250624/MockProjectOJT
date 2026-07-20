@@ -42,6 +42,8 @@ public class Submission {
     
     private String teacherFeedback;
 
+    private Integer attemptNo;
+
     @CreationTimestamp
     private java.time.LocalDateTime submittedAt;
 

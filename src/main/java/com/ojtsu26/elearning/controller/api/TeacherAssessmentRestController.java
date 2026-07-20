@@ -34,6 +34,56 @@ public class TeacherAssessmentRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "Quiz deleted"));
     }
 
+    @PostMapping("/quizzes/{quizId}/archive")
+    public ResponseEntity<ApiResponse<Void>> archiveQuiz(@PathVariable Integer quizId) {
+        assessmentService.archiveTeacherQuiz(quizId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Quiz archived"));
+    }
+
+    @PostMapping("/courses/{courseId}/assignments")
+    public ResponseEntity<ApiResponse<AssignmentView>> createAssignment(@PathVariable Integer courseId,
+                                                                        @Valid @RequestBody AssignmentPayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assessmentService.createTeacherAssignment(courseId, payload),
+                "Coding exercise created"));
+    }
+
+    @PutMapping("/assignments/{assignmentId}")
+    public ResponseEntity<ApiResponse<AssignmentView>> updateAssignment(@PathVariable Integer assignmentId,
+                                                                        @Valid @RequestBody AssignmentPayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assessmentService.updateTeacherAssignment(assignmentId, payload),
+                "Coding exercise updated"));
+    }
+
+    @DeleteMapping("/assignments/{assignmentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAssignment(@PathVariable Integer assignmentId) {
+        assessmentService.deleteTeacherAssignment(assignmentId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Coding exercise deleted"));
+    }
+
+    @PostMapping("/assignments/{assignmentId}/questions")
+    public ResponseEntity<ApiResponse<QuestionView>> createAssignmentQuestion(@PathVariable Integer assignmentId,
+                                                                              @Valid @RequestBody QuestionPayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assessmentService.createTeacherAssignmentQuestion(assignmentId, payload),
+                "Assignment question created"));
+    }
+
+    @PutMapping("/assignments/questions/{questionId}")
+    public ResponseEntity<ApiResponse<QuestionView>> updateAssignmentQuestion(@PathVariable Integer questionId,
+                                                                              @Valid @RequestBody QuestionPayload payload) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assessmentService.updateTeacherAssignmentQuestion(questionId, payload),
+                "Assignment question updated"));
+    }
+
+    @DeleteMapping("/assignments/questions/{questionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAssignmentQuestion(@PathVariable Integer questionId) {
+        assessmentService.deleteTeacherAssignmentQuestion(questionId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Assignment question deleted"));
+    }
+
     @PostMapping("/quizzes/{quizId}/questions")
     public ResponseEntity<ApiResponse<QuestionView>> createQuestion(@PathVariable Integer quizId,
                                                                     @Valid @RequestBody QuestionPayload payload) {
@@ -64,6 +114,11 @@ public class TeacherAssessmentRestController {
     public ResponseEntity<ApiResponse<SubmissionView>> gradeSubmission(@PathVariable Integer submissionId,
                                                                        @Valid @RequestBody GradePayload payload) {
         return ResponseEntity.ok(ApiResponse.success(assessmentService.gradeSubmission(submissionId, payload), "Submission graded"));
+    }
+
+    @GetMapping("/submissions/{submissionId}")
+    public ResponseEntity<ApiResponse<SubmissionView>> getSubmission(@PathVariable Integer submissionId) {
+        return ResponseEntity.ok(ApiResponse.success(assessmentService.getTeacherSubmission(submissionId)));
     }
 
     @PostMapping("/assignments/{assignmentId}/testcases")

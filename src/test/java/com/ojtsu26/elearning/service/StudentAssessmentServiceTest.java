@@ -9,6 +9,7 @@ import com.ojtsu26.elearning.dto.response.StudentQuizAttemptDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.model.entity.CodingAssignment;
+import com.ojtsu26.elearning.model.entity.CodeJudgeResult;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
 import com.ojtsu26.elearning.model.entity.Lesson;
@@ -19,11 +20,13 @@ import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.entity.Testcase;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
+import com.ojtsu26.elearning.model.enums.CodeJudgeStatus;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CodingAssignmentRepository;
+import com.ojtsu26.elearning.repository.CodeJudgeResultRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.LessonProgressRepository;
 import com.ojtsu26.elearning.repository.LessonRepository;
@@ -75,9 +78,15 @@ class StudentAssessmentServiceTest {
     @Mock
     private SubmissionRepository submissionRepository;
     @Mock
+    private CodeJudgeResultRepository codeJudgeResultRepository;
+    @Mock
     private LessonProgressRepository lessonProgressRepository;
     @Mock
     private CourseEnrollmentRepository enrollmentRepository;
+    @Mock
+    private CodeJudgeAdapter codeJudgeAdapter;
+    @Mock
+    private NotificationService notificationService;
 
     private StudentAssessmentServiceImpl service;
     private ObjectMapper objectMapper;
@@ -101,8 +110,11 @@ class StudentAssessmentServiceTest {
                 codingAssignmentRepository,
                 testcaseRepository,
                 submissionRepository,
+                codeJudgeResultRepository,
                 lessonProgressRepository,
                 enrollmentRepository,
+                codeJudgeAdapter,
+                notificationService,
                 objectMapper
         );
         student = User.builder().id(1).role(Role.STUDENT).status(UserStatus.ACTIVE).build();
@@ -115,7 +127,7 @@ class StudentAssessmentServiceTest {
     }
 
     @Test
-    void quizStartReusesPendingAttemptWithoutCreatingDuplicate() {
+    void quizStartReusesPendingAttemptWithoutCreatingDuplicate() throws Exception {
         stubAccessible(quizLesson);
         Submission pending = Submission.builder()
                 .id(501)
@@ -135,6 +147,8 @@ class StudentAssessmentServiceTest {
         assertEquals(List.of(401, 402), response.getQuestions().stream().map(item -> item.getId()).toList());
         assertEquals("A", response.getAnswers().get(401));
         assertFalse(response.getSubmitted());
+        assertTrue(objectMapper.readTree(response.getQuestions().get(0).getOptionsJson()).get(0).isTextual());
+        assertFalse(response.getQuestions().get(0).getOptionsJson().contains("correct"));
         verify(submissionRepository, never()).save(any());
     }
 
@@ -223,7 +237,7 @@ class StudentAssessmentServiceTest {
     }
 
     @Test
-    void quizSubmitPersistsScoreAndMarksPassedLessonProgressComplete() {
+    void quizSubmitPersistsScoreAndMarksPassedLessonProgressComplete() throws Exception {
         stubAccessible(quizLesson);
         Submission pending = Submission.builder().id(501).student(student).lesson(quizLesson).status(SubmissionStatus.PENDING_REVIEW).build();
         CourseEnrollment enrollment = CourseEnrollment.builder().id(20).student(student).course(course).build();
@@ -240,6 +254,8 @@ class StudentAssessmentServiceTest {
         assertEquals(new BigDecimal("100.00"), response.getScore());
         assertEquals(SubmissionStatus.PASSED, pending.getStatus());
         assertTrue(response.getPassed());
+        assertTrue(response.getSubmitted());
+        assertTrue(objectMapper.readTree(response.getQuestions().get(0).getOptionsJson()).get(0).has("correct"));
         assertTrue(progress.getIsCompleted());
         assertNotNull(progress.getCompletedAt());
         verify(lessonProgressRepository).save(progress);
@@ -270,6 +286,7 @@ class StudentAssessmentServiceTest {
                 .timeLimitMs(2000)
                 .build();
         when(codingAssignmentRepository.findByLessonId(202)).thenReturn(Optional.of(assignment));
+        when(submissionRepository.findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(601, 1)).thenReturn(Optional.empty());
         when(submissionRepository.findTopByStudentIdAndLessonIdOrderByIdDesc(1, 202)).thenReturn(Optional.empty());
         when(testcaseRepository.findByAssignmentIdOrderByIdAsc(601)).thenReturn(List.of(
                 Testcase.builder().id(701).assignment(assignment).inputData("visible").expectedOutput("secret-visible-output").isHidden(false).build(),
@@ -282,6 +299,7 @@ class StudentAssessmentServiceTest {
         assertEquals(List.of("Java", "Python"), response.getAllowedLanguages());
         assertEquals(1, response.getExamples().size());
         assertEquals("visible", response.getExamples().get(0).getInputData());
+        assertFalse(response.getExamples().stream().anyMatch(example -> "hidden".equals(example.getInputData())));
     }
 
     @Test
@@ -304,7 +322,7 @@ class StudentAssessmentServiceTest {
     }
 
     @Test
-    void codingSubmitUsesAuthenticatedStudentAndLessonWithoutExecution() throws Exception {
+    void codingSubmitUsesAuthenticatedStudentAssignmentAndPersistsJudgeResult() throws Exception {
         stubAccessible(codeLesson);
         CodingAssignment assignment = CodingAssignment.builder()
                 .id(601)
@@ -315,26 +333,41 @@ class StudentAssessmentServiceTest {
                 .allowedLanguages("Java, Python")
                 .build();
         when(codingAssignmentRepository.findByLessonId(202)).thenReturn(Optional.of(assignment));
-        when(submissionRepository.findTopByStudentIdAndLessonIdAndStatusOrderByIdDesc(1, 202, SubmissionStatus.PENDING_REVIEW))
-                .thenReturn(Optional.empty());
+        when(submissionRepository.findTopByAssignmentIdAndStudentIdOrderByUpdatedAtDesc(601, 1)).thenReturn(Optional.empty());
         when(submissionRepository.save(any(Submission.class))).thenAnswer(invocation -> {
             Submission submission = invocation.getArgument(0);
             submission.setId(801);
             return submission;
         });
-        when(testcaseRepository.findByAssignmentIdOrderByIdAsc(601)).thenReturn(List.of());
+        when(testcaseRepository.findByAssignmentIdOrderByIdAsc(601)).thenReturn(List.of(
+                Testcase.builder().id(701).assignment(assignment).isHidden(true).build()
+        ));
+        when(codeJudgeAdapter.judge(any(), any())).thenReturn(new CodeJudgeAdapter.JudgeOutcome(
+                CodeJudgeStatus.UNAVAILABLE,
+                1,
+                0,
+                List.of(),
+                "Code judge is not configured.",
+                0L
+        ));
+        when(codeJudgeResultRepository.save(any(CodeJudgeResult.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         StudentCodingAssignmentDTO response = service.submitCode(10, 202, codeRequest(null, "Java", "class Solution {}"));
 
         assertEquals(801, response.getSubmissionId());
         assertEquals(SubmissionStatus.PENDING_REVIEW, response.getStatus());
         assertTrue(response.getSubmitted());
+        assertEquals(CodeJudgeStatus.UNAVAILABLE, response.getJudgeStatus());
         ArgumentCaptor<Submission> submissionCaptor = ArgumentCaptor.forClass(Submission.class);
         verify(submissionRepository).save(submissionCaptor.capture());
         Submission saved = submissionCaptor.getValue();
         assertEquals(student, saved.getStudent());
         assertEquals(codeLesson, saved.getLesson());
+        assertEquals(assignment, saved.getAssignment());
+        assertEquals("Java", saved.getCodeLanguage());
+        assertEquals("class Solution {}", saved.getCodeContent());
         assertEquals("SUBMITTED", objectMapper.readTree(saved.getSubmittedContent()).get("state").asText());
+        verify(codeJudgeResultRepository).save(any(CodeJudgeResult.class));
     }
 
     private void stubAccessible(Lesson lesson) {
