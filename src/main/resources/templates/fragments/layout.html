@@ -28,6 +28,9 @@
         <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Home</a>
         <a th:href="@{/public/courses}" th:classappend="${role == 'courses'} ? 'active' : ''">Courses</a>
         <a th:href="@{/blogs}" th:classappend="${role == 'blogs'} ? 'active' : ''">Blog</a>
+        <a sec:authorize="isAuthenticated() and hasRole('STUDENT')"
+           th:href="@{/student/feedback}"
+           th:classappend="${role == 'feedback'} ? 'active' : ''">Feedback</a>
     </nav>
 
     <div class="header-actions">
@@ -141,6 +144,10 @@
             <a th:href="@{/admin/comments}" id="nav-admin-comments" data-nav-match="/admin/comments">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('comments')}"></svg></span>
                 <span class="nav-label">Comments</span>
+            </a>
+            <a th:href="@{/admin/feedback}" id="nav-admin-feedback" data-nav-match="/admin/feedback">
+                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('comments')}"></svg></span>
+                <span class="nav-label">Student Feedback</span>
             </a>
             <a th:href="@{/admin/payments}" id="nav-admin-payments" data-nav-match="/admin/payments,/admin/refunds">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></span>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+    <link rel="stylesheet" th:href="@{/css/student/student.css}">
+</head>
+<body class="lumina-page feedback-page">
+<header th:replace="~{fragments/layout :: header('feedback')}"></header>
+
+<main class="feedback-main">
+            <section class="feedback-shell" aria-labelledby="feedback-title">
+                <header th:unless="${successMessage}" class="feedback-hero">
+                    <div>
+                        <p class="feedback-eyebrow">E-Learning Feedback</p>
+                        <h1 id="feedback-title">Help improve your learning experience</h1>
+                        <p>Rate the parts of the course journey that matter most and send a short note to the platform team.</p>
+                    </div>
+                </header>
+
+                <section th:if="${successMessage}" class="feedback-success-card" role="status" aria-live="polite">
+                    <div class="feedback-success-icon" aria-hidden="true">
+                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                    </div>
+                    <div>
+                        <h2 th:text="${successMessage}">Feedback submitted successfully.</h2>
+                        <p>Thank you for helping us improve the e-learning experience.</p>
+                    </div>
+                    <a class="btn btn-primary" th:href="@{/student/dashboard}">Back to Dashboard</a>
+                </section>
+
+                <div th:if="${errorMessage}" th:unless="${successMessage}"
+                     class="feedback-alert feedback-alert-error"
+                     role="alert"
+                     th:text="${errorMessage}">Unable to submit feedback.</div>
+
+                <form th:unless="${successMessage}"
+                      th:action="@{/student/feedback}"
+                      th:object="${feedback}"
+                      method="post"
+                      class="feedback-form"
+                      data-feedback-form>
+                    <section class="feedback-panel feedback-rating-panel" aria-labelledby="feedback-rating-title">
+                        <div class="feedback-section-head">
+                            <div>
+                                <p class="feedback-section-kicker">Rating Matrix</p>
+                                <h2 id="feedback-rating-title">Rate your experience</h2>
+                            </div>
+                            <span class="feedback-scale" aria-hidden="true">1-5</span>
+                        </div>
+
+                        <div class="rating-matrix">
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('courseContentRating')} ? ' has-error' : ''">
+                                <legend>Course Content</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Course Content rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{courseContentRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Course Content ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('courseContentRating')}" th:errors="*{courseContentRating}">Rating error</span>
+                            </fieldset>
+
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('instructorSupportRating')} ? ' has-error' : ''">
+                                <legend>Instructor Support</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Instructor Support rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{instructorSupportRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Instructor Support ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('instructorSupportRating')}" th:errors="*{instructorSupportRating}">Rating error</span>
+                            </fieldset>
+
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('learningExperienceRating')} ? ' has-error' : ''">
+                                <legend>Learning Experience</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Learning Experience rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{learningExperienceRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Learning Experience ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('learningExperienceRating')}" th:errors="*{learningExperienceRating}">Rating error</span>
+                            </fieldset>
+
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('platformUsabilityRating')} ? ' has-error' : ''">
+                                <legend>Platform Usability</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Platform Usability rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{platformUsabilityRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Platform Usability ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('platformUsabilityRating')}" th:errors="*{platformUsabilityRating}">Rating error</span>
+                            </fieldset>
+
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('assessmentExperienceRating')} ? ' has-error' : ''">
+                                <legend>Assessment Experience</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Assessment Experience rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{assessmentExperienceRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Assessment Experience ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('assessmentExperienceRating')}" th:errors="*{assessmentExperienceRating}">Rating error</span>
+                            </fieldset>
+
+                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('overallSatisfactionRating')} ? ' has-error' : ''">
+                                <legend>Overall Satisfaction</legend>
+                                <div class="star-options" role="radiogroup" aria-label="Overall Satisfaction rating">
+                                    <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
+                                        <input type="radio"
+                                               th:field="*{overallSatisfactionRating}"
+                                               th:value="${rating}"
+                                               th:attr="aria-label=${'Overall Satisfaction ' + rating + ' out of 5'}"
+                                               required>
+                                        <span class="star-glyph" aria-hidden="true"></span>
+                                        <span class="sr-only" th:text="${rating + ' out of 5'}">5 out of 5</span>
+                                    </label>
+                                </div>
+                                <span class="inline-error" th:if="${#fields.hasErrors('overallSatisfactionRating')}" th:errors="*{overallSatisfactionRating}">Rating error</span>
+                            </fieldset>
+                        </div>
+                    </section>
+
+                    <section class="feedback-panel feedback-category-panel" aria-labelledby="feedback-category-title">
+                        <div class="feedback-section-head">
+                            <div>
+                                <p class="feedback-section-kicker">Category</p>
+                                <h2 id="feedback-category-title">Choose a topic</h2>
+                            </div>
+                        </div>
+
+                        <fieldset class="category-grid" th:classappend="${#fields.hasErrors('category')} ? ' has-error' : ''">
+                            <legend class="sr-only">Feedback category</legend>
+                            <label class="category-option" th:each="category : ${feedbackCategories}">
+                                <input type="radio"
+                                       th:field="*{category}"
+                                       th:value="${category}"
+                                       required>
+                                <span class="category-card">
+                                    <span class="category-dot" aria-hidden="true"></span>
+                                    <span th:text="${category.displayName}">Course Content</span>
+                                </span>
+                            </label>
+                            <span class="inline-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}">Category error</span>
+                        </fieldset>
+                    </section>
+
+                    <section class="feedback-panel feedback-text-panel">
+                        <div class="feedback-field">
+                            <label class="form-label" for="feedback-subject">Subject <span aria-hidden="true">*</span></label>
+                            <input id="feedback-subject"
+                                   class="form-control"
+                                   type="text"
+                                   th:field="*{subject}"
+                                   maxlength="150"
+                                   placeholder="Brief summary"
+                                   autocomplete="off"
+                                   required
+                                   data-character-count="feedback-subject-count">
+                            <div class="field-meta">
+                                <span class="inline-error"
+                                      th:if="${#fields.hasErrors('subject')}"
+                                      th:errors="*{subject}">Subject error</span>
+                                <span id="feedback-subject-count" class="character-count">0/150</span>
+                            </div>
+                        </div>
+
+                        <div class="feedback-field">
+                            <label class="form-label" for="feedback-content">Message <span aria-hidden="true">*</span></label>
+                            <textarea id="feedback-content"
+                                      class="form-control feedback-message"
+                                      th:field="*{content}"
+                                      rows="7"
+                                      maxlength="5000"
+                                      placeholder="Share the details"
+                                      required
+                                      data-character-count="feedback-content-count"></textarea>
+                            <div class="field-meta">
+                                <span class="inline-error"
+                                      th:if="${#fields.hasErrors('content')}"
+                                      th:errors="*{content}">Message error</span>
+                                <span id="feedback-content-count" class="character-count">0/5000</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="feedback-actions">
+                        <button class="btn btn-primary feedback-submit" type="submit" data-submit-button>
+                            <span class="submit-spinner" aria-hidden="true"></span>
+                            <svg class="submit-icon" th:replace="~{fragments/icons :: icon('approve')}"></svg>
+                            <span data-submit-label>Submit Feedback</span>
+                        </button>
+                    </div>
+                </form>
+        </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:src="@{/js/public/public.js}"></script>
+<script>
+    (() => {
+        const form = document.querySelector("[data-feedback-form]");
+        if (!form) {
+            return;
+        }
+
+        const updateCounter = (field) => {
+            const target = document.getElementById(field.dataset.characterCount);
+            if (!target) {
+                return;
+            }
+            const max = field.getAttribute("maxlength") || "";
+            target.textContent = `${field.value.length}/${max}`;
+        };
+
+        form.querySelectorAll("[data-character-count]").forEach((field) => {
+            updateCounter(field);
+            field.addEventListener("input", () => updateCounter(field));
+        });
+
+        form.addEventListener("submit", () => {
+            if (!form.checkValidity()) {
+                return;
+            }
+            const button = form.querySelector("[data-submit-button]");
+            const label = form.querySelector("[data-submit-label]");
+            if (button) {
+                button.disabled = true;
+                button.classList.add("is-loading");
+            }
+            if (label) {
+                label.textContent = "Submitting...";
+            }
+        });
+    })();
+</script>
+</body>
+</html>

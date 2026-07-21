@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Detail - Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('Feedback Detail')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                <div>
+                    <div class="admin-kicker">STUDENT FEEDBACK</div>
+                    <h1 class="page-title" th:text="${feedback.subject}">Feedback subject</h1>
+                    <p class="page-subtitle"
+                       th:text="${feedback.createdAt == null ? 'Date unavailable' : 'Submitted ' + #temporals.format(feedback.createdAt, 'dd/MM/yyyy HH:mm')}">Submitted date</p>
+                </div>
+                <a class="btn btn-secondary" th:href="@{/admin/feedback}">Back to Feedback</a>
+            </div>
+
+            <section class="admin-table-container" style="padding:1.5rem;max-width:960px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem;">
+                    <div>
+                        <div class="detail-label">Student</div>
+                        <div class="detail-value" th:text="${#strings.isEmpty(feedback.studentName) ? 'Student' : feedback.studentName}">Student</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value" th:text="${feedback.studentEmail}">student@example.com</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value" th:text="${feedback.categoryLabel}">Course Content</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:1.5rem;">
+                    <div>
+                        <div class="detail-label">Course Content</div>
+                        <div class="detail-value" th:text="${feedback.courseContentRating == null ? 'N/A' : feedback.courseContentRating + '/5'}">5/5</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Instructor Support</div>
+                        <div class="detail-value" th:text="${feedback.instructorSupportRating == null ? 'N/A' : feedback.instructorSupportRating + '/5'}">5/5</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Learning Experience</div>
+                        <div class="detail-value" th:text="${feedback.learningExperienceRating == null ? 'N/A' : feedback.learningExperienceRating + '/5'}">5/5</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Platform Usability</div>
+                        <div class="detail-value" th:text="${feedback.platformUsabilityRating == null ? 'N/A' : feedback.platformUsabilityRating + '/5'}">5/5</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Assessment Experience</div>
+                        <div class="detail-value" th:text="${feedback.assessmentExperienceRating == null ? 'N/A' : feedback.assessmentExperienceRating + '/5'}">5/5</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Overall Satisfaction</div>
+                        <div class="detail-value" th:text="${feedback.overallSatisfactionRating == null ? 'N/A' : feedback.overallSatisfactionRating + '/5'}">5/5</div>
+                    </div>
+                </div>
+                <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;color:var(--lumina-gray-500);margin-bottom:0.75rem;">Message</div>
+                <p style="white-space:pre-wrap;color:var(--lumina-gray-800);line-height:1.7;margin:0;" th:text="${feedback.content}">Feedback content</p>
+            </section>
+        </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
+    </div>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>
