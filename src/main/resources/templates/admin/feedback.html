@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Feedback - Admin Portal | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body>
+<div class="lumina-portal">
+    <aside th:replace="~{fragments/layout :: sidebar-admin}"></aside>
+
+    <div class="lumina-portal-content" style="display:flex;flex-direction:column;min-height:100vh;">
+        <div th:replace="~{fragments/layout :: topbar-admin('Student Feedback')}"></div>
+
+        <main class="lumina-portal-main" style="flex:1;">
+            <div class="page-header">
+                <div class="admin-kicker">ADMIN CONSOLE</div>
+                <h1 class="page-title">Student Feedback</h1>
+                <p class="page-subtitle">Review feedback submitted by students across the platform.</p>
+            </div>
+
+            <section class="admin-table-container">
+                <div class="admin-table-toolbar" style="justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                    <div>
+                        <span style="font-weight:700;color:var(--lumina-gray-900);">All Feedback</span>
+                        <span style="font-size:0.875rem;color:var(--lumina-gray-500);"
+                              th:text="${feedbackPage == null ? '(0)' : '(' + feedbackPage.totalElements + ')'}">(0)</span>
+                    </div>
+                    <span class="badge badge-secondary" style="text-transform:none;"
+                          th:if="${feedbackPage != null && feedbackPage.totalElements > 0}"
+                          th:text="${'Page ' + (feedbackPage.number + 1) + ' of ' + feedbackPage.totalPages}">Page 1 of 1</span>
+                </div>
+
+                <div class="admin-responsive-table" style="overflow-x:auto;" th:if="${feedbackPage != null && !feedbackPage.empty}">
+                    <table class="lumina-table">
+                        <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Overall</th>
+                            <th>Student</th>
+                            <th>Preview</th>
+                            <th>Submitted</th>
+                            <th style="width:100px;text-align:center;">Detail</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${feedbackPage.content}">
+                            <td>
+                                <strong th:text="${item.subject}">Feedback subject</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-secondary" style="text-transform:none;"
+                                      th:text="${item.categoryLabel}">Course Content</span>
+                            </td>
+                            <td th:text="${item.overallSatisfactionRating == null ? 'N/A' : item.overallSatisfactionRating + '/5'}">5/5</td>
+                            <td>
+                                <strong th:text="${#strings.isEmpty(item.studentName) ? 'Student' : item.studentName}">Student</strong>
+                                <div style="font-size:0.8125rem;color:var(--lumina-gray-500);" th:text="${item.studentEmail}">student@example.com</div>
+                            </td>
+                            <td style="max-width:460px;color:var(--lumina-gray-600);"
+                                th:text="${#strings.abbreviate(item.content, 120)}">Feedback preview</td>
+                            <td th:text="${item.createdAt == null ? 'Date unavailable' : #temporals.format(item.createdAt, 'dd/MM/yyyy HH:mm')}">Date</td>
+                            <td style="text-align:center;">
+                                <a class="btn btn-secondary btn-sm" th:href="@{/admin/feedback/{id}(id=${item.id})}">View</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state" th:if="${feedbackPage == null || feedbackPage.empty}">
+                    <div class="empty-state-icon" style="margin-bottom:1rem;">
+                        <svg th:replace="~{fragments/icons :: icon('comments')}"></svg>
+                    </div>
+                    <div class="empty-title">No student feedback yet.</div>
+                    <p style="max-width:520px;margin:0.5rem auto 0;color:var(--lumina-gray-500);">
+                        Feedback submitted by students will appear here.
+                    </p>
+                </div>
+
+                <nav class="pagination-nav"
+                     th:if="${feedbackPage != null && feedbackPage.totalPages > 1}"
+                     aria-label="Admin feedback pages"
+                     style="padding:1rem 1.5rem;border-top:1px solid var(--lumina-gray-200);display:flex;gap:1rem;align-items:center;justify-content:center;flex-wrap:wrap;">
+                    <a class="btn btn-secondary btn-sm disabled"
+                       th:if="${feedbackPage.first}"
+                       href="#">Previous</a>
+                    <a class="btn btn-secondary btn-sm"
+                       th:unless="${feedbackPage.first}"
+                       th:href="@{/admin/feedback(page=${feedbackPage.number - 1})}">Previous</a>
+                    <span th:text="${'Page ' + (feedbackPage.number + 1) + ' of ' + feedbackPage.totalPages}">Page</span>
+                    <a class="btn btn-secondary btn-sm disabled"
+                       th:if="${feedbackPage.last}"
+                       href="#">Next</a>
+                    <a class="btn btn-secondary btn-sm"
+                       th:unless="${feedbackPage.last}"
+                       th:href="@{/admin/feedback(page=${feedbackPage.number + 1})}">Next</a>
+                </nav>
+            </section>
+        </main>
+
+        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
+    </div>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
+</body>
+</html>

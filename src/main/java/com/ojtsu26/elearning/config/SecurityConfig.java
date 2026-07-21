@@ -171,6 +171,9 @@ public class SecurityConfig {
                         "/favicon.ico"
                 ).permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                .requestMatchers("/admin/feedback", "/admin/feedback/**").hasRole("ADMIN")
+                .requestMatchers("/student/feedback").hasRole("STUDENT")
+                .requestMatchers("/student/feedback/**").denyAll()
                 .requestMatchers("/student/**", "/api/student/**").hasRole("STUDENT")
                 .requestMatchers("/teacher/**", "/api/teacher/**", "/instructor/**").hasRole("TEACHER")
                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
