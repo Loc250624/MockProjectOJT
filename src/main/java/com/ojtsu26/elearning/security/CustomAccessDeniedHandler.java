@@ -6,29 +6,63 @@ import com.ojtsu26.elearning.exception.ErrorCode;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.csrf.InvalidCsrfTokenException;
+import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+    private final ObjectMapper objectMapper;
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-        log.error("Access denied error: {}", accessDeniedException.getMessage());
+        String code = csrfCode(accessDeniedException);
+        log.warn("Access denied: code={}, method={}, path={}", code, request.getMethod(), request.getRequestURI());
 
-        if (request.getRequestURI().startsWith("/api/")) {
-            response.setContentType("application/json");
+        if (code != null) {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            objectMapper.writeValue(response.getOutputStream(), csrfBody(code, request.getRequestURI()));
+        } else if (request.getRequestURI().startsWith("/api/")) {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             ApiResponse<Void> apiResponse = ApiResponse.error(ErrorCode.ACCESS_DENIED.getCode(), ErrorCode.ACCESS_DENIED.getMessage());
-            ObjectMapper mapper = new ObjectMapper();
-            response.getOutputStream().println(mapper.writeValueAsString(apiResponse));
+            objectMapper.writeValue(response.getOutputStream(), apiResponse);
         } else {
             response.sendRedirect("/");
         }
+    }
+
+    private String csrfCode(AccessDeniedException exception) {
+        if (exception instanceof MissingCsrfTokenException) {
+            return "CSRF_TOKEN_MISSING";
+        }
+        if (exception instanceof InvalidCsrfTokenException) {
+            return "CSRF_TOKEN_INVALID";
+        }
+        return null;
+    }
+
+    private Map<String, Object> csrfBody(String code, String path) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpServletResponse.SC_FORBIDDEN);
+        body.put("code", code);
+        body.put("message", "CSRF token is missing or invalid. Refresh the token and retry once.");
+        body.put("path", path);
+        return body;
     }
 }

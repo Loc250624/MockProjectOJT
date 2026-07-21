@@ -204,6 +204,9 @@ function initLogoutForms() {
     logoutLinks.forEach(link => {
         link.addEventListener("click", function(e) {
             e.preventDefault();
+            if (window.LuminaCsrf && typeof window.LuminaCsrf.clearToken === 'function') {
+                window.LuminaCsrf.clearToken();
+            }
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/auth/logout';

@@ -108,7 +108,24 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(script.contains("POST: true"));
         assertTrue(script.contains("PATCH: true"));
         assertTrue(script.contains("isSameOrigin"));
+        assertTrue(script.contains("ensureCsrfToken"));
+        assertTrue(script.contains("refreshCsrfToken"));
+        assertTrue(script.contains("Promise.resolve(false)"));
+        assertTrue(script.contains("CSRF_TOKEN_INVALID"));
+        assertTrue(script.contains("CSRF_TOKEN_MISSING"));
         assertTrue(script.contains("XSRF-TOKEN"));
         assertTrue(script.contains("data-csrf-token"));
+        assertFalse(script.contains("merged.set(headerName, String(token))"));
+        assertFalse(script.contains("X-XSRF-TOKEN: null"));
+        assertFalse(script.contains("X-XSRF-TOKEN: undefined"));
+    }
+
+    @Test
+    void studentCourseDetailLoadsCsrfFetchBeforeEnrollmentScript() throws Exception {
+        String template = Files.readString(Path.of("src/main/resources/templates/student/course-detail.html"));
+
+        assertTrue(template.contains("/js/csrf-fetch.js"));
+        assertTrue(template.contains("/js/student/student.js"));
+        assertTrue(template.indexOf("/js/csrf-fetch.js") < template.indexOf("/js/student/student.js"));
     }
 }
