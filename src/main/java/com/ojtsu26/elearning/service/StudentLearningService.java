@@ -5,6 +5,7 @@ import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningLessonDTO;
+import com.ojtsu26.elearning.service.ai.AiTutorLessonContext;
 
 import java.util.List;
 
@@ -15,4 +16,5 @@ public interface StudentLearningService {
     LearningProgressDTO completeLesson(Integer courseId, Integer lessonId);
     LearningProgressDTO getCourseProgress(Integer courseId);
     List<StudentCourseProgressCardDTO> getCurrentStudentCourseCards();
+    AiTutorLessonContext getAuthorizedAiTutorLessonContext(Integer lessonId);
 }

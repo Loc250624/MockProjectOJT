@@ -25,10 +25,12 @@ import com.ojtsu26.elearning.service.CertificateService;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.StudentLearningService;
+import com.ojtsu26.elearning.service.ai.AiTutorLessonContext;
 import com.ojtsu26.elearning.common.VideoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -97,6 +99,32 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     public StudentLearningLessonDTO openLesson(Integer courseId, Integer lessonId) {
         AccessContext context = requireAccess(courseId);
         return openLessonInternal(context, orderedLessons(courseId), lessonId);
+    }
+
+    @Override
+    @Transactional
+    public AiTutorLessonContext getAuthorizedAiTutorLessonContext(Integer lessonId) {
+        if (lessonId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Lesson ID is required.");
+        }
+        Lesson referencedLesson = lessonRepository.findByIdWithCourseAndAssessment(lessonId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available."));
+        if (referencedLesson.getCourse() == null || referencedLesson.getCourse().getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available.");
+        }
+        AccessContext context = requireAccess(referencedLesson.getCourse().getId());
+        List<Lesson> lessons = orderedLessons(context.course().getId());
+        Lesson lesson = requireLessonInCourse(lessons, lessonId);
+        assertLessonAccessible(context.enrollment(), lessons, lesson);
+        return new AiTutorLessonContext(
+                context.course().getId(),
+                lesson.getId(),
+                context.course().getTitle(),
+                lesson.getOrderIndex() == null ? "" : "Lesson " + lesson.getOrderIndex(),
+                lesson.getTitle(),
+                plainText(context.course().getDescription()),
+                plainText(lesson.getContent())
+        );
     }
 
     @Override
@@ -385,6 +413,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         sanitized = JAVASCRIPT_URL.matcher(sanitized).replaceAll("$1=\"#\"");
         sanitized = removeDisallowedTags(sanitized);
         return sanitized;
+    }
+
+    private String plainText(String value) {
+        String sanitized = sanitizeRichText(value);
+        String withoutTags = Pattern.compile("(?is)<[^>]+>").matcher(sanitized).replaceAll(" ");
+        return HtmlUtils.htmlUnescape(withoutTags).replaceAll("\\s+", " ").trim();
     }
 
     private String removeDisallowedTags(String value) {
