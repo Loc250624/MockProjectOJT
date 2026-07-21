@@ -40,11 +40,11 @@
         </form>
 
         <!-- Anonymous Users -->
-        <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
-        <a sec:authorize="isAnonymous()" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
+        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
+        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
 
         <!-- Authenticated Users (Avatar only) -->
-        <div sec:authorize="isAuthenticated()" class="user-avatar-container"
+        <div sec:authorize="hasAnyRole('STUDENT','TEACHER','ADMIN')" class="user-avatar-container"
             style="display: flex; align-items: center; justify-content: center; margin-left: 1rem;">
             <!-- Student Avatar -->
             <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/dashboard}" class="header-avatar-link"
@@ -521,8 +521,8 @@
         <a th:href="@{/}">Home</a>
         <a th:href="@{/public/courses}">Courses</a>
         <a th:href="@{/blogs}">Blog</a>
-        <a sec:authorize="isAnonymous()" th:href="@{/auth/login}">Login</a>
-        <a sec:authorize="isAnonymous()" th:href="@{/auth/register}">Register</a>
+        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}">Login</a>
+        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}">Register</a>
     </div>
 </footer>
 

@@ -15,17 +15,31 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -63,6 +77,7 @@ class OAuth2CompletionControllerTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         identityRepository.deleteAll();
         pendingRepository.deleteAll();
         userRepository.deleteAll();
@@ -94,6 +109,34 @@ class OAuth2CompletionControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("GOOGLE")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("verified account")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"oauthCompleteForm\"")));
+    }
+
+    @Test
+    void homeNavbarShowsGuestActionsForPendingProviderOnlyAuthentication() throws Exception {
+        OAuth2LoginResult pending = startPending("Pending.Home@Example.com", "google-sub-home");
+        MockHttpSession session = pendingSessionWithProviderAuthentication(
+                pending.pendingRegistrationToken(),
+                "pending.home@example.com",
+                "google-sub-home");
+
+        mockMvc.perform(get("/").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("href=\"/auth/login\"")))
+                .andExpect(content().string(containsString("href=\"/auth/register\"")))
+                .andExpect(content().string(not(containsString("user-avatar-container"))));
+    }
+
+    @Test
+    void pendingProviderOnlyAuthenticationCannotOpenStudentRoutes() throws Exception {
+        OAuth2LoginResult pending = startPending("Pending.Student@Example.com", "google-sub-student-route");
+        MockHttpSession session = pendingSessionWithProviderAuthentication(
+                pending.pendingRegistrationToken(),
+                "pending.student@example.com",
+                "google-sub-student-route");
+
+        mockMvc.perform(get("/student/dashboard").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test
@@ -133,5 +176,23 @@ class OAuth2CompletionControllerTest {
         request.setPassword(password);
         request.setConfirmPassword(confirmPassword);
         return request;
+    }
+
+    private MockHttpSession pendingSessionWithProviderAuthentication(String pendingToken, String email, String subject) {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(OAuth2LoginSuccessHandler.PENDING_OAUTH_SESSION_ATTRIBUTE, pendingToken);
+
+        OAuth2User principal = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("OAUTH2_USER")),
+                Map.of("email", email, "name", "Pending User", "sub", subject),
+                "email");
+        OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
+                principal,
+                principal.getAuthorities(),
+                "google");
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        return session;
     }
 }
