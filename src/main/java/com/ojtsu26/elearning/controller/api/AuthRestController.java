@@ -12,6 +12,7 @@ import com.ojtsu26.elearning.security.JwtCookieService;
 import com.ojtsu26.elearning.security.OAuth2AccountService;
 import com.ojtsu26.elearning.security.OAuth2LoginSuccessHandler;
 import com.ojtsu26.elearning.service.AuthService;
+import org.springframework.security.web.csrf.CsrfToken;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -27,6 +28,15 @@ public class AuthRestController {
     private final AuthService authService;
     private final JwtCookieService jwtCookieService;
     private final OAuth2AccountService oAuth2AccountService;
+
+    @GetMapping("/csrf")
+    public CsrfResponse csrf(CsrfToken csrfToken) {
+        return new CsrfResponse(
+                csrfToken.getHeaderName(),
+                csrfToken.getParameterName(),
+                csrfToken.getToken()
+        );
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponseDTO>> register(@Valid @RequestBody RegisterRequestDTO request, HttpServletResponse response) {
@@ -81,5 +91,8 @@ public class AuthRestController {
             case TEACHER -> "/teacher/dashboard";
             case ADMIN -> "/admin/dashboard";
         };
+    }
+
+    public record CsrfResponse(String headerName, String parameterName, String token) {
     }
 }
