@@ -38,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "app.feedback-email.enabled=false"
 })
 class StudentFeedbackSecurityTest {
 
@@ -70,7 +71,8 @@ class StudentFeedbackSecurityTest {
     @Test
     void studentCanOpenFormAndSubmitWithAuthenticatedOwnerOnly() throws Exception {
         mockMvc.perform(validStudentPost(student, "  Search feedback  ", "  Search should remember filters.  ")
-                        .param("studentId", otherStudent.getId().toString()))
+                        .param("studentId", otherStudent.getId().toString())
+                        .param("email", "attacker@example.com"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/student/feedback"));
 

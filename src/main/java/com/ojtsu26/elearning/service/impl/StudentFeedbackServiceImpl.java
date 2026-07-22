@@ -4,6 +4,7 @@ import com.ojtsu26.elearning.dto.request.StudentFeedbackRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentFeedbackResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
+import com.ojtsu26.elearning.feedback.email.FeedbackSubmittedEvent;
 import com.ojtsu26.elearning.model.entity.StudentFeedback;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.FeedbackCategory;
@@ -12,11 +13,14 @@ import com.ojtsu26.elearning.repository.StudentFeedbackRepository;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.StudentFeedbackService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
 
     private final StudentFeedbackRepository feedbackRepository;
     private final CurrentUserService currentUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public StudentFeedbackResponseDTO createForCurrentStudent(StudentFeedbackRequestDTO request) {
@@ -54,7 +59,9 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
                 .student(student)
                 .build();
 
-        return toDto(feedbackRepository.save(feedback));
+        StudentFeedback saved = feedbackRepository.save(feedback);
+        publishFeedbackSubmitted(saved, student);
+        return toDto(saved);
     }
 
     @Override
@@ -116,6 +123,15 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, label + " must be between 1 and 5.");
         }
         return rating;
+    }
+
+    private void publishFeedbackSubmitted(StudentFeedback feedback, User student) {
+        eventPublisher.publishEvent(new FeedbackSubmittedEvent(
+                feedback.getId(),
+                student.getFullName(),
+                student.getEmail(),
+                feedback.getCreatedAt() == null ? LocalDateTime.now() : feedback.getCreatedAt()
+        ));
     }
 
     private StudentFeedbackResponseDTO toDto(StudentFeedback feedback) {

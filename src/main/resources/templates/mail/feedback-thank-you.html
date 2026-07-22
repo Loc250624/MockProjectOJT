@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank you for sharing your feedback</title>
+</head>
+<body style="margin:0;padding:0;background:#f2f5fb;font-family:Arial,Helvetica,sans-serif;color:#1c2940;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    We have received your feedback and forwarded it to our administration team for review.
+</div>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="width:100%;background:#f2f5fb;margin:0;padding:0;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                   style="width:100%;max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+                <tr>
+                    <td style="padding:0;background:#0e3d91;">
+                        <img th:src="|cid:${bannerCid}|"
+                             src="cid:luminaFeedbackBanner"
+                             width="600"
+                             alt="Lumina Learning - Learn with clarity. Teach with confidence."
+                             style="display:block;width:100%;max-width:600px;height:auto;border:0;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:36px 38px 28px 38px;">
+                        <p style="margin:0 0 14px 0;color:#174d9f;font-size:12px;font-weight:700;letter-spacing:0;">
+                            FEEDBACK RECEIVED
+                        </p>
+
+                        <h1 style="margin:0 0 22px 0;font-size:30px;line-height:1.2;color:#102d63;font-weight:700;">
+                            Thank you for helping us improve.
+                        </h1>
+
+                        <p style="font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+                            Dear <strong th:text="${studentName}">Student</strong>,
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+                            Thank you for taking the time to share your feedback with Lumina Learning.
+                            We have successfully received your submission and forwarded it to our
+                            administration team for review.
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.7;margin:0 0 24px 0;">
+                            Your comments help us improve the learning experience for students, teachers,
+                            and administrators across the platform. While this automated message confirms
+                            receipt, our team may contact you through your registered email address if
+                            additional information is required.
+                        </p>
+
+                        <p th:if="${supportEmail != null and !#strings.isEmpty(supportEmail)}"
+                           style="margin:24px 0 0 0;font-size:15px;line-height:1.7;color:#41516b;">
+                            For assistance, please reply to this email when a monitored reply-to address is configured,
+                            or contact
+                            <a th:href="|mailto:${supportEmail}|"
+                               th:text="${supportEmail}"
+                               style="color:#1459b5;">support@example.com</a>.
+                        </p>
+
+                        <p style="margin:28px 0 0 0;font-size:16px;line-height:1.7;">
+                            Kind regards,<br>
+                            <strong>Lumina Learning Support Team</strong><br>
+                            <span style="color:#5f6f89;">Learn with clarity. Teach with confidence.</span>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:20px 38px 28px 38px;border-top:1px solid #edf1f7;
+                               color:#748199;font-size:12px;line-height:1.6;">
+                        This is an automated confirmation sent to the email address registered with your
+                        Lumina Learning account. Please do not share passwords or other sensitive information by email.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
