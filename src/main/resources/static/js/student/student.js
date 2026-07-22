@@ -334,6 +334,7 @@ function initAiTutor() {
 
     function setPanelOpen(isOpen) {
         panel.hidden = !isOpen;
+        toggle.hidden = isOpen;
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         if (isOpen) {
             input.focus();
@@ -948,7 +949,20 @@ function initQuizPanel(panel) {
         }
         var score = data.score == null ? 'Not scored' : data.score + '%';
         var status = data.passed ? 'Passed' : 'Failed';
-        result.querySelector('span').textContent = status + '. Score: ' + score + '.';
+        var resultSummary = result.querySelector('[data-quiz-result-summary]');
+        var resultStatus = result.querySelector('[data-quiz-result-status]');
+        var resultScore = result.querySelector('[data-quiz-result-score]');
+        if (resultSummary) {
+            resultSummary.textContent = data.passed
+                ? 'Nice work. You can review your selected answers below.'
+                : 'Review your selected answers below, then retake when ready.';
+        }
+        if (resultStatus) {
+            resultStatus.textContent = status;
+        }
+        if (resultScore) {
+            resultScore.textContent = 'Score ' + score;
+        }
         result.classList.toggle('passed', data.passed === true);
         result.classList.toggle('failed', data.passed !== true);
         renderQuizReview(data);
