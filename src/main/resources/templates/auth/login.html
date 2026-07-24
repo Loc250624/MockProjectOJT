@@ -58,25 +58,25 @@
                     <a th:if="${googleOAuthConfigured}" th:href="@{/oauth2/authorization/google}"
                        class="oauth-btn oauth-btn-google" id="btn-google"
                        data-oauth-provider="google" data-loading-label="Opening Google...">
-                        <span class="oauth-mark" aria-hidden="true">G</span>
+                        <span class="oauth-mark" aria-hidden="true"><img th:src="@{/images/google.svg}" alt="Google"></span>
                         <span>Continue with Google</span>
                     </a>
                     <span th:unless="${googleOAuthConfigured}" class="oauth-btn oauth-btn-google oauth-btn-disabled"
                           id="btn-google" role="link" aria-disabled="true"
                           title="Google sign-in is not configured yet.">
-                        <span class="oauth-mark" aria-hidden="true">G</span>
+                        <span class="oauth-mark" aria-hidden="true"><img th:src="@{/images/google.svg}" alt="Google"></span>
                         <span>Google unavailable</span>
                     </span>
                     <a th:if="${githubOAuthConfigured}" th:href="@{/oauth2/authorization/github}"
                        class="oauth-btn oauth-btn-github" id="btn-github"
                        data-oauth-provider="github" data-loading-label="Opening GitHub...">
-                        <span class="oauth-mark" aria-hidden="true">GH</span>
+                        <span class="oauth-mark" aria-hidden="true"><img th:src="@{/images/github.svg}" alt="GitHub"></span>
                         <span>Continue with GitHub</span>
                     </a>
                     <span th:unless="${githubOAuthConfigured}" class="oauth-btn oauth-btn-github oauth-btn-disabled"
                           id="btn-github" role="link" aria-disabled="true"
                           title="GitHub sign-in is not configured yet.">
-                        <span class="oauth-mark" aria-hidden="true">GH</span>
+                        <span class="oauth-mark" aria-hidden="true"><img th:src="@{/images/github.svg}" alt="GitHub"></span>
                         <span>GitHub unavailable</span>
                     </span>
                 </div>

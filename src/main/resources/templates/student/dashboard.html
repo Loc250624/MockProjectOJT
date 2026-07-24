@@ -81,7 +81,7 @@
                             <div class="pc-actions">
                                 <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary btn-sm btn-full">
                                     <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
-                                    <span>Continue Learning</span>
+                                    <span th:text="${course.completed ? 'Course Completed' : 'Continue Learning'}">Continue Learning</span>
                                 </a>
                             </div>
                         </div>

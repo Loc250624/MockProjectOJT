@@ -548,6 +548,7 @@ pre {
   text-decoration: none;
 }
 
+.learning-brand .logo-icon,
 .learning-brand-mark {
   display: grid;
   place-items: center;
@@ -890,6 +891,10 @@ pre {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--lumina-gray-100);
+}
+
+.learning-assessment [hidden] {
+  display: none !important;
 }
 
 .learning-assessment-form,
