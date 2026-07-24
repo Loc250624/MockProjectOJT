@@ -7,13 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 /**
- * Runs once at application startup.
+ * Runs once at application startup when enabled.
  * Finds every LOCAL user whose password_hash is stored as plain text
  * (i.e. does NOT start with "$2a$") and re-encodes it with BCrypt.
  *
@@ -22,6 +23,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true", matchIfMissing = false)
 @Order(1)          // Run before any other CommandLineRunner
 @RequiredArgsConstructor
 public class PasswordMigrationRunner implements CommandLineRunner {
