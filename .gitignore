@@ -45,3 +45,7 @@ Thumbs.db
 **/application-*.secret.yaml
 **/application-local.yaml
 **/application-*.local.yaml
+
+# Database Dumps
+*.sql
+mock_project_dump.sql
