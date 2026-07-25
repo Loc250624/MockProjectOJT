@@ -34,9 +34,27 @@
 .progress-card .pc-icon {
   width: 48px; height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--lumina-blue), #3a1578);
+  background: var(--lumina-gray-50);
+  border: 1px solid var(--lumina-gray-200);
   display: flex; align-items: center; justify-content: center;
-  color: white; font-size: 1.25rem; flex-shrink: 0;
+  color: var(--lumina-blue); font-size: 1.25rem; flex-shrink: 0;
+  overflow: hidden;
+}
+
+.progress-card .pc-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.progress-card .pc-icon span,
+.progress-card .pc-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.progress-card .pc-course-info {
+  min-width: 0;
 }
 
 .progress-card .pc-title {
@@ -1238,6 +1256,7 @@ pre {
 .student-course-action {
   display: inline-block;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .student-empty-state {

@@ -78,10 +78,14 @@ class CourseEnrollmentFrontendTemplateTest {
 
         assertTrue(myCourses.contains(expectedLabel));
         assertTrue(myCourses.contains(expectedRoute));
+        assertTrue(myCourses.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
         assertFalse(myCourses.contains("pointer-events: none"));
 
         assertTrue(dashboard.contains(expectedLabel));
         assertTrue(dashboard.contains(expectedRoute));
+        assertTrue(dashboard.contains("th:src=\"${course.thumbnailUrl}\""));
+        assertTrue(dashboard.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
+        assertFalse(dashboard.contains("course.completed ? '100%' : 'Go'"));
     }
 
     @Test

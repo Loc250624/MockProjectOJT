@@ -57,7 +57,10 @@
                             Last lesson: <span th:text="${course.lastAccessedLessonTitle}" style="color: #0f172a; font-weight: 600;">Introduction</span>
                         </p>
                     </div>
-                    <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary student-course-action" style="margin-top: 0.5rem; display: block; text-align: center; text-decoration: none; border-radius: 6px;">
+                    <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}"
+                       class="btn student-course-action"
+                       th:classappend="${course.completed} ? ' btn-success' : ' btn-primary'"
+                       style="margin-top: 0.5rem; text-align: center; text-decoration: none; border-radius: 6px;">
                         <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
                         <span th:text="${course.completed ? 'Course Completed' : 'Continue Learning'}">Continue Learning</span>
                     </a>
