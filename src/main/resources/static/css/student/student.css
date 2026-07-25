@@ -515,7 +515,6 @@ pre {
   margin: 0;
   background: #f6f9ff;
   color: var(--lumina-gray-900);
-  overflow-x: hidden;
 }
 
 .learning-player-header {
@@ -548,15 +547,21 @@ pre {
   text-decoration: none;
 }
 
-.learning-brand-mark {
-  display: grid;
-  place-items: center;
+.learning-brand .logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
   border-radius: 10px;
   background: var(--lumina-blue);
   color: #ffffff;
-  font-weight: 900;
+  flex: 0 0 40px;
+}
+
+.learning-brand .logo-icon .lumina-icon {
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .learning-header-actions {
@@ -2495,16 +2500,22 @@ pre {
   }
 
   .learning-header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
-    flex-wrap: wrap;
+    gap: var(--space-sm);
   }
 
   .learning-header-actions .btn {
-    flex: 1 1 140px;
     justify-content: center;
+    min-width: 0;
+    min-height: var(--hit-target);
+    padding-inline: 0.75rem;
   }
 
   .learning-avatar-link {
+    grid-column: 1 / -1;
+    justify-self: end;
     margin-left: auto;
   }
 
@@ -2571,6 +2582,16 @@ pre {
   .student-progress {
     grid-column: 1 / -1;
     text-align: left;
+  }
+}
+
+@media (max-width: 360px) {
+  .learning-header-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-avatar-link {
+    grid-column: 1;
   }
 }
 

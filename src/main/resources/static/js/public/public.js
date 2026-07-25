@@ -1,14 +1,42 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function () {
+    if (document.documentElement.dataset.publicUiReady === 'true') return;
+    document.documentElement.dataset.publicUiReady = 'true';
+
     document.querySelectorAll('[data-public-nav-toggle]').forEach(function (toggle) {
+        if (toggle.dataset.publicNavReady === 'true') return;
+        toggle.dataset.publicNavReady = 'true';
+
         var header = toggle.closest('.lumina-header');
         if (!header) return;
+        var panel = header.querySelector('[data-public-nav]');
 
         toggle.addEventListener('click', function () {
             var isOpen = header.classList.toggle('public-nav-open');
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape' || !header.classList.contains('public-nav-open')) return;
+            header.classList.remove('public-nav-open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.focus();
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!header.classList.contains('public-nav-open') || header.contains(event.target)) return;
+            header.classList.remove('public-nav-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+
+        if (panel) {
+            panel.addEventListener('click', function (event) {
+                if (!event.target.closest('a')) return;
+                header.classList.remove('public-nav-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        }
     });
 
     document.querySelectorAll('[data-accordion]').forEach(function (accordion) {

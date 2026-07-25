@@ -46,7 +46,7 @@
                         <input type="text" id="roadmapSearch" placeholder="Search roadmaps..." oninput="filterTable(this.value)">
                     </div>
                 </div>
-                <table class="data-table" style="width:100%;border-collapse:collapse;">
+                <table class="data-table responsive-data-table" style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr>
                             <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">ID</th>
@@ -59,14 +59,19 @@
                     <tbody id="roadmapTableBody">
                         <tr th:each="rdm : ${roadmaps}"
                             style="border-bottom:1px solid var(--lumina-gray-100);transition:background 0.15s;">
-                            <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${rdm.id}">1</td>
-                            <td style="padding:1rem 1.5rem;">
+                            <td data-label="ID" style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${rdm.id}">1</td>
+                            <td class="responsive-primary" data-label="Roadmap" style="padding:1rem 1.5rem;">
                                 <span style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);" th:text="${rdm.title}">Roadmap Title</span>
                             </td>
-                            <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-600);max-width:350px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" th:text="${rdm.description}">Description</td>
-                            <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);" th:text="${#temporals.format(rdm.createdAt, 'MMM dd, yyyy HH:mm')}">Date</td>
-                            <td style="padding:1rem 1.5rem;">
-                                <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <td class="responsive-copy" data-label="Description" style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-600);max-width:350px;">
+                                <details class="responsive-row-details">
+                                    <summary>View description</summary>
+                                    <div class="responsive-row-detail-content" th:text="${rdm.description}">Description</div>
+                                </details>
+                            </td>
+                            <td data-label="Created" style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);" th:text="${#temporals.format(rdm.createdAt, 'MMM dd, yyyy HH:mm')}">Date</td>
+                            <td data-label="Actions" style="padding:1rem 1.5rem;">
+                                <div class="table-action-cell" style="gap:0.5rem;align-items:center;">
                                     <a th:href="@{'/teacher/roadmap/edit/' + ${rdm.id}}"
                                        class="btn btn-secondary btn-sm"
                                        th:id="'btn-edit-rdm-' + ${rdm.id}">Edit</a>
@@ -79,7 +84,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr th:if="${#lists.isEmpty(roadmaps)}">
+                        <tr th:if="${#lists.isEmpty(roadmaps)}" data-empty-row>
                             <td colspan="5" style="padding:3rem;text-align:center;color:var(--lumina-gray-400);font-style:italic;">
                                 No roadmaps found. <a th:href="@{/teacher/roadmap/create}" style="color:var(--lumina-blue);">Create your first roadmap →</a>
                             </td>

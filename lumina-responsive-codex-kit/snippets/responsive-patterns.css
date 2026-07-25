@@ -1,0 +1,56 @@
+/* Reference patterns only. Adapt to the project's existing design system. */
+
+:where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+.responsive-shell {
+  width: min(100% - 2rem, 80rem);
+  margin-inline: auto;
+}
+
+.responsive-flex-child {
+  min-width: 0;
+}
+
+.responsive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.responsive-actions > * {
+  max-width: 100%;
+}
+
+.long-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.table-scroll-region {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-card-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (max-width: 47.99rem) {
+  .responsive-shell {
+    width: min(100% - 1rem, 80rem);
+  }
+
+  .responsive-actions {
+    flex-direction: column;
+  }
+
+  .responsive-actions > button,
+  .responsive-actions > a {
+    width: 100%;
+  }
+}

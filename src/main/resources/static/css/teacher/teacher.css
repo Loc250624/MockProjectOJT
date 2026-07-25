@@ -1490,6 +1490,19 @@ pre {
   min-width: 980px;
 }
 
+.teacher-course-identity,
+.teacher-course-identity > * {
+  min-width: 0;
+}
+
+.teacher-course-identity > :last-child {
+  overflow-wrap: anywhere;
+}
+
+.teacher-course-thumbnail {
+  flex: 0 0 40px;
+}
+
 .teacher-course-thumb-icon {
   width: 100%;
   height: 100%;
@@ -1510,6 +1523,32 @@ pre {
 
 .teacher-course-actions form {
   display: inline-flex;
+}
+
+@media (max-width: 768px) {
+  .teacher-course-table,
+  .teacher-course-actions {
+    min-width: 0;
+  }
+
+  .teacher-course-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .teacher-course-actions .action-btn,
+  .teacher-course-actions form,
+  .teacher-course-actions form .action-btn {
+    width: 100%;
+    min-height: var(--hit-target);
+  }
+}
+
+@media (max-width: 380px) {
+  .teacher-course-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .action-btn.disabled,
