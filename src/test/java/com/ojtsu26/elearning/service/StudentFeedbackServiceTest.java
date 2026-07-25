@@ -130,15 +130,19 @@ class StudentFeedbackServiceTest {
     }
 
     @Test
-    void createRejectsMissingCategoryBeforeSaving() {
+    void createDefaultsMissingCategoryForBackwardCompatibility() {
         StudentFeedbackRequestDTO request = validRequest();
         request.setCategory(null);
         when(currentUserService.getCurrentUser()).thenReturn(student);
+        when(feedbackRepository.save(any(StudentFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThrows(BusinessException.class, () -> service.createForCurrentStudent(request));
+        StudentFeedbackResponseDTO response = service.createForCurrentStudent(request);
 
-        verify(feedbackRepository, never()).save(any());
-        verify(eventPublisher, never()).publishEvent(any());
+        ArgumentCaptor<StudentFeedback> captor = ArgumentCaptor.forClass(StudentFeedback.class);
+        verify(feedbackRepository).save(captor.capture());
+        assertEquals(FeedbackCategory.OTHER, captor.getValue().getCategory());
+        assertEquals(FeedbackCategory.OTHER, response.getCategory());
+        assertEquals("Other", response.getCategoryLabel());
     }
 
     @Test

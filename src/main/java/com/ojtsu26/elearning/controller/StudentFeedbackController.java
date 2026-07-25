@@ -2,7 +2,6 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.dto.request.StudentFeedbackRequestDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
-import com.ojtsu26.elearning.model.enums.FeedbackCategory;
 import com.ojtsu26.elearning.service.StudentFeedbackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.List;
 public class StudentFeedbackController {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
-    private static final List<Integer> RATING_OPTIONS = List.of(1, 2, 3, 4, 5);
     private static final List<Integer> RATING_OPTIONS_DESCENDING = List.of(5, 4, 3, 2, 1);
 
     private final StudentFeedbackService feedbackService;
@@ -33,7 +31,6 @@ public class StudentFeedbackController {
     @InitBinder("feedback")
     void initFeedbackBinder(WebDataBinder binder) {
         binder.setAllowedFields(
-                "category",
                 "subject",
                 "content",
                 "courseContentRating",
@@ -90,8 +87,6 @@ public class StudentFeedbackController {
     }
 
     private void addStudentFormOptions(Model model) {
-        model.addAttribute("feedbackCategories", FeedbackCategory.values());
-        model.addAttribute("ratingOptions", RATING_OPTIONS);
         model.addAttribute("ratingOptionsDescending", RATING_OPTIONS_DESCENDING);
     }
 }

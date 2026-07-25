@@ -78,7 +78,7 @@ class StudentFeedbackSecurityTest {
 
         StudentFeedback saved = feedbackRepository.findAll().get(0);
         assertEquals(student.getId(), saved.getStudent().getId());
-        assertEquals(FeedbackCategory.PLATFORM_UI, saved.getCategory());
+        assertEquals(FeedbackCategory.OTHER, saved.getCategory());
         assertEquals("Search feedback", saved.getSubject());
         assertEquals("Search should remember filters.", saved.getContent());
         assertEquals(5, saved.getCourseContentRating());
@@ -95,6 +95,11 @@ class StudentFeedbackSecurityTest {
                 .andExpect(content().string(not(containsString("sidebar-student"))))
                 .andExpect(content().string(not(containsString("portal-topbar"))))
                 .andExpect(content().string(containsString("Submit Feedback")))
+                .andExpect(content().string(containsString("rating-row rating-row--overall")))
+                .andExpect(content().string(not(containsString("feedback-category-panel"))))
+                .andExpect(content().string(not(containsString("category-grid"))))
+                .andExpect(content().string(not(containsString("name=\"category\""))))
+                .andExpect(content().string(not(containsString("Choose a topic"))))
                 .andExpect(content().string(not(containsString("Search feedback"))))
                 .andExpect(content().string(not(containsString("/student/feedback/" + saved.getId()))));
     }
@@ -118,12 +123,12 @@ class StudentFeedbackSecurityTest {
     }
 
     @Test
-    void missingCategoryAndRatingsDoNotCreateFeedback() throws Exception {
+    void missingRatingsDoNotCreateFeedback() throws Exception {
         mockMvc.perform(post("/student/feedback")
                         .with(user(new CustomUserDetails(student)))
                         .with(csrf())
                         .param("subject", "Missing scores")
-                        .param("content", "No category or scores"))
+                        .param("content", "No scores"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/student/feedback"));
 
@@ -273,7 +278,6 @@ class StudentFeedbackSecurityTest {
     void postRequiresCsrfToken() throws Exception {
         mockMvc.perform(post("/student/feedback")
                         .with(user(new CustomUserDetails(student)))
-                        .param("category", FeedbackCategory.PLATFORM_UI.name())
                         .param("subject", "No csrf")
                         .param("content", "Rejected")
                         .param("courseContentRating", "5")
@@ -323,7 +327,6 @@ class StudentFeedbackSecurityTest {
         return post("/student/feedback")
                 .with(user(new CustomUserDetails(actor)))
                 .with(csrf())
-                .param("category", FeedbackCategory.PLATFORM_UI.name())
                 .param("subject", subject)
                 .param("content", content)
                 .param("courseContentRating", "5")

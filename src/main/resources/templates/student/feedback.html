@@ -52,7 +52,7 @@
                                 <p class="feedback-section-kicker">Rating Matrix</p>
                                 <h2 id="feedback-rating-title">Rate your experience</h2>
                             </div>
-                            <span class="feedback-scale" aria-hidden="true">1-5</span>
+                            <span class="feedback-scale" aria-label="Rating scale from 1 to 5">1–5</span>
                         </div>
 
                         <div class="rating-matrix">
@@ -136,7 +136,7 @@
                                 <span class="inline-error" th:if="${#fields.hasErrors('assessmentExperienceRating')}" th:errors="*{assessmentExperienceRating}">Rating error</span>
                             </fieldset>
 
-                            <fieldset class="rating-row" th:classappend="${#fields.hasErrors('overallSatisfactionRating')} ? ' has-error' : ''">
+                            <fieldset class="rating-row rating-row--overall" th:classappend="${#fields.hasErrors('overallSatisfactionRating')} ? ' has-error' : ''">
                                 <legend>Overall Satisfaction</legend>
                                 <div class="star-options" role="radiogroup" aria-label="Overall Satisfaction rating">
                                     <label class="star-choice" th:each="rating : ${ratingOptionsDescending}">
@@ -152,30 +152,6 @@
                                 <span class="inline-error" th:if="${#fields.hasErrors('overallSatisfactionRating')}" th:errors="*{overallSatisfactionRating}">Rating error</span>
                             </fieldset>
                         </div>
-                    </section>
-
-                    <section class="feedback-panel feedback-category-panel" aria-labelledby="feedback-category-title">
-                        <div class="feedback-section-head">
-                            <div>
-                                <p class="feedback-section-kicker">Category</p>
-                                <h2 id="feedback-category-title">Choose a topic</h2>
-                            </div>
-                        </div>
-
-                        <fieldset class="category-grid" th:classappend="${#fields.hasErrors('category')} ? ' has-error' : ''">
-                            <legend class="sr-only">Feedback category</legend>
-                            <label class="category-option" th:each="category : ${feedbackCategories}">
-                                <input type="radio"
-                                       th:field="*{category}"
-                                       th:value="${category}"
-                                       required>
-                                <span class="category-card">
-                                    <span class="category-dot" aria-hidden="true"></span>
-                                    <span th:text="${category.displayName}">Course Content</span>
-                                </span>
-                            </label>
-                            <span class="inline-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}">Category error</span>
-                        </fieldset>
                     </section>
 
                     <section class="feedback-panel feedback-text-panel">

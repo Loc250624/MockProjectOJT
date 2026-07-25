@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 public class StudentFeedbackServiceImpl implements StudentFeedbackService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    private static final FeedbackCategory DEFAULT_FEEDBACK_CATEGORY = FeedbackCategory.OTHER;
 
     private final StudentFeedbackRepository feedbackRepository;
     private final CurrentUserService currentUserService;
@@ -38,7 +39,7 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
         User student = requireCurrentUserWithRole(Role.STUDENT);
         String subject = normalizeRequired(request == null ? null : request.getSubject(), "Subject is required.");
         String content = normalizeRequired(request == null ? null : request.getContent(), "Content is required.");
-        FeedbackCategory category = requireCategory(request == null ? null : request.getCategory());
+        FeedbackCategory category = categoryOrDefault(request == null ? null : request.getCategory());
         Integer courseContentRating = requireRating(request == null ? null : request.getCourseContentRating(), "Course content rating");
         Integer instructorSupportRating = requireRating(request == null ? null : request.getInstructorSupportRating(), "Instructor support rating");
         Integer learningExperienceRating = requireRating(request == null ? null : request.getLearningExperienceRating(), "Learning experience rating");
@@ -108,11 +109,11 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
         return normalized;
     }
 
-    private FeedbackCategory requireCategory(FeedbackCategory category) {
-        if (category == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Category is required.");
-        }
-        return category;
+    private FeedbackCategory categoryOrDefault(FeedbackCategory category) {
+        // Category is no longer user-selectable, but remains required by the
+        // persisted/admin contract. Preserve explicit legacy callers and use
+        // the existing general-purpose enum value for the simplified form.
+        return category == null ? DEFAULT_FEEDBACK_CATEGORY : category;
     }
 
     private Integer requireRating(Integer rating, String label) {
