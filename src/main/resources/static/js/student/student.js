@@ -901,6 +901,9 @@ function initQuizPanel(panel) {
     var stateLabel = document.getElementById('quiz-state-label');
     var attempt = null;
     var requestSequence = 0;
+    var autosaveTimer = null;
+    var autosaveInFlight = Promise.resolve();
+    var submitting = false;
 
     function endpoint(action) {
         return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/quiz' + (action || '');
@@ -1081,6 +1084,26 @@ function initQuizPanel(panel) {
                     block.querySelectorAll('.learning-answer-option').forEach(function(optionLabel) {
                         optionLabel.classList.toggle('selected', optionLabel.querySelector('input:checked') !== null);
                     });
+                    if (autosaveTimer) {
+                        window.clearTimeout(autosaveTimer);
+                    }
+                    stateLabel.textContent = 'Unsaved';
+                    autosaveTimer = window.setTimeout(function() {
+                        stateLabel.textContent = 'Saving';
+                        autosaveInFlight = autosaveInFlight
+                            .catch(function() { return null; })
+                            .then(function() {
+                                return sendQuiz('/save', 'Saving...');
+                            })
+                            .then(function() {
+                                stateLabel.textContent = 'Saved';
+                                setPanelMessage('quiz-message', 'Saved.', false);
+                            })
+                            .catch(function(error) {
+                                stateLabel.textContent = 'Save error';
+                                setPanelMessage('quiz-message', error.message, true);
+                            });
+                    }, 700);
                 });
                 block.appendChild(label);
             });
@@ -1167,12 +1190,23 @@ function initQuizPanel(panel) {
     if (form) {
         form.addEventListener('submit', function (event) {
             event.preventDefault();
+            if (submitting) {
+                return;
+            }
+            submitting = true;
+            if (autosaveTimer) {
+                window.clearTimeout(autosaveTimer);
+                autosaveTimer = null;
+            }
             submitButton.disabled = true;
-            sendQuiz('/submit', 'Submitting quiz...')
+            autosaveInFlight.catch(function() { return null; }).then(function() {
+                return sendQuiz('/submit', 'Submitting quiz...');
+            })
                 .catch(function (error) {
                     setPanelMessage('quiz-message', error.message, true);
                 })
                 .finally(function () {
+                    submitting = false;
                     submitButton.disabled = false;
                 });
         });

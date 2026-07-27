@@ -48,4 +48,7 @@ public class QuizAttempt {
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizAnswer> answers;
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizAttemptQuestion> assignedQuestions;
 }

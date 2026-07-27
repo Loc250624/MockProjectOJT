@@ -20,11 +20,13 @@ import com.ojtsu26.elearning.model.entity.Lesson;
 import com.ojtsu26.elearning.model.entity.LessonProgress;
 import com.ojtsu26.elearning.model.entity.Question;
 import com.ojtsu26.elearning.model.entity.Quiz;
+import com.ojtsu26.elearning.model.entity.QuizAttemptQuestion;
 import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.entity.Testcase;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.NotificationType;
+import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.repository.CodeJudgeResultRepository;
 import com.ojtsu26.elearning.repository.CodingAssignmentRepository;
@@ -40,7 +42,10 @@ import com.ojtsu26.elearning.service.CodeJudgeAdapter;
 import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.StudentAssessmentService;
 import com.ojtsu26.elearning.service.StudentLearningService;
+import com.ojtsu26.elearning.service.quiz.QuizAttemptApplicationService;
+import com.ojtsu26.elearning.service.quiz.QuizQuestionTextNormalizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +53,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +70,7 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     private static final String STATE_DRAFT = "DRAFT";
     private static final String STATE_SUBMITTED = "SUBMITTED";
     private static final int MAX_ANSWER_LENGTH = 2000;
+    private static final int QUIZ_QUESTION_COUNT = 10;
 
     private final StudentLearningService studentLearningService;
     private final CurrentUserService currentUserService;
@@ -80,41 +87,62 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Optional only for direct-constructor legacy tests. In the Spring runtime
+     * this bean is always injected and is the sole writer for new quiz attempts.
+     */
+    @Autowired(required = false)
+    private QuizAttemptApplicationService quizAttemptApplicationService;
+
     @Override
     @Transactional
     public StudentQuizAttemptDTO getOrStartQuiz(Integer courseId, Integer lessonId) {
         Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.QUIZ);
-        User student = currentUserService.getCurrentUser();
         Quiz quiz = quizRepository.findByLessonId(lessonId).orElse(null);
         if (quiz == null) {
             return unavailableQuiz(courseId, lessonId, "This quiz is not configured yet.");
         }
+        if (quizAttemptApplicationService != null) {
+            return toCanonicalQuizDto(
+                    courseId,
+                    lessonId,
+                    quizAttemptApplicationService.startOrResume(quiz.getId()),
+                    null);
+        }
 
-        List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
-        if (questions.isEmpty()) {
+        User student = currentUserService.getCurrentUser();
+        List<Question> questionBank = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
+        if (questionBank.isEmpty()) {
             return unavailableQuiz(courseId, lessonId, "This quiz has no questions yet.");
         }
 
         Submission attempt = currentDraftAttempt(student.getId(), lessonId)
-                .orElseGet(() -> createQuizAttempt(student, lesson));
+                .orElseGet(() -> createQuizAttempt(student, lesson, questionBank));
+        List<Question> questions = ensureAssignedQuestions(attempt, questionBank);
         return toQuizDto(courseId, lessonId, quiz, questions, attempt);
     }
 
     @Override
     @Transactional
     public StudentQuizAttemptDTO saveQuizDraft(Integer courseId, Integer lessonId, StudentQuizSubmissionRequestDTO request) {
-        Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.QUIZ);
+        requireAccessibleLesson(courseId, lessonId, LessonType.QUIZ);
         Quiz quiz = requireQuiz(lessonId);
-        List<Question> questions = requireQuizQuestions(quiz);
+        if (quizAttemptApplicationService != null) {
+            requireRequest(request);
+            QuizAttemptApplicationService.AttemptSession session =
+                    quizAttemptApplicationService.saveTextAnswers(
+                            request.getAttemptId(), sanitizeAnswers(request.getAnswers()));
+            requireAttemptQuiz(session, quiz);
+            return toCanonicalQuizDto(courseId, lessonId, session, null);
+        }
+
+        List<Question> questionBank = requireQuizQuestions(quiz);
         Submission attempt = requirePendingAttempt(request, lessonId);
+        List<Question> questions = ensureAssignedQuestions(attempt, questionBank);
         Map<Integer, String> answers = sanitizeAnswers(request.getAnswers());
         validateQuestionMembership(answers, questions);
 
-        attempt.setSubmittedContent(writePayload(Map.of(
-                "type", "QUIZ",
-                "state", STATE_DRAFT,
-                "answers", answers
-        )));
+        attempt.setSubmittedContent(writeQuizPayload(STATE_DRAFT, questions, answers));
         submissionRepository.save(attempt);
         return toQuizDto(courseId, lessonId, quiz, questions, attempt);
     }
@@ -124,8 +152,23 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     public StudentQuizAttemptDTO submitQuiz(Integer courseId, Integer lessonId, StudentQuizSubmissionRequestDTO request) {
         Lesson lesson = requireAccessibleLesson(courseId, lessonId, LessonType.QUIZ);
         Quiz quiz = requireQuiz(lessonId);
-        List<Question> questions = requireQuizQuestions(quiz);
+        if (quizAttemptApplicationService != null) {
+            requireRequest(request);
+            QuizAttemptApplicationService.AttemptSession session =
+                    quizAttemptApplicationService.submitTextAnswers(
+                            request.getAttemptId(), sanitizeAnswers(request.getAnswers()));
+            requireAttemptQuiz(session, quiz);
+            boolean passed = session.attempt().getScore() != null
+                    && session.attempt().getScore().compareTo(defaultPassingScore(quiz)) >= 0;
+            LearningProgressDTO learningProgress = passed
+                    ? markAssessmentProgressCompleted(courseId, lesson)
+                    : null;
+            return toCanonicalQuizDto(courseId, lessonId, session, learningProgress);
+        }
+
+        List<Question> questionBank = requireQuizQuestions(quiz);
         Submission attempt = requirePendingAttempt(request, lessonId);
+        List<Question> questions = ensureAssignedQuestions(attempt, questionBank);
         Map<Integer, String> answers = sanitizeAnswers(request.getAnswers());
         validateQuestionMembership(answers, questions);
 
@@ -133,11 +176,7 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         boolean passed = score.compareTo(defaultPassingScore(quiz)) >= 0;
         attempt.setScore(score);
         attempt.setStatus(passed ? SubmissionStatus.PASSED : SubmissionStatus.FAILED);
-        attempt.setSubmittedContent(writePayload(Map.of(
-                "type", "QUIZ",
-                "state", STATE_SUBMITTED,
-                "answers", answers
-        )));
+        attempt.setSubmittedContent(writeQuizPayload(STATE_SUBMITTED, questions, answers));
         submissionRepository.save(attempt);
         LearningProgressDTO learningProgress = passed ? markAssessmentProgressCompleted(courseId, lesson) : null;
         return toQuizDto(courseId, lessonId, quiz, questions, attempt, learningProgress);
@@ -238,18 +277,59 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
         return questions;
     }
 
-    private Submission createQuizAttempt(User student, Lesson lesson) {
+    private Submission createQuizAttempt(User student, Lesson lesson, List<Question> questionBank) {
+        List<Question> assignedQuestions = selectRandomQuestions(questionBank);
         Submission attempt = Submission.builder()
                 .student(student)
                 .lesson(lesson)
                 .status(SubmissionStatus.PENDING_REVIEW)
-                .submittedContent(writePayload(Map.of(
-                        "type", "QUIZ",
-                        "state", STATE_DRAFT,
-                        "answers", Map.of()
-                )))
+                .submittedContent(writeQuizPayload(STATE_DRAFT, assignedQuestions, Map.of()))
                 .build();
         return submissionRepository.save(attempt);
+    }
+
+    private List<Question> ensureAssignedQuestions(Submission attempt, List<Question> questionBank) {
+        Map<String, Object> payload = readPayload(attempt.getSubmittedContent());
+        List<Integer> assignedIds = readQuestionIds(payload);
+        if (assignedIds.isEmpty()) {
+            List<Question> selected = selectRandomQuestions(questionBank);
+            attempt.setSubmittedContent(writeQuizPayload(
+                    payloadState(payload),
+                    selected,
+                    readAnswers(payload)
+            ));
+            submissionRepository.save(attempt);
+            return selected;
+        }
+
+        Map<Integer, Question> questionsById = questionBank.stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
+        List<Question> assigned = assignedIds.stream()
+                .map(questionsById::get)
+                .filter(Objects::nonNull)
+                .toList();
+        if (assigned.size() != assignedIds.size()) {
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "One or more assigned quiz questions are no longer available."
+            );
+        }
+        return assigned;
+    }
+
+    private List<Question> selectRandomQuestions(List<Question> questionBank) {
+        List<Question> shuffled = new ArrayList<>(questionBank);
+        Collections.shuffle(shuffled);
+        return new ArrayList<>(shuffled.subList(0, Math.min(QUIZ_QUESTION_COUNT, shuffled.size())));
+    }
+
+    private String writeQuizPayload(String state, List<Question> questions, Map<Integer, String> answers) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("type", "QUIZ");
+        payload.put("state", state == null ? STATE_DRAFT : state);
+        payload.put("questionIds", questions.stream().map(Question::getId).toList());
+        payload.put("answers", answers == null ? Map.of() : answers);
+        return writePayload(payload);
     }
 
     private java.util.Optional<Submission> currentDraftAttempt(Integer studentId, Integer lessonId) {
@@ -388,6 +468,81 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                 .answers(Map.of())
                 .submitted(false)
                 .build();
+    }
+
+    private void requireRequest(StudentQuizSubmissionRequestDTO request) {
+        if (request == null || request.getAttemptId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Attempt is required.");
+        }
+    }
+
+    private void requireAttemptQuiz(QuizAttemptApplicationService.AttemptSession session, Quiz expectedQuiz) {
+        if (session.attempt().getQuiz() == null
+                || !Objects.equals(session.attempt().getQuiz().getId(), expectedQuiz.getId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Quiz attempt does not belong to this lesson.");
+        }
+    }
+
+    private StudentQuizAttemptDTO toCanonicalQuizDto(
+            Integer courseId,
+            Integer lessonId,
+            QuizAttemptApplicationService.AttemptSession session,
+            LearningProgressDTO learningProgress) {
+        Quiz quiz = session.attempt().getQuiz();
+        boolean submitted = session.attempt().getStatus() != QuizAttemptStatus.DRAFT;
+        boolean passed = submitted
+                && session.attempt().getScore() != null
+                && session.attempt().getScore().compareTo(defaultPassingScore(quiz)) >= 0;
+        Map<Integer, String> answers = new LinkedHashMap<>();
+        session.answers().forEach((questionId, answer) ->
+                answers.put(questionId, answer.getAnswerText() == null ? "" : answer.getAnswerText()));
+        return StudentQuizAttemptDTO.builder()
+                .courseId(courseId)
+                .lessonId(lessonId)
+                .quizId(quiz.getId())
+                .quizTitle(quiz.getTitle())
+                .attemptId(session.attempt().getId())
+                .status(submitted
+                        ? (passed ? SubmissionStatus.PASSED : SubmissionStatus.FAILED)
+                        : SubmissionStatus.PENDING_REVIEW)
+                .attemptState(submitted ? STATE_SUBMITTED : STATE_DRAFT)
+                .passingScore(defaultPassingScore(quiz))
+                .score(session.attempt().getScore())
+                .passed(passed)
+                .submitted(submitted)
+                .unavailable(false)
+                .questions(session.questions().stream()
+                        .map(assignment -> StudentQuizQuestionDTO.builder()
+                                .id(assignment.getQuestion().getId())
+                                .questionText(QuizQuestionTextNormalizer.stripCheckpointPrefix(
+                                        assignment.getQuestionTextSnapshot()))
+                                .optionsJson(studentQuizOptionsJson(snapshotQuestion(assignment), submitted))
+                                .build())
+                        .toList())
+                .answers(answers)
+                .submittedAt(session.attempt().getSubmittedAt())
+                .learningProgress(learningProgress)
+                .build();
+    }
+
+    private Question snapshotQuestion(QuizAttemptQuestion assignment) {
+        Question question = Question.builder()
+                .id(assignment.getQuestion().getId())
+                .questionText(QuizQuestionTextNormalizer.stripCheckpointPrefix(
+                        assignment.getQuestionTextSnapshot()))
+                .optionsJson(assignment.getOptionsJsonSnapshot())
+                .correctAnswer(assignment.getCorrectAnswerSnapshot())
+                .points(assignment.getPointsSnapshot())
+                .build();
+        if (assignment.getQuestionTypeSnapshot() != null) {
+            try {
+                question.setQuestionType(com.ojtsu26.elearning.model.enums.QuestionType.valueOf(
+                        assignment.getQuestionTypeSnapshot()));
+            } catch (IllegalArgumentException ignored) {
+                // A historical snapshot may contain a retired type.
+            }
+        }
+        return question;
     }
 
     private StudentQuizAttemptDTO toQuizDto(Integer courseId, Integer lessonId, Quiz quiz, List<Question> questions, Submission attempt) {
@@ -744,6 +899,19 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
             }
         });
         return answers;
+    }
+
+    private List<Integer> readQuestionIds(Map<String, Object> payload) {
+        Object idsValue = payload.get("questionIds");
+        if (!(idsValue instanceof List<?> rawIds)) {
+            return List.of();
+        }
+        return rawIds.stream()
+                .map(this::parseInteger)
+                .filter(Objects::nonNull)
+                .distinct()
+                .limit(QUIZ_QUESTION_COUNT)
+                .toList();
     }
 
     private Integer parseInteger(Object value) {

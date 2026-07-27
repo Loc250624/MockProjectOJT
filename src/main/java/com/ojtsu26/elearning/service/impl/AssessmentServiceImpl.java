@@ -13,7 +13,10 @@ import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.CodeJudgeAdapter;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.NotificationService;
+import com.ojtsu26.elearning.service.quiz.QuizAttemptApplicationService;
+import com.ojtsu26.elearning.service.quiz.QuizQuestionTextNormalizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +49,15 @@ public class AssessmentServiceImpl implements AssessmentService {
     private final CodeJudgeAdapter codeJudgeAdapter;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+
+    @Autowired(required = false)
+    private QuizAttemptApplicationService quizAttemptApplicationService;
+
+    @Autowired(required = false)
+    private QuizAttemptQuestionRepository attemptQuestionRepository;
+
+    @Autowired(required = false)
+    private com.ojtsu26.elearning.service.quiz.QuizQuestionAssignmentService quizQuestionAssignmentService;
     private static final List<SubmissionStatus> PENDING_GRADE_STATUSES = List.of(
             SubmissionStatus.SUBMITTED,
             SubmissionStatus.PENDING_REVIEW,
@@ -90,6 +102,9 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public QuizAttemptView startQuizAttempt(Integer quizId) {
+        if (quizAttemptApplicationService != null) {
+            return toCanonicalAttemptView(quizAttemptApplicationService.startOrResume(quizId));
+        }
         User student = currentUserService.getCurrentUser();
         Quiz quiz = getQuiz(quizId);
         requireEnrollment(student.getId(), quiz.getLesson().getCourse().getId());
@@ -112,6 +127,10 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public QuizAttemptView saveQuizDraft(Integer attemptId, QuizDraftPayload payload) {
+        if (quizAttemptApplicationService != null) {
+            return toCanonicalAttemptView(quizAttemptApplicationService.saveSelectedAnswers(
+                    attemptId, selectedAnswerMap(payload)));
+        }
         QuizAttempt attempt = requireStudentAttempt(attemptId);
         if (attempt.getStatus() != QuizAttemptStatus.DRAFT) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Submitted attempts cannot be edited");
@@ -122,6 +141,10 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public QuizAttemptView submitQuizAttempt(Integer attemptId, QuizDraftPayload payload) {
+        if (quizAttemptApplicationService != null) {
+            return toCanonicalAttemptView(quizAttemptApplicationService.submitSelectedAnswers(
+                    attemptId, selectedAnswerMap(payload)));
+        }
         QuizAttempt attempt = requireStudentAttempt(attemptId);
         if (attempt.getStatus() != QuizAttemptStatus.DRAFT) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Attempt already submitted");
@@ -333,10 +356,15 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Question not found"));
         requireTeacherQuiz(question.getQuiz().getId(), teacher.getId());
         validateQuestionPayload(payload);
-        if (quizAnswerRepository.countByQuestionId(questionId) > 0 && questionContentOrScoringChanged(question, payload)) {
+        boolean hasSnapshot = attemptQuestionRepository != null
+                && attemptQuestionRepository.countByQuestionId(questionId) > 0;
+        if (quizAnswerRepository.countByQuestionId(questionId) > 0
+                && !hasSnapshot
+                && questionContentOrScoringChanged(question, payload)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST,
                     "Question has submitted answers; create a new question instead of changing scored content");
         }
+        question.setVersion(Objects.requireNonNullElse(question.getVersion(), 1) + 1);
         applyQuestion(question, payload);
         return toQuestionView(question, true);
     }
@@ -347,9 +375,12 @@ public class AssessmentServiceImpl implements AssessmentService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Question not found"));
         requireTeacherQuiz(question.getQuiz().getId(), teacher.getId());
-        if (quizAnswerRepository.countByQuestionId(questionId) > 0) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST,
-                    "Question has submitted answers and cannot be deleted without losing attempt history");
+        if (quizAnswerRepository.countByQuestionId(questionId) > 0
+                || (attemptQuestionRepository != null
+                && attemptQuestionRepository.countByQuestionId(questionId) > 0)) {
+            question.setActive(false);
+            question.setReviewStatus(QuestionReviewStatus.ARCHIVED);
+            return;
         }
         questionRepository.delete(question);
     }
@@ -842,6 +873,17 @@ public class AssessmentServiceImpl implements AssessmentService {
         question.setDisplayOrder(payload.getDisplayOrder());
         question.setOptionsJson(writeJson(payload.getOptions()));
         question.setCorrectAnswer(AssessmentOptionCodec.correctAnswerValue(payload.getOptions()));
+        question.setTopicCode(com.ojtsu26.elearning.service.quiz.StratifiedQuestionSampler.normalizeTopic(
+                payload.getTopicCode()));
+        question.setDifficulty(Objects.requireNonNullElse(payload.getDifficulty(), QuestionDifficulty.MEDIUM));
+        question.setReviewStatus(Objects.requireNonNullElse(
+                payload.getReviewStatus(), QuestionReviewStatus.APPROVED));
+        question.setActive(!Boolean.FALSE.equals(payload.getActive()));
+        question.setGenerationSource(Objects.requireNonNullElse(
+                payload.getGenerationSource(), QuestionGenerationSource.MANUAL));
+        if (question.getVersion() == null) {
+            question.setVersion(1);
+        }
     }
 
     private void validateQuizPayload(QuizPayload payload) {
@@ -973,6 +1015,19 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     private void validateQuizCanPublish(Quiz quiz) {
+        if (quizQuestionAssignmentService != null) {
+            var readiness = quizQuestionAssignmentService.readiness(quiz.getId());
+            if (!readiness.ready()) {
+                String shortages = readiness.buckets().stream()
+                        .filter(bucket -> !bucket.ready())
+                        .map(bucket -> bucket.topicCode() + "/" + bucket.difficulty()
+                                + " required " + bucket.required() + ", available " + bucket.available())
+                        .collect(Collectors.joining("; "));
+                throw new BusinessException(
+                        ErrorCode.BAD_REQUEST,
+                        "Quiz question bank is not ready: " + shortages);
+            }
+        }
         List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
         if (questions.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Quiz must have at least one question before publishing");
@@ -1305,6 +1360,12 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setQuestionType(question.getQuestionType() == null ? QuestionType.SINGLE_CHOICE : question.getQuestionType());
         view.setPoints(points(question));
         view.setDisplayOrder(question.getDisplayOrder());
+        view.setTopicCode(question.getTopicCode());
+        view.setDifficulty(question.getDifficulty());
+        view.setReviewStatus(question.getReviewStatus());
+        view.setVersion(question.getVersion());
+        view.setActive(question.getActive());
+        view.setGenerationSource(question.getGenerationSource());
         List<OptionView> options = readOptions(question).stream().map(option -> {
             OptionView optionView = new OptionView();
             optionView.setId(option.id());
@@ -1317,6 +1378,13 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     private QuizAttemptView toAttemptView(QuizAttempt attempt, boolean includeCorrect) {
+        if (quizAttemptApplicationService != null) {
+            QuizAttemptApplicationService.AttemptSession session =
+                    quizAttemptApplicationService.getOwnedAttempt(attempt.getId());
+            if (!session.questions().isEmpty()) {
+                return toCanonicalAttemptView(session);
+            }
+        }
         QuizAttemptView view = new QuizAttemptView();
         view.setId(attempt.getId());
         view.setStatus(attempt.getStatus());
@@ -1327,6 +1395,71 @@ public class AssessmentServiceImpl implements AssessmentService {
         QuizView quizView = toQuizView(attempt.getQuiz(), includeCorrect);
         applyDraftAnswers(quizView, attempt);
         view.setQuiz(quizView);
+        return view;
+    }
+
+    private Map<Integer, List<Integer>> selectedAnswerMap(QuizDraftPayload payload) {
+        Map<Integer, List<Integer>> answers = new LinkedHashMap<>();
+        if (payload == null || payload.getAnswers() == null) {
+            return answers;
+        }
+        for (AnswerPayload answer : payload.getAnswers()) {
+            if (answer != null && answer.getQuestionId() != null) {
+                answers.put(answer.getQuestionId(),
+                        Optional.ofNullable(answer.getSelectedOptionIds()).orElse(List.of()));
+            }
+        }
+        return answers;
+    }
+
+    private QuizAttemptView toCanonicalAttemptView(
+            QuizAttemptApplicationService.AttemptSession session) {
+        QuizAttempt attempt = session.attempt();
+        boolean includeCorrect = attempt.getStatus() != QuizAttemptStatus.DRAFT;
+        QuizView quizView = toQuizView(attempt.getQuiz(), false);
+        List<QuestionView> questions = session.questions().stream()
+                .map(assignment -> toSnapshotQuestionView(
+                        assignment,
+                        session.answers().get(assignment.getQuestion().getId()),
+                        includeCorrect))
+                .toList();
+        quizView.setQuestions(questions);
+        quizView.setTotalPoints(attempt.getTotalPoints());
+
+        QuizAttemptView view = new QuizAttemptView();
+        view.setId(attempt.getId());
+        view.setStatus(attempt.getStatus());
+        view.setStartedAt(attempt.getStartedAt());
+        view.setSubmittedAt(attempt.getSubmittedAt());
+        view.setScore(attempt.getScore());
+        view.setTotalPoints(attempt.getTotalPoints());
+        view.setQuiz(quizView);
+        return view;
+    }
+
+    private QuestionView toSnapshotQuestionView(QuizAttemptQuestion assignment,
+                                                QuizAnswer answer,
+                                                boolean includeCorrect) {
+        Question snapshot = Question.builder()
+                .id(assignment.getQuestion().getId())
+                .questionText(QuizQuestionTextNormalizer.stripCheckpointPrefix(
+                        assignment.getQuestionTextSnapshot()))
+                .optionsJson(assignment.getOptionsJsonSnapshot())
+                .correctAnswer(assignment.getCorrectAnswerSnapshot())
+                .points(assignment.getPointsSnapshot())
+                .displayOrder(assignment.getDisplayOrder())
+                .build();
+        if (assignment.getQuestionTypeSnapshot() != null) {
+            try {
+                snapshot.setQuestionType(QuestionType.valueOf(assignment.getQuestionTypeSnapshot()));
+            } catch (IllegalArgumentException ignored) {
+                snapshot.setQuestionType(QuestionType.SINGLE_CHOICE);
+            }
+        }
+        QuestionView view = toQuestionView(snapshot, includeCorrect);
+        view.setSelectedOptionIds(answer == null
+                ? List.of()
+                : readIntegerList(answer.getSelectedOptionsJson()));
         return view;
     }
 

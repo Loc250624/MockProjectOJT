@@ -43,9 +43,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -144,11 +146,73 @@ class StudentAssessmentServiceTest {
         StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
 
         assertEquals(501, response.getAttemptId());
-        assertEquals(List.of(401, 402), response.getQuestions().stream().map(item -> item.getId()).toList());
+        assertEquals(
+                new HashSet<>(List.of(401, 402)),
+                new HashSet<>(response.getQuestions().stream().map(item -> item.getId()).toList())
+        );
         assertEquals("A", response.getAnswers().get(401));
         assertFalse(response.getSubmitted());
         assertTrue(objectMapper.readTree(response.getQuestions().get(0).getOptionsJson()).get(0).isTextual());
         assertFalse(response.getQuestions().get(0).getOptionsJson().contains("correct"));
+        assertEquals(2, objectMapper.readTree(pending.getSubmittedContent()).path("questionIds").size());
+        verify(submissionRepository).save(pending);
+    }
+
+    @Test
+    void quizStartAssignsAndPersistsTenRandomQuestionsFromBank() throws Exception {
+        stubAccessible(quizLesson);
+        List<Question> questionBank = IntStream.rangeClosed(401, 500)
+                .mapToObj(id -> Question.builder()
+                        .id(id)
+                        .quiz(quiz)
+                        .questionText("Question " + id)
+                        .optionsJson("[\"A\",\"B\"]")
+                        .correctAnswer("A")
+                        .build())
+                .toList();
+        when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(questionBank);
+        when(submissionRepository.findDraftsForUpdate(1, 201, SubmissionStatus.PENDING_REVIEW)).thenReturn(List.of());
+        when(submissionRepository.save(any(Submission.class))).thenAnswer(invocation -> {
+            Submission saved = invocation.getArgument(0);
+            saved.setId(501);
+            return saved;
+        });
+
+        StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
+
+        assertEquals(10, response.getQuestions().size());
+        assertEquals(10, new HashSet<>(response.getQuestions().stream().map(item -> item.getId()).toList()).size());
+        ArgumentCaptor<Submission> attemptCaptor = ArgumentCaptor.forClass(Submission.class);
+        verify(submissionRepository).save(attemptCaptor.capture());
+        var payload = objectMapper.readTree(attemptCaptor.getValue().getSubmittedContent());
+        assertEquals(10, payload.path("questionIds").size());
+        assertEquals(
+                response.getQuestions().stream().map(item -> item.getId()).toList(),
+                objectMapper.convertValue(payload.path("questionIds"), objectMapper.getTypeFactory()
+                        .constructCollectionType(List.class, Integer.class))
+        );
+    }
+
+    @Test
+    void quizRefreshKeepsThePersistedQuestionSetAndOrder() {
+        stubAccessible(quizLesson);
+        Submission pending = Submission.builder()
+                .id(501)
+                .student(student)
+                .lesson(quizLesson)
+                .status(SubmissionStatus.PENDING_REVIEW)
+                .submittedContent("{\"type\":\"QUIZ\",\"state\":\"DRAFT\",\"questionIds\":[402,401],\"answers\":{}}")
+                .build();
+        when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
+        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301))
+                .thenReturn(List.of(questionOne, questionTwo));
+        when(submissionRepository.findDraftsForUpdate(1, 201, SubmissionStatus.PENDING_REVIEW))
+                .thenReturn(List.of(pending));
+
+        StudentQuizAttemptDTO response = service.getOrStartQuiz(10, 201);
+
+        assertEquals(List.of(402, 401), response.getQuestions().stream().map(item -> item.getId()).toList());
         verify(submissionRepository, never()).save(any());
     }
 
@@ -225,7 +289,13 @@ class StudentAssessmentServiceTest {
     @Test
     void quizDraftRejectsQuestionFromAnotherQuiz() {
         stubAccessible(quizLesson);
-        Submission pending = Submission.builder().id(501).student(student).lesson(quizLesson).status(SubmissionStatus.PENDING_REVIEW).build();
+        Submission pending = Submission.builder()
+                .id(501)
+                .student(student)
+                .lesson(quizLesson)
+                .status(SubmissionStatus.PENDING_REVIEW)
+                .submittedContent("{\"type\":\"QUIZ\",\"state\":\"DRAFT\",\"questionIds\":[401],\"answers\":{}}")
+                .build();
         when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
         when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(301)).thenReturn(List.of(questionOne));
         when(submissionRepository.findOwnedLessonSubmission(501, 1, 201)).thenReturn(Optional.of(pending));

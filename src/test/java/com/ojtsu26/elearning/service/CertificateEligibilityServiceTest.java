@@ -10,6 +10,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CertificateRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.LessonRepository;
+import com.ojtsu26.elearning.repository.QuizAttemptRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.service.impl.CertificateEligibilityServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -34,6 +36,8 @@ class CertificateEligibilityServiceTest {
     @Mock
     private SubmissionRepository submissionRepository;
     @Mock
+    private QuizAttemptRepository quizAttemptRepository;
+    @Mock
     private CertificateRepository certificateRepository;
 
     private CertificateEligibilityServiceImpl service;
@@ -41,7 +45,12 @@ class CertificateEligibilityServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CertificateEligibilityServiceImpl(enrollmentRepository, lessonRepository, submissionRepository, certificateRepository);
+        service = new CertificateEligibilityServiceImpl(
+                enrollmentRepository,
+                lessonRepository,
+                submissionRepository,
+                quizAttemptRepository,
+                certificateRepository);
         User student = User.builder().id(1).status(UserStatus.ACTIVE).build();
         Course course = Course.builder().id(10).status(CourseStatus.APPROVED).build();
         enrollment = CourseEnrollment.builder()
@@ -73,7 +82,10 @@ class CertificateEligibilityServiceTest {
         when(lessonRepository.countRequiredContentLessons(10)).thenReturn(2L);
         when(lessonRepository.countCompletedRequiredContentLessons(10, 20)).thenReturn(1L);
         when(lessonRepository.countRequiredAssessmentLessons(10)).thenReturn(1L);
-        when(submissionRepository.countPassedRequiredAssessmentLessons(1, 10)).thenReturn(1L);
+        when(submissionRepository.findPassedRequiredAssessmentLessonIds(1, 10))
+                .thenReturn(List.of(101));
+        when(quizAttemptRepository.findPassedQuizLessonIds(1, 10, new BigDecimal("70.00")))
+                .thenReturn(List.of());
 
         CertificateEligibilityResponse response = service.evaluateEligibility(20, 1);
 
@@ -87,7 +99,10 @@ class CertificateEligibilityServiceTest {
         when(lessonRepository.countRequiredContentLessons(10)).thenReturn(1L);
         when(lessonRepository.countCompletedRequiredContentLessons(10, 20)).thenReturn(1L);
         when(lessonRepository.countRequiredAssessmentLessons(10)).thenReturn(1L);
-        when(submissionRepository.countPassedRequiredAssessmentLessons(1, 10)).thenReturn(0L);
+        when(submissionRepository.findPassedRequiredAssessmentLessonIds(1, 10))
+                .thenReturn(List.of());
+        when(quizAttemptRepository.findPassedQuizLessonIds(1, 10, new BigDecimal("70.00")))
+                .thenReturn(List.of());
 
         CertificateEligibilityResponse response = service.evaluateEligibility(20, 1);
 
@@ -101,7 +116,10 @@ class CertificateEligibilityServiceTest {
         when(lessonRepository.countRequiredContentLessons(10)).thenReturn(2L);
         when(lessonRepository.countCompletedRequiredContentLessons(10, 20)).thenReturn(2L);
         when(lessonRepository.countRequiredAssessmentLessons(10)).thenReturn(1L);
-        when(submissionRepository.countPassedRequiredAssessmentLessons(1, 10)).thenReturn(1L);
+        when(submissionRepository.findPassedRequiredAssessmentLessonIds(1, 10))
+                .thenReturn(List.of(101));
+        when(quizAttemptRepository.findPassedQuizLessonIds(1, 10, new BigDecimal("70.00")))
+                .thenReturn(List.of());
 
         CertificateEligibilityResponse response = service.evaluateEligibility(20, 1);
 
@@ -118,5 +136,39 @@ class CertificateEligibilityServiceTest {
 
         assertFalse(response.isEligible());
         assertTrue(response.getUnmetRequirements().contains("Course is not approved for certificate issuance."));
+    }
+
+    @Test
+    void canonicalQuizAttemptCountsAsPassedAssessment() {
+        when(enrollmentRepository.findById(20)).thenReturn(Optional.of(enrollment));
+        when(lessonRepository.countRequiredContentLessons(10)).thenReturn(2L);
+        when(lessonRepository.countCompletedRequiredContentLessons(10, 20)).thenReturn(2L);
+        when(lessonRepository.countRequiredAssessmentLessons(10)).thenReturn(1L);
+        when(submissionRepository.findPassedRequiredAssessmentLessonIds(1, 10))
+                .thenReturn(List.of());
+        when(quizAttemptRepository.findPassedQuizLessonIds(1, 10, new BigDecimal("70.00")))
+                .thenReturn(List.of(101));
+
+        CertificateEligibilityResponse response = service.evaluateEligibility(20, 1);
+
+        assertTrue(response.isEligible());
+        assertEquals(1L, response.getPassedRequiredAssessments());
+    }
+
+    @Test
+    void legacyAndCanonicalRecordsForSameLessonAreNotDoubleCounted() {
+        when(enrollmentRepository.findById(20)).thenReturn(Optional.of(enrollment));
+        when(lessonRepository.countRequiredContentLessons(10)).thenReturn(2L);
+        when(lessonRepository.countCompletedRequiredContentLessons(10, 20)).thenReturn(2L);
+        when(lessonRepository.countRequiredAssessmentLessons(10)).thenReturn(1L);
+        when(submissionRepository.findPassedRequiredAssessmentLessonIds(1, 10))
+                .thenReturn(List.of(101));
+        when(quizAttemptRepository.findPassedQuizLessonIds(1, 10, new BigDecimal("70.00")))
+                .thenReturn(List.of(101));
+
+        CertificateEligibilityResponse response = service.evaluateEligibility(20, 1);
+
+        assertTrue(response.isEligible());
+        assertEquals(1L, response.getPassedRequiredAssessments());
     }
 }
