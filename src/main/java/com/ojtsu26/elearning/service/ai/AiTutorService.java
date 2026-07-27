@@ -1,30 +1,45 @@
 package com.ojtsu26.elearning.service.ai;
 
 import com.ojtsu26.elearning.config.AiTutorProperties;
+import com.ojtsu26.elearning.dto.request.AiChatbotPageContextDTO;
 import com.ojtsu26.elearning.dto.request.AiTutorChatMessageDTO;
 import com.ojtsu26.elearning.dto.request.AiTutorChatRequestDTO;
 import com.ojtsu26.elearning.dto.response.AiTutorChatResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.StudentLearningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiTutorService {
 
-    private static final String FIXED_REFUSAL = "I can only help with the current lesson or course. You can ask me to summarize the lesson, explain a concept, give an example, or quiz you.";
+    private static final String FIXED_REFUSAL = "I can only help with the LumiNa website, its learning features, and authorized lesson content. I cannot perform account actions, reveal protected data, or answer unrelated requests.";
     private static final Set<String> ALLOWED_ROLES = Set.of("user", "assistant");
     private static final Set<String> ALLOWED_ACTIONS = Set.of("", "SUMMARY", "EXPLAIN_SIMPLY", "EXAMPLE", "QUIZ_ME");
+    private static final Set<String> ALLOWED_ENTITY_TYPES = Set.of(
+            "course", "lesson", "quiz", "coding-assignment", "certificate", "enrollment",
+            "payment", "blog", "profile", "dashboard", "navigation", "authentication");
+    private static final Pattern PAGE_KEY_PATTERN = Pattern.compile("[a-z0-9-]{1,64}");
+    private static final Pattern ENTITY_ID_PATTERN = Pattern.compile("\\d{1,18}");
+    private static final Pattern PATH_PATTERN = Pattern.compile("/[A-Za-z0-9/_\\-.]*");
+    private static final int MAX_PAGE_SNIPPETS = 12;
+    private static final int MAX_PAGE_SNIPPET_CHARS = 320;
+    private static final int MAX_PAGE_CONTEXT_CHARS = 2800;
 
     private final StudentLearningService studentLearningService;
     private final AiTutorTopicGuard topicGuard;
@@ -34,40 +49,93 @@ public class AiTutorService {
     private final AiTutorProperties properties;
 
     public AiTutorChatResponseDTO chat(CustomUserDetails principal, AiTutorChatRequestDTO request) {
-        User student = principal == null ? null : principal.getUser();
-        if (student == null) {
+        User user = principal == null ? null : principal.getUser();
+        if (user == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
+        if (request == null || request.getLessonId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Lesson ID is required.");
+        }
+        return chatInternal(principal, request, "user:" + user.getId(), true);
+    }
+
+    public AiTutorChatResponseDTO chatGlobal(CustomUserDetails principal,
+                                             AiTutorChatRequestDTO request,
+                                             String anonymousSessionKey) {
+        User user = principal == null ? null : principal.getUser();
+        String clientKey = user == null ? "session:" + safeKey(anonymousSessionKey) : "user:" + user.getId();
+        return chatInternal(principal, request, clientKey, false);
+    }
+
+    private AiTutorChatResponseDTO chatInternal(CustomUserDetails principal,
+                                                AiTutorChatRequestDTO request,
+                                                String clientKey,
+                                                boolean requireLessonContext) {
+        User user = principal == null ? null : principal.getUser();
         String message = normalizeMessage(request == null ? null : request.getMessage());
         String action = normalizeAction(request == null ? null : request.getAction());
         validateMessage(message);
-        rateLimiter.check(student.getId());
+        rateLimiter.check(clientKey);
 
-        AiTutorLessonContext context = studentLearningService.getAuthorizedAiTutorLessonContext(request.getLessonId());
+        AiTutorLessonContext context = resolveLessonContext(user, request, requireLessonContext);
+        AiChatbotPageContextDTO pageContext = sanitizePageContext(request == null ? null : request.getPageContext());
         AiTutorTopicGuard.GuardResult guard = topicGuard.evaluate(message, context);
         if (!guard.allowed()) {
-            return refusal(guard.reasonCode());
+            return refusal(guard.reasonCode(), conversationId(request), context, pageContext);
         }
 
         List<AiTutorChatMessageDTO> history = sanitizeHistory(request.getHistory());
-        AiTutorPrompt prompt = promptFactory.create(context, message, action, history);
+        String verifiedRole = user == null || user.getRole() == null ? "ANONYMOUS" : user.getRole().name();
+        AiTutorPrompt prompt = promptFactory.create(
+                context,
+                pageContext,
+                verifiedRole,
+                user != null,
+                message,
+                action,
+                history);
         AiTutorProviderResponse providerResponse = provider.generate(prompt);
+        if (providerResponse == null) {
+            throw new AiTutorUnavailableException("AI Chatbot is temporarily unavailable.");
+        }
         String answer = providerResponse.answer() == null ? "" : providerResponse.answer().trim();
         if (AiTutorPromptFactory.OUT_OF_SCOPE_SENTINEL.equals(answer)) {
-            return refusal("OUT_OF_SCOPE");
+            return refusal("OUT_OF_SCOPE", conversationId(request), context, pageContext);
         }
         if (answer.isBlank()) {
-            throw new AiTutorUnavailableException("AI Tutor returned an empty response.");
+            throw new AiTutorUnavailableException("AI Chatbot returned an empty response.");
         }
 
-        log.info("AI Tutor response: studentId={}, lessonId={}, requestId={}, inputChars={}, outputChars={}",
-                student.getId(), request.getLessonId(), providerResponse.requestId(), message.length(), answer.length());
+        log.info("AI Chatbot response: authenticated={}, role={}, scope={}, requestId={}, inputChars={}, outputChars={}",
+                user != null, verifiedRole, context == null ? "SITE" : "LESSON",
+                providerResponse.requestId(), message.length(), answer.length());
         return AiTutorChatResponseDTO.builder()
+                .conversationId(conversationId(request))
                 .answer(answer)
                 .refused(false)
                 .suggestedQuestions(suggestions())
                 .requestId(providerResponse.requestId())
+                .scope(context == null ? "SITE" : "LESSON")
+                .usedPageContext(pageContext != null)
                 .build();
+    }
+
+    private AiTutorLessonContext resolveLessonContext(User user,
+                                                      AiTutorChatRequestDTO request,
+                                                      boolean requireLessonContext) {
+        Integer lessonId = request == null ? null : request.getLessonId();
+        if (requireLessonContext) {
+            return studentLearningService.getAuthorizedAiTutorLessonContext(lessonId);
+        }
+        if (lessonId == null || user == null || user.getRole() != Role.STUDENT) {
+            return null;
+        }
+        try {
+            return studentLearningService.getAuthorizedAiTutorLessonContext(lessonId);
+        } catch (BusinessException ex) {
+            log.info("AI Chatbot omitted an unavailable optional lesson context for an authenticated request.");
+            return null;
+        }
     }
 
     private String normalizeMessage(String message) {
@@ -86,7 +154,7 @@ public class AiTutorService {
     private String normalizeAction(String action) {
         String normalized = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);
         if (!ALLOWED_ACTIONS.contains(normalized)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Unsupported AI Tutor action.");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Unsupported AI Chatbot action.");
         }
         return normalized;
     }
@@ -105,21 +173,103 @@ public class AiTutorService {
                 .toList();
     }
 
-    private AiTutorChatResponseDTO refusal(String reasonCode) {
+    private AiTutorChatResponseDTO refusal(String reasonCode,
+                                           String conversationId,
+                                           AiTutorLessonContext context,
+                                           AiChatbotPageContextDTO pageContext) {
         return AiTutorChatResponseDTO.builder()
+                .conversationId(conversationId)
                 .answer(FIXED_REFUSAL)
                 .refused(true)
                 .reasonCode(reasonCode == null ? "OUT_OF_SCOPE" : reasonCode)
                 .suggestedQuestions(suggestions())
+                .scope(context == null ? "SITE" : "LESSON")
+                .usedPageContext(pageContext != null)
                 .build();
     }
 
     private List<String> suggestions() {
         return List.of(
-                "Summarize this lesson",
-                "Explain the main concept",
-                "Give me an example",
+                "Summarize",
+                "Explain simply",
+                "Give an example",
                 "Quiz me"
         );
+    }
+
+    private String conversationId(AiTutorChatRequestDTO request) {
+        String value = request == null ? null : request.getConversationId();
+        if (value != null) {
+            try {
+                return UUID.fromString(value.trim()).toString();
+            } catch (IllegalArgumentException ignored) {
+                // Replace malformed client identifiers with an opaque server-generated id.
+            }
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private AiChatbotPageContextDTO sanitizePageContext(AiChatbotPageContextDTO source) {
+        if (source == null) {
+            return null;
+        }
+        String path = sanitizePath(source.getPath());
+        String pageKey = sanitizeToken(source.getPageKey(), PAGE_KEY_PATTERN);
+        String entityType = sanitizeToken(source.getEntityType(), PAGE_KEY_PATTERN);
+        String entityId = sanitizeToken(source.getEntityId(), ENTITY_ID_PATTERN);
+        List<String> visibleText = sanitizeVisibleText(source.getVisibleText());
+        if (!ALLOWED_ENTITY_TYPES.contains(entityType)) {
+            entityType = "";
+            entityId = "";
+        }
+        if (path.isBlank() && pageKey.isBlank() && entityType.isBlank() && visibleText.isEmpty()) {
+            return null;
+        }
+        return new AiChatbotPageContextDTO(path, pageKey, entityType, entityId, visibleText);
+    }
+
+    private List<String> sanitizeVisibleText(List<String> source) {
+        if (source == null || source.isEmpty()) {
+            return List.of();
+        }
+        Set<String> unique = new LinkedHashSet<>();
+        int totalChars = 0;
+        for (String value : source) {
+            String normalized = value == null ? "" : value.replaceAll("\\s+", " ").trim();
+            if (normalized.isBlank()) {
+                continue;
+            }
+            if (normalized.length() > MAX_PAGE_SNIPPET_CHARS) {
+                normalized = normalized.substring(0, MAX_PAGE_SNIPPET_CHARS) + " [TRUNCATED]";
+            }
+            if (totalChars + normalized.length() > MAX_PAGE_CONTEXT_CHARS) {
+                break;
+            }
+            if (unique.add(normalized)) {
+                totalChars += normalized.length();
+            }
+            if (unique.size() >= MAX_PAGE_SNIPPETS) {
+                break;
+            }
+        }
+        return new ArrayList<>(unique);
+    }
+
+    private String sanitizePath(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.length() > 180 || !PATH_PATTERN.matcher(normalized).matches()) {
+            return "";
+        }
+        return normalized;
+    }
+
+    private String sanitizeToken(String value, Pattern pattern) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        return pattern.matcher(normalized).matches() ? normalized : "";
+    }
+
+    private String safeKey(String value) {
+        String normalized = value == null ? "" : value.trim();
+        return normalized.matches("[A-Za-z0-9-]{8,128}") ? normalized : UUID.randomUUID().toString();
     }
 }

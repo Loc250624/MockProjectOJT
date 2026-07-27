@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.service.ai;
 
 import com.ojtsu26.elearning.config.AiTutorProperties;
+import com.ojtsu26.elearning.dto.request.AiChatbotPageContextDTO;
 import com.ojtsu26.elearning.dto.request.AiTutorChatRequestDTO;
 import com.ojtsu26.elearning.dto.response.AiTutorChatResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
@@ -13,6 +14,7 @@ import com.ojtsu26.elearning.service.StudentLearningService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -172,6 +174,34 @@ class AiTutorServiceTest {
         assertEquals("OUT_OF_SCOPE", response.getReasonCode());
         assertNull(response.getRequestId());
         assertTrue(response.getAnswer().contains("I can only help"));
+    }
+
+    @Test
+    void globalChatUsesSanitizedVisiblePageContentInsteadOfGenericGuessing() {
+        CapturingProvider provider = new CapturingProvider("The page shows Java Streams by LumiNa Author.", "resp_page");
+        AiTutorService service = service(provider);
+        AiTutorChatRequestDTO request = new AiTutorChatRequestDTO();
+        request.setMessage("What is on this page?");
+        request.setPageContext(new AiChatbotPageContextDTO(
+                "/blogs",
+                "blogs",
+                "blog",
+                "",
+                List.of(
+                        "Published Blogs",
+                        "Java Streams By LumiNa Author A practical introduction.",
+                        "x".repeat(400)
+                )));
+
+        AiTutorChatResponseDTO response = service.chatGlobal(null, request, "anonymous-session-123");
+
+        assertFalse(response.isRefused());
+        assertTrue(response.isUsedPageContext());
+        String promptInput = provider.prompt.get().input();
+        assertTrue(promptInput.contains("<<<VISIBLE_PAGE_TEXT>>>"));
+        assertTrue(promptInput.contains("Java Streams By LumiNa Author"));
+        assertTrue(promptInput.contains("[TRUNCATED]"));
+        assertTrue(promptInput.contains("<<<END_VISIBLE_PAGE_TEXT>>>"));
     }
 
     private AiTutorService service(AiTutorProvider provider) {

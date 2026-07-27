@@ -522,6 +522,7 @@
         <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}">Login</a>
         <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}">Register</a>
     </div>
+    <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
 </footer>
 
 <!-- ===== PORTAL FOOTER ===== -->
@@ -541,6 +542,7 @@
         <a href="#">Institutional Access</a>
         <a href="#">Support</a>
     </div>
+    <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
     <script th:src="@{/js/csrf-fetch.js}"></script>
     <script th:src="@{/js/auth/auth.js}"></script>
 </div>

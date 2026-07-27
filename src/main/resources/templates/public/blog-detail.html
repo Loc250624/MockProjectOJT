@@ -20,7 +20,7 @@
     <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
 
-    <article style="background:white;border:1px solid var(--lumina-gray-200);border-radius:8px;padding:2rem;margin-bottom:1.5rem;">
+    <article data-ai-page-context style="background:white;border:1px solid var(--lumina-gray-200);border-radius:8px;padding:2rem;margin-bottom:1.5rem;">
         <div style="font-size:0.75rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;margin-bottom:0.75rem;"
              th:text="${blog.publishedAt == null ? 'Published' : #temporals.format(blog.publishedAt, 'dd MMM yyyy HH:mm')}">Published</div>
         <h1 class="section-heading" th:text="${blog.title}">Blog title</h1>

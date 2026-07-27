@@ -7,6 +7,7 @@ import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.ai.AiTutorRateLimitException;
 import com.ojtsu26.elearning.service.ai.AiTutorService;
 import com.ojtsu26.elearning.service.ai.AiTutorUnavailableException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,18 +19,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/student/ai-tutor")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class AiTutorController {
 
     private final AiTutorService aiTutorService;
 
-    @PostMapping("/chat")
+    @PostMapping({"/student/ai-tutor/chat", "/ai-chatbot/chat"})
     public ResponseEntity<ApiResponse<AiTutorChatResponseDTO>> chat(
             @AuthenticationPrincipal CustomUserDetails currentUser,
+            HttpServletRequest servletRequest,
             @Valid @RequestBody AiTutorChatRequestDTO request) {
         try {
-            return ResponseEntity.ok(ApiResponse.success(aiTutorService.chat(currentUser, request)));
+            boolean legacyRoute = servletRequest.getRequestURI().startsWith("/api/student/ai-tutor/");
+            AiTutorChatResponseDTO response = legacyRoute
+                    ? aiTutorService.chat(currentUser, request)
+                    : aiTutorService.chatGlobal(currentUser, request, servletRequest.getSession(true).getId());
+            return ResponseEntity.ok(ApiResponse.success(response));
         } catch (AiTutorRateLimitException ex) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage()));

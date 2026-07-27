@@ -28,10 +28,10 @@ public class OpenAiResponsesClient implements AiTutorProvider {
     @Override
     public AiTutorProviderResponse generate(AiTutorPrompt prompt) {
         if (!properties.isEnabled()) {
-            throw new AiTutorUnavailableException("AI Tutor is disabled.");
+            throw new AiTutorUnavailableException("AI Chatbot is disabled.");
         }
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
-            throw new AiTutorUnavailableException("AI Tutor is not configured.");
+            throw new AiTutorUnavailableException("AI Chatbot is not configured.");
         }
 
         try {
@@ -53,10 +53,10 @@ public class OpenAiResponsesClient implements AiTutorProvider {
             String requestId = root.path("id").asText(null);
             return new AiTutorProviderResponse(answer, requestId);
         } catch (IOException e) {
-            throw new AiTutorUnavailableException("AI Tutor is temporarily unavailable.", e);
+            throw new AiTutorUnavailableException("AI Chatbot is temporarily unavailable.", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new AiTutorUnavailableException("AI Tutor request was interrupted.", e);
+            throw new AiTutorUnavailableException("AI Chatbot request was interrupted.", e);
         }
     }
 
@@ -103,18 +103,18 @@ public class OpenAiResponsesClient implements AiTutorProvider {
         String code = error.code() == null ? "" : error.code();
         String type = error.type() == null ? "" : error.type();
         if (statusCode == 401) {
-            return "AI Tutor OpenAI API key is invalid or unauthorized.";
+            return "AI Chatbot OpenAI API key is invalid or unauthorized.";
         }
         if (statusCode == 404 || "model_not_found".equals(code)) {
-            return "AI Tutor OpenAI model is not available. Check OPENAI_MODEL.";
+            return "AI Chatbot OpenAI model is not available. Check OPENAI_MODEL.";
         }
         if (statusCode == 429 && ("insufficient_quota".equals(code) || "insufficient_quota".equals(type))) {
-            return "AI Tutor OpenAI quota or billing credit is unavailable.";
+            return "AI Chatbot OpenAI quota or billing credit is unavailable.";
         }
         if (statusCode == 429) {
-            return "AI Tutor OpenAI rate limit was reached. Please try again later.";
+            return "AI Chatbot OpenAI rate limit was reached. Please try again later.";
         }
-        return "AI Tutor is temporarily unavailable.";
+        return "AI Chatbot is temporarily unavailable.";
     }
 
     private String extractText(JsonNode root) {

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="widget"
+     class="ai-chatbot"
+     data-ai-chatbot-root
+     th:data-chat-scope="${#authentication?.name ?: 'anonymous'}">
+    <link rel="stylesheet" th:href="@{/css/ai-chatbot.css}">
+
+    <button type="button"
+            class="ai-chatbot-toggle"
+            data-ai-chatbot-toggle
+            aria-label="Open AI Chatbot"
+            aria-controls="ai-chatbot-panel"
+            aria-expanded="false">
+        <img th:src="@{/images/hubot.svg}" class="ai-chatbot-toggle-icon" alt="" aria-hidden="true">
+        <span class="sr-only">Open AI Chatbot</span>
+    </button>
+
+    <section class="ai-chatbot-panel"
+             id="ai-chatbot-panel"
+             data-ai-chatbot-panel
+             role="dialog"
+             aria-labelledby="ai-chatbot-title"
+             hidden>
+        <header class="ai-chatbot-header">
+            <strong id="ai-chatbot-title">AI Chatbot</strong>
+            <button type="button"
+                    class="ai-chatbot-close"
+                    data-ai-chatbot-close
+                    aria-label="Close AI Chatbot">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </header>
+
+        <div class="ai-chatbot-messages"
+             data-ai-chatbot-messages
+             role="log"
+             aria-live="polite"
+             aria-relevant="additions">
+            <div class="ai-chatbot-message assistant" data-ai-chatbot-greeting>
+                <strong>AI Chatbot</strong>
+                <div class="ai-chatbot-bubble">Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?</div>
+            </div>
+            <div class="ai-chatbot-quick-actions"
+                 data-ai-chatbot-quick-actions
+                 aria-label="Suggested questions">
+                <button type="button" data-ai-chatbot-action="SUMMARY">Summarize</button>
+                <button type="button" data-ai-chatbot-action="EXPLAIN_SIMPLY">Explain simply</button>
+                <button type="button" data-ai-chatbot-action="EXAMPLE">Give an example</button>
+                <button type="button" data-ai-chatbot-action="QUIZ_ME">Quiz me</button>
+            </div>
+        </div>
+
+        <p class="ai-chatbot-status" data-ai-chatbot-status aria-live="polite"></p>
+        <form class="ai-chatbot-form" data-ai-chatbot-form>
+            <label class="sr-only" for="ai-chatbot-input">Message AI Chatbot</label>
+            <textarea id="ai-chatbot-input"
+                      data-ai-chatbot-input
+                      rows="2"
+                      maxlength="1200"
+                      placeholder="Ask about this website"></textarea>
+            <button type="submit" data-ai-chatbot-send aria-label="Send message">
+                <span aria-hidden="true">&#10140;</span>
+            </button>
+        </form>
+    </section>
+
+    <span hidden
+          data-csrf-token
+          th:data-csrf-token="${_csrf?.token}"
+          th:data-csrf-header="${_csrf?.headerName}"
+          th:data-csrf-parameter="${_csrf?.parameterName}"></span>
+    <script th:src="@{/js/csrf-fetch.js}" defer></script>
+    <script th:src="@{/js/ai-chatbot.js}" defer></script>
+</div>
+
+</html>

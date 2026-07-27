@@ -16,6 +16,7 @@ import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.ai.AiTutorProvider;
 import com.ojtsu26.elearning.service.ai.AiTutorProviderResponse;
 import com.ojtsu26.elearning.service.ai.AiTutorRateLimiter;
+import com.ojtsu26.elearning.service.ai.AiTutorUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -197,5 +200,89 @@ class AiTutorControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.refused").value(true))
                 .andExpect(jsonPath("$.data.reasonCode").value("PROMPT_INJECTION"));
+    }
+
+    @Test
+    void anonymousVisitorCanAskForPublicWebsiteGuidanceWithoutLessonId() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse("Use the Courses link to browse the public catalog.", "resp_public"));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "message":"Where can I browse courses?",
+                                  "conversationId":"67ea6c59-02e8-4be2-b6fa-343dc1ef7068",
+                                  "pageContext":{
+                                    "path":"/courses",
+                                    "pageKey":"courses",
+                                    "entityType":"course",
+                                    "entityId":""
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.answer").value("Use the Courses link to browse the public catalog."))
+                .andExpect(jsonPath("$.data.conversationId").value("67ea6c59-02e8-4be2-b6fa-343dc1ef7068"))
+                .andExpect(jsonPath("$.data.scope").value("SITE"))
+                .andExpect(jsonPath("$.data.usedPageContext").value(true));
+    }
+
+    @Test
+    void authenticatedStudentCanAskSiteQuestionWithoutLessonId() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse("Open Certificates from the student navigation.", "resp_site"));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"message":"How do I find my certificates?","pageContext":{"path":"/student/certificates","pageKey":"certificates","entityType":"certificate"}}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("SITE"))
+                .andExpect(jsonPath("$.data.answer").value("Open Certificates from the student navigation."))
+                .andExpect(jsonPath("$.data.conversationId", matchesPattern(
+                        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")));
+    }
+
+    @Test
+    void globalRouteOmitsUnauthorizedLessonContextWithoutDisclosingEntity() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse("I can still help with public LumiNa navigation.", "resp_safe"));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"lessonId":%d,"message":"How do I return to my dashboard?","pageContext":{"path":"/student/learning","pageKey":"student-learning","entityType":"lesson","entityId":"%d"}}
+                                """.formatted(otherLesson.getId(), otherLesson.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("SITE"))
+                .andExpect(jsonPath("$.data.answer").value("I can still help with public LumiNa navigation."));
+    }
+
+    @Test
+    void globalRouteStillRequiresCsrf() throws Exception {
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"Where are courses?\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void providerFailureUsesSafeServiceUnavailableResponse() throws Exception {
+        doThrow(new AiTutorUnavailableException("AI Chatbot is temporarily unavailable."))
+                .when(aiTutorProvider).generate(any());
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"How do I browse courses?\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("AI Chatbot is temporarily unavailable."));
     }
 }

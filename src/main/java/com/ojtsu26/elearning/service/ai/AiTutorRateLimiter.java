@@ -17,29 +17,33 @@ public class AiTutorRateLimiter {
 
     private final AiTutorProperties properties;
     private final Clock clock = Clock.systemUTC();
-    private final ConcurrentMap<Integer, Deque<Instant>> requestsByStudent = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Deque<Instant>> requestsByClient = new ConcurrentHashMap<>();
 
     public void check(Integer studentId) {
-        if (studentId == null) {
-            throw new AiTutorRateLimitException("Too many AI Tutor requests. Please wait a moment.");
+        check(studentId == null ? null : "user:" + studentId);
+    }
+
+    public void check(String clientKey) {
+        if (clientKey == null || clientKey.isBlank()) {
+            throw new AiTutorRateLimitException("Too many AI Chatbot requests. Please wait a moment.");
         }
         int maxRequests = Math.max(1, properties.getRateLimitMaxRequests());
         long windowSeconds = Math.max(1, properties.getRateLimitWindowSeconds());
         Instant now = Instant.now(clock);
         Instant cutoff = now.minusSeconds(windowSeconds);
-        Deque<Instant> bucket = requestsByStudent.computeIfAbsent(studentId, ignored -> new ArrayDeque<>());
+        Deque<Instant> bucket = requestsByClient.computeIfAbsent(clientKey, ignored -> new ArrayDeque<>());
         synchronized (bucket) {
             while (!bucket.isEmpty() && bucket.peekFirst().isBefore(cutoff)) {
                 bucket.removeFirst();
             }
             if (bucket.size() >= maxRequests) {
-                throw new AiTutorRateLimitException("Too many AI Tutor requests. Please wait a moment.");
+                throw new AiTutorRateLimitException("Too many AI Chatbot requests. Please wait a moment.");
             }
             bucket.addLast(now);
         }
     }
 
     public void clear() {
-        requestsByStudent.clear();
+        requestsByClient.clear();
     }
 }

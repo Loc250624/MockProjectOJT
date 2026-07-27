@@ -1,0 +1,33 @@
+{
+  "task": "Convert existing AI Tutor into a global AI Chatbot",
+  "project": "LUmiNa/OJTSU26 E-Learning",
+  "priority": "high",
+  "must_have": [
+    "Rename visible AI Tutor labels to AI Chatbot",
+    "Remove lesson subtitle below chatbot title",
+    "Render assistant greeting before quick actions",
+    "Show quick actions once per conversation only",
+    "Persist consumed quick-action state across close/reopen and route changes",
+    "Make lessonId optional",
+    "Support site-wide page-aware and role-aware answers",
+    "Mount one chatbot icon in all shared layouts/routes",
+    "Keep chatbot read-only and permission-safe",
+    "Preserve existing secrets configuration and backward compatibility"
+  ],
+  "must_not": [
+    "Disable CSRF globally",
+    "Expose API key in frontend",
+    "Trust userId or role from client",
+    "Leak unpublished or cross-user content",
+    "Mutate grades, progress, completion, enrollment or payment",
+    "Create duplicate chatbot instances",
+    "Modify unrelated modules"
+  ],
+  "reference_files": [
+    "00_CODEX_MASTER_PROMPT.md",
+    "01_REQUIREMENTS_AND_SCOPE.md",
+    "10_ACCEPTANCE_CRITERIA.md",
+    "assets/current-ai-tutor-design.png",
+    "prototype/ai-chatbot-desired.html"
+  ]
+}

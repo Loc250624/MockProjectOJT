@@ -29,6 +29,9 @@ public class AiTutorTopicGuard {
     }
 
     private boolean hasContextOverlap(String message, AiTutorLessonContext context) {
+        if (context == null) {
+            return false;
+        }
         Set<String> contextTerms = Arrays.stream(normalize(String.join(" ",
                         safe(context.courseTitle()),
                         safe(context.sectionTitle()),
