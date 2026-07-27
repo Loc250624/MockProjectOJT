@@ -13,7 +13,7 @@
 <body class="learning-player-page">
 <header class="learning-player-header">
     <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
-        <span class="learning-brand-mark">L</span>
+        <span th:replace="~{fragments/brand :: mark}"></span>
         <span>LumiNa</span>
     </a>
     <nav class="learning-header-actions" aria-label="Learning navigation">

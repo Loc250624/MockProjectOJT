@@ -47,7 +47,7 @@
                         <input type="text" id="courseSearch" placeholder="Search courses..." oninput="filterTable(this.value)">
                     </div>
                 </div>
-                <table class="data-table lumina-table teacher-course-table">
+                <table class="data-table lumina-table teacher-course-table responsive-data-table">
                     <thead>
                         <tr>
                             <th style="padding:0.75rem 1.5rem;text-align:left;font-size:0.75rem;font-weight:600;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--lumina-gray-200);">#</th>
@@ -60,10 +60,10 @@
                     <tbody id="courseTableBody">
                         <tr th:each="crs, iterStat : ${courses}"
                             style="border-bottom:1px solid var(--lumina-gray-100);transition:background 0.15s;">
-                            <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${iterStat.count}">1</td>
-                            <td style="padding:1rem 1.5rem;">
-                                <div style="display:flex;align-items:center;gap:1rem;">
-                                    <div style="width:40px;height:40px;border-radius:8px;overflow:hidden;background:var(--lumina-gray-100);display:flex;align-items:center;justify-content:center;">
+                            <td data-label="ID" style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${crs.id}">1</td>
+                            <td class="responsive-primary" data-label="Course" style="padding:1rem 1.5rem;">
+                                <div class="teacher-course-identity" style="display:flex;align-items:center;gap:1rem;">
+                                    <div class="teacher-course-thumbnail" style="width:40px;height:40px;border-radius:8px;overflow:hidden;background:var(--lumina-gray-100);display:flex;align-items:center;justify-content:center;">
                                         <img th:if="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" th:src="${crs.thumbnailUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>
                                         <span th:unless="${crs.thumbnailUrl != null && !crs.thumbnailUrl.isEmpty()}" class="teacher-course-thumb-icon">
                                             <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
@@ -75,8 +75,8 @@
                                     </div>
                                 </div>
                             </td>
-                            <td style="padding:1rem 1.5rem;font-size:0.875rem;font-weight:600;color:var(--lumina-green);" th:text="${crs.price == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}">Free</td>
-                            <td style="padding:1rem 1.5rem;">
+                            <td data-label="Price" style="padding:1rem 1.5rem;font-size:0.875rem;font-weight:600;color:var(--lumina-green);" th:text="${crs.price == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}">Free</td>
+                            <td data-label="Status" style="padding:1rem 1.5rem;">
                                 <!-- Status badge -->
                                 <span class="badge"
                                       th:classappend="${crs.status.name() == 'DRAFT' ? 'badge-secondary' : (crs.status.name() == 'PENDING_APPROVAL' ? 'badge-warning' : (crs.status.name() == 'APPROVED' ? 'badge-success' : 'badge-secondary'))}"
@@ -87,8 +87,10 @@
                                     <strong>Rejected:</strong> <span th:text="${crs.rejectReason}"></span>
                                 </div>
                             </td>
-                            <td style="padding:1rem 1.5rem;">
-                                <div class="table-action-cell teacher-course-actions">
+                            <td class="responsive-actions-cell" data-label="Actions" style="padding:1rem 1.5rem;">
+                                <details class="responsive-row-details">
+                                    <summary>Course actions</summary>
+                                    <div class="responsive-row-detail-content table-action-cell teacher-course-actions">
 
                                     <!-- Edit: disabled for PENDING/APPROVED -->
                                     <a th:href="@{'/teacher/courses/edit/' + ${crs.id}}"
@@ -163,10 +165,11 @@
                                         </button>
                                     </form>
 
-                                </div>
+                                    </div>
+                                </details>
                             </td>
                         </tr>
-                        <tr th:if="${#lists.isEmpty(courses)}">
+                        <tr th:if="${#lists.isEmpty(courses)}" data-empty-row>
                             <td colspan="5" style="padding:3rem;text-align:center;color:var(--lumina-gray-400);font-style:italic;">
                                 No courses found. <a th:href="@{/teacher/courses/create}" style="color:var(--lumina-blue);">Create your first course →</a>
                             </td>
