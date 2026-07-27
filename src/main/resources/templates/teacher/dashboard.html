@@ -81,7 +81,7 @@
                         <p>Create a course to start tracking enrollments, progress, and revenue.</p>
                         <a th:href="@{/teacher/courses/create}" class="btn btn-primary">Create Course</a>
                     </div>
-                    <table class="lumina-table" th:unless="${#lists.isEmpty(teacherDashboard.activeCourses)}">
+                    <table class="lumina-table responsive-data-table" th:unless="${#lists.isEmpty(teacherDashboard.activeCourses)}">
                         <thead>
                             <tr>
                                 <th>Course Title</th>
@@ -94,20 +94,20 @@
                         </thead>
                         <tbody>
                             <tr th:each="course : ${teacherDashboard.activeCourses}">
-                                <td>
+                                <td class="responsive-primary" data-label="Course">
                                     <div style="font-weight:700;color:var(--lumina-gray-900);" th:text="${course.title}">Course title</div>
                                     <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${course.courseLabel}">Course ID</div>
                                 </td>
-                                <td th:text="${course.enrolledCount}">0</td>
-                                <td>
+                                <td data-label="Enrolled" th:text="${course.enrolledCount}">0</td>
+                                <td data-label="Avg completion">
                                     <div class="progress-bar-wrap">
                                         <div class="progress-bar-fill" th:style="'width:' + ${course.averageCompletionPercent} + '%;'"></div>
                                     </div>
                                     <div style="font-size:0.6875rem;color:var(--lumina-gray-500);text-align:right;margin-top:4px;" th:text="${course.averageCompletionPercent} + '%'">0%</div>
                                 </td>
-                                <td th:text="${course.revenueMonthToDateDisplay}">$0.00</td>
-                                <td><span class="badge badge-dot" th:classappend="${course.statusClass}" th:text="${course.status}">Status</span></td>
-                                <td><a th:href="${course.actionUrl}" style="color:var(--lumina-blue);font-weight:600;font-size:0.8125rem;" th:text="${course.actionLabel}">Edit</a></td>
+                                <td data-label="Revenue (MTD)" th:text="${course.revenueMonthToDateDisplay}">$0.00</td>
+                                <td data-label="Status"><span class="badge badge-dot" th:classappend="${course.statusClass}" th:text="${course.status}">Status</span></td>
+                                <td data-label="Actions"><a class="btn btn-outline btn-sm" th:href="${course.actionUrl}" th:text="${course.actionLabel}">Edit</a></td>
                             </tr>
                         </tbody>
                     </table>

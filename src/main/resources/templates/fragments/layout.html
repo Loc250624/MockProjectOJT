@@ -10,8 +10,8 @@
 
 <!-- ===== PUBLIC HEADER ===== -->
 <header th:fragment="header(role)" class="lumina-header">
-    <a th:href="@{/}" class="logo">
-        <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
+    <a th:href="@{/}" class="logo" aria-label="LumiNa home">
+        <span th:replace="~{fragments/brand :: mark}"></span>
         <span>LumiNa</span>
     </a>
 
@@ -24,31 +24,32 @@
         <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
     </button>
 
-    <nav id="public-navigation" data-public-nav>
-        <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Home</a>
-        <a th:href="@{/public/courses}" th:classappend="${role == 'courses'} ? 'active' : ''">Courses</a>
-        <a th:href="@{/blogs}" th:classappend="${role == 'blogs'} ? 'active' : ''">Blog</a>
-        <a sec:authorize="isAuthenticated() and hasRole('STUDENT')"
-           th:href="@{/student/feedback}"
-           th:classappend="${role == 'feedback'} ? 'active' : ''">Feedback</a>
-    </nav>
+    <div class="public-nav-panel" id="public-navigation" data-public-nav>
+        <nav aria-label="Public navigation">
+            <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Home</a>
+            <a th:href="@{/public/courses}" th:classappend="${role == 'courses'} ? 'active' : ''">Courses</a>
+            <a th:href="@{/blogs}" th:classappend="${role == 'blogs'} ? 'active' : ''">Blog</a>
+            <a sec:authorize="isAuthenticated() and hasRole('STUDENT')"
+               th:href="@{/student/feedback}"
+               th:classappend="${role == 'feedback'} ? 'active' : ''">Feedback</a>
+        </nav>
 
-    <div class="header-actions">
-        <form class="header-search" th:action="@{/public/courses}" method="get" role="search">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
-            <input type="search" name="keyword" placeholder="Find a course..." aria-label="Search courses">
-            <button type="submit" class="header-search-submit" aria-label="Search courses">
-                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
-            </button>
-        </form>
+        <div class="header-actions">
+            <form class="header-search" th:action="@{/public/courses}" method="get" role="search">
+                <span style="color:var(--lumina-gray-400);font-size:0.9rem;"><svg th:replace="~{fragments/icons :: icon('search')}"></svg></span>
+                <input type="search" name="keyword" placeholder="Find a course..." aria-label="Search courses">
+                <button type="submit" class="header-search-submit" aria-label="Search courses">
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                </button>
+            </form>
 
-        <!-- Anonymous Users -->
-        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
-        <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
+            <!-- Anonymous Users -->
+            <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
+            <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
 
-        <!-- Authenticated Users (Avatar only) -->
-        <div sec:authorize="hasAnyRole('STUDENT','TEACHER','ADMIN')" class="user-avatar-container"
-            style="display: flex; align-items: center; justify-content: center; margin-left: 1rem;">
+            <!-- Authenticated Users (Avatar only) -->
+            <div sec:authorize="hasAnyRole('STUDENT','TEACHER','ADMIN')" class="user-avatar-container"
+                style="display: flex; align-items: center; justify-content: center;">
             <!-- Student Avatar -->
             <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/dashboard}" class="header-avatar-link"
                 style="text-decoration: none;">
@@ -84,23 +85,31 @@
                     th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'A')}">
                     A</div>
             </a>
+            </div>
         </div>
     </div>
+    <script th:src="@{/js/public/public.js}" defer></script>
 </header>
+
+<span th:fragment="brand-mark" class="logo-icon lumina-brand-mark" aria-hidden="true">
+    <svg th:replace="~{fragments/icons :: icon('students')}"></svg>
+</span>
+
+<div th:fragment="sidebar-brand(homeHref, brandName, brandSub)" class="sidebar-brand">
+    <a th:href="${homeHref}" class="sidebar-brand-link" aria-label="LumiNa">
+        <div class="sidebar-logo">
+            <span th:replace="~{fragments/layout :: brand-mark}"></span>
+        </div>
+        <div class="sidebar-brand-copy">
+            <div class="brand-name" th:text="${brandName}">LumiNa Portal</div>
+            <div class="brand-sub" th:text="${brandSub}">Student Learning</div>
+        </div>
+    </a>
+</div>
 
 <!-- ===== ADMIN SIDEBAR ===== -->
 <aside th:fragment="sidebar-admin" class="lumina-sidebar sidebar-admin" data-sidebar-role="admin">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('settings')}"></svg></div>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">LumiNa Portal</div>
-                <div class="brand-sub">Admin Governance</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Admin Governance')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Admin navigation">
         <div class="sidebar-section-label">Dashboard</div>
@@ -186,17 +195,7 @@
 
 <!-- ===== TEACHER SIDEBAR ===== -->
 <aside th:fragment="sidebar-teacher" class="lumina-sidebar sidebar-teacher" data-sidebar-role="teacher">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">LumiNa Portal</div>
-                <div class="brand-sub">Instructor Portal</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Instructor Portal')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Teacher navigation">
         <div class="sidebar-section-label">Overview</div>
@@ -266,17 +265,7 @@
 
 <!-- ===== STUDENT SIDEBAR ===== -->
 <aside th:fragment="sidebar-student" class="lumina-sidebar sidebar-student" data-sidebar-role="student">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <div class="logo-icon"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></div>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">Student Portal</div>
-                <div class="brand-sub">Academic Excellence</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Academic Excellence')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Student navigation">
         <div class="sidebar-section-label">Home</div>
@@ -368,7 +357,9 @@
         </div>
     </div>
     <div class="topbar-right">
-        <span class="badge badge-success badge-dot" style="font-size:0.75rem;"> System Healthy</span>
+        <span class="badge badge-success badge-dot system-health-badge"
+              aria-label="System healthy"
+              style="font-size:0.75rem;"> System Healthy</span>
         <button class="icon-btn notification-bell tooltip-trigger" id="btn-topbar-notif" type="button" data-notification-bell="true"
             aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
             <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>

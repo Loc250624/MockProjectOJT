@@ -63,8 +63,16 @@
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem;" th:unless="${#lists.isEmpty(courseCards)}">
                         <div class="progress-card" th:each="course : ${courseCards}">
                             <div class="pc-header">
-                                <div class="pc-icon" th:text="${course.completed ? '100%' : 'Go'}">Go</div>
-                                <div>
+                                <div class="pc-icon">
+                                    <img th:if="${course.thumbnailUrl != null && !course.thumbnailUrl.isEmpty()}"
+                                         th:src="${course.thumbnailUrl}"
+                                         th:alt="${course.courseTitle + ' thumbnail'}">
+                                    <span th:unless="${course.thumbnailUrl != null && !course.thumbnailUrl.isEmpty()}"
+                                          aria-hidden="true">
+                                        <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
+                                    </span>
+                                </div>
+                                <div class="pc-course-info">
                                     <div class="pc-title" th:text="${course.courseTitle}">Course title</div>
                                     <div class="pc-instructor" th:text="${course.instructorName ?: 'Unknown instructor'}">Instructor</div>
                                 </div>
@@ -79,9 +87,11 @@
                                 </div>
                             </div>
                             <div class="pc-actions">
-                                <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}" class="btn btn-primary btn-sm btn-full">
+                                <a th:href="@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}"
+                                   class="btn btn-sm btn-full"
+                                   th:classappend="${course.completed} ? ' btn-success' : ' btn-primary'">
                                     <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
-                                    <span>Continue Learning</span>
+                                    <span th:text="${course.completed ? 'Course Completed' : 'Continue Learning'}">Continue Learning</span>
                                 </a>
                             </div>
                         </div>

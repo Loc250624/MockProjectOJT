@@ -334,6 +334,7 @@ function initAiTutor() {
 
     function setPanelOpen(isOpen) {
         panel.hidden = !isOpen;
+        toggle.hidden = isOpen;
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         if (isOpen) {
             input.focus();
@@ -899,9 +900,49 @@ function initQuizPanel(panel) {
     var retakeButton = document.getElementById('quiz-retake-button');
     var stateLabel = document.getElementById('quiz-state-label');
     var attempt = null;
+    var requestSequence = 0;
 
     function endpoint(action) {
         return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/quiz' + (action || '');
+    }
+
+    function isCurrentRequest(requestId) {
+        return requestId === requestSequence &&
+            panel.dataset.courseId === courseId &&
+            panel.dataset.lessonId === lessonId;
+    }
+
+    function setUnavailableMessage(text) {
+        var message = unavailable ? unavailable.querySelector('strong + span') : null;
+        if (message) {
+            message.textContent = text || 'This quiz is not available right now.';
+        }
+    }
+
+    function setQuizViewMode(mode, label) {
+        if (loading) {
+            loading.hidden = mode !== 'loading';
+        }
+        if (unavailable) {
+            unavailable.hidden = mode !== 'unavailable';
+        }
+        if (form) {
+            form.hidden = mode !== 'taking';
+        }
+        if (result) {
+            result.hidden = mode !== 'review';
+        }
+        if (retakeButton) {
+            retakeButton.hidden = mode !== 'review';
+            retakeButton.disabled = false;
+        }
+        if (stateLabel) {
+            stateLabel.textContent = label || (
+                mode === 'loading' ? 'Loading' :
+                    mode === 'unavailable' ? 'Unavailable' :
+                        mode === 'review' ? 'Submitted' : 'Draft'
+            );
+        }
     }
 
     function parseOptions(question) {
@@ -940,21 +981,27 @@ function initQuizPanel(panel) {
     }
 
     function renderResult(data) {
-        form.hidden = true;
-        result.hidden = false;
-        if (retakeButton) {
-            retakeButton.disabled = false;
-            retakeButton.hidden = false;
-        }
+        setQuizViewMode('review', data.status || 'Submitted');
+        setPanelMessage('quiz-message', '', false);
         var score = data.score == null ? 'Not scored' : data.score + '%';
         var status = data.passed ? 'Passed' : 'Failed';
-        result.querySelector('span').textContent = status + '. Score: ' + score + '.';
+        var resultSummary = result.querySelector('[data-quiz-result-summary]');
+        var resultStatus = result.querySelector('[data-quiz-result-status]');
+        var resultScore = result.querySelector('[data-quiz-result-score]');
+        if (resultSummary) {
+            resultSummary.textContent = data.passed
+                ? 'Nice work. You can review your selected answers below.'
+                : 'Review your selected answers below, then retake when ready.';
+        }
+        if (resultStatus) {
+            resultStatus.textContent = status;
+        }
+        if (resultScore) {
+            resultScore.textContent = 'Score ' + score;
+        }
         result.classList.toggle('passed', data.passed === true);
         result.classList.toggle('failed', data.passed !== true);
         renderQuizReview(data);
-        if (stateLabel) {
-            stateLabel.textContent = data.status || 'Submitted';
-        }
         if (data.passed) {
             var lessonStatus = document.getElementById('lesson-status');
             if (lessonStatus) {
@@ -988,29 +1035,27 @@ function initQuizPanel(panel) {
     }
 
     function renderQuiz(data) {
+        data = data || {};
         attempt = data;
-        loading.hidden = true;
-        if (data.unavailable) {
-            result.hidden = true;
-            unavailable.hidden = false;
-            unavailable.querySelector('span').textContent = data.unavailableMessage || 'This quiz is not available right now.';
-            if (stateLabel) {
-                stateLabel.textContent = 'Unavailable';
-            }
-            return;
-        }
         if (data.submitted) {
             renderResult(data);
             return;
         }
-
-        unavailable.hidden = true;
-        result.hidden = true;
-        if (retakeButton) {
-            retakeButton.hidden = true;
-            retakeButton.disabled = false;
+        if (data.unavailable) {
+            attempt = null;
+            questionsWrap.replaceChildren();
+            if (review) {
+                review.replaceChildren();
+            }
+            setUnavailableMessage(data.unavailableMessage);
+            setQuizViewMode('unavailable', 'Unavailable');
+            return;
         }
+
         questionsWrap.replaceChildren();
+        if (review) {
+            review.replaceChildren();
+        }
         (data.questions || []).forEach(function (question, index) {
             var block = document.createElement('fieldset');
             block.className = 'learning-question';
@@ -1041,14 +1086,19 @@ function initQuizPanel(panel) {
             });
             questionsWrap.appendChild(block);
         });
-        form.hidden = false;
         setPanelMessage('quiz-message', '', false);
-        if (stateLabel) {
-            stateLabel.textContent = 'Draft';
-        }
+        setQuizViewMode('taking', 'Draft');
     }
 
     function loadQuiz(message) {
+        var requestId = ++requestSequence;
+        attempt = null;
+        questionsWrap.replaceChildren();
+        if (review) {
+            review.replaceChildren();
+        }
+        setQuizViewMode('loading', 'Loading');
+        setUnavailableMessage('');
         if (message) {
             setPanelMessage('quiz-message', message, false);
         }
@@ -1057,7 +1107,17 @@ function initQuizPanel(panel) {
                 return parseLearningJson(response, 'Unable to load quiz');
             })
             .then(function(apiResponse) {
+                if (!isCurrentRequest(requestId)) {
+                    return null;
+                }
                 renderQuiz(apiResponse.data || {});
+                return apiResponse.data;
+            })
+            .catch(function(error) {
+                if (!isCurrentRequest(requestId)) {
+                    return null;
+                }
+                throw error;
             });
     }
 
@@ -1088,10 +1148,8 @@ function initQuizPanel(panel) {
 
     loadQuiz()
         .catch(function (error) {
-            loading.hidden = true;
-            unavailable.hidden = false;
-            unavailable.querySelector('span').textContent = error.message;
-            if (stateLabel) stateLabel.textContent = 'Unavailable';
+            setUnavailableMessage(error.message);
+            setQuizViewMode('unavailable', 'Unavailable');
         });
 
     if (saveButton) {
@@ -1122,14 +1180,12 @@ function initQuizPanel(panel) {
     if (retakeButton) {
         retakeButton.addEventListener('click', function() {
             retakeButton.disabled = true;
-            loading.hidden = false;
             loadQuiz('Starting a new attempt...')
                 .catch(function(error) {
                     setPanelMessage('quiz-message', error.message, true);
+                    setUnavailableMessage(error.message);
+                    setQuizViewMode('unavailable', 'Unavailable');
                     retakeButton.disabled = false;
-                })
-                .finally(function() {
-                    loading.hidden = true;
                 });
         });
     }

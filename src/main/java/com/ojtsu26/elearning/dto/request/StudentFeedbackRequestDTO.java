@@ -11,7 +11,6 @@ import lombok.Data;
 @Data
 public class StudentFeedbackRequestDTO {
 
-    @NotNull(message = "Category is required")
     private FeedbackCategory category;
 
     @NotBlank(message = "Subject is required")

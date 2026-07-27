@@ -13,7 +13,7 @@
 <body class="learning-player-page">
 <header class="learning-player-header">
     <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
-        <span class="learning-brand-mark">L</span>
+        <span th:replace="~{fragments/brand :: mark}"></span>
         <span>LumiNa</span>
     </a>
     <nav class="learning-header-actions" aria-label="Learning navigation">
@@ -209,10 +209,19 @@
                             <span id="quiz-message" class="learning-help"></span>
                         </div>
                     </form>
-                    <div id="quiz-result" class="learning-empty learning-empty-compact" hidden>
-                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
-                        <strong>Quiz submitted</strong>
-                        <span></span>
+                    <div id="quiz-result" class="learning-quiz-result" hidden>
+                        <span class="learning-result-legacy" aria-hidden="true"></span>
+                        <div class="learning-result-summary">
+                            <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
+                            <div class="learning-result-copy">
+                                <strong>Quiz submitted</strong>
+                                <span data-quiz-result-summary>Review your answers below.</span>
+                            </div>
+                            <div class="learning-result-meta" aria-live="polite">
+                                <span class="learning-result-badge" data-quiz-result-status>Passed</span>
+                                <span class="learning-result-score" data-quiz-result-score>Score 100%</span>
+                            </div>
+                        </div>
                         <div id="quiz-review" class="learning-result-review"></div>
                         <div class="learning-assessment-actions">
                             <button type="button" class="btn btn-outline" id="quiz-retake-button">
@@ -353,7 +362,7 @@
             data-ai-tutor-toggle
             aria-controls="ai-tutor-panel"
             aria-expanded="false">
-        <svg th:replace="~{fragments/icons :: icon('comments')}"></svg>
+        <img th:src="@{/images/hubot.svg}" class="ai-tutor-toggle-icon" alt="" aria-hidden="true">
         <span>AI Tutor</span>
     </button>
     <div class="ai-tutor-panel" id="ai-tutor-panel" data-ai-tutor-panel hidden>

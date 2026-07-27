@@ -15,6 +15,11 @@ import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.repository.CertificateRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.service.impl.CertificateServiceImpl;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +27,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -162,7 +171,7 @@ class CertificateServiceTest {
     }
 
     @Test
-    void ownedPdfCanBeGenerated() {
+    void ownedPdfCanBeGenerated() throws Exception {
         when(certificateRepository.findByIdAndStudentId(30, 1)).thenReturn(Optional.of(existing));
 
         byte[] pdf = service.generateCertificatePdf(30, 1);
@@ -170,6 +179,53 @@ class CertificateServiceTest {
         assertTrue(pdf.length > 100);
         assertEquals('%', (char) pdf[0]);
         assertEquals('P', (char) pdf[1]);
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertEquals(1, document.getNumberOfPages());
+            PDRectangle mediaBox = document.getPage(0).getMediaBox();
+            assertTrue(mediaBox.getWidth() > mediaBox.getHeight());
+            assertEquals(PDRectangle.A4.getHeight(), mediaBox.getWidth(), 1.0f);
+            assertEquals(PDRectangle.A4.getWidth(), mediaBox.getHeight(), 1.0f);
+
+            String text = new PDFTextStripper().getText(document);
+            assertTrue(text.contains("Nguyen Van A"));
+            assertTrue(text.contains("Spring Boot Nang Cao"));
+            assertTrue(text.contains("Co Giao B"));
+            assertTrue(text.contains("Completed:"));
+            assertTrue(text.replaceAll("\\s+", "").contains("ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"));
+            assertTrue(text.contains("Verification Code:"));
+            assertFalse(text.contains("Issued:"));
+            assertFalse(text.contains("Verify at"));
+
+            PDFRenderer renderer = new PDFRenderer(document);
+            BufferedImage image = renderer.renderImageWithDPI(0, 120);
+            Path renderDir = Path.of("target", "pdf-render");
+            Files.createDirectories(renderDir);
+            Files.write(renderDir.resolve("certificate-service-test.pdf"), pdf);
+            assertTrue(ImageIO.write(image, "png", renderDir.resolve("certificate-service-test.png").toFile()));
+        }
+    }
+
+    @Test
+    void generatedPdfKeepsUnicodeAndLongDynamicTextSelectable() throws Exception {
+        existing.setStudentNameSnapshot("Nguy\u1ec5n M\u1ea1nh C\u01b0\u1eddng Qu\u1ed1c Anh Tr\u1ea7n Ho\u00e0ng Minh");
+        existing.setCourseNameSnapshot("L\u1eadp tr\u00ecnh h\u01b0\u1edbng \u0111\u1ed1i t\u01b0\u1ee3ng n\u00e2ng cao v\u1edbi Java, ki\u1ec3m th\u1eed t\u1ef1 \u0111\u1ed9ng v\u00e0 thi\u1ebft k\u1ebf ph\u1ea7n m\u1ec1m b\u1ec1n v\u1eefng");
+        existing.setTeacherNameSnapshot("Tr\u1ea7n Th\u1ecb \u00c1nh");
+        existing.setVerificationCode("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_LONG_CODE");
+        existing.setIssuedAt(LocalDateTime.of(2026, 1, 15, 10, 30));
+        when(certificateRepository.findByIdAndStudentId(30, 1)).thenReturn(Optional.of(existing));
+
+        byte[] pdf = service.generateCertificatePdf(30, 1);
+
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            String text = new PDFTextStripper().getText(document);
+            assertTrue(text.contains("Nguy\u1ec5n M\u1ea1nh C\u01b0\u1eddng"));
+            assertTrue(text.contains("L\u1eadp tr\u00ecnh h\u01b0\u1edbng \u0111\u1ed1i t\u01b0\u1ee3ng"));
+            assertTrue(text.contains("Tr\u1ea7n Th\u1ecb \u00c1nh"));
+            assertTrue(text.contains("Completed: 2026-01-15"));
+            assertTrue(text.replaceAll("\\s+", "").contains("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_LONG_CODE"));
+            assertFalse(text.contains("Issued:"));
+            assertFalse(text.contains("Verify at"));
+        }
     }
 
     private CertificateEligibilityResponse eligible() {
