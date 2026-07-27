@@ -4,6 +4,7 @@ import com.ojtsu26.elearning.dto.request.StudentFeedbackRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentFeedbackResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
+import com.ojtsu26.elearning.feedback.email.FeedbackSubmittedEvent;
 import com.ojtsu26.elearning.model.entity.StudentFeedback;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.FeedbackCategory;
@@ -12,11 +13,14 @@ import com.ojtsu26.elearning.repository.StudentFeedbackRepository;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.StudentFeedbackService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -24,16 +28,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentFeedbackServiceImpl implements StudentFeedbackService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    private static final FeedbackCategory DEFAULT_FEEDBACK_CATEGORY = FeedbackCategory.OTHER;
 
     private final StudentFeedbackRepository feedbackRepository;
     private final CurrentUserService currentUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public StudentFeedbackResponseDTO createForCurrentStudent(StudentFeedbackRequestDTO request) {
         User student = requireCurrentUserWithRole(Role.STUDENT);
         String subject = normalizeRequired(request == null ? null : request.getSubject(), "Subject is required.");
         String content = normalizeRequired(request == null ? null : request.getContent(), "Content is required.");
-        FeedbackCategory category = requireCategory(request == null ? null : request.getCategory());
+        FeedbackCategory category = categoryOrDefault(request == null ? null : request.getCategory());
         Integer courseContentRating = requireRating(request == null ? null : request.getCourseContentRating(), "Course content rating");
         Integer instructorSupportRating = requireRating(request == null ? null : request.getInstructorSupportRating(), "Instructor support rating");
         Integer learningExperienceRating = requireRating(request == null ? null : request.getLearningExperienceRating(), "Learning experience rating");
@@ -54,7 +60,9 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
                 .student(student)
                 .build();
 
-        return toDto(feedbackRepository.save(feedback));
+        StudentFeedback saved = feedbackRepository.save(feedback);
+        publishFeedbackSubmitted(saved, student);
+        return toDto(saved);
     }
 
     @Override
@@ -101,11 +109,11 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
         return normalized;
     }
 
-    private FeedbackCategory requireCategory(FeedbackCategory category) {
-        if (category == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Category is required.");
-        }
-        return category;
+    private FeedbackCategory categoryOrDefault(FeedbackCategory category) {
+        // Category is no longer user-selectable, but remains required by the
+        // persisted/admin contract. Preserve explicit legacy callers and use
+        // the existing general-purpose enum value for the simplified form.
+        return category == null ? DEFAULT_FEEDBACK_CATEGORY : category;
     }
 
     private Integer requireRating(Integer rating, String label) {
@@ -116,6 +124,15 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, label + " must be between 1 and 5.");
         }
         return rating;
+    }
+
+    private void publishFeedbackSubmitted(StudentFeedback feedback, User student) {
+        eventPublisher.publishEvent(new FeedbackSubmittedEvent(
+                feedback.getId(),
+                student.getFullName(),
+                student.getEmail(),
+                feedback.getCreatedAt() == null ? LocalDateTime.now() : feedback.getCreatedAt()
+        ));
     }
 
     private StudentFeedbackResponseDTO toDto(StudentFeedback feedback) {

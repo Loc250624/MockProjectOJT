@@ -91,19 +91,25 @@
     <script th:src="@{/js/public/public.js}" defer></script>
 </header>
 
+<span th:fragment="brand-mark" class="logo-icon lumina-brand-mark" aria-hidden="true">
+    <svg th:replace="~{fragments/icons :: icon('students')}"></svg>
+</span>
+
+<div th:fragment="sidebar-brand(homeHref, brandName, brandSub)" class="sidebar-brand">
+    <a th:href="${homeHref}" class="sidebar-brand-link" aria-label="LumiNa">
+        <div class="sidebar-logo">
+            <span th:replace="~{fragments/layout :: brand-mark}"></span>
+        </div>
+        <div class="sidebar-brand-copy">
+            <div class="brand-name" th:text="${brandName}">LumiNa Portal</div>
+            <div class="brand-sub" th:text="${brandSub}">Student Learning</div>
+        </div>
+    </a>
+</div>
+
 <!-- ===== ADMIN SIDEBAR ===== -->
 <aside th:fragment="sidebar-admin" class="lumina-sidebar sidebar-admin" data-sidebar-role="admin">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <span th:replace="~{fragments/brand :: mark}"></span>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">LumiNa Portal</div>
-                <div class="brand-sub">Admin Governance</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Admin Governance')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Admin navigation">
         <div class="sidebar-section-label">Dashboard</div>
@@ -189,17 +195,7 @@
 
 <!-- ===== TEACHER SIDEBAR ===== -->
 <aside th:fragment="sidebar-teacher" class="lumina-sidebar sidebar-teacher" data-sidebar-role="teacher">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <span th:replace="~{fragments/brand :: mark}"></span>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">LumiNa Portal</div>
-                <div class="brand-sub">Instructor Portal</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Instructor Portal')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Teacher navigation">
         <div class="sidebar-section-label">Overview</div>
@@ -269,17 +265,7 @@
 
 <!-- ===== STUDENT SIDEBAR ===== -->
 <aside th:fragment="sidebar-student" class="lumina-sidebar sidebar-student" data-sidebar-role="student">
-    <div class="sidebar-brand">
-        <a th:href="@{/}" class="sidebar-brand-link">
-            <div class="sidebar-logo">
-                <span th:replace="~{fragments/brand :: mark}"></span>
-            </div>
-            <div class="sidebar-brand-copy">
-                <div class="brand-name">LumiNa Portal</div>
-                <div class="brand-sub">Academic Excellence</div>
-            </div>
-        </a>
-    </div>
+    <div th:replace="~{fragments/layout :: sidebar-brand('/', 'LumiNa Portal', 'Academic Excellence')}"></div>
 
     <div class="sidebar-menu" role="navigation" aria-label="Student navigation">
         <div class="sidebar-section-label">Home</div>

@@ -44,12 +44,68 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(template.contains("No resources"));
         assertTrue(template.contains("learning-player-page"));
         assertTrue(template.contains("learning-player-header"));
+        assertTrue(template.contains("fragments/layout :: brand-mark"));
         assertTrue(template.contains("data-csrf-token"));
         assertTrue(template.contains("/js/csrf-fetch.js"));
+        assertTrue(template.contains("/js/student/student.js"));
         assertTrue(template.indexOf("/js/csrf-fetch.js") < template.indexOf("/js/student/student.js"));
+        assertFalse(template.contains("learning-brand-mark\">L</span>"));
         assertFalse(template.contains("sidebar-student"));
         assertFalse(template.contains("layout-container"));
         assertFalse(template.contains("main-content"));
+    }
+
+    @Test
+    void sharedBrandFragmentIsUsedByCoursePlayerAndRoleSidebars() throws Exception {
+        String layout = Files.readString(Path.of("src/main/resources/templates/fragments/layout.html"));
+        String learning = Files.readString(Path.of("src/main/resources/templates/student/learning.html"));
+
+        assertTrue(layout.contains("th:fragment=\"brand-mark\""));
+        assertTrue(layout.contains("th:fragment=\"sidebar-brand(homeHref, brandName, brandSub)\""));
+        assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Admin Governance')"));
+        assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Instructor Portal')"));
+        assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Student Learning')"));
+        assertTrue(learning.contains("fragments/layout :: brand-mark"));
+        assertFalse(learning.contains("<span class=\"learning-brand-mark\">L</span>"));
+    }
+
+    @Test
+    void enrolledCourseCardsShowCompletedLabelWithoutChangingLearningLink() throws Exception {
+        String myCourses = Files.readString(Path.of("src/main/resources/templates/student/my-courses.html"));
+        String dashboard = Files.readString(Path.of("src/main/resources/templates/student/dashboard.html"));
+        String expectedLabel = "course.completed ? 'Course Completed' : 'Continue Learning'";
+        String expectedRoute = "@{/student/learning(courseId=${course.courseId},lessonId=${course.resumeLessonId})}";
+
+        assertTrue(myCourses.contains(expectedLabel));
+        assertTrue(myCourses.contains(expectedRoute));
+        assertTrue(myCourses.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
+        assertFalse(myCourses.contains("pointer-events: none"));
+
+        assertTrue(dashboard.contains(expectedLabel));
+        assertTrue(dashboard.contains(expectedRoute));
+        assertTrue(dashboard.contains("th:src=\"${course.thumbnailUrl}\""));
+        assertTrue(dashboard.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
+        assertFalse(dashboard.contains("course.completed ? '100%' : 'Go'"));
+    }
+
+    @Test
+    void quizPanelJavascriptUsesExclusiveViewModeAndStaleRequestGuard() throws Exception {
+        String script = Files.readString(Path.of("src/main/resources/static/js/student/student.js"));
+        String quizScript = script.substring(
+                script.indexOf("function initQuizPanel"),
+                script.indexOf("function initCodePanel"));
+
+        assertTrue(quizScript.contains("function setQuizViewMode(mode, label)"));
+        assertTrue(quizScript.contains("mode !== 'loading'"));
+        assertTrue(quizScript.contains("mode !== 'unavailable'"));
+        assertTrue(quizScript.contains("mode !== 'taking'"));
+        assertTrue(quizScript.contains("mode !== 'review'"));
+        assertTrue(quizScript.contains("var requestSequence = 0"));
+        assertTrue(quizScript.contains("function isCurrentRequest(requestId)"));
+        assertTrue(quizScript.contains("setQuizViewMode('review'"));
+        assertTrue(quizScript.contains("setQuizViewMode('taking'"));
+        assertTrue(quizScript.contains("setQuizViewMode('unavailable'"));
+        assertFalse(quizScript.contains("unavailable.querySelector('span').textContent"));
     }
 
     @Test
@@ -60,6 +116,8 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(css.contains(".learning-player-header"));
         assertTrue(css.contains(".learning-layout"));
         assertTrue(css.contains(".learning-mobile-curriculum"));
+        assertTrue(css.contains(".learning-assessment [hidden]"));
+        assertTrue(css.contains("display: none !important"));
         assertTrue(css.contains("@media (max-width: 900px)"));
     }
 

@@ -3,6 +3,7 @@ package com.ojtsu26.elearning.service;
 import com.ojtsu26.elearning.dto.request.StudentFeedbackRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentFeedbackResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
+import com.ojtsu26.elearning.feedback.email.FeedbackSubmittedEvent;
 import com.ojtsu26.elearning.model.entity.StudentFeedback;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.FeedbackCategory;
@@ -12,16 +13,19 @@ import com.ojtsu26.elearning.service.impl.StudentFeedbackServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.context.ApplicationEventPublisher;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -37,6 +41,9 @@ class StudentFeedbackServiceTest {
     @Mock
     private CurrentUserService currentUserService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private StudentFeedbackServiceImpl service;
     private User student;
     private User admin;
@@ -44,7 +51,7 @@ class StudentFeedbackServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new StudentFeedbackServiceImpl(feedbackRepository, currentUserService);
+        service = new StudentFeedbackServiceImpl(feedbackRepository, currentUserService, eventPublisher);
         student = User.builder().id(1).fullName("Student One").email("student@example.com").role(Role.STUDENT).build();
         admin = User.builder().id(2).fullName("Admin One").email("admin@example.com").role(Role.ADMIN).build();
         teacher = User.builder().id(3).fullName("Teacher One").email("teacher@example.com").role(Role.TEACHER).build();
@@ -60,6 +67,7 @@ class StudentFeedbackServiceTest {
         when(feedbackRepository.save(any(StudentFeedback.class))).thenAnswer(invocation -> {
             StudentFeedback feedback = invocation.getArgument(0);
             feedback.setId(10);
+            feedback.setCreatedAt(LocalDateTime.of(2026, 7, 22, 9, 30));
             return feedback;
         });
 
@@ -80,6 +88,35 @@ class StudentFeedbackServiceTest {
         assertEquals(5, saved.getOverallSatisfactionRating());
         assertEquals(1, response.getStudentId());
         assertEquals("Platform/UI", response.getCategoryLabel());
+
+        ArgumentCaptor<FeedbackSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(FeedbackSubmittedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        FeedbackSubmittedEvent event = eventCaptor.getValue();
+        assertEquals(10, event.feedbackId());
+        assertEquals("Student One", event.studentDisplayName());
+        assertEquals("student@example.com", event.studentEmail());
+        assertEquals(LocalDateTime.of(2026, 7, 22, 9, 30), event.submittedAt());
+    }
+
+    @Test
+    void createPublishesPostCommitEventOnceUsingStoredStudentEmail() {
+        StudentFeedbackRequestDTO request = validRequest();
+        student.setEmail("registered.student@example.com");
+        when(currentUserService.getCurrentUser()).thenReturn(student);
+        when(feedbackRepository.save(any(StudentFeedback.class))).thenAnswer(invocation -> {
+            StudentFeedback feedback = invocation.getArgument(0);
+            feedback.setId(11);
+            return feedback;
+        });
+
+        service.createForCurrentStudent(request);
+
+        ArgumentCaptor<FeedbackSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(FeedbackSubmittedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        FeedbackSubmittedEvent event = eventCaptor.getValue();
+        assertEquals(11, event.feedbackId());
+        assertEquals("registered.student@example.com", event.studentEmail());
+        assertNotNull(event.submittedAt());
     }
 
     @Test
@@ -89,17 +126,23 @@ class StudentFeedbackServiceTest {
         assertThrows(BusinessException.class, () -> service.createForCurrentStudent(validRequest()));
 
         verify(feedbackRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    void createRejectsMissingCategoryBeforeSaving() {
+    void createDefaultsMissingCategoryForBackwardCompatibility() {
         StudentFeedbackRequestDTO request = validRequest();
         request.setCategory(null);
         when(currentUserService.getCurrentUser()).thenReturn(student);
+        when(feedbackRepository.save(any(StudentFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThrows(BusinessException.class, () -> service.createForCurrentStudent(request));
+        StudentFeedbackResponseDTO response = service.createForCurrentStudent(request);
 
-        verify(feedbackRepository, never()).save(any());
+        ArgumentCaptor<StudentFeedback> captor = ArgumentCaptor.forClass(StudentFeedback.class);
+        verify(feedbackRepository).save(captor.capture());
+        assertEquals(FeedbackCategory.OTHER, captor.getValue().getCategory());
+        assertEquals(FeedbackCategory.OTHER, response.getCategory());
+        assertEquals("Other", response.getCategoryLabel());
     }
 
     @Test
@@ -111,6 +154,7 @@ class StudentFeedbackServiceTest {
         assertThrows(BusinessException.class, () -> service.createForCurrentStudent(request));
 
         verify(feedbackRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
