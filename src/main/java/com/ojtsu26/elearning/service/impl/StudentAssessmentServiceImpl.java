@@ -610,7 +610,6 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
     }
 
     private List<Integer> readQuestionIds(Map<String, Object> payload) {
-    private List<Integer> readQuestionIds(Map<String, Object> payload) {
         Object idsValue = payload.get("questionIds");
         if (!(idsValue instanceof List<?> rawIds)) {
             return List.of();
