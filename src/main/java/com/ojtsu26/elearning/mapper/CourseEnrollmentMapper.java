@@ -15,5 +15,9 @@ public interface CourseEnrollmentMapper {
 
     @Mapping(source = "studentId", target = "student.id")
     @Mapping(source = "courseId", target = "course.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "enrolledAt", ignore = true)
+    @Mapping(target = "lessonprogresss", ignore = true)
+    @Mapping(target = "certificate", ignore = true)
     CourseEnrollment toEntity(CourseEnrollmentRequestDTO dto);
 }

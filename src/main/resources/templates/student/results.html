@@ -26,19 +26,6 @@
                 </a>
             </div>
         </section>
-        <section class="assessment-panel">
-            <h2>Assignments</h2>
-            <div class="empty-state" th:if="${results == null || #lists.isEmpty(results.submissions)}">
-                <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></div>
-                <div class="empty-title">No assignment submissions yet.</div>
-            </div>
-            <div class="assessment-list" th:unless="${results == null || #lists.isEmpty(results.submissions)}">
-                <a class="result-row" th:each="submission : ${results.submissions}" th:href="@{/student/submissions/{id}/result(id=${submission.id})}">
-                    <span th:text="${submission.assignmentTitle}">Assignment</span>
-                    <strong th:text="${submission.released == true && submission.score != null ? submission.score + '%' : submission.status}">Status</strong>
-                </a>
-            </div>
-        </section>
     </main>
 </div>
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>

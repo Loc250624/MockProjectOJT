@@ -4,7 +4,6 @@ import com.ojtsu26.elearning.dto.response.TeacherDashboardStatsDTO;
 import com.ojtsu26.elearning.repository.LessonProgressRepository;
 import com.ojtsu26.elearning.dto.response.TeacherCourseDashboardDTO;
 import com.ojtsu26.elearning.dto.response.TeacherDashboardDTO;
-import com.ojtsu26.elearning.dto.response.TeacherRecentSubmissionDashboardDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.model.entity.Course;
@@ -12,33 +11,26 @@ import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
 import com.ojtsu26.elearning.model.enums.Role;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.OrderItemRepository;
-import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.projection.TeacherCourseMetricProjection;
-import com.ojtsu26.elearning.repository.projection.TeacherRecentSubmissionProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.TeacherDashboardService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,12 +39,7 @@ import java.util.stream.Collectors;
 public class TeacherDashboardServiceImpl implements TeacherDashboardService {
 
     private static final int COURSE_LIMIT = 5;
-    private static final int SUBMISSION_LIMIT = 5;
     private static final String BUSINESS_CURRENCY = "USD";
-    private static final Set<SubmissionStatus> REVIEW_STATUSES = Set.of(
-            SubmissionStatus.SUBMITTED,
-            SubmissionStatus.PENDING_REVIEW
-    );
     private static final String CHANGE_UP = "stat-change-up";
     private static final String CHANGE_DOWN = "stat-change-down";
     private static final String CHANGE_NEUTRAL = "stat-change-neutral";
@@ -61,7 +48,6 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     private final CourseRepository courseRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
     private final OrderItemRepository orderItemRepository;
-    private final SubmissionRepository submissionRepository;
     private final LessonProgressRepository lessonProgressRepository;
 
     @Override
@@ -92,12 +78,6 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .map(course -> toCourseDashboardDto(course, metricsByCourse.get(course.getId()), revenueByCourse.get(course.getId())))
                 .toList();
 
-        List<TeacherRecentSubmissionDashboardDTO> recentSubmissions = submissionRepository
-                .findRecentDashboardSubmissionsByTeacherId(teacher.getId(), REVIEW_STATUSES, PageRequest.of(0, SUBMISSION_LIMIT))
-                .stream()
-                .map(this::toSubmissionDashboardDto)
-                .toList();
-
         BigDecimal totalRevenue = money(orderItemRepository.sumTeacherRevenue(
                 teacher.getId(), OrderStatus.PAID, monthStart, nextMonthStart, null));
         BigDecimal averageProgress = enrollmentRepository.averageProgressByTeacherId(teacher.getId());
@@ -108,12 +88,6 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .revenueMonthToDate(totalRevenue)
                 .revenueMonthToDateDisplay(formatMoney(totalRevenue))
                 .activeCourses(activeCourses)
-                .recentSubmissions(recentSubmissions)
-                .gradeAllUrl(recentSubmissions.stream()
-                        .map(TeacherRecentSubmissionDashboardDTO::getReviewUrl)
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse("/teacher/grading"))
                 .build();
     }
 
@@ -137,20 +111,6 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .statusClass(statusClass(status))
                 .actionLabel(actionLabel)
                 .actionUrl("/teacher/courses/edit/" + course.getId())
-                .build();
-    }
-
-    private TeacherRecentSubmissionDashboardDTO toSubmissionDashboardDto(TeacherRecentSubmissionProjection row) {
-        return TeacherRecentSubmissionDashboardDTO.builder()
-                .submissionId(row.getSubmissionId())
-                .assignmentId(row.getAssignmentId())
-                .assessmentTitle(blankToFallback(row.getAssessmentTitle(), "Untitled assignment"))
-                .studentName(blankToFallback(row.getStudentName(), "Unknown student"))
-                .submittedAt(row.getSubmittedAt())
-                .submittedAgoLabel(formatSubmittedAgo(row.getSubmittedAt()))
-                .reviewStatus(formatSubmissionStatus(row.getStatus()))
-                .reviewStatusClass(submissionStatusClass(row.getStatus()))
-                .reviewUrl("/teacher/assignments/" + row.getAssignmentId() + "/submissions")
                 .build();
     }
 
@@ -198,47 +158,6 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
             return "badge-warning";
         }
         return "badge-secondary";
-    }
-
-    private String formatSubmissionStatus(SubmissionStatus status) {
-        if (status == null) {
-            return "Unknown";
-        }
-        return switch (status) {
-            case SUBMITTED, PENDING_REVIEW -> "Needs Review";
-            case GRADED, AUTO_GRADED -> "Graded";
-            case PASSED -> "Passed";
-            case FAILED -> "Failed";
-            case RETURNED -> "Returned";
-            case DRAFT -> "Draft";
-        };
-    }
-
-    private String submissionStatusClass(SubmissionStatus status) {
-        if (status == SubmissionStatus.SUBMITTED || status == SubmissionStatus.PENDING_REVIEW) {
-            return "badge-warning";
-        }
-        if (status == SubmissionStatus.FAILED || status == SubmissionStatus.RETURNED) {
-            return "badge-danger";
-        }
-        return "badge-success";
-    }
-
-    private String formatSubmittedAgo(LocalDateTime submittedAt) {
-        if (submittedAt == null) {
-            return "Submission time unavailable";
-        }
-        Duration elapsed = Duration.between(submittedAt, LocalDateTime.now());
-        if (elapsed.isNegative() || elapsed.toMinutes() < 1) {
-            return "Submitted just now";
-        }
-        if (elapsed.toHours() < 1) {
-            return "Submitted " + elapsed.toMinutes() + " min ago";
-        }
-        if (elapsed.toDays() < 1) {
-            return "Submitted " + elapsed.toHours() + " hrs ago";
-        }
-        return "Submitted " + elapsed.toDays() + " days ago";
     }
 
     private String blankToFallback(String value, String fallback) {

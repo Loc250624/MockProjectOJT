@@ -224,14 +224,6 @@
 
         <div class="sidebar-section-label">Students &amp; Content</div>
         <nav class="sidebar-nav">
-            <a th:href="@{/teacher/grading}" id="nav-teacher-grading" data-nav-match="/teacher/grading,/teacher/students">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
-                <span class="nav-label">Grading</span>
-            </a>
-            <a th:href="@{/teacher/assignments}" id="nav-teacher-assignments" data-nav-match="/teacher/assignments,/teacher/quizzes,/teacher/testcases">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></span>
-                <span class="nav-label">Assignments</span>
-            </a>
             <a th:href="@{/teacher/blogs}" id="nav-teacher-blog" data-nav-match="/teacher/blogs">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('blog')}"></svg></span>
                 <span class="nav-label">Blog</span>
@@ -270,7 +262,7 @@
     <div class="sidebar-menu" role="navigation" aria-label="Student navigation">
         <div class="sidebar-section-label">Home</div>
         <nav class="sidebar-nav">
-            <a th:href="@{/student/dashboard}" id="nav-student-dashboard" data-nav-match="/student/dashboard,/student/deadlines">
+            <a th:href="@{/student/dashboard}" id="nav-student-dashboard" data-nav-match="/student/dashboard">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('dashboard')}"></svg></span>
                 <span class="nav-label">Dashboard</span>
             </a>
@@ -278,7 +270,7 @@
 
         <div class="sidebar-section-label">Learning</div>
         <nav class="sidebar-nav">
-            <a th:href="@{/student/my-courses}" id="nav-student-courses" data-nav-match="/student/my-courses,/student/learning,/student/lessons,/student/quiz,/student/results,/student/quizzes,/student/code-assignment,/student/assignments,/student/submissions,/student/courses/*/quizzes">
+            <a th:href="@{/student/my-courses}" id="nav-student-courses" data-nav-match="/student/my-courses,/student/learning,/student/lessons,/student/quiz,/student/results,/student/quizzes,/student/courses/*/quizzes">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></span>
                 <span class="nav-label">My Courses</span>
             </a>
@@ -289,10 +281,6 @@
             <a th:href="@{/public/courses}" id="nav-student-public-catalog" data-nav-match="/public/courses,/courses">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('view')}"></svg></span>
                 <span class="nav-label">Public Catalog</span>
-            </a>
-            <a th:href="@{/student/assignments}" id="nav-student-assignments" data-nav-match="/student/assignments">
-                <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></span>
-                <span class="nav-label">Assignments</span>
             </a>
             <a th:href="@{/student/certificates}" id="nav-student-certificates" data-nav-match="/student/certificates">
                 <span class="nav-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>

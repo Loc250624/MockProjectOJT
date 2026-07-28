@@ -11,11 +11,15 @@ public interface LessonMapper {
 
     @Mapping(source = "course.id", target = "courseId")
     @Mapping(source = "quiz.id", target = "quizId")
-    @Mapping(source = "codingassignment.id", target = "codingAssignmentId")
     @Mapping(expression = "java(entity.getQuiz() != null)", target = "hasQuiz")
-    @Mapping(expression = "java(entity.getCodingassignment() != null)", target = "hasCodingAssignment")
     LessonResponseDTO toDto(Lesson entity);
 
     @Mapping(source = "courseId", target = "course.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "video", ignore = true)
+    @Mapping(target = "quiz", ignore = true)
+    @Mapping(target = "lessonprogresss", ignore = true)
+    @Mapping(target = "submissions", ignore = true)
     Lesson toEntity(LessonRequestDTO dto);
 }

@@ -15,10 +15,19 @@ public interface CourseMapper {
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "roadmap.id", target = "roadmapId")
     @Mapping(source = "roadmap.title", target = "roadmapTitle")
+    @Mapping(target = "enrollmentStatus", ignore = true)
     CourseResponseDTO toDto(Course entity);
 
     @Mapping(source = "instructorId", target = "instructor.id")
     @Mapping(source = "categoryId", target = "category.id")
     @Mapping(source = "roadmapId", target = "roadmap.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "rejectReason", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "lessons", ignore = true)
+    @Mapping(target = "courseenrollments", ignore = true)
+    @Mapping(target = "certificates", ignore = true)
+    @Mapping(target = "transactions", ignore = true)
     Course toEntity(CourseRequestDTO dto);
 }

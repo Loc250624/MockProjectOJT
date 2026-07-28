@@ -115,28 +115,6 @@
             </div>
 
             <div class="grid-2-col">
-                <div class="card card-padded">
-                    <div class="card-header">
-                        <h2 class="card-title">Recent Submissions</h2>
-                        <a th:href="${teacherDashboard.gradeAllUrl}" style="font-size:0.8125rem;color:var(--lumina-blue);font-weight:600;">Grade All</a>
-                    </div>
-                    <div style="padding:2rem;border:1px dashed var(--lumina-gray-300);border-radius:8px;text-align:center;background:white;" th:if="${#lists.isEmpty(teacherDashboard.recentSubmissions)}">
-                        <h3>No recent submissions</h3>
-                        <p>New assignment submissions from your courses will appear here.</p>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:1rem;" th:unless="${#lists.isEmpty(teacherDashboard.recentSubmissions)}">
-                        <a th:each="submission : ${teacherDashboard.recentSubmissions}"
-                           th:href="${submission.reviewUrl}"
-                           style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--lumina-gray-100);padding-bottom:0.75rem;text-decoration:none;">
-                            <div style="min-width:0;">
-                                <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);" th:text="${submission.assessmentTitle}">Assignment</div>
-                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${submission.studentName + ' - ' + submission.submittedAgoLabel}">Student - Submitted</div>
-                            </div>
-                            <span class="badge" th:classappend="${submission.reviewStatusClass}" th:text="${submission.reviewStatus}">Status</span>
-                        </a>
-                    </div>
-                </div>
-
                 <div class="card card-padded teacher-quick-card">
                     <div class="card-header">
                         <h2 class="card-title">Quick Actions</h2>

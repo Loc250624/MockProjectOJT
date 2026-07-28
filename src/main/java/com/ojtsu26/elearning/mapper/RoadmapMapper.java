@@ -13,5 +13,8 @@ public interface RoadmapMapper {
     RoadmapResponseDTO toDto(Roadmap entity);
 
     @Mapping(source = "instructorId", target = "instructor.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "courses", ignore = true)
     Roadmap toEntity(RoadmapRequestDTO dto);
 }

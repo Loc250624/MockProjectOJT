@@ -15,5 +15,9 @@ public interface TransactionMapper {
 
     @Mapping(source = "studentId", target = "student.id")
     @Mapping(source = "courseId", target = "course.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "order", ignore = true)
     Transaction toEntity(TransactionRequestDTO dto);
 }

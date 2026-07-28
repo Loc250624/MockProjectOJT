@@ -66,15 +66,7 @@ public class StudentViewController {
         model.addAttribute("completedCourseCount", completed);
         model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
         model.addAttribute("dashboardStats", studentDashboardService.getCurrentStudentStats());
-        model.addAttribute("upcomingDeadlines", studentDashboardService.getCurrentStudentDeadlines(3));
-
         return "student/dashboard";
-    }
-
-    @GetMapping("/deadlines")
-    public String deadlines(Model model) {
-        model.addAttribute("deadlines", studentDashboardService.getCurrentStudentDeadlines(25));
-        return "student/deadlines";
     }
 
     @GetMapping("/profile")
@@ -203,23 +195,6 @@ public class StudentViewController {
         return "student/quiz";
     }
 
-    @GetMapping("/code-assignment")
-    public String codeAssignment() { return "student/code-assignment"; }
-
-    @GetMapping("/assignments")
-    public String assignments(@RequestParam(required = false) Integer courseId, Model model) {
-        model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
-        model.addAttribute("assignments", assessmentService.getStudentAssignments(courseId));
-        model.addAttribute("selectedCourseId", courseId);
-        return "student/assignments";
-    }
-
-    @GetMapping("/assignments/{assignmentId}/submit")
-    public String submitAssignment(@PathVariable Integer assignmentId, Model model) {
-        model.addAttribute("submission", assessmentService.getAssignmentForSubmission(assignmentId));
-        return "student/code-assignment";
-    }
-
     @GetMapping("/results")
     public String results(Model model) {
         model.addAttribute("results", assessmentService.getStudentResults());
@@ -230,12 +205,6 @@ public class StudentViewController {
     public String quizResult(@PathVariable Integer attemptId, Model model) {
         model.addAttribute("attempt", assessmentService.getStudentQuizResult(attemptId));
         return "student/quiz-result";
-    }
-
-    @GetMapping("/submissions/{submissionId}/result")
-    public String submissionResult(@PathVariable Integer submissionId, Model model) {
-        model.addAttribute("submission", assessmentService.getStudentSubmissionResult(submissionId));
-        return "student/submission-result";
     }
 
     @GetMapping("/certificates")

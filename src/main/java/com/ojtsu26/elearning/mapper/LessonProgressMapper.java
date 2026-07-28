@@ -15,5 +15,12 @@ public interface LessonProgressMapper {
 
     @Mapping(source = "enrollmentId", target = "enrollment.id")
     @Mapping(source = "lessonId", target = "lesson.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "lastAccessedAt", ignore = true)
+    @Mapping(target = "watchedSeconds", ignore = true)
+    @Mapping(target = "lastPositionSeconds", ignore = true)
+    @Mapping(target = "maxReachedSeconds", ignore = true)
+    @Mapping(target = "durationSeconds", ignore = true)
+    @Mapping(target = "lastUpdatedAt", ignore = true)
     LessonProgress toEntity(LessonProgressRequestDTO dto);
 }

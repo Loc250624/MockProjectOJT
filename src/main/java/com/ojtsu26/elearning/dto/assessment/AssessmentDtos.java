@@ -1,11 +1,8 @@
 package com.ojtsu26.elearning.dto.assessment;
 
-import com.ojtsu26.elearning.model.enums.CodeJudgeStatus;
-import com.ojtsu26.elearning.model.enums.AssignmentType;
 import com.ojtsu26.elearning.model.enums.QuestionType;
 import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.QuestionDifficulty;
 import com.ojtsu26.elearning.model.enums.QuestionGenerationSource;
 import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
@@ -67,27 +64,6 @@ public final class AssessmentDtos {
     }
 
     @Data
-    public static class AssignmentPayload {
-        @NotBlank
-        private String title;
-        private String problemStatement;
-        private String instructions;
-        private String starterCode;
-        private String allowedLanguages;
-        @Positive
-        private Integer timeLimitMs = 1000;
-        @DecimalMin(value = "0.0", inclusive = false)
-        private BigDecimal maxScore = new BigDecimal("100.00");
-        private LocalDateTime dueDate;
-        private String status = "DRAFT";
-        private Integer lessonId;
-        private AssignmentType type = AssignmentType.CODING;
-        @Valid
-        private List<QuestionPayload> questions = new ArrayList<>();
-        private List<Integer> assigneeStudentIds = new ArrayList<>();
-    }
-
-    @Data
     public static class AnswerPayload {
         @NotNull
         private Integer questionId;
@@ -99,39 +75,6 @@ public final class AssessmentDtos {
     public static class QuizDraftPayload {
         @Valid
         private List<AnswerPayload> answers = new ArrayList<>();
-    }
-
-    @Data
-    public static class AssignmentSubmissionPayload {
-        private String contentText;
-        private String codeLanguage;
-        private String codeContent;
-        private String filePath;
-        @Valid
-        private List<AnswerPayload> answers = new ArrayList<>();
-    }
-
-    @Data
-    public static class TestcasePayload {
-        @NotBlank
-        private String input;
-        @NotBlank
-        private String expectedOutput;
-        private Boolean hidden = false;
-        @NotNull
-        @DecimalMin(value = "0.0", inclusive = false)
-        private BigDecimal points = BigDecimal.ONE;
-        private Integer displayOrder;
-    }
-
-    @Data
-    public static class GradePayload {
-        @NotNull
-        @DecimalMin("0.0")
-        private BigDecimal score;
-        @NotBlank
-        private String feedback;
-        private Boolean publish = true;
     }
 
     @Data
@@ -213,81 +156,7 @@ public final class AssessmentDtos {
     }
 
     @Data
-    public static class SubmissionView {
-        private Integer id;
-        private Integer assignmentId;
-        private Integer lessonId;
-        private Integer courseId;
-        private Integer attemptNo;
-        private String courseTitle;
-        private String assignmentTitle;
-        private String assignmentType;
-        private String studentName;
-        private String contentText;
-        private String codeLanguage;
-        private String codeContent;
-        private String filePath;
-        private List<QuestionView> answers = new ArrayList<>();
-        private SubmissionStatus status;
-        private BigDecimal score;
-        private BigDecimal maxScore;
-        private String feedback;
-        private LocalDateTime submittedAt;
-        private LocalDateTime updatedAt;
-        private LocalDateTime gradedAt;
-        private String gradedByName;
-        private Boolean released;
-        private CodeJudgeStatus judgeStatus;
-        private Integer totalTests;
-        private Integer passedTests;
-        private String outputLog;
-        private List<SubmissionView> history = new ArrayList<>();
-    }
-
-    @Data
-    public static class AssignmentView {
-        private Integer id;
-        private Integer lessonId;
-        private Integer courseId;
-        private String courseTitle;
-        private String lessonTitle;
-        private String title;
-        private String problemStatement;
-        private String instructions;
-        private String starterCode;
-        private String allowedLanguages;
-        private Integer timeLimitMs;
-        private String type;
-        private LocalDateTime dueDate;
-        private String status;
-        private BigDecimal maxScore;
-        private List<Integer> assigneeStudentIds = new ArrayList<>();
-        private long assigneeCount;
-        private long submissionCount;
-        private long pendingCount;
-        private List<QuestionView> questions = new ArrayList<>();
-    }
-
-    @Data
-    public static class GradingSummaryView {
-        private long pendingCount;
-        private long gradedCount;
-        private long failedCount;
-    }
-
-    @Data
-    public static class TestcaseView {
-        private Integer id;
-        private String input;
-        private String expectedOutput;
-        private Boolean hidden;
-        private BigDecimal points;
-        private Integer displayOrder;
-    }
-
-    @Data
     public static class ResultSummaryView {
         private List<QuizAttemptView> quizAttempts = new ArrayList<>();
-        private List<SubmissionView> submissions = new ArrayList<>();
     }
 }

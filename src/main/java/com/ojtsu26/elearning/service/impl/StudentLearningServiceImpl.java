@@ -164,8 +164,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         if (lesson.getType() == LessonType.VIDEO) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Video lessons complete from recorded playback progress.");
         }
-        if (lesson.getType() == LessonType.QUIZ || lesson.getType() == LessonType.CODING
-                || lesson.getQuiz() != null || lesson.getCodingassignment() != null) {
+        if (lesson.getType() == LessonType.QUIZ || lesson.getQuiz() != null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Assessment lessons must be completed through assessment results.");
         }
         LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
@@ -260,6 +259,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private List<Lesson> orderedLessons(Integer courseId) {
         return lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(courseId).stream()
+                .filter(lesson -> lesson.getType() != LessonType.RETIRED)
                 .sorted(Comparator.comparing(Lesson::getOrderIndex, Comparator.nullsLast(Integer::compareTo)))
                 .toList();
     }

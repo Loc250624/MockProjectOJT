@@ -3,11 +3,9 @@ package com.ojtsu26.elearning.service.impl;
 import com.ojtsu26.elearning.dto.response.AdminProfileOverviewDTO;
 import com.ojtsu26.elearning.dto.response.TeacherProfileOverviewDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
-import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,9 +27,6 @@ class ProfileOverviewServiceImplTest {
     private CourseEnrollmentRepository courseEnrollmentRepository;
 
     @Mock
-    private SubmissionRepository submissionRepository;
-
-    @Mock
     private UserRepository userRepository;
 
     private ProfileOverviewServiceImpl profileOverviewService;
@@ -41,7 +36,6 @@ class ProfileOverviewServiceImplTest {
         profileOverviewService = new ProfileOverviewServiceImpl(
                 courseRepository,
                 courseEnrollmentRepository,
-                submissionRepository,
                 userRepository
         );
     }
@@ -51,18 +45,15 @@ class ProfileOverviewServiceImplTest {
         when(courseRepository.countByInstructorId(10)).thenReturn(4L);
         when(courseRepository.countByInstructorIdAndStatus(10, CourseStatus.APPROVED)).thenReturn(3L);
         when(courseEnrollmentRepository.countDistinctStudentsByTeacherId(10)).thenReturn(25L);
-        when(submissionRepository.countByTeacherIdAndStatus(10, SubmissionStatus.PENDING_REVIEW)).thenReturn(7L);
 
         TeacherProfileOverviewDTO overview = profileOverviewService.getTeacherOverview(10);
 
         assertThat(overview.getTotalCourses()).isEqualTo(4L);
         assertThat(overview.getApprovedCourses()).isEqualTo(3L);
         assertThat(overview.getTotalStudents()).isEqualTo(25L);
-        assertThat(overview.getPendingSubmissions()).isEqualTo(7L);
         verify(courseRepository).countByInstructorId(10);
         verify(courseRepository).countByInstructorIdAndStatus(10, CourseStatus.APPROVED);
         verify(courseEnrollmentRepository).countDistinctStudentsByTeacherId(10);
-        verify(submissionRepository).countByTeacherIdAndStatus(10, SubmissionStatus.PENDING_REVIEW);
     }
 
     @Test

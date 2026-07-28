@@ -5,7 +5,6 @@
 .lumina-portal-main {
   background: var(--lumina-bg-alt);
 }
-
 /* Course Progress Card */
 .progress-card {
   background: white;
@@ -18,7 +17,6 @@
   height: 100%;
   transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .progress-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
@@ -314,89 +312,6 @@
   border-radius: 8px;
   padding: 0.75rem;
   font: inherit;
-}
-
-.student-assignment-filter {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
-  align-items: end;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.student-assignment-filter label,
-.student-assignment-section {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.student-assignment-filter select {
-  width: 100%;
-  border: 1px solid var(--lumina-gray-300);
-  border-radius: 8px;
-  padding: 0.75rem;
-  font: inherit;
-}
-
-.student-assignment-list {
-  gap: 0.85rem;
-}
-
-.student-assignment-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
-  border: 1px solid var(--lumina-gray-200);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.student-assignment-card h2,
-.student-assignment-card p {
-  margin: 0.15rem 0;
-}
-
-.student-assignment-card small,
-.result-row small {
-  display: block;
-  margin-top: 0.2rem;
-  color: var(--lumina-gray-500);
-}
-
-.student-mcq-list {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.student-mcq-question {
-  display: grid;
-  gap: 0.6rem;
-  margin: 0;
-  padding: 1rem;
-  border: 1px solid var(--lumina-gray-200);
-  border-radius: 8px;
-}
-
-.student-mcq-question legend {
-  padding: 0 0.35rem;
-  color: var(--lumina-gray-900);
-  font-weight: 800;
-}
-
-.student-answer-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.65rem;
-  border: 1px solid var(--lumina-gray-200);
-  border-radius: 8px;
-}
-
-.student-answer-option input {
-  width: auto;
 }
 
 .quiz-question {

@@ -13,7 +13,5 @@ public interface QuizAnswerRepository extends JpaRepository<QuizAnswer, Integer>
 
     List<QuizAnswer> findByAttemptId(Integer attemptId);
 
-    List<QuizAnswer> findBySubmissionId(Integer submissionId);
-
     Optional<QuizAnswer> findByAttemptIdAndQuestionId(Integer attemptId, Integer questionId);
 }

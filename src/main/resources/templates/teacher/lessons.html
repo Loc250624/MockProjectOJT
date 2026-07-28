@@ -81,10 +81,6 @@
                                        th:href="@{/teacher/quizzes(courseId=${selectedCourseId},lessonId=${lsn.id})}"
                                        class="btn btn-secondary btn-sm"
                                        th:text="${lsn.hasQuiz ? 'Manage Quiz' : 'Create Quiz'}">Create Quiz</a>
-                                    <a th:if="${lsn.type != null && lsn.type.name() == 'CODING'}"
-                                       th:href="@{/teacher/assignments(courseId=${selectedCourseId},lessonId=${lsn.id})}"
-                                       class="btn btn-secondary btn-sm"
-                                       th:text="${lsn.hasCodingAssignment ? 'Manage Coding' : 'Create Coding'}">Create Coding</a>
                                     <a th:if="${lsn.type != null && lsn.type.name() == 'VIDEO'}"
                                        th:href="@{/teacher/videos(courseId=${selectedCourseId},lessonId=${lsn.id})}"
                                        class="btn btn-secondary btn-sm">Manage Video</a>

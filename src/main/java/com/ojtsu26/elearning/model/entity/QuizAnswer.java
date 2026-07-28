@@ -25,10 +25,6 @@ public class QuizAnswer {
     private QuizAttempt attempt;
 
     @ManyToOne
-    @JoinColumn(name = "submission_id")
-    private Submission submission;
-
-    @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 

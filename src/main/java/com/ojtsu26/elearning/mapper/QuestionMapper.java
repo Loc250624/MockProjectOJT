@@ -13,5 +13,10 @@ public interface QuestionMapper {
     QuestionResponseDTO toDto(Question entity);
 
     @Mapping(source = "quizId", target = "quiz.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "questionType", ignore = true)
+    @Mapping(target = "points", ignore = true)
+    @Mapping(target = "displayOrder", ignore = true)
+    @Mapping(target = "answers", ignore = true)
     Question toEntity(QuestionRequestDTO dto);
 }

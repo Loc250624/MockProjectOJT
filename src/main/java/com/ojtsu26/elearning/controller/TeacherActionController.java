@@ -290,26 +290,6 @@ public class TeacherActionController {
         return ResponseEntity.ok(Map.of("message", "Delete quiz " + id + " placeholder - not yet implemented"));
     }
 
-    @PostMapping("/testcases")
-    public ResponseEntity<?> createTestcase() {
-        return ResponseEntity.ok(Map.of("message", "Create testcase placeholder - not yet implemented"));
-    }
-
-    @PatchMapping("/testcases/{id}")
-    public ResponseEntity<?> updateTestcase(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Update testcase " + id + " placeholder - not yet implemented"));
-    }
-
-    @DeleteMapping("/testcases/{id}")
-    public ResponseEntity<?> deleteTestcase(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete testcase " + id + " placeholder - not yet implemented"));
-    }
-
-    @PatchMapping("/assignments/{id}/grade")
-    public ResponseEntity<?> gradeAssignment(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Grade assignment " + id + " placeholder - not yet implemented"));
-    }
-
     @PostMapping("/blogs")
     public String createBlog(@Valid @ModelAttribute("blogPost") BlogPostRequestDTO requestDTO,
                              BindingResult bindingResult,
@@ -393,9 +373,6 @@ public class TeacherActionController {
             redirectAttributes.addFlashAttribute("successMessage", "Lesson created successfully!");
             if (lesson.getType() == LessonType.QUIZ) {
                 return "redirect:/teacher/quizzes?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
-            }
-            if (lesson.getType() == LessonType.CODING) {
-                return "redirect:/teacher/assignments?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
             }
             if (lesson.getType() == LessonType.VIDEO) {
                 return "redirect:/teacher/videos/create?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();

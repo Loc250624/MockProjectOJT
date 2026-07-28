@@ -1,31 +1,29 @@
 package com.ojtsu26.elearning.repository;
 
-import com.ojtsu26.elearning.model.entity.CodingAssignment;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.Lesson;
-import com.ojtsu26.elearning.model.entity.Submission;
+import com.ojtsu26.elearning.model.entity.Question;
+import com.ojtsu26.elearning.model.entity.Quiz;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.Role;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 
-import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:teacher_assessment_repository_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+        "spring.datasource.url=jdbc:h2:mem:quiz_question_repository_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
@@ -36,70 +34,48 @@ class TeacherAssessmentRepositoryTest {
 
     @Autowired
     private EntityManager entityManager;
+
     @Autowired
-    private CodingAssignmentRepository codingAssignmentRepository;
-    @Autowired
-    private SubmissionRepository submissionRepository;
+    private QuestionRepository questionRepository;
 
     @Test
-    void teacherAssignmentQueryFiltersByOwnerStatusSearchAndPaginates() {
-        User teacherA = persistUser("teacher.a@example.com", Role.TEACHER);
-        User teacherB = persistUser("teacher.b@example.com", Role.TEACHER);
-        Course courseA = persistCourse("Java", teacherA);
-        Course courseB = persistCourse("Python", teacherB);
-        CodingAssignment javaOne = persistAssignment("Loops Lab", "PUBLISHED", courseA);
-        persistAssignment("Arrays Lab", "DRAFT", courseA);
-        persistAssignment("Other Teacher Lab", "PUBLISHED", courseB);
+    void randomQuizQuestionQueryReturnsTenQuestionsFromRequestedQuiz() {
+        User teacher = persistUser("teacher.quiz@example.com");
+        Quiz javaQuiz = persistQuiz("Java OOP", teacher);
+        Quiz otherQuiz = persistQuiz("SQL", teacher);
+        persistQuestions(javaQuiz, 100);
+        persistQuestions(otherQuiz, 12);
         entityManager.flush();
         entityManager.clear();
 
-        Page<CodingAssignment> published = codingAssignmentRepository.findTeacherAssignments(
-                teacherA.getId(), null, "PUBLISHED", "loops", PageRequest.of(0, 10));
+        var selected = questionRepository.findRandomByQuizId(
+                javaQuiz.getId(), PageRequest.of(0, 10));
 
-        assertThat(published.getTotalElements()).isEqualTo(1);
-        assertThat(published.getContent()).extracting(CodingAssignment::getId).containsExactly(javaOne.getId());
-
-        Page<CodingAssignment> firstPage = codingAssignmentRepository.findTeacherAssignments(
-                teacherA.getId(), null, null, null, PageRequest.of(0, 1));
-
-        assertThat(firstPage.getTotalElements()).isEqualTo(2);
-        assertThat(firstPage.getContent()).hasSize(1);
+        assertThat(selected).hasSize(10);
+        assertThat(selected)
+                .allMatch(question -> question.getQuiz().getId().equals(javaQuiz.getId()));
     }
 
     @Test
-    void teacherSubmissionQueryFiltersByOwnerAssignmentStatusAndStudentSearch() {
-        User teacherA = persistUser("teacher.a.sub@example.com", Role.TEACHER);
-        User teacherB = persistUser("teacher.b.sub@example.com", Role.TEACHER);
-        User studentA = persistUser("student.a@example.com", Role.STUDENT);
-        User studentB = persistUser("student.b@example.com", Role.STUDENT);
-        Course courseA = persistCourse("Algorithms", teacherA);
-        Course courseB = persistCourse("Databases", teacherB);
-        CodingAssignment assignmentA = persistAssignment("Stacks Lab", "PUBLISHED", courseA);
-        CodingAssignment assignmentB = persistAssignment("Indexes Lab", "PUBLISHED", courseB);
-        Submission ownSubmission = persistSubmission(assignmentA, studentA, SubmissionStatus.SUBMITTED);
-        persistSubmission(assignmentA, studentB, SubmissionStatus.GRADED);
-        persistSubmission(assignmentB, studentA, SubmissionStatus.SUBMITTED);
+    void randomQuizQuestionQueryReturnsAllWhenQuizHasFewerThanTen() {
+        User teacher = persistUser("teacher.small@example.com");
+        Quiz quiz = persistQuiz("Small Quiz", teacher);
+        persistQuestions(quiz, 7);
         entityManager.flush();
         entityManager.clear();
 
-        Page<Submission> submissions = submissionRepository.findTeacherSubmissions(
-                teacherA.getId(),
-                courseA.getId(),
-                assignmentA.getId(),
-                SubmissionStatus.SUBMITTED,
-                "student.a",
-                PageRequest.of(0, 10));
+        var selected = questionRepository.findRandomByQuizId(
+                quiz.getId(), PageRequest.of(0, 10));
 
-        assertThat(submissions.getTotalElements()).isEqualTo(1);
-        assertThat(submissions.getContent()).extracting(Submission::getId).containsExactly(ownSubmission.getId());
+        assertThat(selected).hasSize(7);
     }
 
-    private User persistUser(String email, Role role) {
+    private User persistUser(String email) {
         User user = User.builder()
-                .fullName(email.substring(0, email.indexOf('@')))
+                .fullName("Quiz Teacher")
                 .email(email)
                 .passwordHash("secret")
-                .role(role)
+                .role(Role.TEACHER)
                 .status(UserStatus.ACTIVE)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
@@ -107,7 +83,7 @@ class TeacherAssessmentRepositoryTest {
         return user;
     }
 
-    private Course persistCourse(String title, User teacher) {
+    private Quiz persistQuiz(String title, User teacher) {
         Course course = Course.builder()
                 .title(title)
                 .description(title)
@@ -116,36 +92,31 @@ class TeacherAssessmentRepositoryTest {
                 .instructor(teacher)
                 .build();
         entityManager.persist(course);
-        return course;
-    }
-
-    private CodingAssignment persistAssignment(String title, String status, Course course) {
         Lesson lesson = Lesson.builder()
-                .title(title)
-                .type(LessonType.CODING)
+                .title(title + " Quiz")
+                .type(LessonType.QUIZ)
                 .course(course)
                 .orderIndex(1)
                 .build();
         entityManager.persist(lesson);
-        CodingAssignment assignment = CodingAssignment.builder()
-                .title(title)
-                .status(status)
-                .maxScore(new BigDecimal("100.00"))
+        Quiz quiz = Quiz.builder()
+                .title(title + " Quiz")
                 .lesson(lesson)
+                .createdBy(teacher)
                 .build();
-        entityManager.persist(assignment);
-        return assignment;
+        entityManager.persist(quiz);
+        return quiz;
     }
 
-    private Submission persistSubmission(CodingAssignment assignment, User student, SubmissionStatus status) {
-        Submission submission = Submission.builder()
-                .assignment(assignment)
-                .lesson(assignment.getLesson())
-                .student(student)
-                .status(status)
-                .submittedContent("answer")
-                .build();
-        entityManager.persist(submission);
-        return submission;
+    private void persistQuestions(Quiz quiz, int count) {
+        for (int index = 1; index <= count; index++) {
+            entityManager.persist(Question.builder()
+                    .quiz(quiz)
+                    .questionText("Question " + index)
+                    .optionsJson("[\"A\",\"B\"]")
+                    .correctAnswer("A")
+                    .displayOrder(index)
+                    .build());
+        }
     }
 }

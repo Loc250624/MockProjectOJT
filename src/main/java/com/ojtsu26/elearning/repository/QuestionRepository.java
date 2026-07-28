@@ -4,18 +4,19 @@ import com.ojtsu26.elearning.model.entity.Question;
 import com.ojtsu26.elearning.model.enums.QuestionDifficulty;
 import com.ojtsu26.elearning.model.enums.QuestionGenerationSource;
 import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Integer> {
     List<Question> findByQuizIdOrderByDisplayOrderAscIdAsc(Integer quizId);
-    List<Question> findByAssignmentIdOrderByDisplayOrderAscIdAsc(Integer assignmentId);
 
     List<Question> findByQuizIdAndReviewStatusAndActiveTrueOrderByIdAsc(
             Integer quizId,
@@ -27,12 +28,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
             QuestionDifficulty difficulty,
             QuestionReviewStatus reviewStatus);
 
-    /**
-     * Hibernate ddl-auto initializes newly added NOT NULL columns with zero/first
-     * enum values when an old Questions table already contains rows. The
-     * version=0 + blank-topic pair identifies those legacy rows without touching
-     * questions that a teacher intentionally archived.
-     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update Question q
@@ -51,4 +46,9 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
             @Param("reviewStatus") QuestionReviewStatus reviewStatus,
             @Param("version") Integer version,
             @Param("generationSource") QuestionGenerationSource generationSource);
+
+    List<Question> findByQuizIdAndIdIn(Integer quizId, Collection<Integer> questionIds);
+
+    @Query("select q from Question q where q.quiz.id = :quizId order by function('RAND')")
+    List<Question> findRandomByQuizId(@Param("quizId") Integer quizId, Pageable pageable);
 }

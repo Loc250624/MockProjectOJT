@@ -4,7 +4,6 @@ import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.request.VideoProgressRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningLessonDTO;
-import com.ojtsu26.elearning.model.entity.CodingAssignment;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
@@ -229,15 +228,14 @@ class StudentLearningServiceTest {
     }
 
     @Test
-    void videoCompletionUnlocksNextCodingLesson() {
+    void videoCompletionUnlocksNextQuizLessonAfterVideo() {
         stubAccess();
-        Lesson codingLesson = Lesson.builder()
+        Lesson quizLesson = Lesson.builder()
                 .id(103)
                 .course(course)
-                .title("Build It")
-                .type(LessonType.CODING)
+                .title("Check It")
+                .type(LessonType.QUIZ)
                 .orderIndex(3)
-                .codingassignment(CodingAssignment.builder().id(88).build())
                 .build();
         LessonProgress completedFirst = completedProgress(firstLesson);
         LessonProgress videoProgress = LessonProgress.builder()
@@ -246,7 +244,7 @@ class StudentLearningServiceTest {
                 .isCompleted(false)
                 .watchedSeconds(0)
                 .build();
-        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, secondLesson, codingLesson));
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson, secondLesson, quizLesson));
         when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(videoProgress));
         when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(completedFirst, videoProgress));
@@ -535,31 +533,14 @@ class StudentLearningServiceTest {
     @Test
     void assessmentLessonCannotBeCompletedByGenericEndpoint() {
         stubAccess();
-        Lesson assignmentLesson = Lesson.builder()
+        Lesson quizLesson = Lesson.builder()
                 .id(103)
                 .course(course)
-                .title("Assignment")
-                .type(LessonType.CODING)
-                .orderIndex(3)
-                .codingassignment(CodingAssignment.builder().id(88).build())
-                .build();
-        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(assignmentLesson));
-
-        assertThrows(BusinessException.class, () -> service.completeLesson(10, 103));
-        verify(lessonProgressRepository, never()).save(any());
-    }
-
-    @Test
-    void brokenCodingLessonCannotBeCompletedByGenericEndpoint() {
-        stubAccess();
-        Lesson brokenAssignmentLesson = Lesson.builder()
-                .id(103)
-                .course(course)
-                .title("Assignment")
-                .type(LessonType.CODING)
+                .title("Quiz")
+                .type(LessonType.QUIZ)
                 .orderIndex(3)
                 .build();
-        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(brokenAssignmentLesson));
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(quizLesson));
 
         assertThrows(BusinessException.class, () -> service.completeLesson(10, 103));
         verify(lessonProgressRepository, never()).save(any());

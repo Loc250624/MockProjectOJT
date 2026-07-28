@@ -8,6 +8,7 @@ import com.ojtsu26.elearning.mapper.LessonMapper;
 import com.ojtsu26.elearning.repository.LessonRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.service.LessonService;
+import com.ojtsu26.elearning.model.enums.LessonType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class LessonServiceImpl implements LessonService {
     @Override
     public List<LessonResponseDTO> findAll() {
         return lessonRepository.findAll().stream()
+                .filter(lesson -> lesson.getType() != LessonType.RETIRED)
                 .map(lessonMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -70,8 +72,10 @@ public class LessonServiceImpl implements LessonService {
     @Override
     public LessonResponseDTO create(LessonRequestDTO requestDTO, Integer instructorId) {
         verifyCourseOwnership(requestDTO.getCourseId(), instructorId);
+        validateActiveType(requestDTO.getType());
         
-        List<Lesson> existingLessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(requestDTO.getCourseId());
+        List<Lesson> existingLessons = lessonRepository
+                .findByCourseIdWithAssessmentOrderByOrderIndexAsc(requestDTO.getCourseId());
         int targetIndex = requestDTO.getOrderIndex() != null ? requestDTO.getOrderIndex() : existingLessons.size() + 1;
         
         // Shift lessons down
@@ -92,6 +96,10 @@ public class LessonServiceImpl implements LessonService {
     public LessonResponseDTO update(Integer id, LessonRequestDTO requestDTO, Integer instructorId) {
         Lesson existing = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        if (existing.getType() == LessonType.RETIRED) {
+            throw new RuntimeException("Lesson not found");
+        }
+        validateActiveType(requestDTO.getType());
         
         verifyCourseOwnership(existing.getCourse().getId(), instructorId);
         
@@ -102,7 +110,6 @@ public class LessonServiceImpl implements LessonService {
         existing.setContent(requestDTO.getContent());
         if (requestDTO.getType() != existing.getType()
                 && ((existing.getQuiz() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.QUIZ)
-                || (existing.getCodingassignment() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.CODING)
                 || (existing.getVideo() != null && requestDTO.getType() != com.ojtsu26.elearning.model.enums.LessonType.VIDEO))) {
             throw new RuntimeException("Cannot change lesson type while matching lesson content exists");
         }
@@ -138,6 +145,9 @@ public class LessonServiceImpl implements LessonService {
     public void delete(Integer id, Integer instructorId) {
         Lesson existing = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        if (existing.getType() == LessonType.RETIRED) {
+            throw new RuntimeException("Lesson not found");
+        }
         verifyCourseOwnership(existing.getCourse().getId(), instructorId);
         Integer courseId = existing.getCourse().getId();
         
@@ -162,10 +172,17 @@ public class LessonServiceImpl implements LessonService {
         int idx = 1;
         for (Integer id : lessonIdsInOrder) {
             Lesson lesson = lessonRepository.findById(id).orElse(null);
-            if (lesson != null && lesson.getCourse().getId().equals(courseId)) {
+            if (lesson != null && lesson.getType() != LessonType.RETIRED
+                    && lesson.getCourse().getId().equals(courseId)) {
                 lesson.setOrderIndex(idx++);
                 lessonRepository.save(lesson);
             }
+        }
+    }
+
+    private void validateActiveType(LessonType type) {
+        if (type != LessonType.VIDEO && type != LessonType.QUIZ) {
+            throw new RuntimeException("Lesson type must be VIDEO or QUIZ");
         }
     }
 }

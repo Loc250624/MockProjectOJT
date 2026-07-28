@@ -19,8 +19,6 @@ public class LearningDataSeeder {
     private final LessonProgressRepository lessonProgressRepository;
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
-    private final CodingAssignmentRepository codingAssignmentRepository;
-    private final TestcaseRepository testcaseRepository;
     private final SubmissionRepository submissionRepository;
     
     private final UserRepository userRepository;
@@ -30,7 +28,6 @@ public class LearningDataSeeder {
     @Transactional
     public void seed() {
         seedQuizzesAndQuestions();
-        seedCodingAssignmentsAndTestcases();
         seedCourseEnrollments();
         seedLessonProgress();
         seedSubmissions();
@@ -71,41 +68,6 @@ public class LearningDataSeeder {
                         .build();
                 questionRepository.save(question);
                 questionCount++;
-            }
-        }
-    }
-
-    private void seedCodingAssignmentsAndTestcases() {
-        if (codingAssignmentRepository.count() > 0) return;
-        List<Lesson> codingLessons = lessonRepository.findAll().stream()
-                .filter(l -> l.getType() == LessonType.CODING).collect(Collectors.toList());
-
-        int assignmentCount = 0;
-        for (Lesson lesson : codingLessons) {
-            CodingAssignment assignment = CodingAssignment.builder()
-                    .lesson(lesson)
-                    .title("Coding: " + lesson.getTitle())
-                    .problemStatement("Solve the following problem using Java.")
-                    .starterCode("public class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}")
-                    .allowedLanguages("Java, Python")
-                    .timeLimitMs(2000)
-                    .maxScore(new BigDecimal("100.00"))
-                    .status("PUBLISHED")
-                    .build();
-            assignment = codingAssignmentRepository.save(assignment);
-            assignmentCount++;
-            
-            int testcasesForAssignment = SeederUtils.getRandomInt(3, 8);
-            for (int i = 0; i < testcasesForAssignment; i++) {
-                Testcase testcase = Testcase.builder()
-                        .assignment(assignment)
-                        .inputData("input " + (i + 1))
-                        .expectedOutput("output " + (i + 1))
-                        .isHidden(SeederUtils.getRandomBoolean())
-                        .points(BigDecimal.ONE)
-                        .displayOrder(i + 1)
-                        .build();
-                testcaseRepository.save(testcase);
             }
         }
     }
@@ -156,6 +118,7 @@ public class LearningDataSeeder {
         for (CourseEnrollment enrollment : enrollments) {
             List<Lesson> courseLessons = lessonRepository.findAll().stream()
                 .filter(l -> l.getCourse().getId().equals(enrollment.getCourse().getId()))
+                .filter(l -> l.getType() != LessonType.RETIRED)
                 .collect(Collectors.toList());
             
             int lessonsToComplete = (int) (courseLessons.size() * enrollment.getProgressPercentage().doubleValue() / 100);
@@ -189,23 +152,18 @@ public class LearningDataSeeder {
             
             List<Lesson> assignableLessons = lessonRepository.findAll().stream()
                 .filter(l -> l.getCourse().getId().equals(enrollment.getCourse().getId()))
-                .filter(l -> l.getType() == LessonType.QUIZ || l.getType() == LessonType.CODING)
+                .filter(l -> l.getType() == LessonType.QUIZ)
                 .collect(Collectors.toList());
                 
             for (Lesson lesson : assignableLessons) {
                 if (submissionCount >= targetSubmissions) break;
                 if (SeederUtils.getRandomBoolean()) { // 50% chance they submitted it
-                    CodingAssignment assignment = lesson.getCodingassignment();
                     Submission submission = Submission.builder()
                             .student(enrollment.getStudent())
                             .lesson(lesson)
-                            .assignment(assignment)
                             .score(new BigDecimal(SeederUtils.getRandomInt(0, 100)))
                             .status(SeederUtils.getRandomElement(statuses))
-                            .submittedContent("My solution code or quiz answers")
-                            .codeLanguage(assignment == null ? null : "Java")
-                            .codeContent(assignment == null ? null : "public class Main { public static void main(String[] args) { System.out.println(\"output 1\"); } }")
-                            .teacherFeedback("Good job!")
+                            .submittedContent("{\"type\":\"QUIZ\",\"state\":\"SUBMITTED\",\"answers\":{}}")
                             .submittedAt(SeederUtils.getRandomPastDate(15))
                             .build();
                     submissionRepository.save(submission);

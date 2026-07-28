@@ -43,6 +43,9 @@ public class QuizAttempt {
 
     private BigDecimal totalPoints;
 
+    @Column(columnDefinition = "TEXT")
+    private String selectedQuestionIdsJson;
+
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
