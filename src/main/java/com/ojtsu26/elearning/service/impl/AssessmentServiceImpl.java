@@ -24,6 +24,9 @@ import com.ojtsu26.elearning.model.entity.QuizAttempt;
 import com.ojtsu26.elearning.model.entity.QuizAttemptQuestion;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
+import com.ojtsu26.elearning.model.enums.QuestionDifficulty;
+import com.ojtsu26.elearning.model.enums.QuestionGenerationSource;
+import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
 import com.ojtsu26.elearning.model.enums.QuestionType;
 import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
@@ -47,6 +50,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
