@@ -47,6 +47,7 @@
          style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
         <article th:each="blog : ${blogs}"
                  class="public-course-card"
+                 data-ai-page-context
                  style="padding:1.5rem;">
             <div style="font-size:0.75rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;margin-bottom:0.75rem;"
                  th:text="${blog.publishedAt == null ? 'Published' : #temporals.format(blog.publishedAt, 'dd MMM yyyy')}">Published</div>

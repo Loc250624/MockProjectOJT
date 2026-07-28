@@ -11,20 +11,64 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AiTutorFrontendSafetyTest {
 
     @Test
-    void aiTutorMessagesUseTextContentInsteadOfRawHtml() throws Exception {
-        String script = Files.readString(Path.of("src/main/resources/static/js/student/student.js"));
-        String styles = Files.readString(Path.of("src/main/resources/static/css/student/student.css"));
-        int start = script.indexOf("function initAiTutor()");
-        int end = script.indexOf("function applyLearningProgress", start);
+    void aiChatbotSafelyRendersMarkdownAndSendsBoundedPageContext() throws Exception {
+        String script = Files.readString(Path.of("src/main/resources/static/js/ai-chatbot.js"));
+        String styles = Files.readString(Path.of("src/main/resources/static/css/ai-chatbot.css"));
+        String fragment = Files.readString(Path.of("src/main/resources/templates/fragments/ai-chatbot.html"));
 
-        assertTrue(start >= 0, "AI Tutor initializer should exist");
-        assertTrue(end > start, "AI Tutor initializer should stay before learning progress helpers");
-
-        String aiTutorCode = script.substring(start, end);
-        assertTrue(aiTutorCode.contains("bubble.textContent = text || '';"));
-        assertFalse(aiTutorCode.contains("innerHTML"));
-        assertFalse(aiTutorCode.contains("insertAdjacentHTML"));
-        assertTrue(styles.contains(".ai-tutor-panel[hidden]"));
+        assertTrue(script.contains("renderMarkdown(bubble, text || '');"));
+        assertTrue(script.contains("document.createElement('strong')"));
+        assertTrue(script.contains("document.createElement(nextListType)"));
+        assertFalse(script.contains("innerHTML"));
+        assertFalse(script.contains("insertAdjacentHTML"));
+        assertTrue(script.contains("sessionStorage"));
+        assertTrue(script.contains("quick-actions-consumed"));
+        assertTrue(script.contains("consumeQuickActions();"));
+        assertTrue(script.contains("fetch('/api/ai-chatbot/chat'"));
+        assertTrue(script.contains("window.location.pathname"));
+        assertTrue(script.contains("visibleText: collectVisiblePageText(pageKey)"));
+        assertTrue(script.contains("'main [data-ai-page-context]'"));
+        assertFalse(script.contains("document.body"));
+        assertFalse(script.contains("document.documentElement.innerHTML"));
+        assertTrue(styles.contains(".ai-chatbot-bubble strong"));
+        assertTrue(styles.contains(".ai-chatbot-panel[hidden]"));
         assertTrue(styles.contains("display: none;"));
+        assertTrue(styles.contains("@media (max-width: 640px)"));
+
+        int greeting = fragment.indexOf("data-ai-chatbot-greeting");
+        int actions = fragment.indexOf("data-ai-chatbot-quick-actions");
+        assertTrue(greeting >= 0 && actions > greeting, "Greeting must render before quick actions");
+        assertTrue(fragment.contains("AI Chatbot"));
+        assertTrue(fragment.contains("placeholder=\"Ask about this website\""));
+        assertFalse(fragment.contains("AI Tutor"));
+        assertFalse(fragment.contains("Ask about this lesson"));
+    }
+
+    @Test
+    void everyPageTemplateGetsExactlyOneSharedChatbotMountPath() throws Exception {
+        Path templates = Path.of("src/main/resources/templates");
+        try (var paths = Files.walk(templates)) {
+            for (Path path : paths.filter(candidate -> candidate.toString().endsWith(".html"))
+                    .filter(candidate -> !candidate.toString().contains("fragments"))
+                    .filter(candidate -> !candidate.toString().contains("templates" + java.io.File.separator + "mail"))
+                    .toList()) {
+                String template = Files.readString(path);
+                int directMounts = occurrences(template, "fragments/ai-chatbot :: widget");
+                int sharedFooterMounts = occurrences(template, "fragments/layout :: footer")
+                        + occurrences(template, "fragments/layout :: portal-footer");
+                assertTrue(directMounts + sharedFooterMounts == 1,
+                        () -> path + " must have exactly one direct or shared-footer chatbot mount");
+            }
+        }
+    }
+
+    private int occurrences(String value, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = value.indexOf(needle, index)) >= 0) {
+            count++;
+            index += needle.length();
+        }
+        return count;
     }
 }

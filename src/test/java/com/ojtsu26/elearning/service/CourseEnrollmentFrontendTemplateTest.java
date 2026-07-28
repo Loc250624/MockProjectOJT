@@ -93,7 +93,7 @@ class CourseEnrollmentFrontendTemplateTest {
         String script = Files.readString(Path.of("src/main/resources/static/js/student/student.js"));
         String quizScript = script.substring(
                 script.indexOf("function initQuizPanel"),
-                script.indexOf("function initCodePanel"));
+                script.indexOf("function initAssessmentQuiz"));
 
         assertTrue(quizScript.contains("function setQuizViewMode(mode, label)"));
         assertTrue(quizScript.contains("mode !== 'loading'"));

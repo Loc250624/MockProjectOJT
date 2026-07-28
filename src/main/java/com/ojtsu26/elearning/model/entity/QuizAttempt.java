@@ -43,9 +43,15 @@ public class QuizAttempt {
 
     private BigDecimal totalPoints;
 
+    @Column(columnDefinition = "TEXT")
+    private String selectedQuestionIdsJson;
+
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizAnswer> answers;
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizAttemptQuestion> assignedQuestions;
 }

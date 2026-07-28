@@ -62,7 +62,6 @@
                          th:classappend="${lsn.type.name() == 'VIDEO' ? 'lesson-video' : (lsn.type.name() == 'QUIZ' ? 'lesson-quiz' : 'lesson-read')}">
                         <span th:if="${lsn.type.name() == 'VIDEO'}">▶</span>
                         <span th:if="${lsn.type.name() == 'QUIZ'}">✏</span>
-                        <span th:if="${lsn.type.name() == 'CODING'}">💻</span>
                     </div>
                     <div style="flex:1;">
                         <div style="font-size:0.9375rem; font-weight:700; color:var(--lumina-gray-800);" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1. Lesson Title</div>

@@ -1,6 +1,6 @@
 package com.ojtsu26.elearning.dto.request;
 
-import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,10 +12,13 @@ import java.util.List;
 @AllArgsConstructor
 public class AiTutorChatRequestDTO {
 
-    @NotNull(message = "Lesson ID is required.")
     private Integer lessonId;
-
     private String message;
     private String action;
+
+    @JsonAlias("recentMessages")
     private List<AiTutorChatMessageDTO> history;
+
+    private String conversationId;
+    private AiChatbotPageContextDTO pageContext;
 }

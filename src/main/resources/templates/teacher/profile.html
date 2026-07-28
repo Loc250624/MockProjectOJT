@@ -42,10 +42,6 @@
                                 <div class="stat-label">Enrolled Students</div>
                                 <div class="stat-value" th:text="${teacherOverview.totalStudents}">0</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-label">Pending Grading</div>
-                                <div class="stat-value text-warning" th:text="${teacherOverview.pendingSubmissions}">0</div>
-                            </div>
                         </div>
 
                         <div th:replace="~{fragments/profile :: account-information('Teaching Account Information')}"></div>
@@ -57,7 +53,6 @@
                             <div class="profile-actions-list">
                                 <a class="profile-action-link" th:href="@{/teacher/courses}">Course Management <span>-></span></a>
                                 <a class="profile-action-link" th:href="@{/teacher/courses/create}">Create Course <span>-></span></a>
-                                <a class="profile-action-link" th:href="@{/teacher/grading}">Pending Grading <span>-></span></a>
                                 <a class="profile-action-link" th:href="@{/teacher/analytics}">Teaching Analytics <span>-></span></a>
                             </div>
                         </div>

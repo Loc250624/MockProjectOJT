@@ -189,6 +189,45 @@
                             <div class="assessment-message"></div>
                         </form>
 
+                        <section class="assessment-form compact teacher-blueprint-panel" data-quiz-blueprint>
+                            <h4>Question bank readiness</h4>
+                            <p class="learning-help">Each attempt follows these topic and difficulty buckets. Publishing is blocked while a bucket is short.</p>
+                            <div data-blueprint-rows>
+                                <div class="assessment-grid-4" data-blueprint-row>
+                                    <input name="topicCode" value="GENERAL" placeholder="Topic code" aria-label="Blueprint topic">
+                                    <select name="difficulty" aria-label="Blueprint difficulty">
+                                        <option value="EASY">Easy</option>
+                                        <option value="MEDIUM" selected>Medium</option>
+                                        <option value="HARD">Hard</option>
+                                    </select>
+                                    <input name="questionCount" type="number" min="1" value="10" aria-label="Question count">
+                                    <button class="btn btn-secondary blueprint-remove-row" type="button">Remove</button>
+                                </div>
+                            </div>
+                            <div class="assessment-action-row">
+                                <button class="btn btn-secondary blueprint-add-row" type="button">Add bucket</button>
+                                <button class="btn btn-primary blueprint-save" type="button">Save blueprint</button>
+                                <button class="btn btn-secondary blueprint-readiness" type="button">Check readiness</button>
+                            </div>
+                            <div class="assessment-message" data-blueprint-message></div>
+                        </section>
+
+                        <form class="assessment-form compact question-generation-form">
+                            <h4>Generate draft questions with AI</h4>
+                            <textarea name="lessonContent" rows="3" maxlength="12000" placeholder="Paste the lesson content used to ground this batch" required></textarea>
+                            <div class="assessment-grid-4">
+                                <input name="topicCode" value="GENERAL" placeholder="Topic code" required>
+                                <select name="difficulty">
+                                    <option value="EASY">Easy</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="HARD">Hard</option>
+                                </select>
+                                <input name="questionCount" type="number" min="1" max="25" value="5">
+                                <button class="btn btn-primary" type="submit">Queue generation</button>
+                            </div>
+                            <div class="assessment-message"></div>
+                        </form>
+
                         <div class="assessment-list small teacher-question-list">
                             <div class="result-row teacher-question-row"
                                  th:each="question, stat : ${quiz.questions}"
@@ -215,6 +254,27 @@
                                             <span>Points</span>
                                             <input name="points" type="number" min="0.01" step="0.01" th:value="${question.points}">
                                         </label>
+                                        <label>
+                                            <span>Topic</span>
+                                            <input name="topicCode" th:value="${question.topicCode ?: 'GENERAL'}">
+                                        </label>
+                                        <label>
+                                            <span>Difficulty</span>
+                                            <select name="difficulty">
+                                                <option value="EASY" th:selected="${question.difficulty?.name() == 'EASY'}">Easy</option>
+                                                <option value="MEDIUM" th:selected="${question.difficulty == null || question.difficulty?.name() == 'MEDIUM'}">Medium</option>
+                                                <option value="HARD" th:selected="${question.difficulty?.name() == 'HARD'}">Hard</option>
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Review</span>
+                                            <select name="reviewStatus">
+                                                <option value="DRAFT" th:selected="${question.reviewStatus?.name() == 'DRAFT'}">Draft</option>
+                                                <option value="APPROVED" th:selected="${question.reviewStatus == null || question.reviewStatus?.name() == 'APPROVED'}">Approved</option>
+                                                <option value="REJECTED" th:selected="${question.reviewStatus?.name() == 'REJECTED'}">Rejected</option>
+                                                <option value="ARCHIVED" th:selected="${question.reviewStatus?.name() == 'ARCHIVED'}">Archived</option>
+                                            </select>
+                                        </label>
                                     </div>
                                     <div class="teacher-option-editor" data-option-editor>
                                         <div class="teacher-option-editor-head">
@@ -240,6 +300,9 @@
                                     <div class="assessment-action-row">
                                         <button class="btn btn-secondary" type="submit">Save Question</button>
                                         <button class="btn btn-secondary delete-question-btn" type="button" aria-label="Delete question">Delete</button>
+                                        <button class="btn btn-secondary question-review-btn" data-action="approve" type="button">Approve</button>
+                                        <button class="btn btn-secondary question-review-btn" data-action="reject" type="button">Reject</button>
+                                        <button class="btn btn-secondary question-review-btn" data-action="archive" type="button">Archive</button>
                                         <button class="btn btn-secondary question-move-btn" type="button" data-direction="up" aria-label="Move question up">Up</button>
                                         <button class="btn btn-secondary question-move-btn" type="button" data-direction="down" aria-label="Move question down">Down</button>
                                     </div>
@@ -258,6 +321,16 @@
                                 </select>
                                 <input name="points" type="number" min="0.01" step="0.01" value="1">
                                 <input name="displayOrder" type="number" min="1" placeholder="Order">
+                                <input name="topicCode" value="GENERAL" placeholder="Topic code">
+                                <select name="difficulty">
+                                    <option value="EASY">Easy</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="HARD">Hard</option>
+                                </select>
+                                <select name="reviewStatus">
+                                    <option value="DRAFT">Draft</option>
+                                    <option value="APPROVED" selected>Approved</option>
+                                </select>
                                 <button class="btn btn-primary" type="submit">Add Question</button>
                             </div>
                             <div class="teacher-option-editor" data-option-editor>
@@ -319,6 +392,7 @@
         </main>
     </div>
 </div>
+<div th:replace="~{fragments/ai-chatbot :: widget}"></div>
 <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

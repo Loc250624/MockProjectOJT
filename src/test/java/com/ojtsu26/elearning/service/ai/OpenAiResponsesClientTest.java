@@ -38,7 +38,7 @@ class OpenAiResponsesClientTest {
             AiTutorUnavailableException exception = assertThrows(AiTutorUnavailableException.class,
                     () -> client.generate(new AiTutorPrompt("instructions", "input", 10)));
 
-            assertEquals("AI Tutor OpenAI quota or billing credit is unavailable.", exception.getMessage());
+            assertEquals("AI Chatbot OpenAI quota or billing credit is unavailable.", exception.getMessage());
             assertEquals(1, calls.get());
         } finally {
             server.stop(0);

@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "Quiz_Answers")
+@Table(
+        name = "Quiz_Answers",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_quiz_answer_attempt_question",
+                columnNames = {"attempt_id", "question_id"})
+)
 @Getter
 @Setter
 @Builder
@@ -18,10 +23,6 @@ public class QuizAnswer {
     @ManyToOne
     @JoinColumn(name = "attempt_id")
     private QuizAttempt attempt;
-
-    @ManyToOne
-    @JoinColumn(name = "submission_id")
-    private Submission submission;
 
     @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)

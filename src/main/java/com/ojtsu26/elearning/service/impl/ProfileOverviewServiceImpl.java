@@ -3,11 +3,9 @@ package com.ojtsu26.elearning.service.impl;
 import com.ojtsu26.elearning.dto.response.AdminProfileOverviewDTO;
 import com.ojtsu26.elearning.dto.response.TeacherProfileOverviewDTO;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
-import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.service.ProfileOverviewService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +19,6 @@ public class ProfileOverviewServiceImpl implements ProfileOverviewService {
 
     private final CourseRepository courseRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
-    private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -30,7 +27,6 @@ public class ProfileOverviewServiceImpl implements ProfileOverviewService {
                 .totalCourses(courseRepository.countByInstructorId(teacherId))
                 .approvedCourses(courseRepository.countByInstructorIdAndStatus(teacherId, CourseStatus.APPROVED))
                 .totalStudents(courseEnrollmentRepository.countDistinctStudentsByTeacherId(teacherId))
-                .pendingSubmissions(submissionRepository.countByTeacherIdAndStatus(teacherId, SubmissionStatus.PENDING_REVIEW))
                 .build();
     }
 

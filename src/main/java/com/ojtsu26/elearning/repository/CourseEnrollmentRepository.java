@@ -136,6 +136,20 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     Optional<CourseEnrollment> findByIdForCertificateIssue(Integer enrollmentId);
 
     @Query("""
+            select e.id
+            from CourseEnrollment e
+            where e.isCompleted = true
+              and e.progressPercentage >= 100
+              and not exists (
+                  select c.id
+                  from Certificate c
+                  where c.enrollment.id = e.id
+              )
+            order by e.id
+            """)
+    List<Integer> findCompletedEnrollmentIdsWithoutCertificate();
+
+    @Query("""
             select count(e)
             from CourseEnrollment e
             where e.course.instructor.id = :teacherId

@@ -21,9 +21,7 @@ public class LessonResponseDTO {
 
     private Integer quizId;
 
-    private Integer codingAssignmentId;
 
     private Boolean hasQuiz;
 
-    private Boolean hasCodingAssignment;
 }

@@ -2,9 +2,7 @@ package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
-import com.ojtsu26.elearning.dto.request.StudentCodeSubmissionRequestDTO;
 import com.ojtsu26.elearning.dto.request.StudentQuizSubmissionRequestDTO;
-import com.ojtsu26.elearning.dto.response.StudentCodingAssignmentDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.security.CustomUserDetails;
@@ -213,41 +211,9 @@ public class StudentActionController {
         return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.submitQuiz(courseId, lessonId, request)));
     }
 
-    @GetMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment")
-    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> codingAssignment(@PathVariable Integer courseId,
-                                                                                    @PathVariable Integer lessonId) {
-        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.getCodingAssignment(courseId, lessonId)));
-    }
-
-    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/save")
-    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> saveCode(@PathVariable Integer courseId,
-                                                                            @PathVariable Integer lessonId,
-                                                                            @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
-        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.saveCodeDraft(courseId, lessonId, request)));
-    }
-
-    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/run")
-    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> runCode(@PathVariable Integer courseId,
-                                                                           @PathVariable Integer lessonId,
-                                                                           @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
-        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.runCode(courseId, lessonId, request)));
-    }
-
-    @PostMapping("/courses/{courseId}/lessons/{lessonId}/coding-assignment/submit")
-    public ResponseEntity<ApiResponse<StudentCodingAssignmentDTO>> submitCode(@PathVariable Integer courseId,
-                                                                              @PathVariable Integer lessonId,
-                                                                              @Valid @RequestBody StudentCodeSubmissionRequestDTO request) {
-        return ResponseEntity.ok(ApiResponse.success(studentAssessmentService.submitCode(courseId, lessonId, request)));
-    }
-
     @PostMapping("/quiz/{id}/submit")
     public ResponseEntity<?> submitQuiz(@PathVariable Long id) {
         return ResponseEntity.badRequest().body(Map.of("message", "Use the course lesson quiz endpoint to submit an attempt."));
-    }
-
-    @PostMapping("/code-assignment/{id}/submit")
-    public ResponseEntity<?> submitCodeAssignment(@PathVariable Long id) {
-        return ResponseEntity.badRequest().body(Map.of("message", "Use the course lesson coding endpoint to submit code."));
     }
 
 

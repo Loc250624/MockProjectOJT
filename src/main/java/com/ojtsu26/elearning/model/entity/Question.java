@@ -2,10 +2,7 @@ package com.ojtsu26.elearning.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ojtsu26.elearning.model.enums.*;
 import java.util.List;
 
@@ -38,14 +35,37 @@ public class Question {
 
     private Integer displayOrder;
 
+    @Builder.Default
+    @Column(name = "topic_code", nullable = false, length = 100)
+    private String topicCode = "GENERAL";
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private QuestionDifficulty difficulty = QuestionDifficulty.MEDIUM;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_status", nullable = false, length = 20)
+    private QuestionReviewStatus reviewStatus = QuestionReviewStatus.APPROVED;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer version = 1;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "generation_source", nullable = false, length = 20)
+    private QuestionGenerationSource generationSource = QuestionGenerationSource.MANUAL;
+
     @ManyToOne
     @JoinColumn(name = "quiz_id")
     @JsonBackReference("question-quiz")
     private Quiz quiz;
-
-    @ManyToOne
-    @JoinColumn(name = "assignment_id")
-    private CodingAssignment assignment;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizAnswer> answers;

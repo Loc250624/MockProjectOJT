@@ -25,8 +25,6 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final LessonProgressRepository lessonProgressRepository;
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
-    private final CodingAssignmentRepository assignmentRepository;
-    private final TestcaseRepository testcaseRepository;
     private final SubmissionRepository submissionRepository;
     private final TransactionRepository transactionRepository;
     private final CertificateRepository certificateRepository;
@@ -49,8 +47,6 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("Lesson Progress inserted: " + lessonProgressRepository.count());
         System.out.println("Quizzes inserted: " + quizRepository.count());
         System.out.println("Questions inserted: " + questionRepository.count());
-        System.out.println("Assignments inserted: " + assignmentRepository.count());
-        System.out.println("Testcases inserted: " + testcaseRepository.count());
         System.out.println("Submissions inserted: " + submissionRepository.count());
         System.out.println("Transactions inserted: " + transactionRepository.count());
         System.out.println("Certificates inserted: " + certificateRepository.count());

@@ -39,12 +39,14 @@ class ResponsiveRouteRenderingTest {
 
     private User teacher;
     private User admin;
+    private User student;
 
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
         teacher = userRepository.save(testUser("Responsive Teacher", "teacher.responsive@example.com", Role.TEACHER));
         admin = userRepository.save(testUser("Responsive Admin", "admin.responsive@example.com", Role.ADMIN));
+        student = userRepository.save(testUser("Responsive Student", "student.responsive@example.com", Role.STUDENT));
     }
 
     @Test
@@ -53,7 +55,23 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("class=\"public-nav-panel\"")))
                 .andExpect(content().string(containsString("aria-controls=\"public-navigation\"")))
-                .andExpect(content().string(containsString("/js/public/public.js")));
+                .andExpect(content().string(containsString("/js/public/public.js")))
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+    }
+
+    @Test
+    void authenticationAndStudentShellsRenderOneGlobalChatbot() throws Exception {
+        mockMvc.perform(get("/auth/login"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+
+        mockMvc.perform(get("/auth/register"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+
+        mockMvc.perform(get("/student/dashboard").with(user(new CustomUserDetails(student))))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
     }
 
     @Test
@@ -63,7 +81,8 @@ class ResponsiveRouteRenderingTest {
         mockMvc.perform(get("/teacher/dashboard").with(user(principal)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("teacher-header-actions")))
-                .andExpect(content().string(containsString("help-drawer-panel")));
+                .andExpect(content().string(containsString("help-drawer-panel")))
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
 
         mockMvc.perform(get("/teacher/courses").with(user(principal)))
                 .andExpect(status().isOk())
@@ -82,7 +101,16 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("responsive-data-table")))
                 .andExpect(content().string(containsString("No courses found in the system")))
-                .andExpect(content().string(containsString("system-health-badge")));
+                .andExpect(content().string(containsString("system-health-badge")))
+                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+    }
+
+    private void assertSingleChatbot(String html) {
+        String marker = "data-ai-chatbot-root";
+        int first = html.indexOf(marker);
+        org.junit.jupiter.api.Assertions.assertTrue(first >= 0, "AI Chatbot root should render");
+        org.junit.jupiter.api.Assertions.assertEquals(-1, html.indexOf(marker, first + marker.length()),
+                "AI Chatbot should render exactly once");
     }
 
     private User testUser(String fullName, String email, Role role) {

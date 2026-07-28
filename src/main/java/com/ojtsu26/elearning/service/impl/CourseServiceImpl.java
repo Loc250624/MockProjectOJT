@@ -173,7 +173,6 @@ public class CourseServiceImpl implements CourseService {
      *   - At least one lesson must exist
      *   - VIDEO lessons must have an attached Video
      *   - QUIZ lessons must have an attached Quiz
-     *   - CODING lessons must have an attached CodingAssignment
      */
     private List<String> validateForSubmission(Course course) {
         List<String> errors = new ArrayList<>();
@@ -193,6 +192,9 @@ public class CourseServiceImpl implements CourseService {
             errors.add("The course must have at least one lesson.");
         } else {
             for (Lesson lesson : lessons) {
+                if (lesson.getType() == LessonType.RETIRED) {
+                    continue;
+                }
                 if (lesson.getTitle() == null || lesson.getTitle().isBlank()) {
                     errors.add("Lesson #" + lesson.getOrderIndex() + " is missing a title.");
                 }
@@ -205,9 +207,6 @@ public class CourseServiceImpl implements CourseService {
                 }
                 if (lesson.getType() == LessonType.QUIZ && lesson.getQuiz() == null) {
                     errors.add("Lesson #" + lesson.getOrderIndex() + " (" + lesson.getTitle() + ") is a QUIZ lesson but has no quiz attached.");
-                }
-                if (lesson.getType() == LessonType.CODING && lesson.getCodingassignment() == null) {
-                    errors.add("Lesson #" + lesson.getOrderIndex() + " (" + lesson.getTitle() + ") is a CODING lesson but has no coding assignment attached.");
                 }
             }
         }

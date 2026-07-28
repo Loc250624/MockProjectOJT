@@ -151,6 +151,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                         "/api/auth/**",
+                        "/api/ai-chatbot/chat",
                         "/api/payment/vnpay-ipn",
                         "/api/payment/webhook",
                         "/health",

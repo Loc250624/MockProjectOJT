@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CertificateRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.LessonRepository;
+import com.ojtsu26.elearning.repository.QuizAttemptRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.service.CertificateEligibilityService;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class CertificateEligibilityServiceImpl implements CertificateEligibility
     private final CourseEnrollmentRepository enrollmentRepository;
     private final LessonRepository lessonRepository;
     private final SubmissionRepository submissionRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
     private final CertificateRepository certificateRepository;
 
     @Override
@@ -70,7 +74,12 @@ public class CertificateEligibilityServiceImpl implements CertificateEligibility
             totalRequiredLessons = lessonRepository.countRequiredContentLessons(course.getId());
             completedRequiredLessons = lessonRepository.countCompletedRequiredContentLessons(course.getId(), enrollmentId);
             totalRequiredAssessments = lessonRepository.countRequiredAssessmentLessons(course.getId());
-            passedRequiredAssessments = submissionRepository.countPassedRequiredAssessmentLessons(currentStudentId, course.getId());
+            Set<Integer> passedAssessmentLessonIds = new HashSet<>(
+                    submissionRepository.findPassedRequiredAssessmentLessonIds(
+                            currentStudentId, course.getId()));
+            passedAssessmentLessonIds.addAll(quizAttemptRepository.findPassedQuizLessonIds(
+                    currentStudentId, course.getId(), new BigDecimal("70.00")));
+            passedRequiredAssessments = passedAssessmentLessonIds.size();
         }
 
         if (completedRequiredLessons < totalRequiredLessons) {

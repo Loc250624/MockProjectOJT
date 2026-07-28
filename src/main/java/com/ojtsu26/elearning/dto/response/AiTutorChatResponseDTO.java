@@ -12,9 +12,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AiTutorChatResponseDTO {
+    private String conversationId;
     private String answer;
     private boolean refused;
     private String reasonCode;
     private List<String> suggestedQuestions;
     private String requestId;
+    private String scope;
+    private boolean usedPageContext;
 }
