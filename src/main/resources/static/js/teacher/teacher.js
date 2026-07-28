@@ -290,6 +290,11 @@ function teacherQuestionPayload(form) {
         displayOrder: form.elements.displayOrder && form.elements.displayOrder.value
             ? Number(form.elements.displayOrder.value)
             : null,
+        topicCode: form.elements.topicCode ? form.elements.topicCode.value.trim() : 'GENERAL',
+        difficulty: form.elements.difficulty ? form.elements.difficulty.value : 'MEDIUM',
+        reviewStatus: form.elements.reviewStatus ? form.elements.reviewStatus.value : 'APPROVED',
+        active: !form.elements.reviewStatus || form.elements.reviewStatus.value !== 'ARCHIVED',
+        generationSource: 'MANUAL',
         options: options
     };
 }
@@ -464,6 +469,126 @@ function initTeacherQuizBuilder() {
                 window.location.reload();
             }).catch(function(error) {
                 window.alert(error.message);
+            });
+        });
+    });
+
+    document.querySelectorAll('.question-review-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var row = button.closest('[data-question-id]');
+            if (!row) {
+                return;
+            }
+            button.disabled = true;
+            teacherFetch('/api/teacher/questions/' + encodeURIComponent(row.dataset.questionId)
+                    + '/' + encodeURIComponent(button.dataset.action), {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).then(function(response) {
+                return teacherAssessmentJson(response, 'Unable to update review status');
+            }).then(function() {
+                window.location.reload();
+            }).catch(function(error) {
+                window.alert(error.message);
+                button.disabled = false;
+            });
+        });
+    });
+
+    document.querySelectorAll('[data-quiz-blueprint]').forEach(function(panel) {
+        var card = panel.closest('[data-quiz-id]');
+        var rows = panel.querySelector('[data-blueprint-rows]');
+        var message = panel.querySelector('[data-blueprint-message]');
+        function addRow() {
+            var source = rows.querySelector('[data-blueprint-row]');
+            var clone = source.cloneNode(true);
+            clone.querySelector('[name="topicCode"]').value = 'GENERAL';
+            clone.querySelector('[name="questionCount"]').value = '1';
+            rows.appendChild(clone);
+        }
+        function readiness() {
+            return teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/readiness', {
+                credentials: 'same-origin'
+            }).then(function(response) {
+                return teacherAssessmentJson(response, 'Unable to check readiness');
+            }).then(function(body) {
+                var data = body.data || {};
+                var buckets = (data.buckets || []).map(function(bucket) {
+                    return bucket.topicCode + '/' + bucket.difficulty + ': '
+                        + bucket.available + ' available / ' + bucket.required + ' required';
+                });
+                teacherAssessmentMessage(message,
+                    (data.ready ? 'Ready. ' : 'Not ready. ') + buckets.join(' · '),
+                    data.ready ? 'success' : 'error');
+            });
+        }
+        panel.querySelector('.blueprint-add-row').addEventListener('click', addRow);
+        panel.addEventListener('click', function(event) {
+            if (event.target.classList.contains('blueprint-remove-row')
+                    && rows.querySelectorAll('[data-blueprint-row]').length > 1) {
+                event.target.closest('[data-blueprint-row]').remove();
+            }
+        });
+        panel.querySelector('.blueprint-readiness').addEventListener('click', function() {
+            readiness().catch(function(error) {
+                teacherAssessmentMessage(message, error.message, 'error');
+            });
+        });
+        panel.querySelector('.blueprint-save').addEventListener('click', function() {
+            var payload = Array.prototype.map.call(rows.querySelectorAll('[data-blueprint-row]'), function(row, index) {
+                return {
+                    topicCode: row.querySelector('[name="topicCode"]').value.trim(),
+                    difficulty: row.querySelector('[name="difficulty"]').value,
+                    questionCount: Number(row.querySelector('[name="questionCount"]').value),
+                    displayOrder: index + 1
+                };
+            });
+            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/blueprint', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            }).then(function(response) {
+                return teacherAssessmentJson(response, 'Unable to save blueprint');
+            }).then(function(body) {
+                var data = body.data || {};
+                teacherAssessmentMessage(message,
+                    data.ready ? 'Blueprint saved and ready.' : 'Blueprint saved; add approved questions to short buckets.',
+                    data.ready ? 'success' : 'error');
+            }).catch(function(error) {
+                teacherAssessmentMessage(message, error.message, 'error');
+            });
+        });
+        readiness().catch(function(error) {
+            teacherAssessmentMessage(message, error.message, 'error');
+        });
+    });
+
+    document.querySelectorAll('.question-generation-form').forEach(function(generationForm) {
+        generationForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            var card = generationForm.closest('[data-quiz-id]');
+            var message = generationForm.querySelector('.assessment-message');
+            var payload = {
+                lessonContent: generationForm.elements.lessonContent.value.trim(),
+                topicCode: generationForm.elements.topicCode.value.trim(),
+                difficulty: generationForm.elements.difficulty.value,
+                questionCount: Number(generationForm.elements.questionCount.value)
+            };
+            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId)
+                    + '/question-generation-jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            }).then(function(response) {
+                return teacherAssessmentJson(response, 'Unable to queue question generation');
+            }).then(function(body) {
+                teacherAssessmentMessage(message,
+                    'Generation job #' + body.data.id + ' queued. Generated questions will remain drafts.',
+                    'success');
+            }).catch(function(error) {
+                teacherAssessmentMessage(message, error.message, 'error');
             });
         });
     });

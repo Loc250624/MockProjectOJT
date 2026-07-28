@@ -6,6 +6,9 @@ import com.ojtsu26.elearning.model.enums.QuestionType;
 import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
+import com.ojtsu26.elearning.model.enums.QuestionDifficulty;
+import com.ojtsu26.elearning.model.enums.QuestionGenerationSource;
+import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +42,11 @@ public final class AssessmentDtos {
         @DecimalMin("0.0")
         private BigDecimal points = BigDecimal.ONE;
         private Integer displayOrder;
+        private String topicCode = "GENERAL";
+        private QuestionDifficulty difficulty = QuestionDifficulty.MEDIUM;
+        private QuestionReviewStatus reviewStatus = QuestionReviewStatus.APPROVED;
+        private Boolean active = true;
+        private QuestionGenerationSource generationSource = QuestionGenerationSource.MANUAL;
         @Valid
         @NotEmpty
         private List<OptionPayload> options = new ArrayList<>();
@@ -140,8 +148,40 @@ public final class AssessmentDtos {
         private QuestionType questionType;
         private BigDecimal points;
         private Integer displayOrder;
+        private String topicCode;
+        private QuestionDifficulty difficulty;
+        private QuestionReviewStatus reviewStatus;
+        private Integer version;
+        private Boolean active;
+        private QuestionGenerationSource generationSource;
         private List<OptionView> options = new ArrayList<>();
         private List<Integer> selectedOptionIds = new ArrayList<>();
+    }
+
+    @Data
+    public static class BlueprintItemPayload {
+        @NotBlank
+        private String topicCode;
+        @NotNull
+        private QuestionDifficulty difficulty;
+        @Positive
+        private Integer questionCount;
+        private Integer displayOrder;
+    }
+
+    @Data
+    public static class BlueprintBucketView {
+        private String topicCode;
+        private QuestionDifficulty difficulty;
+        private Integer required;
+        private Long available;
+        private Boolean ready;
+    }
+
+    @Data
+    public static class QuizReadinessView {
+        private Boolean ready;
+        private List<BlueprintBucketView> buckets = new ArrayList<>();
     }
 
     @Data

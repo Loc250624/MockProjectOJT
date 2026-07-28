@@ -26,6 +26,7 @@ import com.ojtsu26.elearning.model.enums.AssignmentType;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.NotificationType;
 import com.ojtsu26.elearning.model.enums.QuestionType;
+import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
@@ -348,7 +349,7 @@ class TeacherAssessmentServiceTest {
     }
 
     @Test
-    void deleteQuestionWithAnswersIsBlockedToPreserveAttemptHistory() {
+    void deleteQuestionWithAnswersArchivesItToPreserveAttemptHistory() {
         Quiz quiz = quizFor(teacher);
         Question question = Question.builder().id(401).quiz(quiz).questionText("Existing?").build();
         when(currentUserService.getCurrentUser()).thenReturn(teacher);
@@ -357,10 +358,10 @@ class TeacherAssessmentServiceTest {
         when(courseRepository.findById(100)).thenReturn(Optional.of(quiz.getLesson().getCourse()));
         when(quizAnswerRepository.countByQuestionId(401)).thenReturn(1L);
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> service.deleteTeacherQuestion(401));
+        service.deleteTeacherQuestion(401);
 
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.BAD_REQUEST);
+        assertThat(question.getActive()).isFalse();
+        assertThat(question.getReviewStatus()).isEqualTo(QuestionReviewStatus.ARCHIVED);
         verify(questionRepository, never()).delete(org.mockito.ArgumentMatchers.any());
     }
 

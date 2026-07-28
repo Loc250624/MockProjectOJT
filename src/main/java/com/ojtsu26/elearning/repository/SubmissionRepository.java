@@ -57,6 +57,23 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
             """)
     long countPassedRequiredAssessmentLessons(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
 
+    @Query("""
+            select distinct s.lesson.id
+            from Submission s
+            where s.student.id = :studentId
+              and s.lesson.course.id = :courseId
+              and s.status in (
+                  com.ojtsu26.elearning.model.enums.SubmissionStatus.PASSED,
+                  com.ojtsu26.elearning.model.enums.SubmissionStatus.AUTO_GRADED
+              )
+              and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ
+                   or s.lesson.quiz is not null
+                   or s.lesson.codingassignment is not null)
+            """)
+    List<Integer> findPassedRequiredAssessmentLessonIds(
+            @Param("studentId") Integer studentId,
+            @Param("courseId") Integer courseId);
+
     @Query("select count(distinct s.lesson.id) from Submission s where s.student.id = :studentId and s.lesson.course.id = :courseId and (s.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.QUIZ or s.lesson.quiz is not null or s.lesson.codingassignment is not null)")
     long countSubmittedAssessmentLessons(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
 

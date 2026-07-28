@@ -52,6 +52,7 @@ class ResponsiveFrontendTemplateTest {
 
         assertTrue(teacherCourses.contains("responsive-data-table"));
         assertTrue(teacherCourses.contains("responsive-row-details"));
+        assertTrue(teacherCourses.contains("class=\"responsive-row-details\" open"));
         assertTrue(teacherCourses.contains("data-label=\"Course\""));
         assertTrue(roadmaps.contains("responsive-data-table"));
         assertTrue(roadmaps.contains("View description"));
