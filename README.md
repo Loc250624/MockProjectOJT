@@ -17,14 +17,13 @@ LumiNa is a robust, full-featured Spring Boot and Thymeleaf-based e-learning sys
 * **Interactive Learning Dashboard**:
   * **Video Player**: Tracks watch progress in real-time.
   * **Quizzes**: Live interactive quiz submissions with automated instant grades.
-  * **Coding Assignments**: Integrated sandbox simulating compiler execution ("Run Judge") for code submissions.
 * **AI Tutor Chatbot**: Context-aware AI tutor at the lesson level with safety topic guards and API rate-limiting.
 * **Automatic Certificates**: Auto-generated PDF certificates once curriculum requirements are met.
 * **Feedback Forms**: Multi-criteria star rating platform feedback submissions.
 
 ### 👩‍🏫 Teacher Portal
 * **Course Creator**: Comprehensive course creator allowing curriculum structured by sections, resources, videos, and quizzes.
-* **Grading Panel**: In-depth submissions grading system for quizzes and coding assignments.
+* **Quiz Assessment**: Multiple-choice quizzes with persisted attempts and automatic scoring.
 * **Analytics**: Complete charts analyzing teacher revenue, student enrollments, and conversion statistics.
 
 ### 👑 Admin Portal

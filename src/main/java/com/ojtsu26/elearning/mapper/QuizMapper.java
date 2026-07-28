@@ -13,5 +13,15 @@ public interface QuizMapper {
     QuizResponseDTO toDto(Quiz entity);
 
     @Mapping(source = "lessonId", target = "lesson.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "durationMinutes", ignore = true)
+    @Mapping(target = "maxAttempts", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "questions", ignore = true)
+    @Mapping(target = "attempts", ignore = true)
     Quiz toEntity(QuizRequestDTO dto);
 }

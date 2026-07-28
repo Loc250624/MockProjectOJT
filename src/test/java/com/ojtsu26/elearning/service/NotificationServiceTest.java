@@ -168,8 +168,4 @@ class NotificationServiceTest {
         verify(notificationRepository, never()).markAllReadForRecipient(eq(2), any(LocalDateTime.class));
     }
 
-    @Test
-    void legacyAssignmentGradedNotificationTypeRemainsReadable() {
-        assertEquals(NotificationType.ASSIGNMENT_GRADED, NotificationType.valueOf("ASSIGNMENT_GRADED"));
-    }
 }

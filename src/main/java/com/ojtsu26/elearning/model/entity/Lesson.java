@@ -3,7 +3,6 @@ package com.ojtsu26.elearning.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ojtsu26.elearning.model.enums.*;
@@ -49,10 +48,6 @@ public class Lesson {
     @OneToOne(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("quiz-lesson")
     private Quiz quiz;
-
-    @OneToOne(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("codingassignment-lesson")
-    private CodingAssignment codingassignment;
 
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("lessonprogress-lesson")

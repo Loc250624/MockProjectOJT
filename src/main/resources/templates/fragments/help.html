@@ -63,7 +63,7 @@
             </ul>
             <ul th:if="${role == 'teacher'}">
                 <li>Use My Courses to manage course shells, lessons, videos, and related content.</li>
-                <li>Use Assignments and Grading for assessments, submissions, test cases, and feedback.</li>
+                <li>Use Quizzes to create and manage course assessments.</li>
                 <li>Use Analytics and Progress Report to review learning and revenue signals.</li>
                 <li>Use Profile to update instructor account details.</li>
             </ul>
@@ -83,8 +83,7 @@
                 <li>Use moderation and approval controls only after reviewing the visible context.</li>
             </ol>
             <ol th:if="${role == 'teacher'}">
-                <li>Choose or create a course before adding lessons, videos, quizzes, or assignments.</li>
-                <li>Review submissions and grading states before publishing feedback.</li>
+                <li>Choose or create a course before adding lessons, videos, or quizzes.</li>
                 <li>Check analytics or progress reports after course activity changes.</li>
             </ol>
             <ol th:if="${role == 'student'}">

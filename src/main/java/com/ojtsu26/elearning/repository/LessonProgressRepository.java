@@ -37,9 +37,8 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
                    count(distinct case
                        when p.isCompleted = true
                         and p.lesson.course.id = :courseId
-                        and (p.lesson.type is null or p.lesson.type <> com.ojtsu26.elearning.model.enums.LessonType.QUIZ)
+                        and (p.lesson.type is null or p.lesson.type = com.ojtsu26.elearning.model.enums.LessonType.VIDEO)
                         and p.lesson.quiz is null
-                        and p.lesson.codingassignment is null
                        then p.lesson.id
                        else null
                    end) as completedLessons,
@@ -101,6 +100,7 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
             from Lesson l
             left join LessonProgress p on p.lesson.id = l.id and p.enrollment.id = :enrollmentId
             where l.course.id = :courseId
+              and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.RETIRED)
             order by l.orderIndex asc, l.id asc
             """)
     List<LessonProgressDetailProjection> findCourseLessonProgressDetail(@Param("courseId") Integer courseId,

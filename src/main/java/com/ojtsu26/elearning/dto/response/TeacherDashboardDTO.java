@@ -18,6 +18,4 @@ public class TeacherDashboardDTO {
     private BigDecimal revenueMonthToDate;
     private String revenueMonthToDateDisplay;
     private List<TeacherCourseDashboardDTO> activeCourses;
-    private List<TeacherRecentSubmissionDashboardDTO> recentSubmissions;
-    private String gradeAllUrl;
 }

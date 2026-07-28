@@ -20,5 +20,18 @@ public interface CertificateMapper {
 
     @Mapping(source = "studentId", target = "student.id")
     @Mapping(source = "courseId", target = "course.id")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "issuedAt", ignore = true)
+    @Mapping(target = "issueDate", ignore = true)
+    @Mapping(target = "enrollment", ignore = true)
+    @Mapping(target = "studentNameSnapshot", ignore = true)
+    @Mapping(target = "courseNameSnapshot", ignore = true)
+    @Mapping(target = "teacherNameSnapshot", ignore = true)
+    @Mapping(target = "verificationCode", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "revokedAt", ignore = true)
+    @Mapping(target = "revokedReason", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Certificate toEntity(CertificateRequestDTO dto);
 }

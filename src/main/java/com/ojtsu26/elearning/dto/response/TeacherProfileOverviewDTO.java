@@ -13,5 +13,4 @@ public class TeacherProfileOverviewDTO {
     private long totalCourses;
     private long approvedCourses;
     private long totalStudents;
-    private long pendingSubmissions;
 }

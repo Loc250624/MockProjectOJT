@@ -13,7 +13,6 @@ import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.Role;
-import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.CertificateRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
@@ -201,7 +200,6 @@ public class ProfileServiceImpl implements ProfileService {
         long drafts = courseRepository.countByInstructorIdAndStatus(userId, CourseStatus.DRAFT);
         long activeStudents = courseRepository.countDistinctStudentsByInstructorId(userId);
         long enrollments = courseRepository.countEnrollmentsByInstructorId(userId);
-        long pendingSubmissions = submissionRepository.countByInstructorIdAndStatus(userId, SubmissionStatus.PENDING_REVIEW);
         long certificatesIssued = certificateRepository.countByCourseInstructorId(userId);
 
         List<Course> courses = courseRepository.findTop5ByInstructorIdOrderByCreatedAtDesc(userId);
@@ -249,7 +247,6 @@ public class ProfileServiceImpl implements ProfileService {
                         stat("Draft Courses", drafts, "In preparation", "amber"),
                         stat("Active Students", activeStudents, "Distinct enrolled students", "cyan"),
                         stat("Total Enrollments", enrollments, "Across your courses", "violet"),
-                        stat("Pending Submissions", pendingSubmissions, "Awaiting review", "rose"),
                         stat("Certificates Issued", certificatesIssued, "From your courses", "green")
                 ))
                 .activities(newest(activities, 5))

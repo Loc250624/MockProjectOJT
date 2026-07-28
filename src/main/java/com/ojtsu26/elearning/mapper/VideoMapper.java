@@ -13,5 +13,6 @@ public interface VideoMapper {
     VideoResponseDTO toDto(Video entity);
 
     @Mapping(source = "lessonId", target = "lesson.id")
+    @Mapping(target = "id", ignore = true)
     Video toEntity(VideoRequestDTO dto);
 }

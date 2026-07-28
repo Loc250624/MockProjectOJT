@@ -16,7 +16,7 @@ const enums = [
     { name: 'AuthProvider', values: ['LOCAL', 'GOOGLE', 'GITHUB'] },
     { name: 'UserStatus', values: ['ACTIVE', 'BLOCKED'] },
     { name: 'CourseStatus', values: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'HIDDEN'] },
-    { name: 'LessonType', values: ['VIDEO', 'QUIZ', 'CODING'] },
+    { name: 'LessonType', values: ['VIDEO', 'QUIZ'] },
     { name: 'SubmissionStatus', values: ['PENDING_REVIEW', 'PASSED', 'FAILED'] },
     { name: 'PaymentMethod', values: ['MOMO', 'VNPAY'] },
     { name: 'TransactionStatus', values: ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'] },
@@ -119,7 +119,6 @@ const entities = [
             { type: 'ManyToOne', target: 'Course', name: 'course', joinColumn: 'course_id' },
             { type: 'OneToOne', target: 'Video', mappedBy: 'lesson' },
             { type: 'OneToOne', target: 'Quiz', mappedBy: 'lesson' },
-            { type: 'OneToOne', target: 'CodingAssignment', mappedBy: 'lesson' },
             { type: 'OneToMany', target: 'LessonProgress', mappedBy: 'lesson' },
             { type: 'OneToMany', target: 'Submission', mappedBy: 'lesson' }
         ]
@@ -157,32 +156,6 @@ const entities = [
         ],
         relations: [
             { type: 'ManyToOne', target: 'Quiz', name: 'quiz', joinColumn: 'quiz_id' }
-        ]
-    },
-    {
-        name: 'CodingAssignment', table: 'Coding_Assignments',
-        fields: [
-            { type: 'Integer', name: 'id', isId: true },
-            { type: 'String', name: 'title' },
-            { type: 'String', name: 'problemStatement' },
-            { type: 'String', name: 'allowedLanguages' },
-            { type: 'Integer', name: 'timeLimitMs' }
-        ],
-        relations: [
-            { type: 'OneToOne', target: 'Lesson', name: 'lesson', joinColumn: 'lesson_id' },
-            { type: 'OneToMany', target: 'Testcase', mappedBy: 'assignment' }
-        ]
-    },
-    {
-        name: 'Testcase', table: 'Testcases',
-        fields: [
-            { type: 'Integer', name: 'id', isId: true },
-            { type: 'String', name: 'inputData' },
-            { type: 'String', name: 'expectedOutput' },
-            { type: 'Boolean', name: 'isHidden' }
-        ],
-        relations: [
-            { type: 'ManyToOne', target: 'CodingAssignment', name: 'assignment', joinColumn: 'assignment_id' }
         ]
     },
     {

@@ -210,14 +210,14 @@ public class CoreDataSeeder {
         int videoCount = 0;
         int targetVideos = 350; // Between 250-400
 
-        LessonType[] types = {LessonType.VIDEO, LessonType.QUIZ, LessonType.CODING};
+        LessonType[] types = {LessonType.VIDEO, LessonType.QUIZ};
 
         for (Course course : courses) {
             int lessonsForCourse = SeederUtils.getRandomInt(5, 12);
             for (int i = 0; i < lessonsForCourse; i++) {
                 if (lessonCount >= targetLessons) break;
 
-                LessonType type = types[i % 3]; // Ensuring a mix
+                LessonType type = types[i % types.length];
                 
                 // Bias towards Video to meet video targets
                 if (videoCount < targetVideos && SeederUtils.getRandomInt(1, 10) <= 7) {

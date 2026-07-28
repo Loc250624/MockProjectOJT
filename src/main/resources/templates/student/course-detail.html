@@ -128,7 +128,6 @@
                         <div class="lesson-icon" th:classappend="${lsn.type.name() == 'VIDEO' ? 'lesson-video' : (lsn.type.name() == 'QUIZ' ? 'lesson-quiz' : 'lesson-read')}">
                             <span th:if="${lsn.type.name() == 'VIDEO'}"><svg th:replace="~{fragments/icons :: icon('videos')}"></svg></span>
                             <span th:if="${lsn.type.name() == 'QUIZ'}"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
-                            <span th:if="${lsn.type.name() == 'CODING'}"><svg th:replace="~{fragments/icons :: icon('code')}"></svg></span>
                         </div>
                         <div>
                             <div class="lesson-name" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1.1 Introduction</div>

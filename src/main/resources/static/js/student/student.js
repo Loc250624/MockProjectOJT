@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
     initAiTutor();
     initStudentCertificates();
     initAssessmentQuiz();
-    initAssessmentSubmission();
 });
 
 function initPortalSidebarNav() {
@@ -46,7 +45,6 @@ function initPortalSidebarNav() {
         activeLink.setAttribute('aria-current', 'page');
     }
 }
-
 function getPortalNavPatterns(link) {
     var raw = link.getAttribute('data-nav-match') || link.getAttribute('href') || '';
     return raw.split(',')
@@ -67,7 +65,6 @@ function getPortalNavPatterns(link) {
         })
         .filter(Boolean);
 }
-
 function normalizePortalPath(path) {
     var clean = String(path || '/').split('?')[0].replace(/\/+$/, '');
     return clean || '/';
@@ -837,12 +834,8 @@ function initLessonCompletion(button) {
 
 function initStudentAssessmentPanels() {
     var quizPanel = document.querySelector('[data-quiz-panel="true"]');
-    var codePanel = document.querySelector('[data-code-panel="true"]');
     if (quizPanel) {
         initQuizPanel(quizPanel);
-    }
-    if (codePanel) {
-        initCodePanel(codePanel);
     }
 }
 
@@ -1191,170 +1184,6 @@ function initQuizPanel(panel) {
     }
 }
 
-function initCodePanel(panel) {
-    var courseId = panel.dataset.courseId;
-    var lessonId = panel.dataset.lessonId;
-    var form = document.getElementById('code-form');
-    var loading = document.getElementById('code-loading');
-    var unavailable = document.getElementById('code-unavailable');
-    var languageSelect = document.getElementById('code-language');
-    var editor = document.getElementById('code-editor');
-    var problem = document.getElementById('code-problem');
-    var examples = document.getElementById('code-examples');
-    var timeLimit = document.getElementById('code-time-limit');
-    var saveButton = document.getElementById('code-save-button');
-    var runButton = document.getElementById('code-run-button');
-    var submitButton = document.getElementById('code-submit-button');
-    var codeResult = document.getElementById('code-result');
-    var stateLabel = document.getElementById('code-state-label');
-    var assignment = null;
-
-    function endpoint(action) {
-        return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/coding-assignment' + (action || '');
-    }
-
-    function renderAssignment(data) {
-        assignment = data;
-        loading.hidden = true;
-        if (data.unavailable) {
-            unavailable.hidden = false;
-            unavailable.querySelector('span').textContent = data.unavailableMessage || 'This exercise is not available right now.';
-            if (stateLabel) stateLabel.textContent = 'Unavailable';
-            return;
-        }
-
-        languageSelect.replaceChildren();
-        (data.allowedLanguages || []).forEach(function (language) {
-            var option = document.createElement('option');
-            option.value = language;
-            option.textContent = language;
-            languageSelect.appendChild(option);
-        });
-        if (data.submittedLanguage) {
-            languageSelect.value = data.submittedLanguage;
-        }
-        problem.textContent = data.problemStatement || 'No instructions are configured for this exercise.';
-        editor.value = data.submittedCode || data.starterCode || '';
-        timeLimit.textContent = data.timeLimitMs ? 'Time limit: ' + data.timeLimitMs + ' ms' : '';
-        examples.replaceChildren();
-        (data.examples || []).forEach(function (example, index) {
-            var item = document.createElement('div');
-            item.className = 'learning-code-example';
-            item.appendChild(createTextElement('strong', null, 'Example ' + (index + 1)));
-            item.appendChild(createTextElement('pre', null, example.inputData || ''));
-            examples.appendChild(item);
-        });
-        editor.readOnly = false;
-        languageSelect.disabled = false;
-        saveButton.disabled = false;
-        if (runButton) runButton.disabled = false;
-        submitButton.disabled = false;
-        if (data.submitted) {
-            setPanelMessage('code-message', data.status || data.submissionState || 'Submitted', false);
-        }
-        renderCodeResult(data);
-        if (stateLabel) {
-            stateLabel.textContent = data.status || data.submissionState || 'Draft';
-        }
-        form.hidden = false;
-    }
-
-    function renderCodeResult(data) {
-        if (!codeResult) {
-            return;
-        }
-        var hasResult = data.judgeStatus || data.outputLog || data.totalTests != null;
-        codeResult.hidden = !hasResult;
-        if (!hasResult) {
-            return;
-        }
-        codeResult.classList.toggle('passed', data.judgeStatus === 'PASSED');
-        codeResult.classList.toggle('failed', data.judgeStatus && data.judgeStatus !== 'PASSED');
-        var summary = data.judgeStatus || 'Run complete';
-        if (data.totalTests != null) {
-            summary += ' - ' + (data.passedTests || 0) + ' / ' + data.totalTests + ' tests';
-        }
-        codeResult.querySelector('span').textContent = summary;
-        codeResult.querySelector('pre').textContent = data.outputLog || '';
-    }
-
-    function codePayload() {
-        return {
-            submissionId: assignment ? assignment.submissionId : null,
-            language: languageSelect.value,
-            code: editor.value
-        };
-    }
-
-    function sendCode(action, message) {
-        setPanelMessage('code-message', message, false);
-        return fetch(endpoint(action), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(codePayload())
-        }).then(function (response) {
-            return parseLearningJson(response, 'Unable to update code submission');
-        }).then(function (apiResponse) {
-            assignment = apiResponse.data;
-            renderAssignment(assignment);
-            applyLearningProgress(assignment && assignment.learningProgress);
-            setPanelMessage('code-message', (apiResponse.data && (apiResponse.data.status || apiResponse.data.submissionState))
-                || (action === '/run' ? 'Code run complete.' : 'Draft saved.'), false);
-        });
-    }
-
-    fetch(endpoint(''), { credentials: 'same-origin' })
-        .then(function (response) {
-            return parseLearningJson(response, 'Unable to load coding exercise');
-        })
-        .then(function (apiResponse) {
-            renderAssignment(apiResponse.data || {});
-        })
-        .catch(function (error) {
-            loading.hidden = true;
-            unavailable.hidden = false;
-            unavailable.querySelector('span').textContent = error.message;
-            if (stateLabel) stateLabel.textContent = 'Unavailable';
-        });
-
-    if (saveButton) {
-        saveButton.addEventListener('click', function () {
-            saveButton.disabled = true;
-            sendCode('/save', 'Saving draft...')
-                .catch(function (error) {
-                    setPanelMessage('code-message', error.message, true);
-                })
-                .finally(function () {
-                    saveButton.disabled = false;
-                });
-        });
-    }
-    if (runButton) {
-        runButton.addEventListener('click', function() {
-            runButton.disabled = true;
-            sendCode('/run', 'Running code...')
-                .catch(function(error) {
-                    setPanelMessage('code-message', error.message, true);
-                })
-                .finally(function() {
-                    runButton.disabled = false;
-                });
-        });
-    }
-    if (form) {
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            submitButton.disabled = true;
-            sendCode('/submit', 'Submitting code...')
-                .catch(function (error) {
-                    setPanelMessage('code-message', error.message, true);
-                    submitButton.disabled = false;
-                });
-        });
-    }
-}
-
 function initAssessmentQuiz() {
     var page = document.querySelector('.assessment-page[data-quiz-id]');
     if (!page || !page.dataset.quizId) {
@@ -1490,121 +1319,6 @@ function initAssessmentQuiz() {
         setAssessmentMessage(message, error.message, 'error');
     });
 }
-
-function initAssessmentSubmission() {
-    var form = document.getElementById('assignment-submit-form');
-    if (!form) {
-        return;
-    }
-    var page = document.querySelector('.assessment-page[data-assignment-id]');
-    var assignmentId = page && page.dataset.assignmentId;
-    var assignmentType = page && page.dataset.assignmentType ? page.dataset.assignmentType : 'CODING';
-    var message = document.getElementById('assignment-message');
-    var draftButton = document.getElementById('save-assignment-draft');
-    var runButton = document.getElementById('run-assignment-code');
-    var runResult = document.getElementById('assignment-run-result');
-
-    function fieldValue(name) {
-        return form.elements[name] ? form.elements[name].value.trim() : '';
-    }
-
-    function mcqAnswers() {
-        return Array.prototype.slice.call(form.querySelectorAll('[data-assignment-answer]')).map(function(question) {
-            return {
-                questionId: Number(question.dataset.assignmentAnswer),
-                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked'))
-                    .map(function(input) { return Number(input.value); })
-                    .filter(function(value) { return !Number.isNaN(value); })
-            };
-        });
-    }
-
-    function payload() {
-        return {
-            contentText: fieldValue('contentText'),
-            codeLanguage: fieldValue('codeLanguage'),
-            codeContent: fieldValue('codeContent'),
-            filePath: fieldValue('filePath'),
-            answers: assignmentType === 'MCQ' ? mcqAnswers() : []
-        };
-    }
-
-    function renderRunResult(data) {
-        if (!runResult || !data) {
-            return;
-        }
-        var hasResult = data.judgeStatus || data.outputLog || data.totalTests != null;
-        runResult.hidden = !hasResult;
-        if (!hasResult) {
-            return;
-        }
-        runResult.classList.toggle('passed', data.judgeStatus === 'PASSED');
-        runResult.classList.toggle('failed', data.judgeStatus && data.judgeStatus !== 'PASSED');
-        var summary = data.judgeStatus || 'Run complete';
-        if (data.totalTests != null) {
-            summary += ' - ' + (data.passedTests || 0) + ' / ' + data.totalTests + ' tests';
-        }
-        runResult.querySelector('span').textContent = summary;
-        runResult.querySelector('pre').textContent = data.outputLog || '';
-    }
-
-    function send(kind) {
-        var body = payload();
-        if (kind === 'run' && assignmentType !== 'CODING') {
-            setAssessmentMessage(message, 'Only coding assignments can be run.', 'error');
-            return Promise.resolve();
-        }
-        if (kind === 'submit' && assignmentType === 'MCQ' && body.answers.some(function(answer) {
-            return !answer.selectedOptionIds.length;
-        })) {
-            setAssessmentMessage(message, 'Please answer every MCQ question before submitting.', 'error');
-            return Promise.resolve();
-        }
-        if (kind === 'submit' && assignmentType === 'ESSAY' && !body.contentText && !body.filePath) {
-            setAssessmentMessage(message, 'Please provide an essay response or file path before submitting.', 'error');
-            return Promise.resolve();
-        }
-        if (kind === 'submit' && assignmentType === 'CODING' && !body.codeContent && !body.filePath) {
-            setAssessmentMessage(message, 'Please provide code or a file path before submitting.', 'error');
-            return Promise.resolve();
-        }
-        return fetch('/api/student/assignments/' + encodeURIComponent(assignmentId) + '/submissions/' + kind, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(body)
-        }).then(function (response) {
-            return assessmentJson(response, 'Unable to save submission');
-        }).then(function (apiResponse) {
-            setAssessmentMessage(message, apiResponse.message, 'success');
-            renderRunResult(apiResponse.data);
-            if (kind === 'submit' && apiResponse.data && apiResponse.data.id) {
-                window.location.href = '/student/submissions/' + encodeURIComponent(apiResponse.data.id) + '/result';
-            }
-        }).catch(function (error) {
-            setAssessmentMessage(message, error.message, 'error');
-        });
-    }
-
-    if (draftButton) {
-        draftButton.addEventListener('click', function () { send('draft'); });
-    }
-    if (runButton) {
-        runButton.addEventListener('click', function() {
-            runButton.disabled = true;
-            send('run').finally(function() {
-                runButton.disabled = false;
-            });
-        });
-    }
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
-        if (window.confirm('Submit this assignment?')) {
-            send('submit');
-        }
-    });
-}
-
 
 function switchProfileTab(tabName) {
     var tabs = document.querySelectorAll('[data-profile-tab]');
