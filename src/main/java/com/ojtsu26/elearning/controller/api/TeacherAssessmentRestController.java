@@ -1,9 +1,11 @@
 package com.ojtsu26.elearning.controller.api;
 
 import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.BlueprintItemPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizPayload;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizReadinessView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizView;
 import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.quiz.TeacherQuestionBankService;
@@ -16,11 +18,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -157,16 +161,5 @@ public class TeacherAssessmentRestController {
     public ResponseEntity<ApiResponse<QuestionBankGenerationService.JobView>> generationJob(
             @PathVariable Integer jobId) {
         return ResponseEntity.ok(ApiResponse.success(questionGenerationService.get(jobId)));
-    }
-
-    @PostMapping("/submissions/{submissionId}/grade")
-    public ResponseEntity<ApiResponse<SubmissionView>> gradeSubmission(@PathVariable Integer submissionId,
-                                                                       @Valid @RequestBody GradePayload payload) {
-        return ResponseEntity.ok(ApiResponse.success(assessmentService.gradeSubmission(submissionId, payload), "Submission graded"));
-    }
-
-    @GetMapping("/submissions/{submissionId}")
-    public ResponseEntity<ApiResponse<SubmissionView>> getSubmission(@PathVariable Integer submissionId) {
-        return ResponseEntity.ok(ApiResponse.success(assessmentService.getTeacherSubmission(submissionId)));
     }
 }
