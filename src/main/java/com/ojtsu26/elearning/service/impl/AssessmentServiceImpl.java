@@ -138,13 +138,16 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (attempt != null) {
             view.setAttemptId(attempt.getId());
             view.setAttemptStatus(attempt.getStatus());
-            view.setScore(attempt.getScore());
             if (quizAttemptApplicationService != null) {
-                int assignedCount = quizAttemptApplicationService
-                        .getOwnedAttempt(attempt.getId()).questions().size();
+                QuizAttemptApplicationService.AttemptSession session =
+                        quizAttemptApplicationService.getOwnedAttempt(attempt.getId());
+                view.setScore(session.attempt().getScore());
+                int assignedCount = session.questions().size();
                 if (assignedCount > 0) {
                     view.setQuestionCount(assignedCount);
                 }
+            } else {
+                view.setScore(attempt.getScore());
             }
         }
         if (view.getQuestionCount() == null && quizQuestionAssignmentService != null) {
@@ -761,6 +764,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setStatus(attempt.getStatus());
         view.setStartedAt(attempt.getStartedAt());
         view.setSubmittedAt(attempt.getSubmittedAt());
+        view.setRemainingSeconds(remainingQuizSeconds(attempt));
         view.setScore(attempt.getScore());
         view.setTotalPoints(attempt.getTotalPoints());
         QuizView quizView = toQuizView(
@@ -805,10 +809,28 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setStatus(attempt.getStatus());
         view.setStartedAt(attempt.getStartedAt());
         view.setSubmittedAt(attempt.getSubmittedAt());
+        view.setRemainingSeconds(remainingQuizSeconds(attempt));
         view.setScore(attempt.getScore());
         view.setTotalPoints(attempt.getTotalPoints());
         view.setQuiz(quizView);
         return view;
+    }
+
+    private Long remainingQuizSeconds(QuizAttempt attempt) {
+        if (attempt == null
+                || attempt.getStatus() != QuizAttemptStatus.DRAFT
+                || attempt.getStartedAt() == null
+                || attempt.getQuiz() == null
+                || attempt.getQuiz().getDurationMinutes() == null
+                || attempt.getQuiz().getDurationMinutes() <= 0) {
+            return null;
+        }
+        LocalDateTime deadline = attempt.getStartedAt()
+                .plusMinutes(attempt.getQuiz().getDurationMinutes());
+        long remainingMillis = java.time.Duration.between(
+                LocalDateTime.now(),
+                deadline).toMillis();
+        return Math.max(0L, (remainingMillis + 999L) / 1000L);
     }
 
     private QuestionView toSnapshotQuestionView(QuizAttemptQuestion assignment,
