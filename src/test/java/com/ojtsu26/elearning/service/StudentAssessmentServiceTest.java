@@ -10,9 +10,11 @@ import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.Lesson;
 import com.ojtsu26.elearning.model.entity.Question;
 import com.ojtsu26.elearning.model.entity.Quiz;
+import com.ojtsu26.elearning.model.entity.QuizAttempt;
 import com.ojtsu26.elearning.model.entity.Submission;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
+import com.ojtsu26.elearning.model.enums.QuizAttemptStatus;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.SubmissionStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
@@ -22,6 +24,7 @@ import com.ojtsu26.elearning.repository.QuestionRepository;
 import com.ojtsu26.elearning.repository.QuizRepository;
 import com.ojtsu26.elearning.repository.SubmissionRepository;
 import com.ojtsu26.elearning.service.impl.StudentAssessmentServiceImpl;
+import com.ojtsu26.elearning.service.quiz.QuizAttemptApplicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +32,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +61,7 @@ class StudentAssessmentServiceTest {
     @Mock private SubmissionRepository submissionRepository;
     @Mock private LessonProgressRepository lessonProgressRepository;
     @Mock private CourseEnrollmentRepository enrollmentRepository;
+    @Mock private QuizAttemptApplicationService quizAttemptApplicationService;
 
     private StudentAssessmentServiceImpl service;
     private ObjectMapper objectMapper;
@@ -85,7 +91,12 @@ class StudentAssessmentServiceTest {
                 .title("Java OOP Quiz")
                 .type(LessonType.QUIZ)
                 .build();
-        quiz = Quiz.builder().id(301).lesson(lesson).title("Java OOP Quiz").build();
+        quiz = Quiz.builder()
+                .id(301)
+                .lesson(lesson)
+                .title("Java OOP Quiz")
+                .passingScore(new BigDecimal("70.00"))
+                .build();
         questions = new ArrayList<>();
         for (int index = 1; index <= 12; index++) {
             questions.add(Question.builder()
@@ -173,6 +184,38 @@ class StudentAssessmentServiceTest {
         assertThrows(BusinessException.class,
                 () -> service.saveQuizDraft(10, 201, request));
         verify(submissionRepository, never()).save(any());
+    }
+
+    @Test
+    void submitUsesCanonicalAttemptInsteadOfLegacySubmissionLookup() {
+        when(studentLearningService.openLesson(10, 201))
+                .thenReturn(StudentLearningLessonDTO.builder().id(201).build());
+        when(lessonRepository.findById(201)).thenReturn(Optional.of(lesson));
+        when(quizRepository.findByLessonId(201)).thenReturn(Optional.of(quiz));
+        ReflectionTestUtils.setField(
+                service, "quizAttemptApplicationService", quizAttemptApplicationService);
+        QuizAttempt canonicalAttempt = QuizAttempt.builder()
+                .id(601)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.GRADED)
+                .score(new BigDecimal("60.00"))
+                .build();
+        StudentQuizSubmissionRequestDTO request = new StudentQuizSubmissionRequestDTO();
+        request.setAttemptId(601);
+        request.setAnswers(Map.of(questions.get(0).getId(), "A"));
+        when(quizAttemptApplicationService.submitTextAnswers(
+                601, request.getAnswers())).thenReturn(
+                new QuizAttemptApplicationService.AttemptSession(
+                        canonicalAttempt, List.of(), Map.of()));
+
+        StudentQuizAttemptDTO result = service.submitQuiz(10, 201, request);
+
+        assertEquals(601, result.getAttemptId());
+        assertEquals(true, result.getSubmitted());
+        assertFalse(result.getPassed());
+        verify(quizAttemptApplicationService).submitTextAnswers(601, request.getAnswers());
+        verify(submissionRepository, never()).findOwnedLessonSubmission(any(), any(), any());
     }
 
     private void stubAccessibleQuiz() {

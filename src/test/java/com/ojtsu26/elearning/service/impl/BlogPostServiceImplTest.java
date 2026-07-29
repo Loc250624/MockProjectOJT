@@ -69,6 +69,38 @@ class BlogPostServiceImplTest {
     }
 
     @Test
+    void createDraftConvertsHtmlToPlainTextWithoutBreakingCodeGenerics() {
+        BlogPostRequestDTO request = request(
+                "  <strong>Plain title</strong>  ",
+                "<h2>Introduction</h2><p>Use <code>List<String></code> safely.</p><!-- editor marker -->"
+        );
+        User student = user(1, Role.STUDENT);
+        BlogPostResponseDTO response = response(11, BlogPostStatus.DRAFT);
+
+        when(blogPostRepository.save(any(BlogPost.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(blogPostMapper.toDto(any(BlogPost.class))).thenReturn(response);
+
+        blogPostService.createDraft(request, student);
+
+        ArgumentCaptor<BlogPost> captor = ArgumentCaptor.forClass(BlogPost.class);
+        verify(blogPostRepository).save(captor.capture());
+        assertThat(captor.getValue().getTitle()).isEqualTo("Plain title");
+        assertThat(captor.getValue().getContent())
+                .isEqualTo("Introduction\n\nUse List<String> safely.")
+                .doesNotContain("<h2>", "<p>", "<code>", "<!--");
+    }
+
+    @Test
+    void createDraftRejectsContentContainingOnlyHtmlTags() {
+        User student = user(1, Role.STUDENT);
+
+        assertThatThrownBy(() -> blogPostService.createDraft(request("Title", "<p></p>"), student))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Content is required");
+        verify(blogPostRepository, never()).save(any(BlogPost.class));
+    }
+
+    @Test
     void submitForReviewMovesOwnDraftToPendingReview() {
         User teacher = user(2, Role.TEACHER);
         BlogPost blogPost = BlogPost.builder()
@@ -164,6 +196,31 @@ class BlogPostServiceImplTest {
         assertThat(blogPost.getContent()).isEqualTo("New content");
         assertThat(blogPost.getStatus()).isEqualTo(BlogPostStatus.REJECTED);
         assertThat(actual).isSameAs(response);
+    }
+
+    @Test
+    void updateRejectedAlsoStoresPlainText() {
+        User teacher = user(10, Role.TEACHER);
+        BlogPost blogPost = BlogPost.builder()
+                .id(53)
+                .title("Old")
+                .content("Old content")
+                .status(BlogPostStatus.REJECTED)
+                .author(teacher)
+                .build();
+
+        when(blogPostRepository.findById(53)).thenReturn(Optional.of(blogPost));
+        when(blogPostRepository.save(blogPost)).thenReturn(blogPost);
+        when(blogPostMapper.toDto(blogPost)).thenReturn(response(53, BlogPostStatus.REJECTED));
+
+        blogPostService.updateRejected(
+                53,
+                request("<em>Updated</em>", "<p>Revised <strong>content</strong>.</p>"),
+                teacher
+        );
+
+        assertThat(blogPost.getTitle()).isEqualTo("Updated");
+        assertThat(blogPost.getContent()).isEqualTo("Revised content.");
     }
 
     @Test

@@ -22,58 +22,69 @@
             <p class="section-lead">Read approved articles from LumiNa learners and instructors.</p>
         </div>
         <div style="font-size:0.875rem;color:var(--lumina-gray-500);">
-            <span th:text="${#lists.size(blogs)}">0</span> published posts
+            <span data-blog-count th:text="${#lists.size(blogs)}">0</span> published posts
         </div>
     </div>
 
     <div th:if="${successMessage}" class="badge badge-success" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="badge badge-danger" style="margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;" th:text="${errorMessage}"></div>
 
-    <form th:action="@{/blogs}" method="get" class="catalog-search-row" data-loading-form>
+    <form th:action="@{/blogs}"
+          method="get"
+          class="catalog-search-row"
+          role="search"
+          data-live-search-form
+          data-live-search-target="#blog-live-results"
+          data-live-search-count-target="[data-blog-count]"
+          data-live-search-loading-target="[data-blog-search-loading]"
+          data-live-search-error-target="[data-blog-search-error]">
         <div class="search-wrap">
-            <span style="color:var(--lumina-gray-400);font-size:0.9rem;">Search</span>
-            <input type="text" name="keyword" th:value="${keyword}" placeholder="Search published blogs...">
+            <span style="color:var(--lumina-gray-400);font-size:0.9rem;" aria-hidden="true">
+                <svg th:replace="~{fragments/icons :: icon('search')}"></svg>
+            </span>
+            <input type="search"
+                   name="keyword"
+                   th:value="${keyword}"
+                   placeholder="Search published blogs..."
+                   aria-label="Search published blogs"
+                   autocomplete="off"
+                   data-live-search-input>
         </div>
-        <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div data-loading-message hidden style="margin-bottom:1rem;color:var(--lumina-gray-500);font-size:0.875rem;">Loading blogs...</div>
+    <div data-blog-search-loading hidden role="status" style="margin-bottom:1rem;color:var(--lumina-gray-500);font-size:0.875rem;">Loading blogs...</div>
+    <div data-blog-search-error hidden role="alert" style="margin-bottom:1rem;color:var(--lumina-danger);font-size:0.875rem;"></div>
 
-    <div th:if="${#lists.isEmpty(blogs)}"
-         style="background:white;border:1px solid var(--lumina-gray-200);border-radius:8px;padding:3rem;text-align:center;color:var(--lumina-gray-500);">
-        No published blogs are available yet.
-    </div>
+    <div id="blog-live-results" aria-live="polite">
+        <div th:if="${#lists.isEmpty(blogs)}"
+             style="background:white;border:1px solid var(--lumina-gray-200);border-radius:8px;padding:3rem;text-align:center;color:var(--lumina-gray-500);">
+            No published blogs are available yet.
+        </div>
 
-    <div th:unless="${#lists.isEmpty(blogs)}"
-         style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
-        <article th:each="blog : ${blogs}"
-                 class="public-course-card"
-                 data-ai-page-context
-                 style="padding:1.5rem;">
-            <div style="font-size:0.75rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;margin-bottom:0.75rem;"
-                 th:text="${blog.publishedAt == null ? 'Published' : #temporals.format(blog.publishedAt, 'dd MMM yyyy')}">Published</div>
-            <h2 style="font-size:1.125rem;line-height:1.35;margin-bottom:0.5rem;">
-                <a th:href="@{'/blogs/' + ${blog.id}}" th:text="${blog.title}" style="color:var(--lumina-gray-900);text-decoration:none;">Blog title</a>
-            </h2>
-            <p style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-bottom:1rem;">
-                By <strong th:text="${blog.authorName ?: 'LumiNa Author'}">Author</strong>
-            </p>
-            <p style="font-size:0.875rem;color:var(--lumina-gray-600);line-height:1.7;margin-bottom:1.25rem;"
-               th:text="${#strings.abbreviate(blog.content, 180)}">Preview</p>
-            <a th:href="@{'/blogs/' + ${blog.id}}" class="btn btn-secondary btn-sm">Read</a>
-        </article>
+        <div th:unless="${#lists.isEmpty(blogs)}"
+             style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
+            <article th:each="blog : ${blogs}"
+                     class="public-course-card"
+                     data-ai-page-context
+                     style="padding:1.5rem;">
+                <div style="font-size:0.75rem;font-weight:700;color:var(--lumina-blue);text-transform:uppercase;margin-bottom:0.75rem;"
+                     th:text="${blog.publishedAt == null ? 'Published' : #temporals.format(blog.publishedAt, 'dd MMM yyyy')}">Published</div>
+                <h2 style="font-size:1.125rem;line-height:1.35;margin-bottom:0.5rem;">
+                    <a th:href="@{'/blogs/' + ${blog.id}}" th:text="${blog.title}" style="color:var(--lumina-gray-900);text-decoration:none;">Blog title</a>
+                </h2>
+                <p style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-bottom:1rem;">
+                    By <strong th:text="${blog.authorName ?: 'LumiNa Author'}">Author</strong>
+                </p>
+                <p style="font-size:0.875rem;color:var(--lumina-gray-600);line-height:1.7;margin-bottom:1.25rem;"
+                   th:text="${#strings.abbreviate(blog.content, 180)}">Preview</p>
+                <a th:href="@{'/blogs/' + ${blog.id}}" class="btn btn-secondary btn-sm">Read</a>
+            </article>
+        </div>
     </div>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script th:src="@{/js/public/public.js}"></script>
-<script>
-    document.querySelectorAll('[data-loading-form]').forEach(function (form) {
-        form.addEventListener('submit', function () {
-            var loading = document.querySelector('[data-loading-message]');
-            if (loading) loading.hidden = false;
-        });
-    });
-</script>
+<script th:src="@{/js/live-search.js}"></script>
 </body>
 </html>

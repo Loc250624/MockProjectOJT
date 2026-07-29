@@ -52,13 +52,6 @@ public class QuizAttemptApplicationService {
             return session(existing, assigned);
         }
 
-        int maxAttempts = Objects.requireNonNullElse(quiz.getMaxAttempts(), 1);
-        long usedAttempts = attemptRepository.countByQuizIdAndStudentIdAndStatusNot(
-                quizId, student.getId(), QuizAttemptStatus.DRAFT);
-        if (usedAttempts >= maxAttempts) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Maximum quiz attempts reached");
-        }
-
         QuizAttempt attempt = attemptRepository.save(QuizAttempt.builder()
                 .quiz(quiz)
                 .student(student)

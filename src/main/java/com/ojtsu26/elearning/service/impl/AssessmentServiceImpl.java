@@ -10,6 +10,7 @@ import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizAttemptView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizDraftPayload;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizOverviewView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.ResultSummaryView;
@@ -17,6 +18,7 @@ import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.Lesson;
+import com.ojtsu26.elearning.model.entity.LessonProgress;
 import com.ojtsu26.elearning.model.entity.Question;
 import com.ojtsu26.elearning.model.entity.Quiz;
 import com.ojtsu26.elearning.model.entity.QuizAnswer;
@@ -33,6 +35,7 @@ import com.ojtsu26.elearning.model.enums.QuizStatus;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.LessonRepository;
+import com.ojtsu26.elearning.repository.LessonProgressRepository;
 import com.ojtsu26.elearning.repository.QuestionRepository;
 import com.ojtsu26.elearning.repository.QuizAnswerRepository;
 import com.ojtsu26.elearning.repository.QuizAttemptRepository;
@@ -97,6 +100,65 @@ public class AssessmentServiceImpl implements AssessmentService {
     @Autowired(required = false)
     private com.ojtsu26.elearning.service.quiz.QuizQuestionAssignmentService quizQuestionAssignmentService;
 
+    @Autowired(required = false)
+    private LessonProgressRepository lessonProgressRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuizOverviewView getStudentQuizOverview(Integer courseId, Integer lessonId) {
+        User student = currentUserService.getCurrentUser();
+        Quiz quiz = quizRepository.findByLessonId(lessonId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Quiz not found"));
+        if (quiz.getLesson() == null
+                || quiz.getLesson().getCourse() == null
+                || !Objects.equals(quiz.getLesson().getCourse().getId(), courseId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "Quiz does not belong to this course");
+        }
+        requireEnrollment(student.getId(), courseId);
+        if (quiz.getStatus() != null && quiz.getStatus() != QuizStatus.PUBLISHED) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Quiz is not published");
+        }
+
+        QuizAttempt attempt = quizAttemptRepository
+                .findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(
+                        quiz.getId(), student.getId(), QuizAttemptStatus.DRAFT)
+                .orElseGet(() -> quizAttemptRepository
+                        .findTopByQuizIdAndStudentIdOrderByStartedAtDesc(
+                                quiz.getId(), student.getId())
+                        .orElse(null));
+
+        QuizOverviewView view = new QuizOverviewView();
+        view.setQuizId(quiz.getId());
+        view.setCourseId(courseId);
+        view.setLessonId(lessonId);
+        view.setTitle(quiz.getTitle());
+        view.setDescription(quiz.getDescription());
+        view.setDurationMinutes(quiz.getDurationMinutes());
+        view.setPassingScore(quiz.getPassingScore());
+        if (attempt != null) {
+            view.setAttemptId(attempt.getId());
+            view.setAttemptStatus(attempt.getStatus());
+            view.setScore(attempt.getScore());
+            if (quizAttemptApplicationService != null) {
+                int assignedCount = quizAttemptApplicationService
+                        .getOwnedAttempt(attempt.getId()).questions().size();
+                if (assignedCount > 0) {
+                    view.setQuestionCount(assignedCount);
+                }
+            }
+        }
+        if (view.getQuestionCount() == null && quizQuestionAssignmentService != null) {
+            int expectedCount = quizQuestionAssignmentService.readiness(quiz.getId())
+                    .buckets().stream()
+                    .mapToInt(bucket -> Math.max(0, bucket.required()))
+                    .sum();
+            if (expectedCount > 0) {
+                view.setQuestionCount(expectedCount);
+            }
+        }
+        return view;
+    }
+
     @Override
     public QuizView getStudentQuiz(Integer courseId, Integer quizId) {
         User student = currentUserService.getCurrentUser();
@@ -130,6 +192,12 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public QuizAttemptView getStudentQuizAttempt(Integer attemptId) {
+        return toAttemptView(requireStudentAttempt(attemptId), false);
+    }
+
+    @Override
     public QuizAttemptView saveQuizDraft(Integer attemptId, QuizDraftPayload payload) {
         if (quizAttemptApplicationService != null) {
             return toCanonicalAttemptView(quizAttemptApplicationService.saveSelectedAnswers(
@@ -146,8 +214,11 @@ public class AssessmentServiceImpl implements AssessmentService {
     @Override
     public QuizAttemptView submitQuizAttempt(Integer attemptId, QuizDraftPayload payload) {
         if (quizAttemptApplicationService != null) {
-            return toCanonicalAttemptView(quizAttemptApplicationService.submitSelectedAnswers(
-                    attemptId, selectedAnswerMap(payload)));
+            QuizAttemptApplicationService.AttemptSession session =
+                    quizAttemptApplicationService.submitSelectedAnswers(
+                            attemptId, selectedAnswerMap(payload));
+            markPassedAssessmentCompleted(session.attempt());
+            return toCanonicalAttemptView(session);
         }
         QuizAttempt attempt = requireStudentAttempt(attemptId);
         if (attempt.getStatus() != QuizAttemptStatus.DRAFT) {
@@ -164,6 +235,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         attempt.setTotalPoints(total);
         attempt.setSubmittedAt(LocalDateTime.now());
         attempt.setStatus(QuizAttemptStatus.GRADED);
+        markPassedAssessmentCompleted(attempt);
         return toAttemptView(attempt, true);
     }
 
@@ -567,6 +639,46 @@ public class AssessmentServiceImpl implements AssessmentService {
             throw new BusinessException(ErrorCode.ENROLLMENT_ACCESS_DENIED,
                     "Student is not enrolled in this course");
         }
+    }
+
+    private void markPassedAssessmentCompleted(QuizAttempt attempt) {
+        if (lessonProgressRepository == null
+                || attempt == null
+                || attempt.getQuiz() == null
+                || attempt.getQuiz().getLesson() == null
+                || attempt.getScore() == null) {
+            return;
+        }
+        BigDecimal passingScore = attempt.getQuiz().getPassingScore() == null
+                ? BigDecimal.ZERO
+                : attempt.getQuiz().getPassingScore();
+        if (attempt.getScore().compareTo(passingScore) < 0) {
+            return;
+        }
+        User student = currentUserService.getCurrentUser();
+        Lesson lesson = attempt.getQuiz().getLesson();
+        Integer courseId = lesson.getCourse().getId();
+        var enrollment = enrollmentRepository
+                .findByStudentIdAndCourseIdForUpdate(student.getId(), courseId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.ACCESS_DENIED, "You are not enrolled in this course."));
+        LessonProgress progress = lessonProgressRepository
+                .findByEnrollmentIdAndLessonIdForUpdate(
+                        enrollment.getId(), lesson.getId())
+                .orElseGet(() -> LessonProgress.builder()
+                        .enrollment(enrollment)
+                        .lesson(lesson)
+                        .isCompleted(false)
+                        .watchedSeconds(0)
+                        .lastPositionSeconds(0)
+                        .maxReachedSeconds(0)
+                        .build());
+        if (!Boolean.TRUE.equals(progress.getIsCompleted())) {
+            progress.setIsCompleted(true);
+            progress.setCompletedAt(LocalDateTime.now());
+        }
+        progress.setLastAccessedAt(LocalDateTime.now());
+        lessonProgressRepository.save(progress);
     }
 
     private Quiz getQuiz(Integer quizId) {

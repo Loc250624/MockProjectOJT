@@ -109,19 +109,31 @@ class QuizAttemptApplicationServiceTest {
     }
 
     @Test
-    void enforcesMaximumAttemptsBeforeCreatingAnyAttempt() {
+    void createsEveryRequestedAttemptEvenWhenConfiguredMaximumIsOne() {
         when(quizRepository.findByIdForAttemptStart(4)).thenReturn(Optional.of(quiz));
         when(enrollmentRepository.existsByStudentIdAndCourseId(1, 2)).thenReturn(true);
         when(attemptRepository.findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(
                 4, 1, QuizAttemptStatus.DRAFT)).thenReturn(Optional.empty());
-        when(attemptRepository.countByQuizIdAndStudentIdAndStatusNot(
-                4, 1, QuizAttemptStatus.DRAFT)).thenReturn(1L);
+        int[] nextAttemptId = {6};
+        when(attemptRepository.save(any(QuizAttempt.class))).thenAnswer(invocation -> {
+            QuizAttempt attempt = invocation.getArgument(0);
+            attempt.setId(nextAttemptId[0]++);
+            return attempt;
+        });
+        when(assignmentService.assign(any(QuizAttempt.class))).thenReturn(List.of());
+        when(answerRepository.findByAttemptId(anyInt())).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.startOrResume(4))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Maximum");
-        verify(attemptRepository, never()).save(any());
-        verifyNoInteractions(assignmentService);
+        QuizAttemptApplicationService.AttemptSession first = service.startOrResume(4);
+        QuizAttemptApplicationService.AttemptSession second = service.startOrResume(4);
+
+        assertThat(first.attempt().getId()).isEqualTo(6);
+        assertThat(second.attempt().getId()).isEqualTo(7);
+        assertThat(first.attempt().getStatus()).isEqualTo(QuizAttemptStatus.DRAFT);
+        assertThat(second.attempt().getStatus()).isEqualTo(QuizAttemptStatus.DRAFT);
+        assertThat(second.attempt().getQuiz()).isSameAs(quiz);
+        assertThat(second.attempt().getStudent()).isSameAs(student);
+        verify(attemptRepository, times(2)).save(any(QuizAttempt.class));
+        verify(assignmentService, times(2)).assign(any(QuizAttempt.class));
     }
 
     @Test

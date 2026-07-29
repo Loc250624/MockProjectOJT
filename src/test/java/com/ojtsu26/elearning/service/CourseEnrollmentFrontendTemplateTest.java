@@ -44,7 +44,7 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(template.contains("No resources"));
         assertTrue(template.contains("learning-player-page"));
         assertTrue(template.contains("learning-player-header"));
-        assertTrue(template.contains("fragments/layout :: brand-mark"));
+        assertTrue(template.contains("fragments/brand :: mark"));
         assertTrue(template.contains("data-csrf-token"));
         assertTrue(template.contains("/js/csrf-fetch.js"));
         assertTrue(template.contains("/js/student/student.js"));
@@ -64,8 +64,8 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(layout.contains("th:fragment=\"sidebar-brand(homeHref, brandName, brandSub)\""));
         assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Admin Governance')"));
         assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Instructor Portal')"));
-        assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Student Learning')"));
-        assertTrue(learning.contains("fragments/layout :: brand-mark"));
+        assertTrue(layout.contains("sidebar-brand('/', 'LumiNa Portal', 'Academic Excellence')"));
+        assertTrue(learning.contains("fragments/brand :: mark"));
         assertFalse(learning.contains("<span class=\"learning-brand-mark\">L</span>"));
     }
 
@@ -89,23 +89,34 @@ class CourseEnrollmentFrontendTemplateTest {
     }
 
     @Test
-    void quizPanelJavascriptUsesExclusiveViewModeAndStaleRequestGuard() throws Exception {
+    void quizJavascriptUsesDedicatedOverviewAndAttemptStateMachines() throws Exception {
         String script = Files.readString(Path.of("src/main/resources/static/js/student/student.js"));
-        String quizScript = script.substring(
-                script.indexOf("function initQuizPanel"),
-                script.indexOf("function initAssessmentQuiz"));
+        String overviewScript = script.substring(
+                script.indexOf("function initQuizOverview(panel)"),
+                script.indexOf("function initDedicatedQuizAttempt()"));
+        String attemptScript = script.substring(
+                script.indexOf("function initDedicatedQuizAttempt()"),
+                script.indexOf("function switchProfileTab"));
 
-        assertTrue(quizScript.contains("function setQuizViewMode(mode, label)"));
-        assertTrue(quizScript.contains("mode !== 'loading'"));
-        assertTrue(quizScript.contains("mode !== 'unavailable'"));
-        assertTrue(quizScript.contains("mode !== 'taking'"));
-        assertTrue(quizScript.contains("mode !== 'review'"));
-        assertTrue(quizScript.contains("var requestSequence = 0"));
-        assertTrue(quizScript.contains("function isCurrentRequest(requestId)"));
-        assertTrue(quizScript.contains("setQuizViewMode('review'"));
-        assertTrue(quizScript.contains("setQuizViewMode('taking'"));
-        assertTrue(quizScript.contains("setQuizViewMode('unavailable'"));
-        assertFalse(quizScript.contains("unavailable.querySelector('span').textContent"));
+        assertTrue(overviewScript.contains("var uiState = 'loading'"));
+        assertTrue(overviewScript.contains("setState('loading')"));
+        assertTrue(overviewScript.contains("setState('ready')"));
+        assertTrue(overviewScript.contains("setState('error')"));
+        assertTrue(overviewScript.contains("stateRoot.replaceChildren()"));
+        assertTrue(overviewScript.contains("'/quiz-overview'"));
+        assertTrue(overviewScript.contains("'Continue Quiz'"));
+        assertTrue(overviewScript.contains("'Review Result'"));
+        assertTrue(overviewScript.contains("'Start Quiz'"));
+
+        assertTrue(attemptScript.contains("var uiState = page.dataset.quizMode"));
+        assertTrue(attemptScript.contains("nextState === 'submitting'"));
+        assertTrue(attemptScript.contains("nextState === 'saving'"));
+        assertTrue(attemptScript.contains("'/draft'"));
+        assertTrue(attemptScript.contains("'/submit'"));
+        assertTrue(attemptScript.contains("window.confirm(prompt)"));
+        assertTrue(attemptScript.contains("uiState === 'submitting' || uiState === 'saving'"));
+        assertFalse(script.contains("function initQuizPanel"));
+        assertFalse(script.contains("function initAssessmentQuiz"));
     }
 
     @Test
