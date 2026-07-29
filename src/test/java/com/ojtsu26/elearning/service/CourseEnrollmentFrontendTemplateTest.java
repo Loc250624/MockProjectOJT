@@ -113,7 +113,12 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(attemptScript.contains("nextState === 'saving'"));
         assertTrue(attemptScript.contains("'/draft'"));
         assertTrue(attemptScript.contains("'/submit'"));
-        assertTrue(attemptScript.contains("window.confirm(prompt)"));
+        assertTrue(attemptScript.contains(
+                "window.confirm('Submit this quiz? You cannot edit it after submission.')"));
+        assertTrue(attemptScript.contains("function firstUnansweredIndex()"));
+        assertTrue(attemptScript.contains("function initCountdown()"));
+        assertTrue(attemptScript.contains("submitQuiz(true)"));
+        assertFalse(attemptScript.contains("Submit anyway?"));
         assertTrue(attemptScript.contains("uiState === 'submitting' || uiState === 'saving'"));
         assertFalse(script.contains("function initQuizPanel"));
         assertFalse(script.contains("function initAssessmentQuiz"));

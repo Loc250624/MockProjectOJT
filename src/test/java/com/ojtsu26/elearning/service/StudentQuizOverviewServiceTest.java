@@ -140,6 +140,41 @@ class StudentQuizOverviewServiceTest {
     }
 
     @Test
+    void overviewDisplaysScoreReconciledByCanonicalAttemptService() {
+        stubOverviewAccess();
+        ReflectionTestUtils.setField(
+                service, "quizAttemptApplicationService", quizAttemptApplicationService);
+        QuizAttempt staleAttempt = QuizAttempt.builder()
+                .id(501)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.GRADED)
+                .score(new BigDecimal("80.00"))
+                .build();
+        QuizAttempt reconciledAttempt = QuizAttempt.builder()
+                .id(501)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.GRADED)
+                .score(new BigDecimal("100.00"))
+                .build();
+        when(quizAttemptRepository
+                .findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(
+                        300, 8, QuizAttemptStatus.DRAFT))
+                .thenReturn(Optional.empty());
+        when(quizAttemptRepository
+                .findTopByQuizIdAndStudentIdOrderByStartedAtDesc(300, 8))
+                .thenReturn(Optional.of(staleAttempt));
+        when(quizAttemptApplicationService.getOwnedAttempt(501))
+                .thenReturn(new QuizAttemptApplicationService.AttemptSession(
+                        reconciledAttempt, List.of(), Map.of()));
+
+        var result = service.getStudentQuizOverview(100, 200);
+
+        assertEquals(new BigDecimal("100.00"), result.getScore());
+    }
+
+    @Test
     void passingDedicatedAttemptCompletesQuizLessonProgress() {
         ReflectionTestUtils.setField(
                 service, "quizAttemptApplicationService", quizAttemptApplicationService);

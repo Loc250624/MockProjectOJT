@@ -12,7 +12,9 @@
                data-quiz-id=${quiz.id},
                data-course-id=${quiz.courseId},
                data-lesson-id=${quiz.lessonId},
-               data-quiz-mode=${attempt.status.name() == 'DRAFT' ? 'active' : 'submitted'}">
+               data-quiz-mode=${attempt.status.name() == 'DRAFT' ? 'active' : 'submitted'},
+               data-remaining-seconds=${attempt.remainingSeconds},
+               data-duration-minutes=${quiz.durationMinutes}">
 <header class="dedicated-quiz-header">
     <div class="dedicated-quiz-heading">
         <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
@@ -27,8 +29,18 @@
     </div>
     <div class="dedicated-quiz-header-actions">
         <span class="dedicated-quiz-time-limit"
-              th:if="${quiz.durationMinutes != null && quiz.durationMinutes > 0}"
-              th:text="${quiz.durationMinutes + ' min limit'}">20 min limit</span>
+              id="quiz-countdown"
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label="Time remaining"
+              th:if="${attempt.status.name() == 'DRAFT'
+                       && quiz.durationMinutes != null
+                       && quiz.durationMinutes > 0}">
+            <span class="dedicated-quiz-timer-label">Time remaining</span>
+            <strong id="quiz-countdown-value"
+                    th:text="${quiz.durationMinutes + ':00'}">20:00</strong>
+        </span>
         <button type="button"
                 class="btn btn-primary"
                 data-submit-quiz="true"
@@ -44,6 +56,9 @@
             <h2>Progress</h2>
             <strong><span id="quiz-answered-count">0</span>/<span th:text="${#lists.size(quiz.questions)}">0</span> answered</strong>
         </div>
+        <p class="dedicated-quiz-requirement">
+            Answer the current question to unlock the next one. All questions are required.
+        </p>
         <div class="dedicated-quiz-nav" id="quiz-nav-grid">
             <button th:each="question, iter : ${quiz.questions}"
                     type="button"
