@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initCourseEnrollmentCta();
     initLearningProgress();
     initStudentCertificates();
-    initAssessmentQuiz();
+    initDedicatedQuizAttempt();
 });
 
 function initPortalSidebarNav() {
@@ -660,7 +660,7 @@ function initLessonCompletion(button) {
 function initStudentAssessmentPanels() {
     var quizPanel = document.querySelector('[data-quiz-panel="true"]');
     if (quizPanel) {
-        initQuizPanel(quizPanel);
+        initQuizOverview(quizPanel);
     }
 }
 
@@ -671,15 +671,6 @@ function createTextElement(tagName, className, text) {
     }
     element.textContent = text || '';
     return element;
-}
-
-function setPanelMessage(elementId, text, isError) {
-    var element = document.getElementById(elementId);
-    if (!element) {
-        return;
-    }
-    element.textContent = text || '';
-    element.style.color = isError ? 'var(--lumina-danger)' : 'var(--lumina-gray-500)';
 }
 
 function assessmentJson(response, fallbackMessage) {
@@ -704,479 +695,413 @@ function setAssessmentMessage(element, text, type) {
     }
 }
 
-function initQuizPanel(panel) {
+function initQuizOverview(panel) {
     var courseId = panel.dataset.courseId;
     var lessonId = panel.dataset.lessonId;
-    var form = document.getElementById('quiz-form');
-    var loading = document.getElementById('quiz-loading');
-    var unavailable = document.getElementById('quiz-unavailable');
-    var questionsWrap = document.getElementById('quiz-questions');
-    var saveButton = document.getElementById('quiz-save-button');
-    var submitButton = document.getElementById('quiz-submit-button');
-    var result = document.getElementById('quiz-result');
-    var review = document.getElementById('quiz-review');
-    var retakeButton = document.getElementById('quiz-retake-button');
-    var stateLabel = document.getElementById('quiz-state-label');
-    var attempt = null;
-    var requestSequence = 0;
-    var autosaveTimer = null;
-    var autosaveInFlight = Promise.resolve();
-    var submitting = false;
+    var stateRoot = document.getElementById('quiz-overview-state');
+    var uiState = 'loading';
 
-    function endpoint(action) {
-        return '/student/courses/' + encodeURIComponent(courseId) + '/lessons/' + encodeURIComponent(lessonId) + '/quiz' + (action || '');
+    if (!stateRoot) {
+        return;
     }
 
-    function isCurrentRequest(requestId) {
-        return requestId === requestSequence &&
-            panel.dataset.courseId === courseId &&
-            panel.dataset.lessonId === lessonId;
+    function attemptUrl(data) {
+        return '/student/courses/' + encodeURIComponent(courseId)
+            + '/lessons/' + encodeURIComponent(lessonId)
+            + '/quiz/attempt/' + encodeURIComponent(data.attemptId);
     }
 
-    function setUnavailableMessage(text) {
-        var message = unavailable ? unavailable.querySelector('strong + span') : null;
-        if (message) {
-            message.textContent = text || 'This quiz is not available right now.';
-        }
+    function setState(nextState) {
+        uiState = nextState;
+        stateRoot.dataset.state = nextState;
+        stateRoot.setAttribute('aria-busy', nextState === 'loading' ? 'true' : 'false');
     }
 
-    function setQuizViewMode(mode, label) {
-        if (loading) {
-            loading.hidden = mode !== 'loading';
+    function renderLoading() {
+        setState('loading');
+        stateRoot.replaceChildren();
+        var skeleton = document.createElement('div');
+        skeleton.className = 'quiz-overview-skeleton';
+        skeleton.setAttribute('aria-hidden', 'true');
+        for (var index = 0; index < 3; index += 1) {
+            skeleton.appendChild(document.createElement('span'));
         }
-        if (unavailable) {
-            unavailable.hidden = mode !== 'unavailable';
-        }
-        if (form) {
-            form.hidden = mode !== 'taking';
-        }
-        if (result) {
-            result.hidden = mode !== 'review';
-        }
-        if (retakeButton) {
-            retakeButton.hidden = mode !== 'review';
-            retakeButton.disabled = false;
-        }
-        if (stateLabel) {
-            stateLabel.textContent = label || (
-                mode === 'loading' ? 'Loading' :
-                    mode === 'unavailable' ? 'Unavailable' :
-                        mode === 'review' ? 'Submitted' : 'Draft'
-            );
-        }
+        stateRoot.appendChild(skeleton);
     }
 
-    function parseOptions(question) {
-        try {
-            var parsed = JSON.parse(question.optionsJson || '[]');
-            if (!Array.isArray(parsed)) {
-                return [];
-            }
-            return parsed.map(function(option) {
-                if (option && typeof option === 'object') {
-                    return {
-                        content: String(option.content || ''),
-                        correct: option.correct === true
-                    };
-                }
-                return { content: String(option), correct: null };
-            }).filter(function(option) { return option.content; });
-        } catch (error) {
-            return [];
-        }
+    function renderError(error) {
+        setState('error');
+        stateRoot.replaceChildren();
+        var errorCard = document.createElement('div');
+        errorCard.className = 'quiz-overview-error';
+        errorCard.appendChild(createTextElement(
+            'strong', null, 'We could not load this quiz overview.'));
+        errorCard.appendChild(createTextElement(
+            'span', null, error && error.message
+                ? error.message
+                : 'Please try again in a moment.'));
+        var retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-outline';
+        retry.textContent = 'Try Again';
+        retry.addEventListener('click', loadOverview);
+        errorCard.appendChild(retry);
+        stateRoot.appendChild(errorCard);
     }
 
-    function selectedAnswers() {
-        var answers = {};
-        if (!attempt || !attempt.questions) {
-            return answers;
-        }
-        attempt.questions.forEach(function (question) {
-            var selector = '[name="quiz-question-' + question.id + '"]:checked';
-            var checked = questionsWrap.querySelector(selector);
-            if (checked) {
-                answers[question.id] = checked.value;
-            }
-        });
-        return answers;
-    }
-
-    function renderResult(data) {
-        setQuizViewMode('review', data.status || 'Submitted');
-        setPanelMessage('quiz-message', '', false);
-        var score = data.score == null ? 'Not scored' : data.score + '%';
-        var status = data.passed ? 'Passed' : 'Failed';
-        var resultSummary = result.querySelector('[data-quiz-result-summary]');
-        var resultStatus = result.querySelector('[data-quiz-result-status]');
-        var resultScore = result.querySelector('[data-quiz-result-score]');
-        if (resultSummary) {
-            resultSummary.textContent = data.passed
-                ? 'Nice work. You can review your selected answers below.'
-                : 'Review your selected answers below, then retake when ready.';
-        }
-        if (resultStatus) {
-            resultStatus.textContent = status;
-        }
-        if (resultScore) {
-            resultScore.textContent = 'Score ' + score;
-        }
-        result.classList.toggle('passed', data.passed === true);
-        result.classList.toggle('failed', data.passed !== true);
-        renderQuizReview(data);
-        if (data.passed) {
-            var lessonStatus = document.getElementById('lesson-status');
-            if (lessonStatus) {
-                lessonStatus.textContent = 'Completed';
-                lessonStatus.classList.add('completed');
-            }
-        }
-        applyLearningProgress(data.learningProgress);
-    }
-
-    function renderQuizReview(data) {
-        if (!review) {
+    function addMetadata(list, label, value) {
+        if (value == null || value === '') {
             return;
         }
-        review.replaceChildren();
-        (data.questions || []).forEach(function(question, index) {
-            var item = document.createElement('div');
-            item.className = 'learning-result-item';
-            item.appendChild(createTextElement('strong', null, (index + 1) + '. ' + (question.questionText || 'Question')));
-            var selected = data.answers && data.answers[question.id] ? String(data.answers[question.id]) : 'No answer';
-            var options = parseOptions(question);
-            var selectedOption = options.filter(function(option) { return option.content === selected; })[0];
-            if (selectedOption && selectedOption.correct === true) {
-                item.classList.add('correct');
-            } else if (selectedOption && selectedOption.correct === false) {
-                item.classList.add('wrong');
-            }
-            item.appendChild(createTextElement('span', null, 'Selected: ' + selected));
-            review.appendChild(item);
-        });
+        var item = document.createElement('div');
+        item.className = 'quiz-overview-meta-item';
+        item.appendChild(createTextElement('span', null, label));
+        item.appendChild(createTextElement('strong', null, value));
+        list.appendChild(item);
     }
 
-    function renderQuiz(data) {
-        data = data || {};
-        attempt = data;
-        if (data.submitted) {
-            renderResult(data);
+    function startOrOpen(data, button) {
+        if (uiState === 'loading') {
             return;
         }
-        if (data.unavailable) {
-            attempt = null;
-            questionsWrap.replaceChildren();
-            if (review) {
-                review.replaceChildren();
-            }
-            setUnavailableMessage(data.unavailableMessage);
-            setQuizViewMode('unavailable', 'Unavailable');
+        if (data.attemptId) {
+            window.location.assign(attemptUrl(data));
             return;
         }
-
-        questionsWrap.replaceChildren();
-        if (review) {
-            review.replaceChildren();
-        }
-        (data.questions || []).forEach(function (question, index) {
-            var block = document.createElement('fieldset');
-            block.className = 'learning-question';
-            block.appendChild(createTextElement('legend', null, (index + 1) + '. ' + (question.questionText || 'Question')));
-            var options = parseOptions(question);
-            if (!options.length) {
-                block.appendChild(createTextElement('p', 'learning-help', 'No options are configured for this question.'));
-            }
-            options.slice(0, 4).forEach(function (option) {
-                var label = document.createElement('label');
-                label.className = 'learning-answer-option';
-                var input = document.createElement('input');
-                input.type = 'radio';
-                input.name = 'quiz-question-' + question.id;
-                input.value = option.content;
-                if (data.answers && data.answers[question.id] === option.content) {
-                    input.checked = true;
-                    label.classList.add('selected');
-                }
-                label.appendChild(input);
-                label.appendChild(createTextElement('span', null, option.content));
-                input.addEventListener('change', function() {
-                    block.querySelectorAll('.learning-answer-option').forEach(function(optionLabel) {
-                        optionLabel.classList.toggle('selected', optionLabel.querySelector('input:checked') !== null);
-                    });
-                    if (autosaveTimer) {
-                        window.clearTimeout(autosaveTimer);
-                    }
-                    stateLabel.textContent = 'Unsaved';
-                    autosaveTimer = window.setTimeout(function() {
-                        stateLabel.textContent = 'Saving';
-                        autosaveInFlight = autosaveInFlight
-                            .catch(function() { return null; })
-                            .then(function() {
-                                return sendQuiz('/save', 'Saving...');
-                            })
-                            .then(function() {
-                                stateLabel.textContent = 'Saved';
-                                setPanelMessage('quiz-message', 'Saved.', false);
-                            })
-                            .catch(function(error) {
-                                stateLabel.textContent = 'Save error';
-                                setPanelMessage('quiz-message', error.message, true);
-                            });
-                    }, 700);
-                });
-                block.appendChild(label);
-            });
-            questionsWrap.appendChild(block);
-        });
-        setPanelMessage('quiz-message', '', false);
-        setQuizViewMode('taking', 'Draft');
-    }
-
-    function loadQuiz(message) {
-        var requestId = ++requestSequence;
-        attempt = null;
-        questionsWrap.replaceChildren();
-        if (review) {
-            review.replaceChildren();
-        }
-        setQuizViewMode('loading', 'Loading');
-        setUnavailableMessage('');
-        if (message) {
-            setPanelMessage('quiz-message', message, false);
-        }
-        return fetch(endpoint(''), { credentials: 'same-origin' })
-            .then(function(response) {
-                return parseLearningJson(response, 'Unable to load quiz');
-            })
-            .then(function(apiResponse) {
-                if (!isCurrentRequest(requestId)) {
-                    return null;
-                }
-                renderQuiz(apiResponse.data || {});
-                return apiResponse.data;
-            })
-            .catch(function(error) {
-                if (!isCurrentRequest(requestId)) {
-                    return null;
-                }
-                throw error;
-            });
-    }
-
-    function sendQuiz(action, message) {
-        if (!attempt || !attempt.attemptId) {
-            return Promise.resolve();
-        }
-        setPanelMessage('quiz-message', message, false);
-        var payload = {
-            attemptId: attempt.attemptId,
-            answers: selectedAnswers()
-        };
-        return fetch(endpoint(action), {
+        setState('loading');
+        button.disabled = true;
+        button.textContent = 'Starting...';
+        fetch('/api/student/quizzes/' + encodeURIComponent(data.quizId) + '/attempts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(payload)
+            credentials: 'same-origin'
         }).then(function (response) {
-            return parseLearningJson(response, 'Unable to update quiz attempt');
-        }).then(function (apiResponse) {
-            attempt = apiResponse.data;
-            setPanelMessage('quiz-message', action === '/submit' ? 'Quiz submitted.' : 'Draft saved.', false);
-            if (attempt.submitted) {
-                renderResult(attempt);
+            return assessmentJson(response, 'Unable to start this quiz');
+        }).then(function (body) {
+            var attempt = body.data || {};
+            if (!attempt.id) {
+                throw new Error('The quiz attempt could not be opened.');
             }
-        });
+            data.attemptId = attempt.id;
+            window.location.assign(attemptUrl(data));
+        }).catch(renderError);
     }
 
-    loadQuiz()
-        .catch(function (error) {
-            setUnavailableMessage(error.message);
-            setQuizViewMode('unavailable', 'Unavailable');
-        });
+    function renderReady(data) {
+        setState('ready');
+        stateRoot.replaceChildren();
+        var card = document.createElement('article');
+        card.className = 'quiz-overview-card';
+        card.appendChild(createTextElement('p', 'quiz-overview-eyebrow', 'Graded assessment'));
+        card.appendChild(createTextElement('h3', null, data.title || 'Quiz'));
+        if (data.description) {
+            card.appendChild(createTextElement('p', 'quiz-overview-description', data.description));
+        }
 
-    if (saveButton) {
-        saveButton.addEventListener('click', function () {
-            saveButton.disabled = true;
-            sendQuiz('/save', 'Saving draft...')
-                .catch(function (error) {
-                    setPanelMessage('quiz-message', error.message, true);
-                })
-                .finally(function () {
-                    saveButton.disabled = false;
-                });
+        var metadata = document.createElement('div');
+        metadata.className = 'quiz-overview-metadata';
+        if (Number(data.questionCount) > 0) {
+            addMetadata(metadata, 'Questions', String(data.questionCount));
+        }
+        if (Number(data.durationMinutes) > 0) {
+            addMetadata(metadata, 'Time limit', data.durationMinutes + ' minutes');
+        }
+        if (data.passingScore != null) {
+            addMetadata(metadata, 'Passing score', data.passingScore + '%');
+        }
+        if (data.score != null && data.attemptStatus !== 'DRAFT') {
+            addMetadata(metadata, 'Latest score', data.score + '%');
+        }
+        if (metadata.childElementCount) {
+            card.appendChild(metadata);
+        }
+
+        var actionRow = document.createElement('div');
+        actionRow.className = 'quiz-overview-actions';
+        var action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn-primary quiz-overview-primary-action';
+        action.textContent = data.attemptStatus === 'DRAFT'
+            ? 'Continue Quiz'
+            : (data.attemptId ? 'Review Result' : 'Start Quiz');
+        action.addEventListener('click', function () {
+            startOrOpen(data, action);
         });
+        actionRow.appendChild(action);
+        card.appendChild(actionRow);
+        stateRoot.appendChild(card);
     }
-    if (form) {
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            if (submitting) {
-                return;
-            }
-            submitting = true;
-            if (autosaveTimer) {
-                window.clearTimeout(autosaveTimer);
-                autosaveTimer = null;
-            }
-            submitButton.disabled = true;
-            autosaveInFlight.catch(function() { return null; }).then(function() {
-                return sendQuiz('/submit', 'Submitting quiz...');
-            })
-                .catch(function (error) {
-                    setPanelMessage('quiz-message', error.message, true);
-                })
-                .finally(function () {
-                    submitting = false;
-                    submitButton.disabled = false;
-                });
-        });
+
+    function loadOverview() {
+        renderLoading();
+        fetch('/api/student/courses/' + encodeURIComponent(courseId)
+            + '/lessons/' + encodeURIComponent(lessonId) + '/quiz-overview', {
+            credentials: 'same-origin'
+        }).then(function (response) {
+            return assessmentJson(response, 'Unable to load this quiz');
+        }).then(function (body) {
+            renderReady(body.data || {});
+        }).catch(renderError);
     }
-    if (retakeButton) {
-        retakeButton.addEventListener('click', function() {
-            retakeButton.disabled = true;
-            loadQuiz('Starting a new attempt...')
-                .catch(function(error) {
-                    setPanelMessage('quiz-message', error.message, true);
-                    setUnavailableMessage(error.message);
-                    setQuizViewMode('unavailable', 'Unavailable');
-                    retakeButton.disabled = false;
-                });
-        });
-    }
+
+    loadOverview();
 }
 
-function initAssessmentQuiz() {
-    var page = document.querySelector('.assessment-page[data-quiz-id]');
-    if (!page || !page.dataset.quizId) {
+function initDedicatedQuizAttempt() {
+    var page = document.querySelector('.dedicated-quiz-page[data-attempt-id]');
+    if (!page) {
         return;
     }
+    var attemptId = page.dataset.attemptId;
     var quizId = page.dataset.quizId;
+    var courseId = page.dataset.courseId;
+    var lessonId = page.dataset.lessonId;
     var message = document.getElementById('quiz-message');
-    var saveState = document.getElementById('quiz-save-state');
-    var questions = Array.prototype.slice.call(document.querySelectorAll('.quiz-question'));
-    var navButtons = Array.prototype.slice.call(document.querySelectorAll('.q-nav-btn'));
-    if (!questions.length) {
+    var retake = document.getElementById('retake-quiz-btn');
+    var uiState = page.dataset.quizMode === 'submitted' ? 'submitted' : 'ready';
+
+    function attemptUrl(id) {
+        return '/student/courses/' + encodeURIComponent(courseId)
+            + '/lessons/' + encodeURIComponent(lessonId)
+            + '/quiz/attempt/' + encodeURIComponent(id);
+    }
+
+    function setState(nextState, feedback, type) {
+        uiState = nextState;
+        page.dataset.uiState = nextState;
+        setAssessmentMessage(message, feedback || '', type || null);
+        var submitting = nextState === 'submitting';
+        var saving = nextState === 'saving';
+        document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (button) {
+            button.disabled = submitting || saving;
+            button.textContent = submitting ? 'Submitting...' : 'Submit Quiz';
+        });
+        var saveButton = document.getElementById('save-quiz-btn');
+        if (saveButton) {
+            saveButton.disabled = submitting || saving;
+            saveButton.textContent = saving ? 'Saving...' : 'Save Draft';
+        }
+    }
+
+    if (retake) {
+        retake.addEventListener('click', function () {
+            if (uiState === 'loading') {
+                return;
+            }
+            setState('loading', 'Opening a new attempt...');
+            retake.disabled = true;
+            fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).then(function (response) {
+                return assessmentJson(response, 'Unable to start a new attempt');
+            }).then(function (body) {
+                window.location.assign(attemptUrl(body.data.id));
+            }).catch(function (error) {
+                retake.disabled = false;
+                setState('error', error.message, 'error');
+            });
+        });
         return;
     }
-    var current = 0;
-    var attemptId = null;
 
-    function showQuestion(index) {
+    var questions = Array.prototype.slice.call(
+        document.querySelectorAll('.dedicated-quiz-question'));
+    var navButtons = Array.prototype.slice.call(
+        document.querySelectorAll('.dedicated-quiz-nav-item'));
+    var current = 0;
+
+    if (!questions.length) {
+        setState('error', 'This attempt does not contain any questions.', 'error');
+        return;
+    }
+
+    function questionAnswered(question) {
+        return question.querySelector('input:checked') !== null;
+    }
+
+    function updateOptionStates(question) {
+        question.querySelectorAll('.dedicated-quiz-option').forEach(function (option) {
+            option.classList.toggle(
+                'is-selected', option.querySelector('input:checked') !== null);
+        });
+    }
+
+    function updateProgress() {
+        var answered = 0;
+        questions.forEach(function (question, index) {
+            var isAnswered = questionAnswered(question);
+            if (isAnswered) {
+                answered += 1;
+            }
+            if (!navButtons[index]) {
+                return;
+            }
+            navButtons[index].classList.toggle('is-current', index === current);
+            navButtons[index].classList.toggle(
+                'is-answered', index !== current && isAnswered);
+            navButtons[index].classList.toggle(
+                'is-unanswered', index !== current && !isAnswered);
+            if (index === current) {
+                navButtons[index].setAttribute('aria-current', 'step');
+            } else {
+                navButtons[index].removeAttribute('aria-current');
+            }
+        });
+        var count = document.getElementById('quiz-answered-count');
+        if (count) {
+            count.textContent = String(answered);
+        }
+    }
+
+    function showQuestion(index, focusHeading) {
         current = Math.max(0, Math.min(index, questions.length - 1));
         questions.forEach(function (question, questionIndex) {
-            question.classList.toggle('active', questionIndex === current);
+            var active = questionIndex === current;
+            question.classList.toggle('is-active', active);
+            question.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
-        navButtons.forEach(function (button, buttonIndex) {
-            button.classList.toggle('active', buttonIndex === current);
-        });
+        var previous = document.getElementById('previous-question-btn');
+        var next = document.getElementById('next-question-btn');
+        if (previous) {
+            previous.disabled = current === 0;
+        }
+        if (next) {
+            next.textContent = current === questions.length - 1
+                ? 'Review Answers'
+                : 'Next Question';
+        }
+        updateProgress();
+        if (focusHeading) {
+            var heading = questions[current].querySelector('h2');
+            if (heading) {
+                heading.focus();
+            }
+        }
     }
 
     function collectAnswers() {
         return questions.map(function (question) {
             return {
                 questionId: Number(question.dataset.questionId),
-                selectedOptionIds: Array.prototype.slice.call(question.querySelectorAll('input:checked')).map(function (input) {
-                    return Number(input.value);
-                })
+                selectedOptionIds: Array.prototype.slice.call(
+                    question.querySelectorAll('input:checked'))
+                    .map(function (input) {
+                        return Number(input.value);
+                    })
             };
         });
     }
 
-    function markAnswered() {
-        questions.forEach(function (question, index) {
-            if (navButtons[index]) {
-                navButtons[index].classList.toggle('answered', question.querySelectorAll('input:checked').length > 0);
-            }
-        });
-    }
-
-    function ensureAttempt() {
-        if (attemptId) {
-            return Promise.resolve(attemptId);
-        }
-        setAssessmentMessage(saveState, 'Starting...', null);
-        return fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
-            method: 'POST',
-            credentials: 'same-origin'
+    function updateAttempt(method, endpoint, fallbackMessage) {
+        return fetch(endpoint, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ answers: collectAnswers() })
         }).then(function (response) {
-            return assessmentJson(response, 'Unable to start quiz');
-        }).then(function (body) {
-            attemptId = body.data.id;
-            setAssessmentMessage(saveState, 'Draft active', null);
-            return attemptId;
-        });
-    }
-
-    function saveDraft() {
-        return ensureAttempt().then(function (id) {
-            return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/draft', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ answers: collectAnswers() })
-            });
-        }).then(function (response) {
-            return assessmentJson(response, 'Unable to save draft');
-        }).then(function () {
-            setAssessmentMessage(message, 'Draft saved.', 'success');
-            setAssessmentMessage(saveState, 'Saved', null);
-        }).catch(function (error) {
-            setAssessmentMessage(message, error.message, 'error');
+            return assessmentJson(response, fallbackMessage);
         });
     }
 
     navButtons.forEach(function (button) {
         button.addEventListener('click', function () {
-            showQuestion(Number(button.dataset.questionIndex));
+            showQuestion(Number(button.dataset.questionIndex), true);
         });
     });
-    document.querySelectorAll('.quiz-option input').forEach(function (input) {
-        input.addEventListener('change', function () {
-            markAnswered();
-            input.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(function (option) {
-                option.classList.toggle('selected', option.querySelector('input:checked') !== null);
+    questions.forEach(function (question) {
+        question.querySelectorAll('input').forEach(function (input) {
+            input.addEventListener('change', function () {
+                updateOptionStates(question);
+                updateProgress();
+                setState('ready', 'Changes are not saved yet.');
             });
         });
     });
+
     var previous = document.getElementById('previous-question-btn');
     if (previous) {
-        previous.addEventListener('click', function () { showQuestion(current - 1); });
+        previous.addEventListener('click', function () {
+            showQuestion(current - 1, true);
+        });
     }
     var next = document.getElementById('next-question-btn');
     if (next) {
-        next.addEventListener('click', function () { showQuestion(current + 1); });
+        next.addEventListener('click', function () {
+            if (current < questions.length - 1) {
+                showQuestion(current + 1, true);
+                return;
+            }
+            var unanswered = questions.filter(function (question) {
+                return !questionAnswered(question);
+            }).length;
+            setState('ready', unanswered
+                ? unanswered + ' question(s) are still unanswered.'
+                : 'All questions are answered. Submit when you are ready.');
+            var submitButton = document.querySelector('[data-submit-quiz="true"]');
+            if (submitButton) {
+                submitButton.focus();
+            }
+        });
+    }
+    var clear = document.getElementById('clear-selection-btn');
+    if (clear) {
+        clear.addEventListener('click', function () {
+            questions[current].querySelectorAll('input:checked').forEach(function (input) {
+                input.checked = false;
+            });
+            updateOptionStates(questions[current]);
+            updateProgress();
+            setState('ready', 'Selection cleared. Save the draft to persist this change.');
+        });
     }
     var save = document.getElementById('save-quiz-btn');
     if (save) {
-        save.addEventListener('click', saveDraft);
-    }
-    var submit = document.getElementById('submit-quiz-btn');
-    if (submit) {
-        submit.addEventListener('click', function () {
-            if (!window.confirm('Submit this quiz attempt? You cannot edit it after submission.')) {
+        save.addEventListener('click', function () {
+            if (uiState === 'saving' || uiState === 'submitting') {
                 return;
             }
-            ensureAttempt().then(function (id) {
-                submit.disabled = true;
-                return fetch('/api/student/quiz-attempts/' + encodeURIComponent(id) + '/submit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ answers: collectAnswers() })
-                });
-            }).then(function (response) {
-                return assessmentJson(response, 'Unable to submit quiz');
-            }).then(function (body) {
-                window.location.href = '/student/quizzes/' + encodeURIComponent(body.data.id) + '/result';
+            setState('saving');
+            updateAttempt(
+                'PUT',
+                '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/draft',
+                'Unable to save this draft'
+            ).then(function () {
+                setState('ready', 'Draft saved.', 'success');
             }).catch(function (error) {
-                submit.disabled = false;
-                setAssessmentMessage(message, error.message, 'error');
+                setState('error', error.message, 'error');
             });
         });
     }
-    markAnswered();
-    showQuestion(0);
-    ensureAttempt().catch(function (error) {
-        setAssessmentMessage(message, error.message, 'error');
+    document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (submit) {
+        submit.addEventListener('click', function () {
+            if (uiState === 'submitting' || uiState === 'saving') {
+                return;
+            }
+            var unanswered = questions.filter(function (question) {
+                return !questionAnswered(question);
+            }).length;
+            var prompt = unanswered
+                ? 'You have ' + unanswered + ' unanswered question(s). Submit anyway?'
+                : 'Submit this quiz? You cannot edit it after submission.';
+            if (!window.confirm(prompt)) {
+                return;
+            }
+            setState('submitting');
+            updateAttempt(
+                'POST',
+                '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
+                'Unable to submit this quiz'
+            ).then(function () {
+                setState('submitted');
+                window.location.assign(attemptUrl(attemptId));
+            }).catch(function (error) {
+                setState('error', error.message, 'error');
+            });
+        });
     });
+
+    questions.forEach(updateOptionStates);
+    showQuestion(0, false);
 }
 
 function switchProfileTab(tabName) {

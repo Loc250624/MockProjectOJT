@@ -3,88 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${quiz != null ? quiz.title + ' - Quiz' : 'Quiz'}">Quiz</title>
+    <title th:text="${quiz.title + ' - LumiNa'}">Quiz - LumiNa</title>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
-<body class="lumina-bg assessment-page"
-      th:attr="data-quiz-id=${quiz != null ? quiz.id : ''},data-course-id=${quiz != null ? quiz.courseId : ''}">
-<header class="portal-topbar assessment-topbar">
-    <div class="breadcrumb">
-        <a th:href="@{/student/dashboard}">Dashboard</a>
-        <span class="sep">&gt;</span>
-        <a th:href="@{/student/learning(courseId=${quiz.courseId})}" th:if="${quiz != null}" th:text="${quiz.courseTitle}">Course</a>
-        <span class="sep">&gt;</span>
-        <span class="current" th:text="${quiz != null ? quiz.title : 'Quiz'}">Quiz</span>
+<body class="lumina-bg dedicated-quiz-page"
+      th:attr="data-attempt-id=${attempt.id},
+               data-quiz-id=${quiz.id},
+               data-course-id=${quiz.courseId},
+               data-lesson-id=${quiz.lessonId},
+               data-quiz-mode=${attempt.status.name() == 'DRAFT' ? 'active' : 'submitted'}">
+<header class="dedicated-quiz-header">
+    <div class="dedicated-quiz-heading">
+        <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
+            <span th:replace="~{fragments/brand :: mark}"></span>
+            <span>LumiNa</span>
+        </a>
+        <span class="dedicated-quiz-header-divider" aria-hidden="true"></span>
+        <div>
+            <span class="dedicated-quiz-module" th:text="${quiz.lessonTitle}">Quiz lesson</span>
+            <h1 th:text="${quiz.title}">Quiz title</h1>
+        </div>
     </div>
-    <div class="assessment-status">
-        <span id="quiz-save-state">Ready</span>
-        <strong th:text="${quiz != null && quiz.durationMinutes != null ? quiz.durationMinutes + ' min' : 'No timer'}">30 min</strong>
+    <div class="dedicated-quiz-header-actions">
+        <span class="dedicated-quiz-time-limit"
+              th:if="${quiz.durationMinutes != null && quiz.durationMinutes > 0}"
+              th:text="${quiz.durationMinutes + ' min limit'}">20 min limit</span>
+        <button type="button"
+                class="btn btn-primary"
+                data-submit-quiz="true"
+                th:if="${attempt.status.name() == 'DRAFT'}">
+            Submit Quiz
+        </button>
     </div>
 </header>
 
-<main class="assessment-shell" th:if="${quiz != null}">
-    <aside class="quiz-nav">
-        <h3>Questions</h3>
-        <p>Answered questions are highlighted.</p>
-        <div class="quiz-nav-grid" id="quiz-nav-grid">
-            <button th:each="question,iter : ${quiz.questions}"
-                    type="button"
-                    class="q-nav-btn"
-                    th:text="${iter.index + 1}"
-                    th:attr="data-question-index=${iter.index}">1</button>
+<main class="dedicated-quiz-shell" th:if="${attempt.status.name() == 'DRAFT'}">
+    <aside class="dedicated-quiz-progress" aria-label="Quiz progress">
+        <div class="dedicated-quiz-progress-heading">
+            <h2>Progress</h2>
+            <strong><span id="quiz-answered-count">0</span>/<span th:text="${#lists.size(quiz.questions)}">0</span> answered</strong>
         </div>
-        <button class="btn btn-secondary assessment-wide" type="button" id="save-quiz-btn">
-            <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
-            <span>Save draft</span>
-        </button>
-        <button class="btn btn-primary assessment-wide" type="button" id="submit-quiz-btn">
-            <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
-            <span>Submit quiz</span>
-        </button>
-        <div class="assessment-message" id="quiz-message"></div>
+        <div class="dedicated-quiz-nav" id="quiz-nav-grid">
+            <button th:each="question, iter : ${quiz.questions}"
+                    type="button"
+                    class="dedicated-quiz-nav-item"
+                    th:classappend="${iter.index == 0 ? ' is-current' : (!#lists.isEmpty(question.selectedOptionIds) ? ' is-answered' : ' is-unanswered')}"
+                    th:text="${iter.count}"
+                    th:attr="data-question-index=${iter.index},
+                             aria-label=${'Question ' + iter.count},
+                             aria-current=${iter.index == 0 ? 'step' : null}">1</button>
+        </div>
+        <div class="dedicated-quiz-legend" aria-label="Question status legend">
+            <span><i class="is-answered"></i>Answered</span>
+            <span><i class="is-current"></i>Current question</span>
+            <span><i class="is-unanswered"></i>Not answered</span>
+        </div>
     </aside>
 
-    <section class="quiz-area">
-        <div class="quiz-question"
-             th:each="question,iter : ${quiz.questions}"
-             th:classappend="${iter.index == 0} ? ' active' : ''"
-             th:attr="data-question-id=${question.id},data-question-type=${question.questionType}">
-            <div class="quiz-question-header">
-                <span class="badge badge-primary" th:text="'Question ' + ${iter.index + 1}">Question 1</span>
-                <span class="badge badge-dark" th:text="${question.points} + ' pts'">1 pts</span>
+    <section class="dedicated-quiz-workspace">
+        <div class="dedicated-quiz-question"
+             th:each="question, iter : ${quiz.questions}"
+             th:classappend="${iter.index == 0 ? ' is-active' : ''}"
+             th:attr="data-question-id=${question.id},
+                      data-question-index=${iter.index},
+                      data-question-type=${question.questionType.name()}"
+             th:aria-hidden="${iter.index != 0}">
+            <div class="dedicated-quiz-question-meta">
+                <span th:text="${'Question ' + iter.count}">Question 1</span>
+                <span th:text="${#strings.replace(question.questionType.name(), '_', ' ')}">Single choice</span>
+                <span th:if="${question.points != null}" th:text="${question.points + ' points'}">1 point</span>
             </div>
-            <div class="quiz-question-text" th:text="${question.content}">Question text</div>
-            <div class="quiz-options">
-                <label class="quiz-option" th:each="option : ${question.options}">
+            <h2 tabindex="-1" th:text="${question.content}">Question text</h2>
+            <div class="dedicated-quiz-options">
+                <label class="dedicated-quiz-option"
+                       th:each="option : ${question.options}"
+                       th:classappend="${question.selectedOptionIds != null && question.selectedOptionIds.contains(option.id) ? ' is-selected' : ''}">
                     <input th:type="${question.questionType.name() == 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}"
-                           th:name="'question-' + ${question.id}"
+                           th:name="${'question-' + question.id}"
                            th:value="${option.id}"
-                           th:checked="${question.selectedOptionIds != null and question.selectedOptionIds.contains(option.id)}">
-                    <span th:text="${option.content}">Option</span>
+                           th:checked="${question.selectedOptionIds != null && question.selectedOptionIds.contains(option.id)}">
+                    <span th:text="${option.content}">Answer option</span>
                 </label>
             </div>
         </div>
-        <div class="quiz-footer">
-            <button type="button" class="btn btn-secondary" id="previous-question-btn">
-                <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
-                <span>Previous</span>
-            </button>
-            <button type="button" class="btn btn-primary" id="next-question-btn">
-                <span>Next</span>
-                <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
-            </button>
+
+        <p class="dedicated-quiz-feedback" id="quiz-message" role="status" aria-live="polite"></p>
+        <div class="dedicated-quiz-actions">
+            <button type="button" class="btn btn-outline" id="previous-question-btn">Previous Question</button>
+            <button type="button" class="btn btn-outline" id="clear-selection-btn">Clear Selection</button>
+            <button type="button" class="btn btn-secondary" id="save-quiz-btn">Save Draft</button>
+            <button type="button" class="btn btn-primary" id="next-question-btn">Next Question</button>
         </div>
     </section>
 </main>
 
-<main class="assessment-shell" th:unless="${quiz != null}">
-    <section class="empty-state">
-        <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></div>
-        <div class="empty-title">Quiz data is unavailable.</div>
+<main class="dedicated-quiz-result-shell" th:unless="${attempt.status.name() == 'DRAFT'}">
+    <section class="dedicated-quiz-result">
+        <p class="learning-eyebrow">Attempt result</p>
+        <h2 th:text="${quiz.title}">Quiz title</h2>
+        <div class="dedicated-quiz-result-summary">
+            <strong th:text="${attempt.score == null ? 'Score pending' : attempt.score + '%'}">80%</strong>
+            <span th:if="${attempt.score != null && quiz.passingScore != null}"
+                  th:classappend="${attempt.score.compareTo(quiz.passingScore) >= 0 ? ' is-passed' : ' is-failed'}"
+                  th:text="${attempt.score.compareTo(quiz.passingScore) >= 0 ? 'Passed' : 'Not passed'}">Passed</span>
+        </div>
+        <p th:if="${attempt.submittedAt != null}"
+           th:text="${'Submitted ' + #temporals.format(attempt.submittedAt, 'MMM d, yyyy HH:mm')}">Submitted</p>
+
+        <div class="dedicated-quiz-review">
+            <article th:each="question, iter : ${quiz.questions}">
+                <h3 th:text="${iter.count + '. ' + question.content}">Question</h3>
+                <div class="dedicated-quiz-review-options">
+                    <span th:each="option : ${question.options}"
+                          th:classappend="${option.correct == true ? ' is-correct' : (question.selectedOptionIds != null && question.selectedOptionIds.contains(option.id) ? ' is-incorrect' : '')}">
+                        <strong th:if="${question.selectedOptionIds != null && question.selectedOptionIds.contains(option.id)}">Your answer:</strong>
+                        <span th:text="${option.content}">Option</span>
+                    </span>
+                </div>
+            </article>
+        </div>
+        <div class="dedicated-quiz-result-actions">
+            <a class="btn btn-outline"
+               th:href="@{/student/learning(courseId=${quiz.courseId},lessonId=${quiz.lessonId})}">Back to Lesson</a>
+            <button type="button" class="btn btn-primary" id="retake-quiz-btn">Try Again</button>
+            <p class="dedicated-quiz-feedback" id="quiz-message" role="status" aria-live="polite"></p>
+        </div>
     </section>
 </main>
 
+<footer class="dedicated-quiz-footer">
+    <span>&copy; LumiNa Academic Systems</span>
+    <a th:href="@{/student/learning(courseId=${quiz.courseId},lessonId=${quiz.lessonId})}">Return to lesson</a>
+</footer>
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
 <script th:src="@{/js/student/student.js}"></script>
 </body>

@@ -6,6 +6,7 @@ import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
 import com.ojtsu26.elearning.dto.response.BlogPostResponseDTO;
 import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizAttemptView;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Order;
 import com.ojtsu26.elearning.model.entity.User;
@@ -185,13 +186,39 @@ public class StudentViewController {
     public String lessonView() { return "student/lesson-view"; }
 
     @GetMapping("/quiz")
-    public String quiz() { return "student/quiz"; }
+    public String quiz() { return "redirect:/student/my-courses"; }
 
     @GetMapping("/courses/{courseId}/quizzes/{quizId}/take")
     public String takeQuiz(@PathVariable Integer courseId,
                            @PathVariable Integer quizId,
-                           Model model) {
-        model.addAttribute("quiz", assessmentService.getStudentQuiz(courseId, quizId));
+                           RedirectAttributes redirectAttributes) {
+        QuizAttemptView attempt = assessmentService.startQuizAttempt(quizId);
+        if (attempt.getQuiz() == null
+                || !courseId.equals(attempt.getQuiz().getCourseId())) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage", "This quiz attempt is not available for the selected course.");
+            return "redirect:/student/learning?courseId=" + courseId;
+        }
+        return dedicatedQuizRedirect(attempt);
+    }
+
+    @GetMapping("/courses/{courseId}/lessons/{lessonId}/quiz/attempt/{attemptId}")
+    public String quizAttempt(@PathVariable Integer courseId,
+                              @PathVariable Integer lessonId,
+                              @PathVariable Integer attemptId,
+                              Model model,
+                              RedirectAttributes redirectAttributes) {
+        QuizAttemptView attempt = assessmentService.getStudentQuizAttempt(attemptId);
+        if (attempt.getQuiz() == null
+                || !courseId.equals(attempt.getQuiz().getCourseId())
+                || !lessonId.equals(attempt.getQuiz().getLessonId())) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage", "This quiz attempt does not belong to the selected lesson.");
+            return "redirect:/student/learning?courseId=" + courseId
+                    + "&lessonId=" + lessonId;
+        }
+        model.addAttribute("attempt", attempt);
+        model.addAttribute("quiz", attempt.getQuiz());
         return "student/quiz";
     }
 
@@ -203,8 +230,13 @@ public class StudentViewController {
 
     @GetMapping("/quizzes/{attemptId}/result")
     public String quizResult(@PathVariable Integer attemptId, Model model) {
-        model.addAttribute("attempt", assessmentService.getStudentQuizResult(attemptId));
-        return "student/quiz-result";
+        return dedicatedQuizRedirect(assessmentService.getStudentQuizResult(attemptId));
+    }
+
+    private String dedicatedQuizRedirect(QuizAttemptView attempt) {
+        return "redirect:/student/courses/" + attempt.getQuiz().getCourseId()
+                + "/lessons/" + attempt.getQuiz().getLessonId()
+                + "/quiz/attempt/" + attempt.getId();
     }
 
     @GetMapping("/certificates")

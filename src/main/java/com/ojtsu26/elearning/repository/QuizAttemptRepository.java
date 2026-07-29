@@ -19,7 +19,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Intege
 
     Optional<QuizAttempt> findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(Integer quizId, Integer studentId, QuizAttemptStatus status);
 
-    long countByQuizIdAndStudentIdAndStatusNot(Integer quizId, Integer studentId, QuizAttemptStatus status);
+    Optional<QuizAttempt> findTopByQuizIdAndStudentIdOrderByStartedAtDesc(Integer quizId, Integer studentId);
 
     List<QuizAttempt> findByStudentIdOrderByStartedAtDesc(Integer studentId);
 

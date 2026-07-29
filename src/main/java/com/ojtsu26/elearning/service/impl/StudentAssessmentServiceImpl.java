@@ -147,6 +147,19 @@ public class StudentAssessmentServiceImpl implements StudentAssessmentService {
                                             StudentQuizSubmissionRequestDTO request) {
         Lesson lesson = requireAccessibleQuizLesson(courseId, lessonId);
         Quiz quiz = requireQuiz(lessonId);
+        if (quizAttemptApplicationService != null) {
+            requireRequest(request);
+            QuizAttemptApplicationService.AttemptSession session =
+                    quizAttemptApplicationService.submitTextAnswers(
+                            request.getAttemptId(), sanitizeAnswers(request.getAnswers()));
+            requireAttemptQuiz(session, quiz);
+            boolean passed = session.attempt().getScore() != null
+                    && session.attempt().getScore().compareTo(defaultPassingScore(quiz)) >= 0;
+            LearningProgressDTO learningProgress =
+                    passed ? markAssessmentProgressCompleted(courseId, lesson) : null;
+            return toCanonicalQuizDto(courseId, lessonId, session, learningProgress);
+        }
+
         Submission attempt = requirePendingAttempt(request, lessonId);
         List<Question> questions = selectedQuestionsForAttempt(quiz, attempt);
         Map<Integer, String> answers = sanitizeAnswers(request.getAnswers());

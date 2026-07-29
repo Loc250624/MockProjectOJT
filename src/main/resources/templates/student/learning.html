@@ -183,51 +183,16 @@
                          th:data-lesson-id="${learningCourse.activeLesson.id}">
                     <div class="learning-panel-head">
                         <span>Quiz</span>
-                        <small id="quiz-state-label">Loading</small>
+                        <small>Assessment overview</small>
                     </div>
-                    <div id="quiz-loading" class="learning-empty learning-empty-compact">
-                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg></span>
-                        <strong>Loading quiz</strong>
-                        <span>Preparing your attempt.</span>
-                    </div>
-                    <div id="quiz-unavailable" class="learning-empty learning-empty-compact" hidden>
-                        <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('info')}"></svg></span>
-                        <strong>Quiz unavailable</strong>
-                        <span></span>
-                    </div>
-                    <form id="quiz-form" class="learning-assessment-form" hidden>
-                        <div id="quiz-questions" class="learning-question-list"></div>
-                        <div class="learning-assessment-actions">
-                            <button type="button" class="btn btn-outline" id="quiz-save-button">
-                                <svg th:replace="~{fragments/icons :: icon('save')}"></svg>
-                                <span>Save draft</span>
-                            </button>
-                            <button type="submit" class="btn btn-primary" id="quiz-submit-button">
-                                <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
-                                <span>Submit quiz</span>
-                            </button>
-                            <span id="quiz-message" class="learning-help"></span>
-                        </div>
-                    </form>
-                    <div id="quiz-result" class="learning-quiz-result" hidden>
-                        <span class="learning-result-legacy" aria-hidden="true"></span>
-                        <div class="learning-result-summary">
-                            <span class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
-                            <div class="learning-result-copy">
-                                <strong>Quiz submitted</strong>
-                                <span data-quiz-result-summary>Review your answers below.</span>
-                            </div>
-                            <div class="learning-result-meta" aria-live="polite">
-                                <span class="learning-result-badge" data-quiz-result-status>Passed</span>
-                                <span class="learning-result-score" data-quiz-result-score>Score 100%</span>
-                            </div>
-                        </div>
-                        <div id="quiz-review" class="learning-result-review"></div>
-                        <div class="learning-assessment-actions">
-                            <button type="button" class="btn btn-outline" id="quiz-retake-button">
-                                <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
-                                <span>Retake Quiz</span>
-                            </button>
+                    <div id="quiz-overview-state"
+                         class="quiz-overview-state"
+                         aria-live="polite"
+                         aria-busy="true">
+                        <div class="quiz-overview-skeleton" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
                         </div>
                     </div>
                 </section>

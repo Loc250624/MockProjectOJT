@@ -156,6 +156,21 @@ public final class AssessmentDtos {
     }
 
     @Data
+    public static class QuizOverviewView {
+        private Integer quizId;
+        private Integer courseId;
+        private Integer lessonId;
+        private String title;
+        private String description;
+        private Integer durationMinutes;
+        private BigDecimal passingScore;
+        private Integer questionCount;
+        private Integer attemptId;
+        private QuizAttemptStatus attemptStatus;
+        private BigDecimal score;
+    }
+
+    @Data
     public static class ResultSummaryView {
         private List<QuizAttemptView> quizAttempts = new ArrayList<>();
     }
