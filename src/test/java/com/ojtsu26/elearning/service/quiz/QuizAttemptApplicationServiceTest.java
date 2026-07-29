@@ -12,6 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +109,133 @@ class QuizAttemptApplicationServiceTest {
         assertThat(result.attempt()).isSameAs(graded);
         verifyNoInteractions(gradingService);
         verify(attemptRepository, never()).save(any());
+    }
+
+    @Test
+    void submitGradesUsingAllAnswersPersistedByTheCurrentRequest() {
+        QuizAttempt draft = QuizAttempt.builder()
+                .id(5).quiz(quiz).student(student).status(QuizAttemptStatus.DRAFT).build();
+        List<QuizAttemptQuestion> assigned = java.util.stream.IntStream.range(0, 10)
+                .mapToObj(index -> assignment(draft, 100 + index, index + 1))
+                .toList();
+        List<QuizAnswer> eightPreviouslySaved = assigned.stream()
+                .limit(8)
+                .map(item -> QuizAnswer.builder()
+                        .attempt(draft)
+                        .question(item.getQuestion())
+                        .selectedOptionsJson("[0]")
+                        .build())
+                .toList();
+        Map<Integer, List<Integer>> submitted = new LinkedHashMap<>();
+        assigned.forEach(item -> submitted.put(item.getQuestion().getId(), List.of(0)));
+
+        when(attemptRepository.findByIdWithQuizCourse(5)).thenReturn(Optional.of(draft));
+        when(assignmentService.loadAssigned(5)).thenReturn(assigned);
+        when(answerRepository.findByAttemptId(5)).thenReturn(eightPreviouslySaved);
+        when(answerRepository.save(any(QuizAnswer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(gradingService.grade(eq(assigned), argThat(answers -> answers.size() == 10)))
+                .thenReturn(new QuizGradingService.GradeResult(
+                        BigDecimal.TEN, BigDecimal.TEN, new BigDecimal("100.00")));
+
+        QuizAttemptApplicationService.AttemptSession result =
+                service.submitSelectedAnswers(5, submitted);
+
+        assertThat(result.attempt().getScore()).isEqualByComparingTo("100.00");
+        assertThat(result.answers()).hasSize(10);
+        verify(answerRepository, times(1)).findByAttemptId(5);
+        verify(gradingService).grade(eq(assigned), argThat(answers -> answers.size() == 10));
+    }
+
+    @Test
+    void rejectsManualSubmissionWhileRequiredQuestionsAreUnanswered() {
+        quiz.setDurationMinutes(25);
+        QuizAttempt draft = QuizAttempt.builder()
+                .id(5)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.DRAFT)
+                .startedAt(LocalDateTime.now())
+                .build();
+        List<QuizAttemptQuestion> assigned = List.of(
+                assignment(draft, 10, 1),
+                assignment(draft, 11, 2));
+        Map<Integer, List<Integer>> submitted = new LinkedHashMap<>();
+        submitted.put(10, List.of(0));
+        submitted.put(11, List.of());
+
+        when(attemptRepository.findByIdWithQuizCourse(5)).thenReturn(Optional.of(draft));
+        when(assignmentService.loadAssigned(5)).thenReturn(assigned);
+        when(answerRepository.findByAttemptId(5)).thenReturn(List.of());
+        when(answerRepository.save(any(QuizAnswer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThatThrownBy(() -> service.submitSelectedAnswers(5, submitted))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("All questions must be answered");
+        verifyNoInteractions(gradingService);
+    }
+
+    @Test
+    void allowsAutomaticSubmissionWithUnansweredQuestionsAfterTimeExpires() {
+        quiz.setDurationMinutes(25);
+        QuizAttempt draft = QuizAttempt.builder()
+                .id(5)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.DRAFT)
+                .startedAt(LocalDateTime.now().minusMinutes(26))
+                .build();
+        List<QuizAttemptQuestion> assigned = List.of(
+                assignment(draft, 10, 1),
+                assignment(draft, 11, 2));
+        Map<Integer, List<Integer>> submitted = new LinkedHashMap<>();
+        submitted.put(10, List.of(0));
+        submitted.put(11, List.of());
+
+        when(attemptRepository.findByIdWithQuizCourse(5)).thenReturn(Optional.of(draft));
+        when(assignmentService.loadAssigned(5)).thenReturn(assigned);
+        when(answerRepository.findByAttemptId(5)).thenReturn(List.of());
+        when(answerRepository.save(any(QuizAnswer.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(gradingService.grade(eq(assigned), anyList()))
+                .thenReturn(new QuizGradingService.GradeResult(
+                        BigDecimal.ONE, new BigDecimal("2.00"), new BigDecimal("50.00")));
+
+        QuizAttemptApplicationService.AttemptSession result =
+                service.submitSelectedAnswers(5, submitted);
+
+        assertThat(result.attempt().getStatus()).isEqualTo(QuizAttemptStatus.GRADED);
+        assertThat(result.attempt().getScore()).isEqualByComparingTo("50.00");
+        verify(gradingService).grade(eq(assigned), anyList());
+    }
+
+    @Test
+    void openingGradedAttemptRepairsStaleStoredPercentage() {
+        QuizAttempt graded = QuizAttempt.builder()
+                .id(5)
+                .quiz(quiz)
+                .student(student)
+                .status(QuizAttemptStatus.GRADED)
+                .score(new BigDecimal("80.00"))
+                .totalPoints(BigDecimal.TEN)
+                .build();
+        QuizAttemptQuestion assigned = assignment(graded, 10, 1);
+        QuizAnswer answer = QuizAnswer.builder()
+                .attempt(graded)
+                .question(assigned.getQuestion())
+                .selectedOptionsJson("[0]")
+                .build();
+        when(attemptRepository.findByIdWithQuizCourse(5)).thenReturn(Optional.of(graded));
+        when(assignmentService.loadAssigned(5)).thenReturn(List.of(assigned));
+        when(answerRepository.findByAttemptId(5)).thenReturn(List.of(answer));
+        when(gradingService.grade(List.of(assigned), List.of(answer)))
+                .thenReturn(new QuizGradingService.GradeResult(
+                        BigDecimal.ONE, BigDecimal.ONE, new BigDecimal("100.00")));
+
+        QuizAttemptApplicationService.AttemptSession result = service.getOwnedAttempt(5);
+
+        assertThat(result.attempt().getScore()).isEqualByComparingTo("100.00");
+        verify(attemptRepository).save(graded);
     }
 
     @Test

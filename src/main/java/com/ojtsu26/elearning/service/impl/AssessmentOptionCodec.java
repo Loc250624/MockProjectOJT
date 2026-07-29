@@ -23,11 +23,19 @@ final class AssessmentOptionCodec {
     }
 
     static List<ParsedOption> readOptions(Question question, ObjectMapper objectMapper) {
-        List<ParsedOption> parsed = parseRawOptions(question == null ? null : question.getOptionsJson(), objectMapper);
-        Set<Integer> correctIndexes = correctIndexes(question == null ? null : question.getCorrectAnswer(), parsed);
+        String correctAnswer = question == null ? null : question.getCorrectAnswer();
+        boolean useLegacyMarkers = correctAnswer == null || correctAnswer.isBlank();
+        List<ParsedOption> parsed = parseRawOptions(
+                question == null ? null : question.getOptionsJson(),
+                objectMapper,
+                useLegacyMarkers);
+        Set<Integer> correctIndexes = correctIndexes(correctAnswer, parsed);
         List<ParsedOption> merged = new ArrayList<>();
         for (ParsedOption option : parsed) {
-            merged.add(new ParsedOption(option.id(), option.content(), option.correct() || correctIndexes.contains(option.id())));
+            boolean correct = useLegacyMarkers
+                    ? option.correct()
+                    : correctIndexes.contains(option.id());
+            merged.add(new ParsedOption(option.id(), option.content(), correct));
         }
         return merged;
     }
@@ -96,21 +104,27 @@ final class AssessmentOptionCodec {
         }
     }
 
-    private static List<ParsedOption> parseRawOptions(String raw, ObjectMapper objectMapper) {
+    private static List<ParsedOption> parseRawOptions(
+            String raw,
+            ObjectMapper objectMapper,
+            boolean useLegacyMarkers) {
         if (raw == null || raw.isBlank()) {
             return List.of();
         }
         String trimmed = raw.trim();
         if (trimmed.startsWith("[")) {
-            List<ParsedOption> fromJson = parseJsonOptions(trimmed, objectMapper);
+            List<ParsedOption> fromJson = parseJsonOptions(trimmed, objectMapper, useLegacyMarkers);
             if (!fromJson.isEmpty()) {
                 return fromJson;
             }
         }
-        return parseDelimitedOptions(trimmed);
+        return parseDelimitedOptions(trimmed, useLegacyMarkers);
     }
 
-    private static List<ParsedOption> parseJsonOptions(String raw, ObjectMapper objectMapper) {
+    private static List<ParsedOption> parseJsonOptions(
+            String raw,
+            ObjectMapper objectMapper,
+            boolean useLegacyMarkers) {
         try {
             List<Map<String, Object>> values = objectMapper.readValue(raw, new TypeReference<>() {
             });
@@ -136,9 +150,14 @@ final class AssessmentOptionCodec {
             });
             List<ParsedOption> parsed = new ArrayList<>();
             for (int i = 0; i < values.size(); i++) {
-                String content = stripMarker(values.get(i));
+                String content = useLegacyMarkers
+                        ? stripMarker(values.get(i))
+                        : stringValue(values.get(i));
                 if (content != null) {
-                    parsed.add(new ParsedOption(i, content, isMarkedCorrect(values.get(i))));
+                    parsed.add(new ParsedOption(
+                            i,
+                            content,
+                            useLegacyMarkers && isMarkedCorrect(values.get(i))));
                 }
             }
             return parsed;
@@ -147,13 +166,16 @@ final class AssessmentOptionCodec {
         }
     }
 
-    private static List<ParsedOption> parseDelimitedOptions(String raw) {
+    private static List<ParsedOption> parseDelimitedOptions(String raw, boolean useLegacyMarkers) {
         String[] parts = raw.split("\\|");
         List<ParsedOption> parsed = new ArrayList<>();
         for (String part : parts) {
-            String content = stripMarker(part);
+            String content = useLegacyMarkers ? stripMarker(part) : stringValue(part);
             if (content != null) {
-                parsed.add(new ParsedOption(parsed.size(), content, isMarkedCorrect(part)));
+                parsed.add(new ParsedOption(
+                        parsed.size(),
+                        content,
+                        useLegacyMarkers && isMarkedCorrect(part)));
             }
         }
         return parsed;

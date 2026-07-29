@@ -61,7 +61,8 @@ public class QuizGradingService {
 
     private Set<String> correctTokens(String correctAnswer, String optionsJson) {
         Set<String> tokens = new LinkedHashSet<>();
-        if (correctAnswer != null) {
+        boolean hasExplicitCorrectAnswer = normalize(correctAnswer) != null;
+        if (hasExplicitCorrectAnswer) {
             Arrays.stream(correctAnswer.split(","))
                     .map(this::normalize)
                     .filter(Objects::nonNull)
@@ -72,11 +73,14 @@ public class QuizGradingService {
             if (options.isArray()) {
                 for (int index = 0; index < options.size(); index++) {
                     JsonNode option = options.get(index);
+                    String rawText = option.isTextual() ? option.asText() : null;
                     String content = option.isTextual()
-                            ? normalize(stripMarker(option.asText()))
+                            ? normalize(hasExplicitCorrectAnswer ? rawText : stripMarker(rawText))
                             : normalize(option.path("content").asText(null));
-                    boolean marked = option.isTextual() && option.asText().trim().startsWith("*");
-                    boolean correct = marked || option.path("correct").asBoolean(false)
+                    boolean metadataCorrect = !hasExplicitCorrectAnswer
+                            && ((rawText != null && rawText.trim().startsWith("*"))
+                            || option.path("correct").asBoolean(false));
+                    boolean correct = metadataCorrect
                             || tokens.contains(String.valueOf(index))
                             || (content != null && tokens.stream().anyMatch(content::equalsIgnoreCase));
                     if (correct) {

@@ -858,6 +858,15 @@ function initDedicatedQuizAttempt() {
     var message = document.getElementById('quiz-message');
     var retake = document.getElementById('retake-quiz-btn');
     var uiState = page.dataset.quizMode === 'submitted' ? 'submitted' : 'ready';
+    var questions = Array.prototype.slice.call(
+        document.querySelectorAll('.dedicated-quiz-question'));
+    var navButtons = Array.prototype.slice.call(
+        document.querySelectorAll('.dedicated-quiz-nav-item'));
+    var current = 0;
+    var countdown = document.getElementById('quiz-countdown');
+    var countdownValue = document.getElementById('quiz-countdown-value');
+    var countdownInterval = null;
+    var automaticSubmitRetry = null;
 
     function attemptUrl(id) {
         return '/student/courses/' + encodeURIComponent(courseId)
@@ -879,6 +888,9 @@ function initDedicatedQuizAttempt() {
         if (saveButton) {
             saveButton.disabled = submitting || saving;
             saveButton.textContent = saving ? 'Saving...' : 'Save Draft';
+        }
+        if (questions.length) {
+            updateProgress();
         }
     }
 
@@ -904,12 +916,6 @@ function initDedicatedQuizAttempt() {
         return;
     }
 
-    var questions = Array.prototype.slice.call(
-        document.querySelectorAll('.dedicated-quiz-question'));
-    var navButtons = Array.prototype.slice.call(
-        document.querySelectorAll('.dedicated-quiz-nav-item'));
-    var current = 0;
-
     if (!questions.length) {
         setState('error', 'This attempt does not contain any questions.', 'error');
         return;
@@ -928,10 +934,14 @@ function initDedicatedQuizAttempt() {
 
     function updateProgress() {
         var answered = 0;
+        var firstUnanswered = -1;
+        var busy = uiState === 'saving' || uiState === 'submitting';
         questions.forEach(function (question, index) {
             var isAnswered = questionAnswered(question);
             if (isAnswered) {
                 answered += 1;
+            } else if (firstUnanswered === -1) {
+                firstUnanswered = index;
             }
             if (!navButtons[index]) {
                 return;
@@ -947,10 +957,36 @@ function initDedicatedQuizAttempt() {
                 navButtons[index].removeAttribute('aria-current');
             }
         });
+        var lastUnlocked = firstUnanswered === -1
+            ? questions.length - 1
+            : firstUnanswered;
+        navButtons.forEach(function (button, index) {
+            button.disabled = busy || (index > lastUnlocked && index !== current);
+            button.setAttribute('aria-disabled', button.disabled ? 'true' : 'false');
+        });
         var count = document.getElementById('quiz-answered-count');
         if (count) {
             count.textContent = String(answered);
         }
+        var previous = document.getElementById('previous-question-btn');
+        var next = document.getElementById('next-question-btn');
+        var clear = document.getElementById('clear-selection-btn');
+        if (previous) {
+            previous.disabled = busy || current === 0;
+        }
+        if (next) {
+            next.disabled = busy || !questionAnswered(questions[current]);
+        }
+        if (clear) {
+            clear.disabled = busy;
+        }
+        document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (button) {
+            button.disabled = busy || firstUnanswered !== -1;
+            button.setAttribute('aria-disabled', button.disabled ? 'true' : 'false');
+            button.title = firstUnanswered !== -1
+                ? 'Answer all questions before submitting'
+                : '';
+        });
     }
 
     function showQuestion(index, focusHeading) {
@@ -960,11 +996,7 @@ function initDedicatedQuizAttempt() {
             question.classList.toggle('is-active', active);
             question.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
-        var previous = document.getElementById('previous-question-btn');
         var next = document.getElementById('next-question-btn');
-        if (previous) {
-            previous.disabled = current === 0;
-        }
         if (next) {
             next.textContent = current === questions.length - 1
                 ? 'Review Answers'
@@ -976,6 +1008,24 @@ function initDedicatedQuizAttempt() {
             if (heading) {
                 heading.focus();
             }
+        }
+    }
+
+    function firstUnansweredIndex() {
+        return questions.findIndex(function (question) {
+            return !questionAnswered(question);
+        });
+    }
+
+    function requireAnswer(questionIndex) {
+        showQuestion(questionIndex, true);
+        setState(
+            'ready',
+            'Select at least one answer before continuing. All questions are required.',
+            'error');
+        var firstInput = questions[questionIndex].querySelector('input');
+        if (firstInput) {
+            firstInput.focus();
         }
     }
 
@@ -1005,7 +1055,15 @@ function initDedicatedQuizAttempt() {
 
     navButtons.forEach(function (button) {
         button.addEventListener('click', function () {
-            showQuestion(Number(button.dataset.questionIndex), true);
+            var target = Number(button.dataset.questionIndex);
+            if (button.disabled) {
+                return;
+            }
+            if (target > current && !questionAnswered(questions[current])) {
+                requireAnswer(current);
+                return;
+            }
+            showQuestion(target, true);
         });
     });
     questions.forEach(function (question) {
@@ -1027,16 +1085,20 @@ function initDedicatedQuizAttempt() {
     var next = document.getElementById('next-question-btn');
     if (next) {
         next.addEventListener('click', function () {
+            if (!questionAnswered(questions[current])) {
+                requireAnswer(current);
+                return;
+            }
             if (current < questions.length - 1) {
                 showQuestion(current + 1, true);
                 return;
             }
-            var unanswered = questions.filter(function (question) {
-                return !questionAnswered(question);
-            }).length;
-            setState('ready', unanswered
-                ? unanswered + ' question(s) are still unanswered.'
-                : 'All questions are answered. Submit when you are ready.');
+            var unansweredIndex = firstUnansweredIndex();
+            if (unansweredIndex !== -1) {
+                requireAnswer(unansweredIndex);
+                return;
+            }
+            setState('ready', 'All questions are answered. Submit when you are ready.', 'success');
             var submitButton = document.querySelector('[data-submit-quiz="true"]');
             if (submitButton) {
                 submitButton.focus();
@@ -1072,36 +1134,119 @@ function initDedicatedQuizAttempt() {
             });
         });
     }
+    function stopCountdown() {
+        if (countdownInterval !== null) {
+            window.clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+    }
+
+    function submitQuiz(automatic) {
+        if (uiState === 'submitted' || uiState === 'submitting') {
+            return;
+        }
+        if (uiState === 'saving') {
+            if (automatic && automaticSubmitRetry === null) {
+                automaticSubmitRetry = window.setTimeout(function () {
+                    automaticSubmitRetry = null;
+                    submitQuiz(true);
+                }, 250);
+            }
+            return;
+        }
+        var unansweredIndex = firstUnansweredIndex();
+        if (!automatic && unansweredIndex !== -1) {
+            requireAnswer(unansweredIndex);
+            return;
+        }
+        if (!automatic
+                && !window.confirm('Submit this quiz? You cannot edit it after submission.')) {
+            return;
+        }
+        stopCountdown();
+        setState(
+            'submitting',
+            automatic ? 'Time is up. Your quiz is being submitted automatically.' : '');
+        updateAttempt(
+            'POST',
+            '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
+            'Unable to submit this quiz'
+        ).then(function () {
+            setState('submitted');
+            window.location.assign(attemptUrl(attemptId));
+        }).catch(function (error) {
+            setState('error', error.message, 'error');
+            if (automatic && automaticSubmitRetry === null) {
+                automaticSubmitRetry = window.setTimeout(function () {
+                    automaticSubmitRetry = null;
+                    submitQuiz(true);
+                }, 5000);
+            }
+        });
+    }
+
+    function formatCountdown(totalSeconds) {
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+        var minuteText = String(minutes).padStart(2, '0');
+        var secondText = String(seconds).padStart(2, '0');
+        return hours > 0
+            ? String(hours).padStart(2, '0') + ':' + minuteText + ':' + secondText
+            : minuteText + ':' + secondText;
+    }
+
+    function initCountdown() {
+        if (!countdown || !countdownValue) {
+            return;
+        }
+        var durationMinutes = Number(page.dataset.durationMinutes);
+        var remainingAtLoad = Number(page.dataset.remainingSeconds);
+        if (!Number.isFinite(durationMinutes)
+                || durationMinutes <= 0
+                || !Number.isFinite(remainingAtLoad)
+                || remainingAtLoad < 0) {
+            countdown.hidden = true;
+            return;
+        }
+        var deadline = Date.now() + remainingAtLoad * 1000;
+
+        function updateCountdown() {
+            var remainingSeconds = Math.max(
+                0,
+                Math.ceil((deadline - Date.now()) / 1000));
+            countdownValue.textContent = formatCountdown(remainingSeconds);
+            countdown.setAttribute(
+                'aria-label',
+                'Time remaining: ' + formatCountdown(remainingSeconds));
+            countdown.classList.toggle(
+                'is-warning',
+                remainingSeconds > 0 && remainingSeconds <= 300);
+            countdown.classList.toggle('is-expired', remainingSeconds === 0);
+            if (remainingSeconds === 0) {
+                stopCountdown();
+                submitQuiz(true);
+            }
+        }
+
+        updateCountdown();
+        if (countdownInterval === null && uiState !== 'submitting') {
+            countdownInterval = window.setInterval(updateCountdown, 250);
+        }
+    }
+
     document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (submit) {
         submit.addEventListener('click', function () {
             if (uiState === 'submitting' || uiState === 'saving') {
                 return;
             }
-            var unanswered = questions.filter(function (question) {
-                return !questionAnswered(question);
-            }).length;
-            var prompt = unanswered
-                ? 'You have ' + unanswered + ' unanswered question(s). Submit anyway?'
-                : 'Submit this quiz? You cannot edit it after submission.';
-            if (!window.confirm(prompt)) {
-                return;
-            }
-            setState('submitting');
-            updateAttempt(
-                'POST',
-                '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
-                'Unable to submit this quiz'
-            ).then(function () {
-                setState('submitted');
-                window.location.assign(attemptUrl(attemptId));
-            }).catch(function (error) {
-                setState('error', error.message, 'error');
-            });
+            submitQuiz(false);
         });
     });
 
     questions.forEach(updateOptionStates);
     showQuestion(0, false);
+    initCountdown();
 }
 
 function switchProfileTab(tabName) {

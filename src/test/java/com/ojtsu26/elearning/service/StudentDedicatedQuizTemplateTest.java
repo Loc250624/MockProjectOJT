@@ -39,6 +39,11 @@ class StudentDedicatedQuizTemplateTest {
         assertTrue(quiz.contains("id=\"clear-selection-btn\""));
         assertTrue(quiz.contains("id=\"save-quiz-btn\""));
         assertTrue(quiz.contains("data-submit-quiz=\"true\""));
+        assertTrue(quiz.contains("data-remaining-seconds=${attempt.remainingSeconds}"));
+        assertTrue(quiz.contains("data-duration-minutes=${quiz.durationMinutes}"));
+        assertTrue(quiz.contains("id=\"quiz-countdown\""));
+        assertTrue(quiz.contains("role=\"timer\""));
+        assertTrue(quiz.contains("All questions are required"));
         assertTrue(quiz.contains("th:if=\"${attempt.status.name() == 'DRAFT'}\""));
         assertTrue(quiz.contains("th:unless=\"${attempt.status.name() == 'DRAFT'}\""));
         assertFalse(quiz.contains("No timer"));
@@ -58,6 +63,12 @@ class StudentDedicatedQuizTemplateTest {
         assertTrue(script.contains("/quiz-overview"));
         assertTrue(script.contains("/quiz/attempt/"));
         assertTrue(dedicatedFlow.contains("data-attempt-id"));
+        assertTrue(dedicatedFlow.contains("function firstUnansweredIndex()"));
+        assertTrue(dedicatedFlow.contains("All questions are required."));
+        assertTrue(dedicatedFlow.contains("function formatCountdown(totalSeconds)"));
+        assertTrue(dedicatedFlow.contains("window.setInterval(updateCountdown, 250)"));
+        assertTrue(dedicatedFlow.contains("submitQuiz(true)"));
+        assertFalse(dedicatedFlow.contains("Submit anyway?"));
         assertFalse(dedicatedFlow.contains("ensureAttempt"));
     }
 }

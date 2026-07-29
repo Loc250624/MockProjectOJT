@@ -5,6 +5,7 @@ import com.ojtsu26.elearning.model.entity.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +60,57 @@ class QuizGradingServiceTest {
         assertThat(result.earnedPoints()).isEqualByComparingTo("2.00");
         assertThat(result.totalPoints()).isEqualByComparingTo("5.00");
         assertThat(result.percentage()).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void gradesTenCorrectSelectedAnswersAtExactlyOneHundredPercent() {
+        QuizAttempt attempt = QuizAttempt.builder().id(20).build();
+        List<QuizAttemptQuestion> assigned = new ArrayList<>();
+        List<QuizAnswer> answers = new ArrayList<>();
+        for (int index = 0; index < 10; index++) {
+            Question question = Question.builder().id(100 + index).build();
+            String correctIndex = String.valueOf(index % 4);
+            assigned.add(QuizAttemptQuestion.builder()
+                    .attempt(attempt)
+                    .question(question)
+                    .pointsSnapshot(BigDecimal.ONE)
+                    .optionsJsonSnapshot("[\"A\",\"B\",\"C\",\"D\"]")
+                    .correctAnswerSnapshot(correctIndex)
+                    .build());
+            answers.add(QuizAnswer.builder()
+                    .attempt(attempt)
+                    .question(question)
+                    .selectedOptionsJson("[" + correctIndex + "]")
+                    .build());
+        }
+
+        QuizGradingService.GradeResult result = service.grade(assigned, answers);
+
+        assertThat(result.earnedPoints()).isEqualByComparingTo("10.00");
+        assertThat(result.totalPoints()).isEqualByComparingTo("10.00");
+        assertThat(result.percentage()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void treatsLeadingAsteriskAsLiteralCssWhenCorrectIndexIsExplicit() {
+        QuizAttempt attempt = QuizAttempt.builder().id(20).build();
+        Question question = Question.builder().id(10).build();
+        QuizAttemptQuestion snapshot = QuizAttemptQuestion.builder()
+                .attempt(attempt)
+                .question(question)
+                .pointsSnapshot(BigDecimal.ONE)
+                .optionsJsonSnapshot("[\"p\",\".note\",\"#notice\",\"*\"]")
+                .correctAnswerSnapshot("2")
+                .build();
+        QuizAnswer answer = QuizAnswer.builder()
+                .attempt(attempt)
+                .question(question)
+                .selectedOptionsJson("[2]")
+                .build();
+
+        QuizGradingService.GradeResult result = service.grade(List.of(snapshot), List.of(answer));
+
+        assertThat(result.percentage()).isEqualByComparingTo("100.00");
     }
 
     private QuizAttemptQuestion snapshot(

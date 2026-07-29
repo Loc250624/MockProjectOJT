@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.repository.*;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -61,24 +62,27 @@ public class QuizAttemptApplicationService {
         return session(attempt, assigned);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public AttemptSession getOwnedAttempt(Integer attemptId) {
         QuizAttempt attempt = requireOwnedAttempt(attemptId);
-        return session(attempt, assignmentService.loadAssigned(attemptId));
+        List<QuizAttemptQuestion> assigned = assignmentService.loadAssigned(attemptId);
+        List<QuizAnswer> answers = answerRepository.findByAttemptId(attemptId);
+        reconcileStoredGrade(attempt, assigned, answers);
+        return session(attempt, assigned, answers);
     }
 
     @Transactional
     public AttemptSession saveTextAnswers(Integer attemptId, Map<Integer, String> answers) {
         QuizAttempt attempt = requireDraft(attemptId);
-        upsert(attempt, textAnswerInputs(answers));
-        return session(attempt, assignmentService.loadAssigned(attemptId));
+        List<QuizAnswer> persistedAnswers = upsert(attempt, textAnswerInputs(answers));
+        return session(attempt, assignmentService.loadAssigned(attemptId), persistedAnswers);
     }
 
     @Transactional
     public AttemptSession saveSelectedAnswers(Integer attemptId, Map<Integer, List<Integer>> answers) {
         QuizAttempt attempt = requireDraft(attemptId);
-        upsert(attempt, selectedAnswerInputs(answers));
-        return session(attempt, assignmentService.loadAssigned(attemptId));
+        List<QuizAnswer> persistedAnswers = upsert(attempt, selectedAnswerInputs(answers));
+        return session(attempt, assignmentService.loadAssigned(attemptId), persistedAnswers);
     }
 
     @Transactional
@@ -87,8 +91,8 @@ public class QuizAttemptApplicationService {
         if (attempt.getStatus() != QuizAttemptStatus.DRAFT) {
             return session(attempt, assignmentService.loadAssigned(attemptId));
         }
-        upsert(attempt, textAnswerInputs(answers));
-        return gradeAndSubmit(attempt);
+        List<QuizAnswer> persistedAnswers = upsert(attempt, textAnswerInputs(answers));
+        return gradeAndSubmit(attempt, persistedAnswers);
     }
 
     @Transactional
@@ -97,23 +101,90 @@ public class QuizAttemptApplicationService {
         if (attempt.getStatus() != QuizAttemptStatus.DRAFT) {
             return session(attempt, assignmentService.loadAssigned(attemptId));
         }
-        upsert(attempt, selectedAnswerInputs(answers));
-        return gradeAndSubmit(attempt);
+        List<QuizAnswer> persistedAnswers = upsert(attempt, selectedAnswerInputs(answers));
+        return gradeAndSubmit(attempt, persistedAnswers);
     }
 
-    private AttemptSession gradeAndSubmit(QuizAttempt attempt) {
+    private AttemptSession gradeAndSubmit(QuizAttempt attempt, List<QuizAnswer> answers) {
         List<QuizAttemptQuestion> assigned = assignmentService.loadAssigned(attempt.getId());
-        QuizGradingService.GradeResult grade =
-                gradingService.grade(assigned, answerRepository.findByAttemptId(attempt.getId()));
+        requireCompleteAnswersOrExpired(attempt, assigned, answers);
+        QuizGradingService.GradeResult grade = gradingService.grade(assigned, answers);
         attempt.setScore(grade.percentage());
         attempt.setTotalPoints(grade.totalPoints());
         attempt.setSubmittedAt(LocalDateTime.now());
         attempt.setStatus(QuizAttemptStatus.GRADED);
         attemptRepository.save(attempt);
-        return session(attempt, assigned);
+        return session(attempt, assigned, answers);
     }
 
-    private void upsert(QuizAttempt attempt, Map<Integer, AnswerInput> inputs) {
+    private void requireCompleteAnswersOrExpired(
+            QuizAttempt attempt,
+            List<QuizAttemptQuestion> assigned,
+            List<QuizAnswer> answers) {
+        Set<Integer> answeredQuestionIds = answers.stream()
+                .filter(this::hasSubmittedAnswer)
+                .map(answer -> answer.getQuestion().getId())
+                .collect(Collectors.toSet());
+        boolean complete = assigned.stream()
+                .map(item -> item.getQuestion().getId())
+                .allMatch(answeredQuestionIds::contains);
+        if (!complete && !submissionWindowExpired(attempt)) {
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "All questions must be answered before submitting the quiz");
+        }
+    }
+
+    private boolean hasSubmittedAnswer(QuizAnswer answer) {
+        if (answer.getAnswerText() != null && !answer.getAnswerText().isBlank()) {
+            return true;
+        }
+        String selected = answer.getSelectedOptionsJson();
+        if (selected == null || selected.isBlank()) {
+            return false;
+        }
+        try {
+            var selectedOptions = objectMapper.readTree(selected);
+            return selectedOptions.isArray() && !selectedOptions.isEmpty();
+        } catch (JsonProcessingException ignored) {
+            return false;
+        }
+    }
+
+    private boolean submissionWindowExpired(QuizAttempt attempt) {
+        Integer durationMinutes = attempt.getQuiz() == null
+                ? null
+                : attempt.getQuiz().getDurationMinutes();
+        if (attempt.getStartedAt() == null
+                || durationMinutes == null
+                || durationMinutes <= 0) {
+            return false;
+        }
+        return !LocalDateTime.now().isBefore(
+                attempt.getStartedAt().plusMinutes(durationMinutes));
+    }
+
+    private void reconcileStoredGrade(QuizAttempt attempt,
+                                      List<QuizAttemptQuestion> assigned,
+                                      List<QuizAnswer> answers) {
+        if (attempt.getStatus() != QuizAttemptStatus.GRADED || assigned.isEmpty()) {
+            return;
+        }
+        QuizGradingService.GradeResult grade = gradingService.grade(assigned, answers);
+        if (sameValue(attempt.getScore(), grade.percentage())
+                && sameValue(attempt.getTotalPoints(), grade.totalPoints())) {
+            return;
+        }
+        attempt.setScore(grade.percentage());
+        attempt.setTotalPoints(grade.totalPoints());
+        attemptRepository.save(attempt);
+    }
+
+    private boolean sameValue(java.math.BigDecimal left, java.math.BigDecimal right) {
+        return left == null ? right == null : right != null && left.compareTo(right) == 0;
+    }
+
+    private List<QuizAnswer> upsert(QuizAttempt attempt, Map<Integer, AnswerInput> inputs) {
         List<QuizAttemptQuestion> assigned = assignmentService.loadAssigned(attempt.getId());
         Set<Integer> assignedIds = assigned.stream()
                 .map(item -> item.getQuestion().getId())
@@ -137,8 +208,9 @@ public class QuizAttemptApplicationService {
                     .build());
             answer.setAnswerText(entry.getValue().text());
             answer.setSelectedOptionsJson(entry.getValue().selectedJson());
-            answerRepository.save(answer);
+            existing.put(entry.getKey(), answerRepository.save(answer));
         }
+        return List.copyOf(existing.values());
     }
 
     private Map<Integer, AnswerInput> textAnswerInputs(Map<Integer, String> answers) {
@@ -167,7 +239,13 @@ public class QuizAttemptApplicationService {
     }
 
     private AttemptSession session(QuizAttempt attempt, List<QuizAttemptQuestion> assigned) {
-        Map<Integer, QuizAnswer> answers = answerRepository.findByAttemptId(attempt.getId()).stream()
+        return session(attempt, assigned, answerRepository.findByAttemptId(attempt.getId()));
+    }
+
+    private AttemptSession session(QuizAttempt attempt,
+                                   List<QuizAttemptQuestion> assigned,
+                                   List<QuizAnswer> persistedAnswers) {
+        Map<Integer, QuizAnswer> answers = persistedAnswers.stream()
                 .collect(Collectors.toMap(
                         answer -> answer.getQuestion().getId(),
                         Function.identity(),

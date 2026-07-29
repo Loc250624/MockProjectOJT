@@ -150,6 +150,7 @@ public final class AssessmentDtos {
         private QuizAttemptStatus status;
         private LocalDateTime startedAt;
         private LocalDateTime submittedAt;
+        private Long remainingSeconds;
         private BigDecimal score;
         private BigDecimal totalPoints;
         private QuizView quiz;
