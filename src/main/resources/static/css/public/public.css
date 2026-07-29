@@ -72,8 +72,7 @@
   margin: 0 auto var(--space-xl);
 }
 
-.hero-cta-group,
-.cta-actions {
+.hero-cta-group {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -420,34 +419,6 @@
   line-height: 1.7;
 }
 
-.cta-section {
-  padding: 4.5rem 2rem;
-  text-align: center;
-  background:
-    linear-gradient(135deg, rgba(13, 27, 75, 0.98), rgba(0, 80, 203, 0.92)),
-    var(--lumina-navy);
-}
-
-.cta-content {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.cta-title {
-  color: var(--lumina-white);
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  font-weight: 850;
-  line-height: 1.18;
-  margin-bottom: var(--space-md);
-}
-
-.cta-sub {
-  color: rgba(255,255,255,0.74);
-  font-size: 1rem;
-  line-height: 1.7;
-  margin: 0 auto var(--space-xl);
-}
-
 .public-empty-state .empty-state-icon {
   display: inline-flex;
   align-items: center;
@@ -566,8 +537,7 @@
 
   .public-section,
   .public-section-full,
-  .faq-section,
-  .cta-section {
+  .faq-section {
     padding-left: 1rem;
     padding-right: 1rem;
   }
@@ -591,14 +561,12 @@
 }
 
 @media (max-width: 560px) {
-  .hero-cta-group,
-  .cta-actions {
+  .hero-cta-group {
     align-items: stretch;
     flex-direction: column;
   }
 
   .hero-cta-group .btn,
-  .cta-actions .btn,
   .section-header-row .btn {
     width: 100%;
   }

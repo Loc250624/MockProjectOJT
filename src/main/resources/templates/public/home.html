@@ -38,7 +38,7 @@
     <section class="public-section" aria-labelledby="featured-courses-title">
         <div class="section-header-row">
             <div>
-                <div class="section-eyebrow">Approved Catalog</div>
+                <div class="section-eyebrow">Catalog</div>
                 <h2 id="featured-courses-title" class="section-heading">Featured Courses</h2>
                 <p class="section-lead">Recently approved courses from the LumiNa catalog.</p>
             </div>
@@ -184,20 +184,6 @@
         </div>
     </section>
 
-    <section class="cta-section" aria-labelledby="public-cta-title">
-        <div class="cta-content">
-            <h2 id="public-cta-title" class="cta-title">Ready to begin?</h2>
-            <p class="cta-sub">Start from the live catalog, or create a student account when you are ready to enroll.</p>
-            <div class="cta-actions">
-                <a th:href="@{/public/courses}" class="btn btn-lg btn-hero-primary" id="btn-cta-browse">
-                    Browse Courses
-                </a>
-                <a th:href="@{/auth/register}" class="btn btn-lg btn-hero-secondary" id="btn-cta-join">
-                    Create Account
-                </a>
-            </div>
-        </div>
-    </section>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
