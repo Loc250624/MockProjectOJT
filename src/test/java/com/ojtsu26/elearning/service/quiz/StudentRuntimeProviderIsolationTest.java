@@ -1,6 +1,5 @@
 package com.ojtsu26.elearning.service.quiz;
 
-import com.ojtsu26.elearning.service.ai.question.QuestionGenerationProvider;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -11,13 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class StudentRuntimeProviderIsolationTest {
     @Test
     void studentAttemptRuntimeHasNoQuestionGenerationProviderDependency() {
-        boolean dependsOnQuestionGenerationProvider =
+        boolean dependsOnQuestionGenerationCode =
                 Arrays.stream(QuizAttemptApplicationService.class.getDeclaredFields())
                 .map(Field::getType)
-                .anyMatch(QuestionGenerationProvider.class::equals);
+                .anyMatch(type -> type.getPackageName().contains(".service.ai.question"));
 
         assertFalse(
-                dependsOnQuestionGenerationProvider,
+                dependsOnQuestionGenerationCode,
                 "Student quiz runtime must not depend on the question-generation provider");
     }
 }

@@ -18,6 +18,8 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "User does not exist"),
     USER_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "User already exists"),
     ASSESSMENT_CONTENT_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Assessment content already exists"),
+    QUIZ_INSUFFICIENT_QUESTIONS(409, HttpStatus.CONFLICT, "Quiz has fewer than 10 valid active questions"),
+    QUESTION_BANK_LIMIT_REACHED(409, HttpStatus.CONFLICT, "Question bank limit reached"),
     EMAIL_ALREADY_EXISTS(409, HttpStatus.CONFLICT, "Email already exists"),
     COURSE_NOT_FOUND(404, HttpStatus.NOT_FOUND, "Course does not exist"),
     COURSE_UNAVAILABLE(409, HttpStatus.CONFLICT, "Course is not available"),

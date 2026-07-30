@@ -1116,6 +1116,323 @@
   }
 }
 
+/* Lesson quiz question manager */
+.teacher-quiz-manager-page {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-bottom: 6rem;
+}
+
+.teacher-quiz-manager-page .assessment-filter-bar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.teacher-quiz-list {
+  gap: 1.5rem;
+}
+
+.teacher-quiz-card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--lumina-outline-soft, #e2e8f0);
+  border-radius: 16px;
+  background: var(--lumina-white, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgb(15 23 42 / 0.08));
+}
+
+.teacher-quiz-card-header,
+.teacher-quiz-summary-badges,
+.teacher-quiz-form-actions,
+.teacher-question-editor-heading,
+.teacher-question-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.teacher-quiz-card-header,
+.teacher-question-editor-heading {
+  justify-content: space-between;
+}
+
+.teacher-quiz-card-header h3,
+.teacher-question-editor-heading h4 {
+  margin: 0;
+}
+
+.teacher-quiz-card-header p {
+  margin: 0.3rem 0 0;
+  color: #64748b;
+}
+
+.teacher-quiz-summary-badges {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.teacher-quiz-policy-badge,
+.teacher-question-count,
+.teacher-unsaved-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.teacher-quiz-policy-badge {
+  color: var(--lumina-blue, #1d4ed8);
+  background: var(--lumina-blue-pale, #eff6ff);
+}
+
+.teacher-question-count {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.teacher-unsaved-indicator {
+  margin-top: 0.35rem;
+  color: #9a3412;
+  background: #fff7ed;
+}
+
+.teacher-quiz-settings-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.teacher-quiz-settings-grid label,
+.teacher-question-select-label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.teacher-quiz-form-actions {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+}
+
+.teacher-quiz-form-actions .assessment-message {
+  flex: 1 1 220px;
+}
+
+.teacher-question-manager {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.teacher-question-browser,
+.teacher-question-editor {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.teacher-question-browser {
+  align-self: start;
+}
+
+.teacher-question-browser .teacher-option-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.teacher-question-browser .teacher-option-editor-head > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.teacher-question-select-label {
+  margin-top: 1rem;
+}
+
+.teacher-question-select-label select {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-question-pagination {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.teacher-question-pagination span {
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.teacher-question-editor-form {
+  margin-top: 0;
+}
+
+.teacher-answer-editor {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+
+.teacher-answer-editor legend {
+  padding-inline: 0.35rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.teacher-answer-editor > p {
+  margin: 0 0 0.75rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.teacher-answer-editor [data-options-container] {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.teacher-answer-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.teacher-answer-correct {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.teacher-answer-correct input {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.teacher-question-editor-actions {
+  flex-wrap: wrap;
+}
+
+.teacher-quiz-manager-page .btn,
+.teacher-quiz-manager-page input,
+.teacher-quiz-manager-page select {
+  min-height: 44px;
+}
+
+.teacher-quiz-manager-page textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.teacher-quiz-manager-page :focus-visible {
+  outline: 3px solid rgb(37 99 235 / 0.3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1023px) {
+  .teacher-quiz-settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-question-manager {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .teacher-quiz-manager-page {
+    padding-inline: 0.75rem;
+    padding-bottom: 7rem;
+    overflow-x: clip;
+  }
+
+  .teacher-quiz-manager-page .assessment-filter-bar,
+  .teacher-quiz-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-quiz-card {
+    padding: 0.9rem;
+  }
+
+  .teacher-quiz-card-header,
+  .teacher-question-editor-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .teacher-quiz-summary-badges {
+    justify-content: flex-start;
+  }
+
+  .teacher-quiz-form-actions,
+  .teacher-question-editor-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-quiz-form-actions .btn,
+  .teacher-question-editor-actions .btn {
+    width: 100%;
+  }
+
+  .teacher-question-browser,
+  .teacher-question-editor {
+    padding: 0.8rem;
+  }
+
+  .teacher-question-browser .teacher-option-editor-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-question-pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .teacher-question-pagination span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .teacher-answer-row {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+  }
+
+  .teacher-answer-correct {
+    grid-column: 2;
+  }
+}
+
 .empty-state {
   padding: 1.5rem;
   border: 1px dashed #cbd5e1;

@@ -3,6 +3,7 @@ package com.ojtsu26.elearning.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizView;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionPayload;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.Lesson;
@@ -27,12 +28,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -91,15 +95,69 @@ class TeacherAssessmentServiceTest {
             saved.setId(300);
             return saved;
         });
-        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(300))
-                .thenReturn(List.of());
-
         QuizView result = service.createTeacherQuiz(100, payload);
 
         assertEquals(300, result.getId());
         assertEquals("Java OOP Quiz", result.getTitle());
         assertEquals(QuizStatus.DRAFT, result.getStatus());
+        assertEquals(20, result.getDurationMinutes());
+        assertNull(result.getMaxAttempts());
         verify(quizRepository).save(any(Quiz.class));
+    }
+
+    @Test
+    void teacherQuestionBrowserUsesTenItemServerPage() {
+        Lesson lesson = Lesson.builder()
+                .id(200)
+                .title("OOP Quiz")
+                .type(LessonType.QUIZ)
+                .course(course)
+                .build();
+        Quiz quiz = Quiz.builder().id(300).lesson(lesson).createdBy(teacher).build();
+        List<Question> questions = IntStream.rangeClosed(1, 10)
+                .mapToObj(index -> Question.builder()
+                        .id(400 + index)
+                        .quiz(quiz)
+                        .questionText("Question " + index)
+                        .optionsJson("[{\"content\":\"A\",\"correct\":true},"
+                                + "{\"content\":\"B\",\"correct\":false}]")
+                        .correctAnswer("0")
+                        .active(true)
+                        .displayOrder(index)
+                        .build())
+                .toList();
+        when(currentUserService.getCurrentUser()).thenReturn(teacher);
+        when(quizRepository.findByIdWithCourse(300)).thenReturn(Optional.of(quiz));
+        when(courseRepository.findById(100)).thenReturn(Optional.of(course));
+        when(questionRepository.findByQuizIdAndActiveTrueOrderByDisplayOrderAscIdAsc(
+                300, PageRequest.of(1, 10)))
+                .thenReturn(new PageImpl<>(questions, PageRequest.of(1, 10), 23));
+
+        var result = service.getTeacherQuestions(300, 1);
+
+        assertEquals(10, result.getItems().size());
+        assertEquals(1, result.getPage());
+        assertEquals(10, result.getSize());
+        assertEquals(23L, result.getTotalItems());
+        assertEquals(3, result.getTotalPages());
+    }
+
+    @Test
+    void teacherCannotCreateQuestionOneHundredAndOne() {
+        Lesson lesson = Lesson.builder()
+                .id(200)
+                .type(LessonType.QUIZ)
+                .course(course)
+                .build();
+        Quiz quiz = Quiz.builder().id(300).lesson(lesson).createdBy(teacher).build();
+        when(currentUserService.getCurrentUser()).thenReturn(teacher);
+        when(quizRepository.findByIdWithCourse(300)).thenReturn(Optional.of(quiz));
+        when(courseRepository.findById(100)).thenReturn(Optional.of(course));
+        when(questionRepository.countByQuizIdAndActiveTrue(300)).thenReturn(100L);
+
+        assertThrows(BusinessException.class,
+                () -> service.createTeacherQuestion(300, new QuestionPayload()));
+        verify(questionRepository, never()).save(any());
     }
 
     @Test

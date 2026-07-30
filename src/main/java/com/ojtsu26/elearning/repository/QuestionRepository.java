@@ -5,6 +5,7 @@ import com.ojtsu26.elearning.model.enums.QuestionDifficulty;
 import com.ojtsu26.elearning.model.enums.QuestionGenerationSource;
 import com.ojtsu26.elearning.model.enums.QuestionReviewStatus;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,12 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
     List<Question> findByQuizIdAndReviewStatusAndActiveTrueOrderByIdAsc(
             Integer quizId,
             QuestionReviewStatus reviewStatus);
+
+    Page<Question> findByQuizIdAndActiveTrueOrderByDisplayOrderAscIdAsc(
+            Integer quizId,
+            Pageable pageable);
+
+    long countByQuizIdAndActiveTrue(Integer quizId);
 
     long countByQuizIdAndTopicCodeIgnoreCaseAndDifficultyAndReviewStatusAndActiveTrue(
             Integer quizId,

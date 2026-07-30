@@ -426,7 +426,7 @@ public class TeacherViewController {
                 model.addAttribute("errorMessage", e.getMessage());
             }
         }
-        model.addAttribute("quizStatuses", QuizStatus.values());
+        model.addAttribute("quizStatuses", List.of(QuizStatus.DRAFT, QuizStatus.PUBLISHED));
         return "teacher/quizzes";
     }
 

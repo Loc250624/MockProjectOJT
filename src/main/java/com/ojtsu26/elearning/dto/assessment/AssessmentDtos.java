@@ -11,7 +11,6 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -53,12 +52,14 @@ public final class AssessmentDtos {
     public static class QuizPayload {
         @NotBlank
         private String title;
+        @Deprecated
         private String description;
         @NotNull
         private Integer lessonId;
-        private Integer durationMinutes = 30;
-        @Positive
-        private Integer maxAttempts = 1;
+        @Deprecated
+        private Integer durationMinutes;
+        @Deprecated
+        private Integer maxAttempts;
         private BigDecimal passingScore = new BigDecimal("70.00");
         private QuizStatus status = QuizStatus.DRAFT;
     }
@@ -102,32 +103,6 @@ public final class AssessmentDtos {
     }
 
     @Data
-    public static class BlueprintItemPayload {
-        @NotBlank
-        private String topicCode;
-        @NotNull
-        private QuestionDifficulty difficulty;
-        @Positive
-        private Integer questionCount;
-        private Integer displayOrder;
-    }
-
-    @Data
-    public static class BlueprintBucketView {
-        private String topicCode;
-        private QuestionDifficulty difficulty;
-        private Integer required;
-        private Long available;
-        private Boolean ready;
-    }
-
-    @Data
-    public static class QuizReadinessView {
-        private Boolean ready;
-        private List<BlueprintBucketView> buckets = new ArrayList<>();
-    }
-
-    @Data
     public static class QuizView {
         private Integer id;
         private Integer courseId;
@@ -141,7 +116,18 @@ public final class AssessmentDtos {
         private QuizStatus status;
         private BigDecimal passingScore;
         private BigDecimal totalPoints;
+        private Long activeQuestionCount;
+        private Integer questionLimit;
         private List<QuestionView> questions = new ArrayList<>();
+    }
+
+    @Data
+    public static class QuestionPageView {
+        private List<QuestionView> items = new ArrayList<>();
+        private Integer page;
+        private Integer size;
+        private Long totalItems;
+        private Integer totalPages;
     }
 
     @Data

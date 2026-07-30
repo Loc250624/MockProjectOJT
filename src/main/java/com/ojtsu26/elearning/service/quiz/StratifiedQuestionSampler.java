@@ -74,6 +74,31 @@ public class StratifiedQuestionSampler {
         return List.copyOf(selected);
     }
 
+    public List<Candidate> selectAny(List<Candidate> candidates,
+                                     int count,
+                                     Set<Integer> previouslySeen,
+                                     Map<Integer, Long> usageCount) {
+        Objects.requireNonNull(candidates, "candidates");
+        if (count <= 0) {
+            throw new IllegalArgumentException("count must be positive");
+        }
+        Set<Integer> seen = previouslySeen == null ? Set.of() : Set.copyOf(previouslySeen);
+        Map<Integer, Long> usage = usageCount == null ? Map.of() : Map.copyOf(usageCount);
+        List<Candidate> pool = candidates.stream()
+                .filter(Candidate::approved)
+                .filter(Candidate::active)
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (pool.size() < count) {
+            throw new InsufficientQuestionBankException(
+                    "ALL", QuestionDifficulty.MEDIUM, count, pool.size());
+        }
+        Collections.shuffle(pool, random);
+        pool.sort(Comparator
+                .comparing((Candidate candidate) -> seen.contains(candidate.id()))
+                .thenComparingLong(candidate -> usage.getOrDefault(candidate.id(), 0L)));
+        return List.copyOf(pool.subList(0, count));
+    }
+
     public static String normalizeTopic(String topicCode) {
         return topicCode == null || topicCode.isBlank()
                 ? "GENERAL"

@@ -1,4 +1,5 @@
 'use strict';
+
 document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
@@ -29,6 +30,7 @@ function initPortalSidebarNav() {
         activeLink.setAttribute('aria-current', 'page');
     }
 }
+
 function getPortalNavPatterns(link) {
     var raw = link.getAttribute('data-nav-match') || link.getAttribute('href') || '';
     return raw.split(',')
@@ -42,7 +44,10 @@ function getPortalNavPatterns(link) {
                 clean = clean.substring(1);
             }
             try {
-                return { path: normalizePortalPath(new URL(clean, window.location.origin).pathname), exact: exact };
+                return {
+                    path: normalizePortalPath(new URL(clean, window.location.origin).pathname),
+                    exact: exact
+                };
             } catch (error) {
                 return { path: normalizePortalPath(clean), exact: exact };
             }
@@ -61,7 +66,9 @@ function scorePortalPath(pattern, currentPath) {
         return -1;
     }
     if (patternPath.indexOf('*') !== -1) {
-        return wildcardPortalPathMatch(patternPath, currentPath) ? patternPath.length + 5000 : -1;
+        return wildcardPortalPathMatch(patternPath, currentPath)
+            ? patternPath.length + 5000
+            : -1;
     }
     if (patternPath === currentPath) {
         return patternPath.length + 10000;
@@ -73,7 +80,9 @@ function scorePortalPath(pattern, currentPath) {
 }
 
 function wildcardPortalPathMatch(patternPath, currentPath) {
-    var escaped = patternPath.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]+');
+    var escaped = patternPath
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '[^/]+');
     return new RegExp('^' + escaped + '(?:/.*)?$').test(currentPath);
 }
 
@@ -106,7 +115,9 @@ function initPortalSidebarDrawer() {
             sidebar.removeAttribute('aria-hidden');
         }
         if (isOpen) {
-            var focusTarget = sidebar.querySelector('[aria-current="page"], .sidebar-nav a, .sidebar-support-links a');
+            var focusTarget = sidebar.querySelector(
+                '[aria-current="page"], .sidebar-nav a, .sidebar-support-links a'
+            );
             if (focusTarget) {
                 focusTarget.focus();
             }
@@ -173,8 +184,12 @@ function teacherCsrfHeaders(existingHeaders) {
     var headers = new Headers(existingHeaders || {});
     var tokenMeta = document.querySelector('meta[name="_csrf"]');
     var headerMeta = document.querySelector('meta[name="_csrf_header"]');
-    var token = tokenMeta && tokenMeta.content ? tokenMeta.content : teacherCookieValue('XSRF-TOKEN');
-    var headerName = headerMeta && headerMeta.content ? headerMeta.content : 'X-XSRF-TOKEN';
+    var token = tokenMeta && tokenMeta.content
+        ? tokenMeta.content
+        : teacherCookieValue('XSRF-TOKEN');
+    var headerName = headerMeta && headerMeta.content
+        ? headerMeta.content
+        : 'X-XSRF-TOKEN';
     if (token && !headers.has(headerName)) {
         headers.set(headerName, token);
     }
@@ -200,68 +215,14 @@ function teacherAssessmentMessage(element, text, type) {
 }
 
 function initTeacherAssessments() {
-    initTeacherQuizBuilder();
+    initTeacherQuizSettings();
     initTeacherQuizActions();
-}
-
-function parseTeacherQuestionOptions(rawValue) {
-    try {
-        var parsed = JSON.parse(rawValue || '[]');
-        if (Array.isArray(parsed)) {
-            return parsed.map(function(option) {
-                if (typeof option === 'string') {
-                    return { content: option.trim(), correct: false };
-                }
-                return {
-                    content: option && option.content ? String(option.content).trim() : '',
-                    correct: option && option.correct === true
-                };
-            }).filter(function(option) { return option.content; });
+    document.querySelectorAll('[data-question-manager]').forEach(initTeacherQuestionManager);
+    window.addEventListener('beforeunload', function(event) {
+        if (document.querySelector('[data-question-manager][data-dirty="true"]')) {
+            event.preventDefault();
+            event.returnValue = '';
         }
-    } catch (ignored) {
-        // Fall through to the legacy delimiter reader for pre-normalized markup.
-    }
-    return (rawValue || '').split('|').map(function(raw) {
-        var text = raw.trim();
-        var correct = text.charAt(0) === '*';
-        return { content: correct ? text.substring(1).trim() : text, correct: correct };
-    }).filter(function(option) { return option.content; });
-}
-
-function readTeacherQuestionOptionRows(form) {
-    var rows = Array.prototype.slice.call(form.querySelectorAll('[data-option-row]'));
-    if (!rows.length) {
-        return parseTeacherQuestionOptions(form.elements.options ? form.elements.options.value : '');
-    }
-    return rows.map(function(row) {
-        var contentInput = row.querySelector('[data-option-content]');
-        var correctInput = row.querySelector('[data-option-correct]');
-        return {
-            content: contentInput ? contentInput.value.trim() : '',
-            correct: correctInput ? correctInput.checked : false
-        };
-    }).filter(function(option) { return option.content; });
-}
-
-function writeTeacherQuestionOptionRows(form) {
-    var hidden = form.elements.options;
-    if (!hidden) {
-        return;
-    }
-    hidden.value = JSON.stringify(readTeacherQuestionOptionRows(form));
-}
-
-function syncTeacherCorrectControls(form) {
-    var typeField = form.elements.questionType;
-    if (!typeField) {
-        return;
-    }
-    var singleChoice = typeField.value === 'SINGLE_CHOICE';
-    form.querySelectorAll('[data-option-correct]').forEach(function(input) {
-        input.type = singleChoice ? 'radio' : 'checkbox';
-        input.name = singleChoice
-            ? 'correctOption-' + (form.elements.questionId ? form.elements.questionId.value : form.closest('[data-quiz-id]').dataset.quizId)
-            : 'correctOption';
     });
 }
 
@@ -269,67 +230,27 @@ function teacherQuizPayload(form) {
     return {
         lessonId: Number(form.elements.lessonId.value),
         title: form.elements.title.value.trim(),
-        description: form.elements.description ? form.elements.description.value.trim() : '',
-        durationMinutes: Number(form.elements.durationMinutes.value),
-        maxAttempts: Number(form.elements.maxAttempts.value),
-        passingScore: Number(form.elements.passingScore.value),
+        passingScore: Number(form.elements.passingScore.value || 70),
         status: form.elements.status.value
     };
 }
 
-function teacherQuestionPayload(form) {
-    var options = readTeacherQuestionOptionRows(form);
-    writeTeacherQuestionOptionRows(form);
-    return {
-        content: form.elements.content.value.trim(),
-        questionType: form.elements.questionType.value,
-        points: Number(form.elements.points.value || 1),
-        displayOrder: form.elements.displayOrder && form.elements.displayOrder.value
-            ? Number(form.elements.displayOrder.value)
-            : null,
-        topicCode: form.elements.topicCode ? form.elements.topicCode.value.trim() : 'GENERAL',
-        difficulty: form.elements.difficulty ? form.elements.difficulty.value : 'MEDIUM',
-        reviewStatus: form.elements.reviewStatus ? form.elements.reviewStatus.value : 'APPROVED',
-        active: !form.elements.reviewStatus || form.elements.reviewStatus.value !== 'ARCHIVED',
-        generationSource: 'MANUAL',
-        options: options
-    };
-}
-
-function validateTeacherQuestionPayload(payload) {
-    if (!payload.content) {
-        return 'Question content is required.';
-    }
-    if (payload.options.length < 2) {
-        return 'Add at least two options.';
-    }
-    var correctCount = payload.options.filter(function(option) { return option.correct; }).length;
-    if (correctCount < 1) {
-        return 'Mark at least one correct option.';
-    }
-    if (payload.questionType === 'SINGLE_CHOICE' && correctCount !== 1) {
-        return 'Single choice questions need exactly one correct option.';
-    }
-    return null;
-}
-
-function initTeacherQuizBuilder() {
-    var form = document.getElementById('teacher-quiz-form');
+function initTeacherQuizSettings() {
+    var createForm = document.getElementById('teacher-quiz-form');
     var courseId = document.body.dataset.courseId;
-    var message = document.getElementById('teacher-quiz-message');
-    if (form && courseId) {
-        form.addEventListener('submit', function(event) {
+    if (createForm && courseId) {
+        createForm.addEventListener('submit', function(event) {
             event.preventDefault();
-            var body = teacherQuizPayload(form);
-            if (!body.title || !body.lessonId) {
-                teacherAssessmentMessage(message, 'Lesson ID and title are required.', 'error');
+            var message = document.getElementById('teacher-quiz-message');
+            var payload = teacherQuizPayload(createForm);
+            if (!payload.lessonId || !payload.title) {
+                teacherAssessmentMessage(message, 'Lesson and title are required.', 'error');
                 return;
             }
             teacherFetch('/api/teacher/courses/' + encodeURIComponent(courseId) + '/quizzes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(body)
+                body: JSON.stringify(payload)
             }).then(function(response) {
                 return teacherAssessmentJson(response, 'Unable to create quiz');
             }).then(function() {
@@ -341,283 +262,26 @@ function initTeacherQuizBuilder() {
         });
     }
 
-    document.querySelectorAll('.teacher-quiz-update-form').forEach(function(updateForm) {
-        updateForm.addEventListener('submit', function(event) {
+    document.querySelectorAll('.teacher-quiz-update-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
             event.preventDefault();
-            var message = updateForm.querySelector('.assessment-message');
-            var quizId = updateForm.elements.quizId.value;
-            var body = teacherQuizPayload(updateForm);
-            if (!body.title || !body.lessonId) {
+            var quizId = form.elements.quizId.value;
+            var message = form.querySelector('.assessment-message');
+            var payload = teacherQuizPayload(form);
+            if (!payload.lessonId || !payload.title) {
                 teacherAssessmentMessage(message, 'Lesson and title are required.', 'error');
                 return;
             }
             teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(quizId), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(body)
+                body: JSON.stringify(payload)
             }).then(function(response) {
                 return teacherAssessmentJson(response, 'Unable to update quiz');
             }).then(function() {
-                teacherAssessmentMessage(message, 'Quiz saved.', 'success');
-                window.setTimeout(function() { window.location.reload(); }, 400);
+                teacherAssessmentMessage(message, 'Settings saved.', 'success');
             }).catch(function(error) {
                 teacherAssessmentMessage(message, error.message, 'error');
-            });
-        });
-    });
-
-    document.querySelectorAll('.teacher-question-form, .teacher-question-update-form').forEach(function(questionForm) {
-        syncTeacherCorrectControls(questionForm);
-        if (questionForm.elements.questionType) {
-            questionForm.elements.questionType.addEventListener('change', function() {
-                syncTeacherCorrectControls(questionForm);
-            });
-        }
-        questionForm.querySelectorAll('[data-option-content], [data-option-correct]').forEach(function(input) {
-            input.addEventListener('input', function() { writeTeacherQuestionOptionRows(questionForm); });
-            input.addEventListener('change', function() { writeTeacherQuestionOptionRows(questionForm); });
-        });
-    });
-
-    document.querySelectorAll('.archive-quiz-btn').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var card = button.closest('[data-quiz-id]');
-            if (!card || button.disabled || !window.confirm('Archive this quiz? Student history, progress, and certificates remain available.')) {
-                return;
-            }
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/archive', {
-                method: 'POST',
-                credentials: 'same-origin'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to archive quiz');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
-            });
-        });
-    });
-
-    document.querySelectorAll('.teacher-question-form').forEach(function(questionForm) {
-        questionForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var card = questionForm.closest('[data-quiz-id]');
-            var payload = teacherQuestionPayload(questionForm);
-            var validationError = validateTeacherQuestionPayload(payload);
-            if (validationError) {
-                window.alert(validationError);
-                return;
-            }
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/questions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload)
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to add question');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
-            });
-        });
-    });
-
-    document.querySelectorAll('.teacher-question-update-form').forEach(function(questionForm) {
-        questionForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var message = questionForm.querySelector('.assessment-message');
-            var questionId = questionForm.elements.questionId.value;
-            var payload = teacherQuestionPayload(questionForm);
-            var validationError = validateTeacherQuestionPayload(payload);
-            if (validationError) {
-                teacherAssessmentMessage(message, validationError, 'error');
-                return;
-            }
-            teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload)
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to update question');
-            }).then(function() {
-                teacherAssessmentMessage(message, 'Question saved.', 'success');
-                window.setTimeout(function() { window.location.reload(); }, 400);
-            }).catch(function(error) {
-                teacherAssessmentMessage(message, error.message, 'error');
-            });
-        });
-    });
-
-    document.querySelectorAll('.delete-question-btn').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var row = button.closest('[data-question-id]');
-            if (!row || !window.confirm('Delete this question? Questions with submitted answers are protected.')) {
-                return;
-            }
-            teacherFetch('/api/teacher/questions/' + encodeURIComponent(row.dataset.questionId), {
-                method: 'DELETE',
-                credentials: 'same-origin'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to delete question');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
-            });
-        });
-    });
-
-    document.querySelectorAll('.question-review-btn').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var row = button.closest('[data-question-id]');
-            if (!row) {
-                return;
-            }
-            button.disabled = true;
-            teacherFetch('/api/teacher/questions/' + encodeURIComponent(row.dataset.questionId)
-                    + '/' + encodeURIComponent(button.dataset.action), {
-                method: 'POST',
-                credentials: 'same-origin'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to update review status');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
-                button.disabled = false;
-            });
-        });
-    });
-
-    document.querySelectorAll('[data-quiz-blueprint]').forEach(function(panel) {
-        var card = panel.closest('[data-quiz-id]');
-        var rows = panel.querySelector('[data-blueprint-rows]');
-        var message = panel.querySelector('[data-blueprint-message]');
-        function addRow() {
-            var source = rows.querySelector('[data-blueprint-row]');
-            var clone = source.cloneNode(true);
-            clone.querySelector('[name="topicCode"]').value = 'GENERAL';
-            clone.querySelector('[name="questionCount"]').value = '1';
-            rows.appendChild(clone);
-        }
-        function readiness() {
-            return teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/readiness', {
-                credentials: 'same-origin'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to check readiness');
-            }).then(function(body) {
-                var data = body.data || {};
-                var buckets = (data.buckets || []).map(function(bucket) {
-                    return bucket.topicCode + '/' + bucket.difficulty + ': '
-                        + bucket.available + ' available / ' + bucket.required + ' required';
-                });
-                teacherAssessmentMessage(message,
-                    (data.ready ? 'Ready. ' : 'Not ready. ') + buckets.join(' · '),
-                    data.ready ? 'success' : 'error');
-            });
-        }
-        panel.querySelector('.blueprint-add-row').addEventListener('click', addRow);
-        panel.addEventListener('click', function(event) {
-            if (event.target.classList.contains('blueprint-remove-row')
-                    && rows.querySelectorAll('[data-blueprint-row]').length > 1) {
-                event.target.closest('[data-blueprint-row]').remove();
-            }
-        });
-        panel.querySelector('.blueprint-readiness').addEventListener('click', function() {
-            readiness().catch(function(error) {
-                teacherAssessmentMessage(message, error.message, 'error');
-            });
-        });
-        panel.querySelector('.blueprint-save').addEventListener('click', function() {
-            var payload = Array.prototype.map.call(rows.querySelectorAll('[data-blueprint-row]'), function(row, index) {
-                return {
-                    topicCode: row.querySelector('[name="topicCode"]').value.trim(),
-                    difficulty: row.querySelector('[name="difficulty"]').value,
-                    questionCount: Number(row.querySelector('[name="questionCount"]').value),
-                    displayOrder: index + 1
-                };
-            });
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/blueprint', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload)
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to save blueprint');
-            }).then(function(body) {
-                var data = body.data || {};
-                teacherAssessmentMessage(message,
-                    data.ready ? 'Blueprint saved and ready.' : 'Blueprint saved; add approved questions to short buckets.',
-                    data.ready ? 'success' : 'error');
-            }).catch(function(error) {
-                teacherAssessmentMessage(message, error.message, 'error');
-            });
-        });
-        readiness().catch(function(error) {
-            teacherAssessmentMessage(message, error.message, 'error');
-        });
-    });
-
-    document.querySelectorAll('.question-generation-form').forEach(function(generationForm) {
-        generationForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var card = generationForm.closest('[data-quiz-id]');
-            var message = generationForm.querySelector('.assessment-message');
-            var payload = {
-                lessonContent: generationForm.elements.lessonContent.value.trim(),
-                topicCode: generationForm.elements.topicCode.value.trim(),
-                difficulty: generationForm.elements.difficulty.value,
-                questionCount: Number(generationForm.elements.questionCount.value)
-            };
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId)
-                    + '/question-generation-jobs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload)
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to queue question generation');
-            }).then(function(body) {
-                teacherAssessmentMessage(message,
-                    'Generation job #' + body.data.id + ' queued. Generated questions will remain drafts.',
-                    'success');
-            }).catch(function(error) {
-                teacherAssessmentMessage(message, error.message, 'error');
-            });
-        });
-    });
-
-    document.querySelectorAll('.question-move-btn').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var card = button.closest('[data-quiz-id]');
-            var row = button.closest('[data-question-id]');
-            var list = row ? row.parentElement : null;
-            if (!card || !row || !list) {
-                return;
-            }
-            if (button.dataset.direction === 'up' && row.previousElementSibling) {
-                list.insertBefore(row, row.previousElementSibling);
-            }
-            if (button.dataset.direction === 'down' && row.nextElementSibling) {
-                list.insertBefore(row.nextElementSibling, row);
-            }
-            var order = Array.prototype.map.call(list.querySelectorAll('[data-question-id]'), function(item) {
-                return Number(item.dataset.questionId);
-            });
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId) + '/questions/reorder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(order)
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to reorder questions');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
             });
         });
     });
@@ -627,12 +291,13 @@ function initTeacherQuizActions() {
     document.querySelectorAll('.delete-quiz-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             var card = button.closest('[data-quiz-id]');
-            if (!card || button.disabled || !window.confirm('Permanently delete this quiz? This only succeeds before student attempts exist.')) {
+            if (!card || !window.confirm(
+                'Delete this quiz? Quizzes with student history cannot be deleted.'
+            )) {
                 return;
             }
             teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId), {
-                method: 'DELETE',
-                credentials: 'same-origin'
+                method: 'DELETE'
             }).then(function(response) {
                 return teacherAssessmentJson(response, 'Unable to delete quiz');
             }).then(function() {
@@ -642,18 +307,306 @@ function initTeacherQuizActions() {
             });
         });
     });
+}
 
-    document.querySelectorAll('.quiz-preview-toggle').forEach(function(button) {
-        button.addEventListener('click', function() {
-            var card = button.closest('[data-quiz-id]');
-            var preview = card ? card.querySelector('[data-quiz-preview]') : null;
-            if (!preview) {
-                return;
+function initTeacherQuestionManager(panel) {
+    var card = panel.closest('[data-quiz-id]');
+    if (!card) {
+        return;
+    }
+    var quizId = card.dataset.quizId;
+    var select = panel.querySelector('[data-question-select]');
+    var previousButton = panel.querySelector('[data-question-previous]');
+    var nextButton = panel.querySelector('[data-question-next]');
+    var addButton = panel.querySelector('[data-add-question]');
+    var pageIndicator = panel.querySelector('[data-question-page-indicator]');
+    var pageSummary = panel.querySelector('[data-question-page-summary]');
+    var emptyState = panel.querySelector('[data-question-empty]');
+    var form = panel.querySelector('[data-question-editor-form]');
+    var deleteButton = panel.querySelector('[data-delete-question]');
+    var title = panel.querySelector('[data-question-editor-title]');
+    var unsaved = panel.querySelector('[data-unsaved-indicator]');
+    var message = form.querySelector('.assessment-message');
+    var optionsContainer = panel.querySelector('[data-options-container]');
+    var state = {
+        page: 0,
+        totalPages: 0,
+        totalItems: 0,
+        items: [],
+        selectedId: null,
+        dirty: false,
+        creating: false
+    };
+
+    function markDirty(dirty) {
+        state.dirty = dirty;
+        panel.dataset.dirty = dirty ? 'true' : 'false';
+        unsaved.hidden = !dirty;
+    }
+
+    function canLeaveEditor() {
+        return !state.dirty || window.confirm('Discard unsaved question changes?');
+    }
+
+    function questionLabel(question, index) {
+        var number = state.page * 10 + index + 1;
+        var excerpt = String(question.content || '').replace(/\s+/g, ' ').trim();
+        if (excerpt.length > 54) {
+            excerpt = excerpt.substring(0, 51) + '…';
+        }
+        return 'Question ' + String(number).padStart(2, '0') + ' — ' + excerpt;
+    }
+
+    function optionRow(option, index) {
+        var row = document.createElement('div');
+        row.className = 'teacher-answer-row';
+        row.setAttribute('data-option-row', '');
+
+        var number = document.createElement('span');
+        number.className = 'teacher-option-index';
+        number.textContent = String(index + 1);
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 1000;
+        input.placeholder = 'Answer ' + String(index + 1);
+        input.value = option && option.content ? option.content : '';
+        input.setAttribute('data-option-content', '');
+        input.setAttribute('aria-label', 'Answer ' + String(index + 1));
+
+        var correctLabel = document.createElement('label');
+        correctLabel.className = 'teacher-answer-correct';
+        var radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'correct-answer-' + quizId;
+        radio.checked = Boolean(option && option.correct);
+        radio.setAttribute('data-option-correct', '');
+        var correctText = document.createElement('span');
+        correctText.textContent = 'Correct';
+        correctLabel.appendChild(radio);
+        correctLabel.appendChild(correctText);
+
+        row.appendChild(number);
+        row.appendChild(input);
+        row.appendChild(correctLabel);
+        return row;
+    }
+
+    function renderOptions(options) {
+        optionsContainer.textContent = '';
+        var values = Array.isArray(options) ? options.slice() : [];
+        while (values.length < 4) {
+            values.push({ content: '', correct: values.length === 0 });
+        }
+        values.forEach(function(option, index) {
+            optionsContainer.appendChild(optionRow(option, index));
+        });
+    }
+
+    function showQuestion(question) {
+        state.creating = false;
+        state.selectedId = question.id;
+        form.hidden = false;
+        emptyState.hidden = true;
+        form.elements.questionId.value = question.id;
+        form.elements.content.value = question.content || '';
+        title.textContent = 'Edit question';
+        deleteButton.hidden = false;
+        renderOptions(question.options || []);
+        teacherAssessmentMessage(message, '', null);
+        markDirty(false);
+    }
+
+    function showNewQuestion() {
+        state.creating = true;
+        state.selectedId = null;
+        form.hidden = false;
+        emptyState.hidden = true;
+        form.elements.questionId.value = '';
+        form.elements.content.value = '';
+        title.textContent = 'Add question';
+        deleteButton.hidden = true;
+        renderOptions([]);
+        teacherAssessmentMessage(message, '', null);
+        markDirty(false);
+        form.elements.content.focus();
+    }
+
+    function renderPage(preferredQuestionId) {
+        select.textContent = '';
+        state.items.forEach(function(question, index) {
+            var option = document.createElement('option');
+            option.value = String(question.id);
+            option.textContent = questionLabel(question, index);
+            select.appendChild(option);
+        });
+        var pageCount = Math.max(1, state.totalPages);
+        pageIndicator.textContent = 'Page ' + String(state.page + 1) + ' / ' + String(pageCount);
+        pageSummary.textContent = String(state.totalItems) + ' / 100 active questions';
+        previousButton.disabled = state.page <= 0;
+        nextButton.disabled = state.totalPages === 0 || state.page >= state.totalPages - 1;
+        addButton.disabled = state.totalItems >= 100;
+        select.disabled = state.items.length === 0;
+
+        if (state.items.length === 0) {
+            state.selectedId = null;
+            form.hidden = true;
+            emptyState.hidden = false;
+            markDirty(false);
+            return;
+        }
+
+        var selected = state.items.find(function(item) {
+            return item.id === preferredQuestionId;
+        }) || state.items[0];
+        select.value = String(selected.id);
+        showQuestion(selected);
+    }
+
+    function loadPage(page, preferredQuestionId) {
+        pageSummary.textContent = 'Loading questions…';
+        return teacherFetch(
+            '/api/teacher/quizzes/' + encodeURIComponent(quizId)
+                + '/questions?page=' + encodeURIComponent(Math.max(0, page)),
+            { method: 'GET' }
+        ).then(function(response) {
+            return teacherAssessmentJson(response, 'Unable to load questions');
+        }).then(function(body) {
+            var data = body.data || {};
+            state.page = Number(data.page || 0);
+            state.totalPages = Number(data.totalPages || 0);
+            state.totalItems = Number(data.totalItems || 0);
+            state.items = Array.isArray(data.items) ? data.items : [];
+            renderPage(preferredQuestionId);
+        }).catch(function(error) {
+            pageSummary.textContent = error.message;
+            teacherAssessmentMessage(message, error.message, 'error');
+        });
+    }
+
+    function questionPayload() {
+        var options = Array.prototype.map.call(
+            optionsContainer.querySelectorAll('[data-option-row]'),
+            function(row) {
+                return {
+                    content: row.querySelector('[data-option-content]').value.trim(),
+                    correct: row.querySelector('[data-option-correct]').checked
+                };
             }
-            var open = preview.hidden;
-            preview.hidden = !open;
-            button.setAttribute('aria-expanded', String(open));
-            button.textContent = open ? 'Hide Preview' : 'Preview';
+        ).filter(function(option) {
+            return option.content;
+        });
+        return {
+            content: form.elements.content.value.trim(),
+            questionType: 'SINGLE_CHOICE',
+            points: 1,
+            options: options
+        };
+    }
+
+    function validationError(payload) {
+        if (!payload.content) {
+            return 'Question content is required.';
+        }
+        if (payload.options.length < 2) {
+            return 'Enter at least two answers.';
+        }
+        if (payload.options.filter(function(option) { return option.correct; }).length !== 1) {
+            return 'Select exactly one correct answer.';
+        }
+        return null;
+    }
+
+    panel.addEventListener('input', function(event) {
+        if (event.target.closest('[data-question-editor-form]')) {
+            markDirty(true);
+        }
+    });
+    panel.addEventListener('change', function(event) {
+        if (event.target.closest('[data-question-editor-form]')) {
+            markDirty(true);
+        }
+    });
+
+    select.addEventListener('change', function() {
+        var nextId = Number(select.value);
+        if (!canLeaveEditor()) {
+            select.value = state.selectedId == null ? '' : String(state.selectedId);
+            return;
+        }
+        var selected = state.items.find(function(item) {
+            return item.id === nextId;
+        });
+        if (selected) {
+            showQuestion(selected);
+        }
+    });
+
+    previousButton.addEventListener('click', function() {
+        if (state.page > 0 && canLeaveEditor()) {
+            loadPage(state.page - 1);
+        }
+    });
+    nextButton.addEventListener('click', function() {
+        if (state.page < state.totalPages - 1 && canLeaveEditor()) {
+            loadPage(state.page + 1);
+        }
+    });
+    addButton.addEventListener('click', function() {
+        if (state.totalItems < 100 && canLeaveEditor()) {
+            showNewQuestion();
+        }
+    });
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        var payload = questionPayload();
+        var error = validationError(payload);
+        if (error) {
+            teacherAssessmentMessage(message, error, 'error');
+            return;
+        }
+        var url = state.creating
+            ? '/api/teacher/quizzes/' + encodeURIComponent(quizId) + '/questions'
+            : '/api/teacher/questions/' + encodeURIComponent(form.elements.questionId.value);
+        teacherFetch(url, {
+            method: state.creating ? 'POST' : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(function(response) {
+            return teacherAssessmentJson(response, 'Unable to save question');
+        }).then(function(body) {
+            var saved = body.data || {};
+            markDirty(false);
+            teacherAssessmentMessage(message, 'Question saved.', 'success');
+            var targetPage = state.creating
+                ? Math.floor(state.totalItems / 10)
+                : state.page;
+            return loadPage(targetPage, saved.id);
+        }).catch(function(saveError) {
+            teacherAssessmentMessage(message, saveError.message, 'error');
         });
     });
+
+    deleteButton.addEventListener('click', function() {
+        var questionId = Number(form.elements.questionId.value);
+        if (!questionId || !window.confirm('Delete this question?')) {
+            return;
+        }
+        teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
+            method: 'DELETE'
+        }).then(function(response) {
+            return teacherAssessmentJson(response, 'Unable to delete question');
+        }).then(function() {
+            markDirty(false);
+            var targetPage = state.items.length === 1 && state.page > 0
+                ? state.page - 1
+                : state.page;
+            return loadPage(targetPage);
+        }).catch(function(error) {
+            teacherAssessmentMessage(message, error.message, 'error');
+        });
+    });
+
+    loadPage(0);
 }
