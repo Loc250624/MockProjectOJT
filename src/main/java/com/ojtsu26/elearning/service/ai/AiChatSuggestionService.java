@@ -22,7 +22,11 @@ public class AiChatSuggestionService {
     );
     static final double NEAR_DUPLICATE_THRESHOLD = 0.82d;
     public static final int MAX_RELATED_QUESTIONS = 4;
+    static final int MAX_SUGGESTION_CHARS = 120;
     private static final Pattern PUNCTUATION_OR_SYMBOL = Pattern.compile("[\\p{P}\\p{S}]+");
+    private static final Pattern ASSISTANT_LED_PROMPT = Pattern.compile(
+            "^(?:do you (?:need|want|have)|would you like|are you (?:interested|ready|curious)|can i help|shall i)\\b",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     public List<String> selectUniqueQuestions(List<String> candidates,
                                               List<String> excluded,
@@ -37,7 +41,10 @@ public class AiChatSuggestionService {
         }
         for (String rawCandidate : candidates) {
             String candidate = readableQuestion(rawCandidate);
-            if (candidate.isBlank() || candidate.length() > 500 || isDuplicateQuestion(candidate, existing)
+            if (candidate.isBlank()
+                    || candidate.length() > MAX_SUGGESTION_CHARS
+                    || isAssistantLedPrompt(candidate)
+                    || isDuplicateQuestion(candidate, existing)
                     || isDuplicateQuestion(candidate, selected)) {
                 continue;
             }
@@ -65,6 +72,11 @@ public class AiChatSuggestionService {
             }
         }
         return false;
+    }
+
+    boolean isAssistantLedPrompt(String value) {
+        String readable = readableQuestion(value);
+        return !readable.isBlank() && ASSISTANT_LED_PROMPT.matcher(readable).find();
     }
 
     public String normalizeQuestion(String value) {

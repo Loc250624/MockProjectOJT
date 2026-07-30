@@ -298,13 +298,21 @@
         var existing = Array.isArray(excluded) ? excluded.slice() : [];
         (Array.isArray(candidates) ? candidates : []).some(function (rawCandidate) {
             var candidate = String(rawCandidate || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
-            if (!candidate || isDuplicateQuestion(candidate, existing.concat(selected))) {
+            if (!candidate
+                    || candidate.length > 120
+                    || isAssistantLedPrompt(candidate)
+                    || isDuplicateQuestion(candidate, existing.concat(selected))) {
                 return false;
             }
             selected.push(candidate);
             return selected.length >= maxItems;
         });
         return selected;
+    }
+
+    function isAssistantLedPrompt(value) {
+        return /^(?:do you (?:need|want|have)|would you like|are you (?:interested|ready|curious)|can i help|shall i)\b/i
+            .test(String(value || '').trim());
     }
 
     function isDuplicateQuestion(candidate, existing) {

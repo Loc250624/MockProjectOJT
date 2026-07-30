@@ -71,4 +71,37 @@ class AiChatSuggestionServiceTest {
 
         assertTrue(related.isEmpty());
     }
+
+    @Test
+    void selectionRejectsAssistantLedOffersAndKeepsStudentAuthoredMessages() {
+        List<String> related = service.selectUniqueQuestions(
+                List.of(
+                        "Do you need help finding the Certificates section?",
+                        "Would you like step-by-step instructions for LinkedIn?",
+                        "Are you interested in sharing your achievement?",
+                        "Do you have any questions about certificate requirements?",
+                        "Where can I find Certificates?",
+                        "How do I add the PDF to LinkedIn?",
+                        "Which certificate requirements remain?",
+                        "Show me how to share my certificate."),
+                List.of(),
+                AiChatSuggestionService.MAX_RELATED_QUESTIONS);
+
+        assertEquals(List.of(
+                "Where can I find Certificates?",
+                "How do I add the PDF to LinkedIn?",
+                "Which certificate requirements remain?",
+                "Show me how to share my certificate."), related);
+    }
+
+    @Test
+    void selectionRejectsSuggestionsThatAreTooLongForAQuickAction() {
+        String tooLong = "How do I " + "review ".repeat(20) + "my certificate?";
+
+        assertTrue(tooLong.length() > AiChatSuggestionService.MAX_SUGGESTION_CHARS);
+        assertTrue(service.selectUniqueQuestions(
+                List.of(tooLong),
+                List.of(),
+                AiChatSuggestionService.MAX_RELATED_QUESTIONS).isEmpty());
+    }
 }
