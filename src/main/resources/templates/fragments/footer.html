@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="content" class="public-footer-inner">
+    <div class="public-footer-grid">
+        <section class="public-footer-brand" aria-labelledby="site-footer-title">
+            <div class="public-footer-brand-lockup">
+                <span th:replace="~{fragments/brand :: mark}"></span>
+                <div>
+                    <h2 id="site-footer-title">LumiNa</h2>
+                    <p class="public-footer-slogan">Flexible learning, sustainable growth</p>
+                </div>
+            </div>
+
+            <dl class="public-footer-contact">
+                <div>
+                    <dt>Hotline:</dt>
+                    <dd>0123456789</dd>
+                </div>
+                <div>
+                    <dt>Email:</dt>
+                    <dd>lumina@gmail.com</dd>
+                </div>
+                <div>
+                    <dt>Address:</dt>
+                    <dd>123 Green Street, Red Village</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="public-footer-section" aria-labelledby="site-footer-about">
+            <h3 id="site-footer-about">About Us</h3>
+            <ul>
+                <li><span class="public-footer-item">Introduction</span></li>
+                <li><span class="public-footer-item">Contact</span></li>
+                <li><span class="public-footer-item">Terms of Use</span></li>
+                <li><span class="public-footer-item">Privacy Policy</span></li>
+            </ul>
+        </section>
+
+        <section class="public-footer-section" aria-labelledby="site-footer-support">
+            <h3 id="site-footer-support">Support</h3>
+            <ul>
+                <li><span class="public-footer-item">Help Center</span></li>
+                <li><span class="public-footer-item">Learning Guide</span></li>
+                <li><span class="public-footer-item">Frequently Asked Questions</span></li>
+                <li><span class="public-footer-item">Payment Policy</span></li>
+            </ul>
+        </section>
+
+        <nav class="public-footer-section" aria-labelledby="site-footer-resources">
+            <h3 id="site-footer-resources">Resources</h3>
+            <ul>
+                <li><a class="public-footer-link" th:href="@{/public/courses}">Courses</a></li>
+                <li><a class="public-footer-link" th:href="@{/blogs}">Blog</a></li>
+                <li><span class="public-footer-item">Certificates</span></li>
+                <li><span class="public-footer-item">AI Chatbot</span></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="public-footer-meta">
+        <p th:text="${'© ' + #temporals.year(#temporals.createNow()) + ' LumiNa. All rights reserved.'}">
+            © 2026 LumiNa. All rights reserved.
+        </p>
+
+        <div class="public-footer-socials" aria-label="Social media">
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="Facebook — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/facebook.svg}" src="/images/social/facebook.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="YouTube — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/youtube.svg}" src="/images/social/youtube.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="TikTok — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/tiktok.svg}" src="/images/social/tiktok.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="GitHub — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/github.svg}" src="/images/social/github.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="LinkedIn — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/linkedin.svg}" src="/images/social/linkedin.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="Discord — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/discord.svg}" src="/images/social/discord.svg" alt="" aria-hidden="true">
+            </span>
+        </div>
+    </div>
+</div>
+
+</html>

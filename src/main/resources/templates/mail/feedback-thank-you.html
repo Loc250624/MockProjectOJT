@@ -7,7 +7,7 @@
 </head>
 <body style="margin:0;padding:0;background:#f2f5fb;font-family:Arial,Helvetica,sans-serif;color:#1c2940;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-    We have received your feedback and forwarded it to our administration team for review.
+    Your feedback has been received. A summary of your submission is included below.
 </div>
 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
@@ -26,43 +26,97 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding:36px 38px 28px 38px;">
+                    <td style="padding:32px 38px 26px 38px;">
                         <p style="margin:0 0 14px 0;color:#174d9f;font-size:12px;font-weight:700;letter-spacing:0;">
                             FEEDBACK RECEIVED
                         </p>
 
-                        <h1 style="margin:0 0 22px 0;font-size:30px;line-height:1.2;color:#102d63;font-weight:700;">
-                            Thank you for helping us improve.
+                        <h1 style="margin:0 0 20px 0;font-size:28px;line-height:1.2;color:#102d63;font-weight:700;">
+                            Thank you for your feedback.
                         </h1>
 
-                        <p style="font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+                        <p style="font-size:16px;line-height:1.65;margin:0 0 12px 0;">
                             Dear <strong th:text="${studentName}">Student</strong>,
                         </p>
 
-                        <p style="font-size:16px;line-height:1.7;margin:0 0 16px 0;">
-                            Thank you for taking the time to share your feedback with Lumina Learning.
-                            We have successfully received your submission and forwarded it to our
-                            administration team for review.
+                        <p style="font-size:16px;line-height:1.65;margin:0 0 24px 0;">
+                            Thank you for sharing your experience with Lumina Learning. Your feedback has
+                            been received and forwarded to our administration team for review.
                         </p>
 
-                        <p style="font-size:16px;line-height:1.7;margin:0 0 24px 0;">
-                            Your comments help us improve the learning experience for students, teachers,
-                            and administrators across the platform. While this automated message confirms
-                            receipt, our team may contact you through your registered email address if
-                            additional information is required.
-                        </p>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                               style="width:100%;border:1px solid #dfe5ee;border-radius:10px;background:#ffffff;">
+                            <tr>
+                                <td style="height:4px;background:#1459b5;border-radius:10px 10px 0 0;font-size:0;line-height:0;">&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:20px 20px 18px 20px;">
+                                    <p style="margin:0 0 4px 0;color:#1459b5;font-size:11px;font-weight:700;
+                                              letter-spacing:0.08em;text-transform:uppercase;">
+                                        Your feedback summary
+                                    </p>
+                                    <p style="margin:0 0 3px 0;color:#748199;font-size:12px;line-height:1.5;">
+                                        Submitted <span th:text="${submittedAt}">22 Jul 2026, 09:30</span>
+                                    </p>
+                                    <h2 th:text="${feedbackSubject}"
+                                        style="margin:10px 0 18px 0;color:#1c2940;font-size:20px;line-height:1.35;">
+                                        Platform idea
+                                    </h2>
+
+                                    <p style="margin:0 0 10px 0;color:#41516b;font-size:12px;font-weight:700;
+                                              letter-spacing:0.06em;text-transform:uppercase;">
+                                        Ratings
+                                    </p>
+                                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                                           style="width:100%;border-collapse:separate;border-spacing:0 6px;">
+                                        <tr th:each="rating : ${ratings}"
+                                            th:style="${rating.overall}
+                                                ? 'background:#eef6ff;'
+                                                : 'background:#f8fafc;'">
+                                            <td th:text="${rating.label}"
+                                                style="padding:10px 12px;border:1px solid #e3e8f0;border-right:0;
+                                                       border-radius:8px 0 0 8px;color:#1c2940;font-size:13px;
+                                                       font-weight:700;line-height:1.35;">
+                                                Course Content
+                                            </td>
+                                            <td align="right"
+                                                style="padding:10px 12px;border:1px solid #e3e8f0;border-left:0;
+                                                       border-radius:0 8px 8px 0;white-space:nowrap;">
+                                                <span th:text="${rating.stars}"
+                                                      style="color:#f5b301;font-size:15px;letter-spacing:1px;">★★★★★</span>
+                                                <span th:text="|${rating.score}/5|"
+                                                      style="display:inline-block;margin-left:8px;color:#174d9f;
+                                                             font-size:12px;font-weight:700;">5/5</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <div style="margin-top:16px;padding:14px 15px;background:#f8fafc;
+                                                border:1px solid #e3e8f0;border-radius:8px;">
+                                        <p style="margin:0 0 7px 0;color:#41516b;font-size:11px;font-weight:700;
+                                                  letter-spacing:0.06em;text-transform:uppercase;">
+                                            Message
+                                        </p>
+                                        <p th:text="${feedbackContent}"
+                                           style="margin:0;color:#1c2940;font-size:14px;line-height:1.65;
+                                                  white-space:pre-wrap;overflow-wrap:anywhere;">
+                                            Please improve search.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
 
                         <p th:if="${supportEmail != null and !#strings.isEmpty(supportEmail)}"
-                           style="margin:24px 0 0 0;font-size:15px;line-height:1.7;color:#41516b;">
-                            For assistance, please reply to this email when a monitored reply-to address is configured,
-                            or contact
+                           style="margin:22px 0 0 0;font-size:14px;line-height:1.65;color:#5f6f89;">
+                            For assistance, contact
                             <a th:href="|mailto:${supportEmail}|"
                                th:text="${supportEmail}"
-                               style="color:#1459b5;">support@example.com</a>.
+                               style="color:#1459b5;text-decoration:none;">support@example.com</a>.
                         </p>
 
-                        <p style="margin:28px 0 0 0;font-size:16px;line-height:1.7;">
-                            Kind regards,<br>
+                        <p style="margin:24px 0 0 0;font-size:15px;line-height:1.65;">
+                            Respectfully,<br>
                             <strong>Lumina Learning Support Team</strong><br>
                             <span style="color:#5f6f89;">Learn with clarity. Teach with confidence.</span>
                         </p>
@@ -71,8 +125,8 @@
                 <tr>
                     <td style="padding:20px 38px 28px 38px;border-top:1px solid #edf1f7;
                                color:#748199;font-size:12px;line-height:1.6;">
-                        This is an automated confirmation sent to the email address registered with your
-                        Lumina Learning account. Please do not share passwords or other sensitive information by email.
+                        This automated email confirms receipt of the feedback submitted from your
+                        Lumina Learning account.
                     </td>
                 </tr>
             </table>

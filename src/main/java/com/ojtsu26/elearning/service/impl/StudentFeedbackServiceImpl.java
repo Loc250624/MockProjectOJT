@@ -131,6 +131,14 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
                 feedback.getId(),
                 student.getFullName(),
                 student.getEmail(),
+                feedback.getSubject(),
+                feedback.getContent(),
+                feedback.getCourseContentRating(),
+                feedback.getInstructorSupportRating(),
+                feedback.getLearningExperienceRating(),
+                feedback.getPlatformUsabilityRating(),
+                feedback.getAssessmentExperienceRating(),
+                feedback.getOverallSatisfactionRating(),
                 feedback.getCreatedAt() == null ? LocalDateTime.now() : feedback.getCreatedAt()
         ));
     }

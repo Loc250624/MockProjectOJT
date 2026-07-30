@@ -498,77 +498,24 @@
 </div>
 
 <!-- ===== FOOTER ===== -->
-<footer th:fragment="footer" class="lumina-footer public-site-footer">
-    <div class="public-footer-inner">
-        <div class="public-footer-grid">
-            <section class="public-footer-brand" aria-labelledby="public-footer-brand-title">
-                <div class="public-footer-brand-lockup">
-                    <span th:replace="~{fragments/brand :: mark}"></span>
-                    <h2 id="public-footer-brand-title">LumiNa</h2>
-                </div>
-                <p>
-                    A focused learning platform for discovering approved courses, practicing skills,
-                    tracking progress, and earning certificates.
-                </p>
-            </section>
-
-            <th:block th:with="items=${ {'Course Catalog', 'Learning Roadmaps', 'Blog', 'Certificates', 'AI Chatbot'} }">
-                <section th:replace="~{fragments/layout :: public-footer-section(
-                    'public-footer-explore', 'Explore', ${items}
-                )}"></section>
-            </th:block>
-
-            <th:block th:with="items=${ {'My Courses', 'Progress Tracking', 'Quizzes', 'Teacher Workspace', 'Feedback &amp; Support'} }">
-                <section th:replace="~{fragments/layout :: public-footer-section(
-                    'public-footer-learning', 'Learning &amp; Teaching', ${items}
-                )}"></section>
-            </th:block>
-
-            <th:block th:with="items=${ {'Certificate Verification', 'Enrollment &amp; Checkout', 'Payment History', 'Course Feedback', 'Role-Aware Access'} }">
-                <section th:replace="~{fragments/layout :: public-footer-section(
-                    'public-footer-support', 'Support &amp; Access', ${items}
-                )}"></section>
-            </th:block>
-        </div>
-
-        <div class="public-footer-meta">
-            <span th:text="${'© ' + #temporals.year(#temporals.createNow()) + ' LumiNa'}">© 2026 LumiNa</span>
-            <span>Learn. Practice. Grow.</span>
-        </div>
-    </div>
+<footer th:fragment="footer"
+        class="lumina-footer public-site-footer"
+        aria-labelledby="site-footer-title">
+    <div th:replace="~{fragments/footer :: content}"></div>
     <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
 </footer>
 
-<section th:fragment="public-footer-section(sectionId, title, items)"
-         class="public-footer-section"
-         th:attr="aria-labelledby=${sectionId}">
-    <h2 th:id="${sectionId}" th:text="${title}">Explore</h2>
-    <ul>
-        <li th:each="item : ${items}">
-            <span class="public-footer-item"
-                  aria-disabled="true"
-                  th:text="${item}">Course Catalog</span>
-        </li>
-    </ul>
-</section>
-
 <!-- ===== PORTAL FOOTER ===== -->
-<div th:fragment="portal-footer" class="portal-footer">
+<div th:fragment="portal-footer"
+     class="portal-footer public-site-footer"
+     role="contentinfo"
+     aria-labelledby="site-footer-title">
     <span hidden
           data-csrf-token
           th:data-csrf-token="${_csrf.token}"
           th:data-csrf-header="${_csrf.headerName}"
           th:data-csrf-parameter="${_csrf.parameterName}"></span>
-    <div>
-        <div class="footer-brand">LumiNa</div>
-        <div class="footer-copy">© 2026 LumiNa Academy</div>
-    </div>
-    <div class="footer-links">
-        <a href="#">Terms of Service</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Institutional Access</a>
-        <a href="#">Support</a>
-    </div>
+    <div th:replace="~{fragments/footer :: content}"></div>
     <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
     <script th:src="@{/js/csrf-fetch.js}"></script>
     <script th:src="@{/js/auth/auth.js}"></script>
