@@ -7,6 +7,7 @@ import com.ojtsu26.elearning.dto.request.AiTutorChatRequestDTO;
 import com.ojtsu26.elearning.dto.response.AiTutorChatResponseDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.exception.ErrorCode;
+import com.ojtsu26.elearning.model.entity.AiChatConversation;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.security.CustomUserDetails;
@@ -47,6 +48,8 @@ public class AiTutorService {
     private final AiTutorProvider provider;
     private final AiTutorRateLimiter rateLimiter;
     private final AiTutorProperties properties;
+    private final AiChatHistoryService historyService;
+    private final AiChatSuggestionService suggestionService;
 
     public AiTutorChatResponseDTO chat(CustomUserDetails principal, AiTutorChatRequestDTO request) {
         User user = principal == null ? null : principal.getUser();
@@ -56,7 +59,7 @@ public class AiTutorService {
         if (request == null || request.getLessonId() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Lesson ID is required.");
         }
-        return chatInternal(principal, request, "user:" + user.getId(), true);
+        return chatInternal(principal, request, "user:" + user.getId(), true, null, null);
     }
 
     public AiTutorChatResponseDTO chatGlobal(CustomUserDetails principal,
@@ -64,13 +67,64 @@ public class AiTutorService {
                                              String anonymousSessionKey) {
         User user = principal == null ? null : principal.getUser();
         String clientKey = user == null ? "session:" + safeKey(anonymousSessionKey) : "user:" + user.getId();
-        return chatInternal(principal, request, clientKey, false);
+        if (user == null) {
+            AiTutorChatResponseDTO response = chatInternal(
+                    principal,
+                    request,
+                    clientKey,
+                    false,
+                    null,
+                    null);
+            List<String> exclusions = sanitizeHistory(request == null ? null : request.getHistory()).stream()
+                    .filter(message -> "user".equals(message.getRole()))
+                    .map(AiTutorChatMessageDTO::getContent)
+                    .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+            exclusions.add(normalizeMessage(request == null ? null : request.getMessage()));
+            response.setSuggestedQuestions(suggestionService.selectUniqueQuestions(
+                    response.getSuggestedQuestions(),
+                    exclusions,
+                    AiChatSuggestionService.MAX_RELATED_QUESTIONS));
+            return response;
+        }
+
+        String message = normalizeMessage(request == null ? null : request.getMessage());
+        validateMessage(message);
+        AiChatConversation conversation = historyService.resolveOwnedConversation(
+                user.getId(),
+                request == null ? null : request.getConversationId());
+        List<AiTutorChatMessageDTO> serverHistory = historyService.loadRecentContext(conversation, user.getId());
+        AiTutorChatResponseDTO response = chatInternal(
+                principal,
+                request,
+                clientKey,
+                false,
+                serverHistory,
+                conversation == null ? null : conversation.getId());
+
+        List<String> exclusions = new ArrayList<>(
+                historyService.loadQuestionAndSuggestionHistory(conversation, user.getId()));
+        exclusions.add(message);
+        List<String> relatedQuestions = suggestionService.selectUniqueQuestions(
+                response.getSuggestedQuestions(),
+                exclusions,
+                AiChatSuggestionService.MAX_RELATED_QUESTIONS);
+        AiChatConversation persistedConversation = historyService.appendTurn(
+                user,
+                conversation,
+                message,
+                response,
+                relatedQuestions);
+        response.setConversationId(persistedConversation.getId());
+        response.setSuggestedQuestions(relatedQuestions);
+        return response;
     }
 
     private AiTutorChatResponseDTO chatInternal(CustomUserDetails principal,
                                                 AiTutorChatRequestDTO request,
                                                 String clientKey,
-                                                boolean requireLessonContext) {
+                                                boolean requireLessonContext,
+                                                List<AiTutorChatMessageDTO> authoritativeHistory,
+                                                String authoritativeConversationId) {
         User user = principal == null ? null : principal.getUser();
         String message = normalizeMessage(request == null ? null : request.getMessage());
         String action = normalizeAction(request == null ? null : request.getAction());
@@ -81,10 +135,16 @@ public class AiTutorService {
         AiChatbotPageContextDTO pageContext = sanitizePageContext(request == null ? null : request.getPageContext());
         AiTutorTopicGuard.GuardResult guard = topicGuard.evaluate(message, context);
         if (!guard.allowed()) {
-            return refusal(guard.reasonCode(), conversationId(request), context, pageContext);
+            return refusal(
+                    guard.reasonCode(),
+                    authoritativeConversationId == null ? conversationId(request) : authoritativeConversationId,
+                    context,
+                    pageContext);
         }
 
-        List<AiTutorChatMessageDTO> history = sanitizeHistory(request.getHistory());
+        List<AiTutorChatMessageDTO> history = authoritativeHistory == null
+                ? sanitizeHistory(request.getHistory())
+                : sanitizeHistory(authoritativeHistory);
         String verifiedRole = user == null || user.getRole() == null ? "ANONYMOUS" : user.getRole().name();
         AiTutorPrompt prompt = promptFactory.create(
                 context,
@@ -100,7 +160,11 @@ public class AiTutorService {
         }
         String answer = providerResponse.answer() == null ? "" : providerResponse.answer().trim();
         if (AiTutorPromptFactory.OUT_OF_SCOPE_SENTINEL.equals(answer)) {
-            return refusal("OUT_OF_SCOPE", conversationId(request), context, pageContext);
+            return refusal(
+                    "OUT_OF_SCOPE",
+                    authoritativeConversationId == null ? conversationId(request) : authoritativeConversationId,
+                    context,
+                    pageContext);
         }
         if (answer.isBlank()) {
             throw new AiTutorUnavailableException("AI Chatbot returned an empty response.");
@@ -110,10 +174,15 @@ public class AiTutorService {
                 user != null, verifiedRole, context == null ? "SITE" : "LESSON",
                 providerResponse.requestId(), message.length(), answer.length());
         return AiTutorChatResponseDTO.builder()
-                .conversationId(conversationId(request))
+                .conversationId(authoritativeConversationId == null
+                        ? conversationId(request)
+                        : authoritativeConversationId)
                 .answer(answer)
                 .refused(false)
-                .suggestedQuestions(suggestions())
+                .suggestedQuestions(suggestionService.selectUniqueQuestions(
+                        providerResponse.suggestedQuestions(),
+                        AiChatSuggestionService.INITIAL_QUESTIONS,
+                        AiChatSuggestionService.MAX_RELATED_QUESTIONS))
                 .requestId(providerResponse.requestId())
                 .scope(context == null ? "SITE" : "LESSON")
                 .usedPageContext(pageContext != null)
@@ -182,19 +251,10 @@ public class AiTutorService {
                 .answer(FIXED_REFUSAL)
                 .refused(true)
                 .reasonCode(reasonCode == null ? "OUT_OF_SCOPE" : reasonCode)
-                .suggestedQuestions(suggestions())
+                .suggestedQuestions(List.of())
                 .scope(context == null ? "SITE" : "LESSON")
                 .usedPageContext(pageContext != null)
                 .build();
-    }
-
-    private List<String> suggestions() {
-        return List.of(
-                "Summarize",
-                "Explain simply",
-                "Give an example",
-                "Quiz me"
-        );
     }
 
     private String conversationId(AiTutorChatRequestDTO request) {
