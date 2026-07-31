@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+    This fragment emits three sibling grid items so the existing footer grid,
+    spacing and responsive behavior remain unchanged.
+-->
+<th:block th:fragment="footer-navigation">
+    <section class="public-footer-section" aria-labelledby="site-footer-about">
+        <h3 id="site-footer-about">About Us</h3>
+        <ul>
+            <li><a class="public-footer-link" th:href="@{/about/introduction}" href="/about/introduction">Introduction</a></li>
+            <li><a class="public-footer-link" th:href="@{/contact}" href="/contact">Contact</a></li>
+            <li><a class="public-footer-link" th:href="@{/legal/terms-of-use}" href="/legal/terms-of-use">Terms of Use</a></li>
+            <li><a class="public-footer-link" th:href="@{/legal/privacy-policy}" href="/legal/privacy-policy">Privacy Policy</a></li>
+        </ul>
+    </section>
+
+    <section class="public-footer-section" aria-labelledby="site-footer-support">
+        <h3 id="site-footer-support">Support</h3>
+        <ul>
+            <li><a class="public-footer-link" th:href="@{/support/help-center}" href="/support/help-center">Help Center</a></li>
+            <li><a class="public-footer-link" th:href="@{/support/learning-guide}" href="/support/learning-guide">Learning Guide</a></li>
+            <li><a class="public-footer-link" th:href="@{/support/faq}" href="/support/faq">Frequently Asked Questions</a></li>
+            <li><a class="public-footer-link" th:href="@{/support/payment-policy}" href="/support/payment-policy">Payment Policy</a></li>
+        </ul>
+    </section>
+
+    <nav class="public-footer-section" aria-labelledby="site-footer-resources">
+        <h3 id="site-footer-resources">Resources</h3>
+        <ul>
+            <li><a class="public-footer-link" th:href="@{/courses}" href="/courses">Courses</a></li>
+            <li><a class="public-footer-link" th:href="@{/blogs}" href="/blogs">Blog</a></li>
+            <li><a class="public-footer-link" th:href="@{/certificates}" href="/certificates">Certificates</a></li>
+            <li><a class="public-footer-link" th:href="@{/ai-chatbot}" href="/ai-chatbot">AI Chatbot</a></li>
+        </ul>
+    </nav>
+</th:block>
+
+</html>

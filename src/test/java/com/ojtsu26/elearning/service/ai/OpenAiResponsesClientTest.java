@@ -8,12 +8,48 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenAiResponsesClientTest {
+
+    @Test
+    void parsesAnswerAndModelGeneratedQuestionsFromStructuredOutput() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/responses", exchange -> {
+            byte[] body = """
+                    {
+                      "id":"resp_structured",
+                      "output_text":"{\\"answer\\":\\"Open My Courses from the dashboard.\\",\\"suggestedQuestions\\":[\\"How can I resume my latest lesson?\\",\\"Where is my course progress shown?\\",\\"Can I filter completed courses?\\",\\"What happens after I finish a course?\\"]}"
+                    }
+                    """.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            AiTutorProperties properties = new AiTutorProperties();
+            properties.setApiKey("test-key");
+            properties.setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            OpenAiResponsesClient client = new OpenAiResponsesClient(properties, new ObjectMapper());
+
+            AiTutorProviderResponse response = client.generate(new AiTutorPrompt("instructions", "input", 300));
+
+            assertEquals("Open My Courses from the dashboard.", response.answer());
+            assertEquals("resp_structured", response.requestId());
+            assertEquals(List.of(
+                    "How can I resume my latest lesson?",
+                    "Where is my course progress shown?",
+                    "Can I filter completed courses?",
+                    "What happens after I finish a course?"), response.suggestedQuestions());
+        } finally {
+            server.stop(0);
+        }
+    }
 
     @Test
     void insufficientQuotaMapsToBillingMessageWithoutRetry() throws Exception {

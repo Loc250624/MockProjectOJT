@@ -12,6 +12,9 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -19,6 +22,8 @@ public class FeedbackThankYouEmailService {
 
     public static final String CID = "luminaFeedbackBanner";
     static final String SUBJECT = "Thank you for sharing your feedback | Lumina Learning";
+    private static final DateTimeFormatter SUBMITTED_AT_FORMAT =
+            DateTimeFormatter.ofPattern("dd MMM uuuu, HH:mm", Locale.ENGLISH);
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -46,9 +51,13 @@ public class FeedbackThankYouEmailService {
             context.setVariable("studentName", name);
             context.setVariable("supportEmail", supportEmail);
             context.setVariable("bannerCid", CID);
+            context.setVariable("feedbackSubject", defaultText(event.subject(), "Feedback"));
+            context.setVariable("feedbackContent", defaultText(event.content(), "No message provided."));
+            context.setVariable("submittedAt", formatSubmittedAt(event.submittedAt()));
+            context.setVariable("ratings", ratings(event));
 
             String html = templateEngine.process("mail/feedback-thank-you", context);
-            String plain = plainText(name, supportEmail);
+            String plain = plainText(event, name, supportEmail);
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
@@ -97,31 +106,69 @@ public class FeedbackThankYouEmailService {
         return StringUtils.hasText(value) ? value.trim() : fallback;
     }
 
-    private static String plainText(String name, String supportEmail) {
+    private static List<FeedbackRating> ratings(FeedbackSubmittedEvent event) {
+        return List.of(
+                rating("Course Content", event.courseContentRating(), false),
+                rating("Instructor Support", event.instructorSupportRating(), false),
+                rating("Learning Experience", event.learningExperienceRating(), false),
+                rating("Platform Usability", event.platformUsabilityRating(), false),
+                rating("Assessment Experience", event.assessmentExperienceRating(), false),
+                rating("Overall Satisfaction", event.overallSatisfactionRating(), true)
+        );
+    }
+
+    private static FeedbackRating rating(String label, Integer value, boolean overall) {
+        int score = value == null ? 0 : Math.max(0, Math.min(5, value));
+        return new FeedbackRating(label, score, "★".repeat(score) + "☆".repeat(5 - score), overall);
+    }
+
+    private static String formatSubmittedAt(LocalDateTime submittedAt) {
+        LocalDateTime timestamp = submittedAt == null ? LocalDateTime.now() : submittedAt;
+        return timestamp.format(SUBMITTED_AT_FORMAT);
+    }
+
+    private static String plainText(FeedbackSubmittedEvent event, String name, String supportEmail) {
         String help = StringUtils.hasText(supportEmail)
-                ? "For assistance, please reply to this email when a monitored reply-to address is configured, "
-                + "or contact " + supportEmail + "."
+                ? "For assistance, contact " + supportEmail + "."
                 : "For assistance, please use the official Lumina Learning support channel.";
+        String ratingLines = ratings(event).stream()
+                .map(rating -> rating.label() + ": " + rating.score() + "/5")
+                .collect(java.util.stream.Collectors.joining("\n"));
 
         return """
                 FEEDBACK RECEIVED
 
-                Thank you for helping us improve.
-
                 Dear %s,
 
-                Thank you for taking the time to share your feedback with Lumina Learning. We have successfully received your submission and forwarded it to our administration team for review.
+                Thank you for sharing your experience with Lumina Learning. Your feedback has been received and forwarded to our administration team for review.
 
-                Your comments help us improve the learning experience for students, teachers, and administrators across the platform. While this automated message confirms receipt, our team may contact you through your registered email address if additional information is required.
+                YOUR FEEDBACK SUMMARY
+
+                Subject: %s
+                Submitted: %s
+
+                Ratings
+                %s
+
+                Message
+                %s
 
                 %s
 
-                Kind regards,
-
+                Respectfully,
                 Lumina Learning Support Team
                 Learn with clarity. Teach with confidence.
 
-                This is an automated confirmation sent to the email address registered with your Lumina Learning account. Please do not share passwords or other sensitive information by email.
-                """.formatted(name, help);
+                This automated email confirms receipt of the feedback submitted from your Lumina Learning account.
+                """.formatted(
+                name,
+                defaultText(event.subject(), "Feedback"),
+                formatSubmittedAt(event.submittedAt()),
+                ratingLines,
+                defaultText(event.content(), "No message provided."),
+                help);
+    }
+
+    private record FeedbackRating(String label, int score, String stars, boolean overall) {
     }
 }

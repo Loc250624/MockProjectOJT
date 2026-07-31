@@ -7,6 +7,7 @@ import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.AnswerPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.OptionPayload;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.OptionView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionPayload;
+import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionPageView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuestionView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizAttemptView;
 import com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizDraftPayload;
@@ -46,6 +47,7 @@ import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.quiz.QuizAttemptApplicationService;
 import com.ojtsu26.elearning.service.quiz.QuizQuestionTextNormalizer;
+import com.ojtsu26.elearning.service.quiz.QuizRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -57,17 +59,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +73,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class AssessmentServiceImpl implements AssessmentService {
-    private static final int QUIZ_QUESTION_LIMIT = 10;
+    private static final int QUIZ_QUESTION_LIMIT = QuizRules.QUESTIONS_PER_ATTEMPT;
 
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
@@ -96,9 +89,6 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Autowired(required = false)
     private QuizAttemptQuestionRepository attemptQuestionRepository;
-
-    @Autowired(required = false)
-    private com.ojtsu26.elearning.service.quiz.QuizQuestionAssignmentService quizQuestionAssignmentService;
 
     @Autowired(required = false)
     private LessonProgressRepository lessonProgressRepository;
@@ -133,7 +123,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setLessonId(lessonId);
         view.setTitle(quiz.getTitle());
         view.setDescription(quiz.getDescription());
-        view.setDurationMinutes(quiz.getDurationMinutes());
+        view.setDurationMinutes(QuizRules.DURATION_MINUTES);
         view.setPassingScore(quiz.getPassingScore());
         if (attempt != null) {
             view.setAttemptId(attempt.getId());
@@ -150,14 +140,8 @@ public class AssessmentServiceImpl implements AssessmentService {
                 view.setScore(attempt.getScore());
             }
         }
-        if (view.getQuestionCount() == null && quizQuestionAssignmentService != null) {
-            int expectedCount = quizQuestionAssignmentService.readiness(quiz.getId())
-                    .buckets().stream()
-                    .mapToInt(bucket -> Math.max(0, bucket.required()))
-                    .sum();
-            if (expectedCount > 0) {
-                view.setQuestionCount(expectedCount);
-            }
+        if (view.getQuestionCount() == null) {
+            view.setQuestionCount(QuizRules.QUESTIONS_PER_ATTEMPT);
         }
         return view;
     }
@@ -266,8 +250,30 @@ public class AssessmentServiceImpl implements AssessmentService {
         User teacher = currentUserService.getCurrentUser();
         requireTeacherCourse(courseId, teacher.getId());
         return quizRepository.findByCourseId(courseId).stream()
-                .map(quiz -> toQuizView(quiz, true))
+                .filter(quiz -> quiz.getStatus() != QuizStatus.ARCHIVED)
+                .map(this::toTeacherQuizSummary)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionPageView getTeacherQuestions(Integer quizId, Integer page) {
+        User teacher = currentUserService.getCurrentUser();
+        requireTeacherQuiz(quizId, teacher.getId());
+        int requestedPage = Math.max(0, Objects.requireNonNullElse(page, 0));
+        Page<Question> questions = questionRepository
+                .findByQuizIdAndActiveTrueOrderByDisplayOrderAscIdAsc(
+                        quizId,
+                        PageRequest.of(requestedPage, QuizRules.TEACHER_PAGE_SIZE));
+        QuestionPageView view = new QuestionPageView();
+        view.setItems(questions.getContent().stream()
+                .map(question -> toQuestionView(question, true))
+                .toList());
+        view.setPage(questions.getNumber());
+        view.setSize(QuizRules.TEACHER_PAGE_SIZE);
+        view.setTotalItems(questions.getTotalElements());
+        view.setTotalPages(questions.getTotalPages());
+        return view;
     }
 
     @Override
@@ -286,15 +292,15 @@ public class AssessmentServiceImpl implements AssessmentService {
         }
         Quiz quiz = Quiz.builder()
                 .title(payload.getTitle().trim())
-                .description(trim(payload.getDescription()))
-                .durationMinutes(payload.getDurationMinutes())
-                .maxAttempts(payload.getMaxAttempts())
+                .description(null)
+                .durationMinutes(QuizRules.DURATION_MINUTES)
+                .maxAttempts(null)
                 .passingScore(payload.getPassingScore())
                 .status(payload.getStatus() == null ? QuizStatus.DRAFT : payload.getStatus())
                 .lesson(lesson)
                 .createdBy(teacher)
                 .build();
-        return toQuizView(quizRepository.save(quiz), true);
+        return toTeacherQuizSummary(quizRepository.save(quiz));
     }
 
     @Override
@@ -317,18 +323,10 @@ public class AssessmentServiceImpl implements AssessmentService {
             quiz.setLesson(lesson);
         }
         quiz.setTitle(payload.getTitle().trim());
-        quiz.setDescription(trim(payload.getDescription()));
-        quiz.setDurationMinutes(payload.getDurationMinutes());
-        quiz.setMaxAttempts(payload.getMaxAttempts());
+        quiz.setDurationMinutes(QuizRules.DURATION_MINUTES);
         quiz.setPassingScore(payload.getPassingScore());
         quiz.setStatus(payload.getStatus() == null ? QuizStatus.DRAFT : payload.getStatus());
-        return toQuizView(quiz, true);
-    }
-
-    @Override
-    public void archiveTeacherQuiz(Integer quizId) {
-        User teacher = currentUserService.getCurrentUser();
-        requireTeacherQuiz(quizId, teacher.getId()).setStatus(QuizStatus.ARCHIVED);
+        return toTeacherQuizSummary(quiz);
     }
 
     @Override
@@ -336,7 +334,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         User teacher = currentUserService.getCurrentUser();
         if (quizAttemptRepository.countByQuizId(quizId) > 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST,
-                    "Quiz has attempt history; archive it instead of deleting it");
+                    "Quiz has student attempt history and cannot be deleted");
         }
         requireTeacherQuiz(quizId, teacher.getId());
         quizRepository.deleteById(quizId);
@@ -347,7 +345,16 @@ public class AssessmentServiceImpl implements AssessmentService {
     public QuestionView createTeacherQuestion(Integer quizId, QuestionPayload payload) {
         User teacher = currentUserService.getCurrentUser();
         Quiz quiz = requireTeacherQuiz(quizId, teacher.getId());
+        long activeQuestionCount = questionRepository.countByQuizIdAndActiveTrue(quizId);
+        if (activeQuestionCount >= QuizRules.QUESTION_BANK_LIMIT) {
+            throw new BusinessException(
+                    ErrorCode.QUESTION_BANK_LIMIT_REACHED,
+                    "Question bank limit reached: a quiz can contain at most 100 active questions.");
+        }
         validateQuestionPayload(payload);
+        if (payload.getDisplayOrder() == null) {
+            payload.setDisplayOrder(Math.toIntExact(activeQuestionCount + 1));
+        }
         Question question = Question.builder().quiz(quiz).build();
         applyQuestion(question, payload);
         return toQuestionView(questionRepository.save(question), true);
@@ -363,6 +370,13 @@ public class AssessmentServiceImpl implements AssessmentService {
         }
         requireTeacherQuiz(question.getQuiz().getId(), teacher.getId());
         validateQuestionPayload(payload);
+        if (Boolean.FALSE.equals(question.getActive())
+                && questionRepository.countByQuizIdAndActiveTrue(question.getQuiz().getId())
+                >= QuizRules.QUESTION_BANK_LIMIT) {
+            throw new BusinessException(
+                    ErrorCode.QUESTION_BANK_LIMIT_REACHED,
+                    "Question bank limit reached: a quiz can contain at most 100 active questions.");
+        }
         boolean hasSnapshot = attemptQuestionRepository != null
                 && attemptQuestionRepository.countByQuestionId(questionId) > 0;
         if (quizAnswerRepository.countByQuestionId(questionId) > 0
@@ -393,29 +407,6 @@ public class AssessmentServiceImpl implements AssessmentService {
             return;
         }
         questionRepository.delete(question);
-    }
-
-    @Override
-    public List<QuestionView> reorderTeacherQuestions(Integer quizId, List<Integer> questionIdsInOrder) {
-        User teacher = currentUserService.getCurrentUser();
-        requireTeacherQuiz(quizId, teacher.getId());
-        List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quizId);
-        Map<Integer, Question> byId = questions.stream()
-                .collect(Collectors.toMap(Question::getId, Function.identity()));
-        List<Integer> requestedIds = Optional.ofNullable(questionIdsInOrder).orElse(List.of());
-        if (requestedIds.size() != byId.size() || !byId.keySet().equals(new HashSet<>(requestedIds))) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST,
-                    "Question order must include every question exactly once");
-        }
-        for (int index = 0; index < requestedIds.size(); index++) {
-            byId.get(requestedIds.get(index)).setDisplayOrder(index + 1);
-        }
-        return questions.stream()
-                .sorted(Comparator.comparing(
-                                (Question question) -> Optional.ofNullable(question.getDisplayOrder()).orElse(0))
-                        .thenComparing(Question::getId))
-                .map(question -> toQuestionView(question, true))
-                .toList();
     }
 
     private void persistAnswers(QuizAttempt attempt, QuizDraftPayload payload) {
@@ -464,9 +455,7 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     private void applyQuestion(Question question, QuestionPayload payload) {
         question.setQuestionText(payload.getContent().trim());
-        question.setQuestionType(payload.getQuestionType() == null
-                ? QuestionType.SINGLE_CHOICE
-                : payload.getQuestionType());
+        question.setQuestionType(QuestionType.SINGLE_CHOICE);
         question.setPoints(payload.getPoints() == null ? BigDecimal.ONE : payload.getPoints());
         question.setDisplayOrder(payload.getDisplayOrder());
         question.setOptionsJson(writeJson(payload.getOptions()));
@@ -474,11 +463,9 @@ public class AssessmentServiceImpl implements AssessmentService {
         question.setTopicCode(com.ojtsu26.elearning.service.quiz.StratifiedQuestionSampler.normalizeTopic(
                 payload.getTopicCode()));
         question.setDifficulty(Objects.requireNonNullElse(payload.getDifficulty(), QuestionDifficulty.MEDIUM));
-        question.setReviewStatus(Objects.requireNonNullElse(
-                payload.getReviewStatus(), QuestionReviewStatus.APPROVED));
-        question.setActive(!Boolean.FALSE.equals(payload.getActive()));
-        question.setGenerationSource(Objects.requireNonNullElse(
-                payload.getGenerationSource(), QuestionGenerationSource.MANUAL));
+        question.setReviewStatus(QuestionReviewStatus.APPROVED);
+        question.setActive(true);
+        question.setGenerationSource(QuestionGenerationSource.MANUAL);
         if (question.getVersion() == null) {
             question.setVersion(1);
         }
@@ -488,12 +475,6 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (payload == null || payload.getTitle() == null || payload.getTitle().trim().isBlank()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Quiz title is required");
         }
-        if (payload.getDurationMinutes() != null && payload.getDurationMinutes() < 1) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Quiz duration must be at least 1 minute");
-        }
-        if (payload.getMaxAttempts() == null || payload.getMaxAttempts() < 1) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Quiz max attempts must be at least 1");
-        }
         if (payload.getPassingScore() != null
                 && (payload.getPassingScore().compareTo(BigDecimal.ZERO) < 0
                 || payload.getPassingScore().compareTo(new BigDecimal("100")) > 0)) {
@@ -502,23 +483,12 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     private void validateQuizCanPublish(Quiz quiz) {
-        if (quizQuestionAssignmentService != null) {
-            var readiness = quizQuestionAssignmentService.readiness(quiz.getId());
-            if (!readiness.ready()) {
-                String shortages = readiness.buckets().stream()
-                        .filter(bucket -> !bucket.ready())
-                        .map(bucket -> bucket.topicCode() + "/" + bucket.difficulty()
-                                + " required " + bucket.required() + ", available " + bucket.available())
-                        .collect(Collectors.joining("; "));
-                throw new BusinessException(
-                        ErrorCode.BAD_REQUEST,
-                        "Quiz question bank is not ready: " + shortages);
-            }
-        }
-        List<Question> questions = questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(quiz.getId());
-        if (questions.isEmpty()) {
+        List<Question> questions = questionRepository
+                .findByQuizIdAndReviewStatusAndActiveTrueOrderByIdAsc(
+                        quiz.getId(), QuestionReviewStatus.APPROVED);
+        if (questions.size() < QuizRules.QUESTIONS_PER_ATTEMPT) {
             throw new BusinessException(ErrorCode.BAD_REQUEST,
-                    "Quiz must have at least one question before publishing");
+                    "Quiz must have at least 10 valid active questions before publishing");
         }
         BigDecimal total = questions.stream()
                 .map(this::points)
@@ -533,9 +503,6 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (payload == null || payload.getContent() == null || payload.getContent().trim().isBlank()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Question content is required");
         }
-        QuestionType type = payload.getQuestionType() == null
-                ? QuestionType.SINGLE_CHOICE
-                : payload.getQuestionType();
         if (payload.getPoints() != null && payload.getPoints().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Question points must be greater than zero");
         }
@@ -554,12 +521,9 @@ public class AssessmentServiceImpl implements AssessmentService {
         long correctCount = options.stream()
                 .filter(option -> Boolean.TRUE.equals(option.getCorrect()))
                 .count();
-        if (correctCount == 0) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "At least one correct answer is required");
-        }
-        if (type == QuestionType.SINGLE_CHOICE && correctCount != 1) {
+        if (correctCount != 1) {
             throw new BusinessException(ErrorCode.BAD_REQUEST,
-                    "Single choice questions must have exactly one correct answer");
+                    "A quiz question must have exactly one correct answer");
         }
     }
 
@@ -703,7 +667,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setId(quiz.getId());
         view.setTitle(quiz.getTitle());
         view.setDescription(quiz.getDescription());
-        view.setDurationMinutes(quiz.getDurationMinutes());
+        view.setDurationMinutes(QuizRules.DURATION_MINUTES);
         view.setMaxAttempts(quiz.getMaxAttempts());
         view.setStatus(quiz.getStatus());
         view.setPassingScore(quiz.getPassingScore());
@@ -722,6 +686,16 @@ public class AssessmentServiceImpl implements AssessmentService {
         view.setTotalPoints(questions.stream()
                 .map(question -> question.getPoints() == null ? BigDecimal.ZERO : question.getPoints())
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
+        return view;
+    }
+
+    private QuizView toTeacherQuizSummary(Quiz quiz) {
+        QuizView view = toQuizView(quiz, false, List.of());
+        long activeQuestionCount = questionRepository.countByQuizIdAndActiveTrue(quiz.getId());
+        view.setDescription(null);
+        view.setMaxAttempts(null);
+        view.setActiveQuestionCount(activeQuestionCount);
+        view.setQuestionLimit(QuizRules.QUESTION_BANK_LIMIT);
         return view;
     }
 
@@ -794,7 +768,7 @@ public class AssessmentServiceImpl implements AssessmentService {
             QuizAttemptApplicationService.AttemptSession session) {
         QuizAttempt attempt = session.attempt();
         boolean includeCorrect = attempt.getStatus() != QuizAttemptStatus.DRAFT;
-        QuizView quizView = toQuizView(attempt.getQuiz(), false);
+        QuizView quizView = toQuizView(attempt.getQuiz(), false, List.of());
         List<QuestionView> questions = session.questions().stream()
                 .map(assignment -> toSnapshotQuestionView(
                         assignment,
@@ -820,13 +794,11 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (attempt == null
                 || attempt.getStatus() != QuizAttemptStatus.DRAFT
                 || attempt.getStartedAt() == null
-                || attempt.getQuiz() == null
-                || attempt.getQuiz().getDurationMinutes() == null
-                || attempt.getQuiz().getDurationMinutes() <= 0) {
+                || attempt.getQuiz() == null) {
             return null;
         }
         LocalDateTime deadline = attempt.getStartedAt()
-                .plusMinutes(attempt.getQuiz().getDurationMinutes());
+                .plusMinutes(QuizRules.DURATION_MINUTES);
         long remainingMillis = java.time.Duration.between(
                 LocalDateTime.now(),
                 deadline).toMillis();

@@ -68,6 +68,25 @@ class AiTutorServiceTest {
     }
 
     @Test
+    void successfulResponseUsesModelGeneratedFollowUpQuestions() {
+        when(studentLearningService.getAuthorizedAiTutorLessonContext(101)).thenReturn(lessonContext);
+        AiTutorService service = service(prompt -> new AiTutorProviderResponse(
+                "Encapsulation protects object state.",
+                "resp_follow_up",
+                List.of(
+                        "Why are private fields useful in Java?",
+                        "How do getters preserve encapsulation?",
+                        "When should a setter validate input?",
+                        "Can you show an immutable class example?")));
+
+        AiTutorChatResponseDTO response = service.chat(principal, request("Explain encapsulation"));
+
+        assertEquals(4, response.getSuggestedQuestions().size());
+        assertEquals("Why are private fields useful in Java?", response.getSuggestedQuestions().get(0));
+        assertFalse(response.getSuggestedQuestions().contains("What should I do next with encapsulation?"));
+    }
+
+    @Test
     void studentCannotRequestUnauthorizedLesson() {
         when(studentLearningService.getAuthorizedAiTutorLessonContext(999))
                 .thenThrow(new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course."));
@@ -211,7 +230,9 @@ class AiTutorServiceTest {
                 new AiTutorPromptFactory(properties),
                 provider,
                 rateLimiter,
-                properties
+                properties,
+                mock(AiChatHistoryService.class),
+                new AiChatSuggestionService()
         );
     }
 

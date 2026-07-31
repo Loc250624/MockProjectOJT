@@ -217,6 +217,7 @@ class CertificateServiceTest {
         byte[] pdf = service.generateCertificatePdf(30, 1);
 
         try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertTrue(document.getPage(0).getResources().getXObjectNames().iterator().hasNext());
             String text = new PDFTextStripper().getText(document);
             assertTrue(text.contains("Nguy\u1ec5n M\u1ea1nh C\u01b0\u1eddng"));
             assertTrue(text.contains("L\u1eadp tr\u00ecnh h\u01b0\u1edbng \u0111\u1ed1i t\u01b0\u1ee3ng"));

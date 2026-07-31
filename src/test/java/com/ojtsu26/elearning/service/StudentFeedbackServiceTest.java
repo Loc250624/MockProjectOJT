@@ -95,6 +95,14 @@ class StudentFeedbackServiceTest {
         assertEquals(10, event.feedbackId());
         assertEquals("Student One", event.studentDisplayName());
         assertEquals("student@example.com", event.studentEmail());
+        assertEquals("Platform idea", event.subject());
+        assertEquals("Please improve search.", event.content());
+        assertEquals(5, event.courseContentRating());
+        assertEquals(4, event.instructorSupportRating());
+        assertEquals(3, event.learningExperienceRating());
+        assertEquals(2, event.platformUsabilityRating());
+        assertEquals(1, event.assessmentExperienceRating());
+        assertEquals(5, event.overallSatisfactionRating());
         assertEquals(LocalDateTime.of(2026, 7, 22, 9, 30), event.submittedAt());
     }
 

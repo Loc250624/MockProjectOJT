@@ -4,7 +4,8 @@
 <div th:fragment="widget"
      class="ai-chatbot"
      data-ai-chatbot-root
-     th:data-chat-scope="${#authentication?.name ?: 'anonymous'}">
+     th:data-chat-scope="${#authentication?.name ?: 'anonymous'}"
+     th:data-chat-authenticated="${#authentication != null and #authentication.authenticated and #authentication.name != 'anonymousUser'}">
     <link rel="stylesheet" th:href="@{/css/ai-chatbot.css}">
 
     <button type="button"
@@ -33,22 +34,34 @@
             </button>
         </header>
 
-        <div class="ai-chatbot-messages"
-             data-ai-chatbot-messages
-             role="log"
-             aria-live="polite"
-             aria-relevant="additions">
-            <div class="ai-chatbot-message assistant" data-ai-chatbot-greeting>
-                <strong>AI Chatbot</strong>
-                <div class="ai-chatbot-bubble">Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?</div>
+        <div class="ai-chatbot-content" data-ai-chatbot-content>
+            <div class="ai-chatbot-messages"
+                 data-ai-chatbot-messages
+                 role="log"
+                 aria-live="polite"
+                 aria-relevant="additions">
+                <div class="ai-chatbot-message assistant" data-ai-chatbot-greeting>
+                    <strong>AI Chatbot</strong>
+                    <div class="ai-chatbot-bubble">Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?</div>
+                </div>
             </div>
-            <div class="ai-chatbot-quick-actions"
-                 data-ai-chatbot-quick-actions
-                 aria-label="Suggested questions">
-                <button type="button" data-ai-chatbot-action="SUMMARY">Summarize</button>
-                <button type="button" data-ai-chatbot-action="EXPLAIN_SIMPLY">Explain simply</button>
-                <button type="button" data-ai-chatbot-action="EXAMPLE">Give an example</button>
-                <button type="button" data-ai-chatbot-action="QUIZ_ME">Quiz me</button>
+
+            <div class="ai-chatbot-suggestion-groups">
+                <div class="ai-chatbot-quick-actions"
+                     data-ai-chatbot-quick-actions
+                     aria-label="Initial quick questions">
+                    <button type="button" data-ai-chatbot-action="SUMMARY">Summarize</button>
+                    <button type="button" data-ai-chatbot-action="EXPLAIN_SIMPLY">Explain simply</button>
+                    <button type="button" data-ai-chatbot-action="EXAMPLE">Give an example</button>
+                    <button type="button" data-ai-chatbot-action="QUIZ_ME">Quiz me</button>
+                </div>
+                <div class="ai-chatbot-related-actions"
+                     data-ai-chatbot-related-actions
+                     aria-label="Related questions"
+                     hidden>
+                    <span>Ask next</span>
+                    <div class="ai-chatbot-quick-actions" data-ai-chatbot-related-buttons></div>
+                </div>
             </div>
         </div>
 

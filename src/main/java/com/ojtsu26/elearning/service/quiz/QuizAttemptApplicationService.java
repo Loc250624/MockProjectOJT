@@ -40,6 +40,7 @@ public class QuizAttemptApplicationService {
         if (quiz.getStatus() != null && quiz.getStatus() != QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "Quiz is not published");
         }
+        quiz.setDurationMinutes(QuizRules.DURATION_MINUTES);
 
         Optional<QuizAttempt> draft = attemptRepository
                 .findTopByQuizIdAndStudentIdAndStatusOrderByStartedAtDesc(
@@ -152,16 +153,11 @@ public class QuizAttemptApplicationService {
     }
 
     private boolean submissionWindowExpired(QuizAttempt attempt) {
-        Integer durationMinutes = attempt.getQuiz() == null
-                ? null
-                : attempt.getQuiz().getDurationMinutes();
-        if (attempt.getStartedAt() == null
-                || durationMinutes == null
-                || durationMinutes <= 0) {
+        if (attempt.getStartedAt() == null) {
             return false;
         }
         return !LocalDateTime.now().isBefore(
-                attempt.getStartedAt().plusMinutes(durationMinutes));
+                attempt.getStartedAt().plusMinutes(QuizRules.DURATION_MINUTES));
     }
 
     private void reconcileStoredGrade(QuizAttempt attempt,

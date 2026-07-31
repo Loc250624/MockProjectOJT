@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" th:content="${pageDescription}" content="LumiNa information page">
+    <title th:text="${pageTitle + ' | LumiNa'}">Information | LumiNa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/public/public.css}">
+    <link rel="stylesheet" th:href="@{/css/public/footer-information.css}">
+</head>
+<body class="lumina-page">
+<header th:replace="~{fragments/layout :: header('public')}"></header>
+
+<main class="footer-info-page">
+    <section class="footer-info-hero">
+        <div class="footer-info-container">
+            <nav class="footer-info-breadcrumb" aria-label="Breadcrumb">
+                <a th:href="@{/}" href="/">Home</a>
+                <span aria-hidden="true">/</span>
+                <span th:text="${pageTitle}">Information</span>
+            </nav>
+            <p class="footer-info-eyebrow" th:text="${pageEyebrow}">Resources</p>
+            <h1 th:text="${pageTitle}">Page title</h1>
+            <p class="footer-info-lead" th:text="${pageDescription}">Page description</p>
+        </div>
+    </section>
+
+    <div class="footer-info-container footer-info-layout">
+        <article class="footer-info-content">
+            <section class="footer-info-section" th:each="section : ${pageSections}">
+                <h2 th:text="${section.heading}">Section heading</h2>
+                <p th:text="${section.text}">Section text</p>
+            </section>
+        </article>
+
+        <aside class="footer-info-actions" aria-label="Related actions">
+            <h2>Continue in LumiNa</h2>
+            <a th:each="action, actionStat : ${pageActions}"
+               th:href="@{${action.href}}"
+               th:text="${action.label}"
+               th:class="${actionStat.first} ? 'btn btn-primary footer-info-action' : 'btn btn-secondary footer-info-action'">
+                Related page
+            </a>
+
+            <button th:if="${openChatbotAction}"
+                    type="button"
+                    class="btn btn-primary footer-info-action"
+                    data-open-ai-chatbot>
+                Open AI Chatbot
+            </button>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/public/footer-information.js}" defer></script>
+</body>
+</html>

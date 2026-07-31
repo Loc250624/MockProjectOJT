@@ -26,6 +26,7 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,8 +58,9 @@ public class CertificateServiceImpl implements CertificateService {
     private static final Color CERT_NAVY = new Color(23, 39, 65);
     private static final Color CERT_NAVY_SOFT = new Color(49, 68, 99);
     private static final Color CERT_GOLD = new Color(197, 138, 28);
-    private static final Color CERT_GOLD_LIGHT = new Color(251, 220, 117);
     private static final Color CERT_PAPER = new Color(251, 251, 252);
+    private static final String CERTIFICATE_SEAL_RESOURCE = "/static/images/certificate-seal.png";
+    private static final float CERTIFICATE_SEAL_SIZE = 112f;
 
     private final CertificateRepository certificateRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
@@ -125,6 +128,7 @@ public class CertificateServiceImpl implements CertificateService {
             PDFont displayBold = loadFont(document, "timesbd.ttf", Standard14Fonts.FontName.TIMES_BOLD,
                     "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
                     "/Library/Fonts/Times New Roman Bold.ttf");
+            PDImageXObject certificateSeal = loadCertificateSeal(document);
 
             try (PDPageContentStream content = new PDPageContentStream(document, page)) {
                 drawPaper(content);
@@ -161,7 +165,8 @@ public class CertificateServiceImpl implements CertificateService {
                 writeCentered(content, regular, 11.5f, courseY - 8,
                         "Completed: " + formatCompletionDate(certificate.getIssuedAt()));
 
-                drawFooter(content, regular, bold, safePdfText(certificate.getTeacherNameSnapshot()));
+                drawFooter(content, regular, bold, safePdfText(certificate.getTeacherNameSnapshot()),
+                        certificateSeal);
             }
 
             document.save(output);
@@ -299,6 +304,15 @@ public class CertificateServiceImpl implements CertificateService {
         return new PDType1Font(fallback);
     }
 
+    private PDImageXObject loadCertificateSeal(PDDocument document) throws IOException {
+        try (InputStream input = CertificateServiceImpl.class.getResourceAsStream(CERTIFICATE_SEAL_RESOURCE)) {
+            if (input == null) {
+                throw new IOException("Certificate seal resource is unavailable.");
+            }
+            return PDImageXObject.createFromByteArray(document, input.readAllBytes(), "certificate-seal");
+        }
+    }
+
     private void drawPaper(PDPageContentStream content) throws IOException {
         content.setNonStrokingColor(CERT_PAPER);
         content.addRect(0, 0, CERTIFICATE_PAGE.getWidth(), CERTIFICATE_PAGE.getHeight());
@@ -349,9 +363,11 @@ public class CertificateServiceImpl implements CertificateService {
         content.curveTo(startX, startY + vertical * control, endX + horizontal * control, endY, endX, endY);
     }
 
-    private void drawFooter(PDPageContentStream content, PDFont regular, PDFont bold, String instructorName) throws IOException {
+    private void drawFooter(PDPageContentStream content, PDFont regular, PDFont bold, String instructorName,
+                            PDImageXObject certificateSeal) throws IOException {
         drawSignature(content, regular, bold, 180, 110, instructorName, "Instructor");
-        drawSeal(content, CERTIFICATE_PAGE.getWidth() / 2, 96);
+        float sealX = (CERTIFICATE_PAGE.getWidth() - CERTIFICATE_SEAL_SIZE) / 2;
+        content.drawImage(certificateSeal, sealX, 40, CERTIFICATE_SEAL_SIZE, CERTIFICATE_SEAL_SIZE);
         drawSignature(content, regular, bold, CERTIFICATE_PAGE.getWidth() - 180, 110, "LUMINA E-LEARNING", "Learning Platform");
     }
 
@@ -360,49 +376,6 @@ public class CertificateServiceImpl implements CertificateService {
         drawLine(content, centerX - 80, lineY, centerX + 80, lineY, CERT_GOLD, 0.8f);
         writeCenteredAt(content, bold, 9.5f, centerX, lineY - 23, safePdfText(name));
         drawTrackingCenteredAt(content, regular, 8f, centerX, lineY - 40, role, 2f);
-    }
-
-    private void drawSeal(PDPageContentStream content, float centerX, float centerY) throws IOException {
-        drawRibbon(content, centerX - 16, centerY - 8, -14);
-        drawRibbon(content, centerX + 16, centerY - 8, 14);
-
-        content.setNonStrokingColor(CERT_GOLD);
-        content.setStrokingColor(new Color(140, 90, 0));
-        drawCirclePath(content, centerX, centerY + 14, 34);
-        content.fillAndStroke();
-
-        content.setNonStrokingColor(CERT_GOLD_LIGHT);
-        content.setStrokingColor(new Color(156, 101, 0));
-        drawCirclePath(content, centerX, centerY + 14, 24);
-        content.fillAndStroke();
-
-        content.setNonStrokingColor(new Color(224, 150, 12));
-        drawCirclePath(content, centerX, centerY + 14, 16);
-        content.fill();
-    }
-
-    private void drawRibbon(PDPageContentStream content, float x, float y, float slant) throws IOException {
-        content.setNonStrokingColor(new Color(246, 246, 242));
-        content.setStrokingColor(new Color(165, 106, 0));
-        content.setLineWidth(0.7f);
-        content.moveTo(x - 8, y + 12);
-        content.lineTo(x + 5, y + 12);
-        content.lineTo(x + slant, y - 44);
-        content.lineTo(x - 3, y - 30);
-        content.lineTo(x - 15, y - 44);
-        content.closePath();
-        content.fillAndStroke();
-    }
-
-    private void drawCirclePath(PDPageContentStream content, float centerX, float centerY, float radius) throws IOException {
-        float k = 0.55228475f;
-        float c = radius * k;
-        content.moveTo(centerX + radius, centerY);
-        content.curveTo(centerX + radius, centerY + c, centerX + c, centerY + radius, centerX, centerY + radius);
-        content.curveTo(centerX - c, centerY + radius, centerX - radius, centerY + c, centerX - radius, centerY);
-        content.curveTo(centerX - radius, centerY - c, centerX - c, centerY - radius, centerX, centerY - radius);
-        content.curveTo(centerX + c, centerY - radius, centerX + radius, centerY - c, centerX + radius, centerY);
-        content.closePath();
     }
 
     private void drawCenteredLine(PDPageContentStream content, float y, float width, Color color, float lineWidth) throws IOException {

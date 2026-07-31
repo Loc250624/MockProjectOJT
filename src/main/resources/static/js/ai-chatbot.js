@@ -19,30 +19,38 @@
     var toggle = root.querySelector('[data-ai-chatbot-toggle]');
     var panel = root.querySelector('[data-ai-chatbot-panel]');
     var closeButton = root.querySelector('[data-ai-chatbot-close]');
+    var content = root.querySelector('[data-ai-chatbot-content]');
     var messages = root.querySelector('[data-ai-chatbot-messages]');
     var greeting = root.querySelector('[data-ai-chatbot-greeting]');
     var quickActionsContainer = root.querySelector('[data-ai-chatbot-quick-actions]');
     var quickActions = Array.from(root.querySelectorAll('[data-ai-chatbot-action]'));
+    var relatedActionsContainer = root.querySelector('[data-ai-chatbot-related-actions]');
+    var relatedButtonsContainer = root.querySelector('[data-ai-chatbot-related-buttons]');
     var form = root.querySelector('[data-ai-chatbot-form]');
     var input = root.querySelector('[data-ai-chatbot-input]');
     var sendButton = root.querySelector('[data-ai-chatbot-send]');
     var status = root.querySelector('[data-ai-chatbot-status]');
 
-    if (!toggle || !panel || !closeButton || !messages || !greeting || !quickActionsContainer || !form || !input) {
+    if (!toggle || !panel || !closeButton || !content || !messages || !greeting || !quickActionsContainer
+        || !relatedActionsContainer || !relatedButtonsContainer || !form || !input) {
         return;
     }
 
+    var authenticated = root.dataset.chatAuthenticated === 'true';
     var storage = safeSessionStorage();
     var scope = normalizeScope(root.dataset.chatScope);
     var conversationStorageKey = 'ai-chatbot:' + scope + ':conversation-id';
-    var conversationId = readStored(conversationStorageKey) || createConversationId();
-    var quickActionsConsumed = readStored(consumedStorageKey(conversationId)) === 'true';
+    var conversationId = authenticated ? null : (readStored(conversationStorageKey) || createConversationId());
     var history = [];
+    var shownRelatedQuestions = [];
     var sending = false;
     var previouslyFocused = null;
 
-    writeStored(conversationStorageKey, conversationId);
-    renderQuickActions();
+    if (!authenticated) {
+        writeStored(conversationStorageKey, conversationId);
+    }
+    renderInitialQuestions();
+    renderRelatedQuestions([]);
 
     toggle.addEventListener('click', function () {
         setPanelOpen(panel.hidden);
@@ -54,7 +62,6 @@
             if (sending) {
                 return;
             }
-            consumeQuickActions();
             sendChat(button.textContent.trim(), button.dataset.aiChatbotAction || '');
         });
     });
@@ -96,7 +103,7 @@
             if (wasHidden) {
                 previouslyFocused = document.activeElement;
             }
-            renderQuickActions();
+            renderInitialQuestions();
             input.focus();
             scrollMessages();
         }
@@ -131,24 +138,15 @@
         }
     }
 
-    function consumeQuickActions() {
-        if (quickActionsConsumed) {
-            return;
-        }
-        quickActionsConsumed = true;
-        writeStored(consumedStorageKey(conversationId), 'true');
-        renderQuickActions();
-    }
-
-    function renderQuickActions() {
-        var noUserMessage = !history.some(function (turn) {
+    function renderInitialQuestions() {
+        quickActionsContainer.hidden = history.some(function (turn) {
             return turn.role === 'user';
         });
-        quickActionsContainer.hidden = !(
-            greeting
-            && noUserMessage
-            && !quickActionsConsumed
-        );
+    }
+
+    function beginSuggestionTransition() {
+        quickActionsContainer.hidden = true;
+        relatedActionsContainer.hidden = true;
     }
 
     function setLoading(isLoading) {
@@ -158,6 +156,9 @@
             sendButton.disabled = isLoading;
         }
         quickActions.forEach(function (button) {
+            button.disabled = isLoading;
+        });
+        Array.from(relatedButtonsContainer.querySelectorAll('button')).forEach(function (button) {
             button.disabled = isLoading;
         });
         if (isLoading) {
@@ -186,27 +187,30 @@
             return;
         }
 
-        consumeQuickActions();
         setPanelOpen(true);
         var requestHistory = history.slice(-6);
         appendMessage('user', message);
         history.push({ role: 'user', content: message });
+        beginSuggestionTransition();
         input.value = '';
         setLoading(true);
 
         var pageData = currentPageContext();
+        var requestBody = {
+            conversationId: conversationId,
+            lessonId: pageData.lessonId,
+            message: message,
+            action: action || '',
+            pageContext: pageData.pageContext
+        };
+        if (!authenticated) {
+            requestBody.recentMessages = requestHistory;
+        }
         fetch('/api/ai-chatbot/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-            body: JSON.stringify({
-                conversationId: conversationId,
-                lessonId: pageData.lessonId,
-                message: message,
-                action: action || '',
-                recentMessages: requestHistory,
-                pageContext: pageData.pageContext
-            })
+            body: JSON.stringify(requestBody)
         }).then(function (response) {
             return response.json().catch(function () {
                 return { message: 'AI Chatbot could not respond. Please try again later.' };
@@ -220,16 +224,21 @@
             var data = apiResponse.data || {};
             if (isUuid(data.conversationId) && data.conversationId !== conversationId) {
                 conversationId = data.conversationId;
-                writeStored(conversationStorageKey, conversationId);
-                writeStored(consumedStorageKey(conversationId), 'true');
+                if (!authenticated) {
+                    writeStored(conversationStorageKey, conversationId);
+                }
             }
             var answer = data.answer || 'AI Chatbot does not have an answer yet.';
             appendMessage('assistant', answer);
             history.push({ role: 'assistant', content: answer });
-            history = history.slice(-8);
+            history = history.slice(-50);
+            renderRelatedQuestions(data.suggestedQuestions || []);
             setStatus(data.refused ? 'This request is outside the available website guidance.' : '', Boolean(data.refused));
         }).catch(function (error) {
             setStatus(error.message || 'AI Chatbot could not respond. Please try again later.', true);
+            if (relatedButtonsContainer.childElementCount > 0) {
+                relatedActionsContainer.hidden = false;
+            }
         }).finally(function () {
             setLoading(false);
             input.focus();
@@ -239,6 +248,7 @@
     function appendMessage(role, text) {
         var item = document.createElement('div');
         item.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'assistant');
+        item.setAttribute('data-ai-chatbot-persisted-message', '');
         var label = document.createElement('strong');
         label.textContent = role === 'user' ? 'You' : 'AI Chatbot';
         var bubble = document.createElement('div');
@@ -252,6 +262,155 @@
         item.appendChild(bubble);
         messages.appendChild(item);
         scrollMessages();
+    }
+
+    function renderRelatedQuestions(candidates) {
+        quickActionsContainer.hidden = true;
+        var excluded = quickActions.map(function (button) {
+            return button.textContent.trim();
+        }).concat(history.filter(function (turn) {
+            return turn.role === 'user';
+        }).map(function (turn) {
+            return turn.content;
+        })).concat(shownRelatedQuestions);
+        var selected = selectUniqueQuestions(candidates, excluded, 4);
+        relatedButtonsContainer.replaceChildren();
+        selected.forEach(function (question) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = question;
+            button.setAttribute('data-ai-chatbot-related-action', '');
+            button.disabled = sending;
+            button.addEventListener('click', function () {
+                if (!sending) {
+                    sendChat(question, '');
+                }
+            });
+            relatedButtonsContainer.appendChild(button);
+        });
+        shownRelatedQuestions = shownRelatedQuestions.concat(selected);
+        relatedActionsContainer.hidden = selected.length === 0;
+        scrollContent();
+    }
+
+    function selectUniqueQuestions(candidates, excluded, maxItems) {
+        var selected = [];
+        var existing = Array.isArray(excluded) ? excluded.slice() : [];
+        (Array.isArray(candidates) ? candidates : []).some(function (rawCandidate) {
+            var candidate = String(rawCandidate || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+            if (!candidate
+                    || candidate.length > 120
+                    || isAssistantLedPrompt(candidate)
+                    || isDuplicateQuestion(candidate, existing.concat(selected))) {
+                return false;
+            }
+            selected.push(candidate);
+            return selected.length >= maxItems;
+        });
+        return selected;
+    }
+
+    function isAssistantLedPrompt(value) {
+        return /^(?:do you (?:need|want|have)|would you like|are you (?:interested|ready|curious)|can i help|shall i)\b/i
+            .test(String(value || '').trim());
+    }
+
+    function isDuplicateQuestion(candidate, existing) {
+        var normalizedCandidate = normalizeQuestion(candidate);
+        if (!normalizedCandidate) {
+            return true;
+        }
+        return existing.some(function (item) {
+            var normalizedExisting = normalizeQuestion(item);
+            return normalizedCandidate === normalizedExisting
+                || jaccardSimilarity(normalizedCandidate, normalizedExisting) >= 0.82;
+        });
+    }
+
+    function normalizeQuestion(value) {
+        return String(value || '')
+            .normalize('NFKC')
+            .toLocaleLowerCase()
+            .replace(/[\p{P}\p{S}]+/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function jaccardSimilarity(left, right) {
+        var leftTokens = new Set(normalizeQuestion(left).split(' ').filter(Boolean));
+        var rightTokens = new Set(normalizeQuestion(right).split(' ').filter(Boolean));
+        if (!leftTokens.size || !rightTokens.size) {
+            return 0;
+        }
+        var intersection = 0;
+        leftTokens.forEach(function (token) {
+            if (rightTokens.has(token)) {
+                intersection += 1;
+            }
+        });
+        return intersection / (leftTokens.size + rightTokens.size - intersection);
+    }
+
+    function restoreAuthenticatedHistory() {
+        setLoading(true);
+        setStatus('Restoring chat history...', false);
+        fetch('/api/ai-chatbot/conversations/latest', {
+            credentials: 'same-origin'
+        }).then(readApiResponse).then(function (latestResponse) {
+            var latest = latestResponse.data || null;
+            if (!latest || !isUuid(latest.conversationId)) {
+                greeting.hidden = false;
+                history = [];
+                renderInitialQuestions();
+                return null;
+            }
+            conversationId = latest.conversationId;
+            renderRelatedQuestions(latest.suggestedQuestions || []);
+            return fetch('/api/ai-chatbot/conversations/' + encodeURIComponent(conversationId)
+                + '/messages?limit=50', {
+                credentials: 'same-origin'
+            }).then(readApiResponse);
+        }).then(function (messagesResponse) {
+            if (!messagesResponse || !messagesResponse.data) {
+                setStatus('', false);
+                return;
+            }
+            var restoredMessages = Array.isArray(messagesResponse.data.messages)
+                ? messagesResponse.data.messages
+                : [];
+            if (!restoredMessages.length) {
+                setStatus('', false);
+                return;
+            }
+            Array.from(messages.querySelectorAll('[data-ai-chatbot-persisted-message]')).forEach(function (message) {
+                message.remove();
+            });
+            greeting.hidden = true;
+            history = [];
+            restoredMessages.forEach(function (message) {
+                var role = String(message.role || '').toLowerCase() === 'user' ? 'user' : 'assistant';
+                appendMessage(role, message.content || '');
+                history.push({ role: role, content: message.content || '' });
+            });
+            history = history.slice(-50);
+            renderInitialQuestions();
+            setStatus('', false);
+        }).catch(function () {
+            setStatus('Chat history could not be restored. You can still ask a question.', true);
+        }).finally(function () {
+            setLoading(false);
+        });
+    }
+
+    function readApiResponse(response) {
+        return response.json().catch(function () {
+            return { message: 'AI Chatbot could not load chat history.' };
+        }).then(function (body) {
+            if (!response.ok) {
+                throw new Error(body.message || 'AI Chatbot could not load chat history.');
+            }
+            return body;
+        });
     }
 
     function renderMarkdown(container, rawText) {
@@ -461,11 +620,11 @@
     }
 
     function scrollMessages() {
-        messages.scrollTop = messages.scrollHeight;
+        scrollContent();
     }
 
-    function consumedStorageKey(id) {
-        return 'ai-chatbot:' + scope + ':' + id + ':quick-actions-consumed';
+    function scrollContent() {
+        content.scrollTop = content.scrollHeight;
     }
 
     function safeSessionStorage() {
@@ -536,5 +695,9 @@
     function pathId(path) {
         var match = String(path || '').match(/\/(\d{1,18})(?:\/)?$/);
         return match ? match[1] : '';
+    }
+
+    if (authenticated) {
+        restoreAuthenticatedHistory();
     }
 })();

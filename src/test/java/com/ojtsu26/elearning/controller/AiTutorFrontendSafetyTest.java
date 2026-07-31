@@ -22,9 +22,17 @@ class AiTutorFrontendSafetyTest {
         assertFalse(script.contains("innerHTML"));
         assertFalse(script.contains("insertAdjacentHTML"));
         assertTrue(script.contains("sessionStorage"));
-        assertTrue(script.contains("quick-actions-consumed"));
-        assertTrue(script.contains("consumeQuickActions();"));
+        assertFalse(script.contains("quick-actions-consumed"));
+        assertFalse(script.contains("consumeQuickActions"));
+        assertTrue(script.contains("function beginSuggestionTransition()"));
+        assertTrue(script.contains("quickActionsContainer.hidden = history.some"));
+        assertTrue(script.contains("quickActionsContainer.hidden = true;"));
+        assertTrue(script.contains("if (!authenticated)"));
         assertTrue(script.contains("fetch('/api/ai-chatbot/chat'"));
+        assertTrue(script.contains("fetch('/api/ai-chatbot/conversations/latest'"));
+        assertTrue(script.contains("renderRelatedQuestions(data.suggestedQuestions || [])"));
+        assertTrue(script.contains("content.scrollTop = content.scrollHeight"));
+        assertTrue(script.contains("normalize('NFKC')"));
         assertTrue(script.contains("window.location.pathname"));
         assertTrue(script.contains("visibleText: collectVisiblePageText(pageKey)"));
         assertTrue(script.contains("'main [data-ai-page-context]'"));
@@ -34,10 +42,16 @@ class AiTutorFrontendSafetyTest {
         assertTrue(styles.contains(".ai-chatbot-panel[hidden]"));
         assertTrue(styles.contains("display: none;"));
         assertTrue(styles.contains("@media (max-width: 640px)"));
+        assertTrue(styles.contains(".ai-chatbot-content"));
+        assertTrue(styles.contains("scrollbar-gutter: stable"));
+        assertFalse(styles.contains("max-height: 15rem"));
 
         int greeting = fragment.indexOf("data-ai-chatbot-greeting");
         int actions = fragment.indexOf("data-ai-chatbot-quick-actions");
         assertTrue(greeting >= 0 && actions > greeting, "Greeting must render before quick actions");
+        assertTrue(fragment.contains("data-ai-chatbot-related-actions"));
+        assertTrue(fragment.contains("data-ai-chatbot-content"));
+        assertTrue(fragment.contains("data-chat-authenticated"));
         assertTrue(fragment.contains("AI Chatbot"));
         assertTrue(fragment.contains("placeholder=\"Ask about this website\""));
         assertFalse(fragment.contains("AI Tutor"));

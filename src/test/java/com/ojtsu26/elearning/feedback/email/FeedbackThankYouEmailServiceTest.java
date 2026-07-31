@@ -60,6 +60,14 @@ class FeedbackThankYouEmailServiceTest {
                 42,
                 "Student One",
                 "registered.student@example.com",
+                "Platform idea",
+                "Please improve search.",
+                5,
+                4,
+                3,
+                2,
+                1,
+                5,
                 LocalDateTime.of(2026, 7, 22, 9, 30)
         );
 
@@ -73,6 +81,7 @@ class FeedbackThankYouEmailServiceTest {
         assertEquals("registered.student@example.com",
                 message.getRecipients(Message.RecipientType.TO)[0].toString());
         assertEquals("support@lumina.test", message.getReplyTo()[0].toString());
+        message.saveChanges();
 
         List<String> htmlParts = new ArrayList<>();
         List<String> plainParts = new ArrayList<>();
@@ -81,30 +90,47 @@ class FeedbackThankYouEmailServiceTest {
 
         assertFalse(plainParts.isEmpty());
         String plain = String.join("\n", plainParts);
-        assertTrue(plain.contains("Thank you for helping us improve."), plain);
-        assertFalse(plain.contains("Submission details"), plain);
-        assertFalse(plain.contains("Reference:"), plain);
-        assertFalse(plain.contains("Received:"), plain);
-        assertFalse(plain.contains("Status: Received"), plain);
+        assertTrue(plain.contains("Thank you for sharing your experience"), plain);
+        assertTrue(plain.contains("YOUR FEEDBACK SUMMARY"), plain);
+        assertTrue(plain.contains("Subject: Platform idea"), plain);
+        assertTrue(plain.contains("Course Content: 5/5"), plain);
+        assertTrue(plain.contains("Platform Usability: 2/5"), plain);
+        assertTrue(plain.contains("Overall Satisfaction: 5/5"), plain);
+        assertTrue(plain.contains("Please improve search."), plain);
+
+        String html = String.join("\n", htmlParts);
+        assertTrue(html.contains("Your feedback summary"), html);
+        assertTrue(html.contains("Platform idea"), html);
+        assertTrue(html.contains("Please improve search."), html);
+        assertTrue(html.contains("Course Content"), html);
+        assertTrue(html.contains("Overall Satisfaction"), html);
+        assertTrue(html.contains("22 Jul 2026, 09:30"), html);
 
         ByteArrayOutputStream rawMessage = new ByteArrayOutputStream();
         message.writeTo(rawMessage);
         String raw = rawMessage.toString(StandardCharsets.UTF_8);
         assertTrue(raw.contains("FEEDBACK RECEIVED"), raw);
-        assertTrue(raw.contains("Thank you for helping us improve."), raw);
         assertTrue(raw.contains("cid:luminaFeedbackBanner"), raw);
         assertTrue(raw.contains("Content-ID: <luminaFeedbackBanner>"), raw);
         assertTrue(raw.contains("Content-Type: image/png"), raw);
-        assertFalse(raw.contains("Please improve search."));
-        assertFalse(raw.contains("Submission details"), raw);
         assertFalse(raw.contains("Reference"), raw);
-        assertFalse(raw.contains("Received"), raw);
-        assertFalse(raw.contains("Status"), raw);
     }
 
     @Test
     void sendRejectsMissingStudentEmailBeforeSending() {
-        FeedbackSubmittedEvent event = new FeedbackSubmittedEvent(42, "Student One", " ", LocalDateTime.now());
+        FeedbackSubmittedEvent event = new FeedbackSubmittedEvent(
+                42,
+                "Student One",
+                " ",
+                "Platform idea",
+                "Please improve search.",
+                5,
+                4,
+                3,
+                2,
+                1,
+                5,
+                LocalDateTime.now());
 
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> service.send(event));
 

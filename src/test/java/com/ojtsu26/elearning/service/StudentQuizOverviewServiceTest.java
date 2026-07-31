@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -135,7 +134,7 @@ class StudentQuizOverviewServiceTest {
         assertEquals(501, result.getAttemptId());
         assertEquals(QuizAttemptStatus.GRADED, result.getAttemptStatus());
         assertEquals(new BigDecimal("85.00"), result.getScore());
-        assertNull(result.getQuestionCount());
+        assertEquals(10, result.getQuestionCount());
         verify(quizAttemptRepository, never()).save(any());
     }
 
@@ -201,9 +200,6 @@ class StudentQuizOverviewServiceTest {
         when(lessonProgressRepository
                 .findByEnrollmentIdAndLessonIdForUpdate(20, 200))
                 .thenReturn(Optional.empty());
-        when(questionRepository.findByQuizIdOrderByDisplayOrderAscIdAsc(300))
-                .thenReturn(List.of());
-
         service.submitQuizAttempt(
                 502, new com.ojtsu26.elearning.dto.assessment.AssessmentDtos.QuizDraftPayload());
 

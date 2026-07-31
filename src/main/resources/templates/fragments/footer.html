@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="content" class="public-footer-inner">
+    <div class="public-footer-grid">
+        <section class="public-footer-brand" aria-labelledby="site-footer-title">
+            <div class="public-footer-brand-lockup">
+                <span th:replace="~{fragments/brand :: mark}"></span>
+                <div>
+                    <h2 id="site-footer-title">LumiNa</h2>
+                    <p class="public-footer-slogan">Flexible learning, sustainable growth</p>
+                </div>
+            </div>
+
+            <dl class="public-footer-contact">
+                <div>
+                    <dt>Hotline:</dt>
+                    <dd>0123456789</dd>
+                </div>
+                <div>
+                    <dt>Email:</dt>
+                    <dd>lumina@gmail.com</dd>
+                </div>
+                <div>
+                    <dt>Address:</dt>
+                    <dd>123 Green Street, Red Village</dd>
+                </div>
+            </dl>
+        </section>
+
+        <th:block th:replace="~{fragments/footer-navigation :: footer-navigation}"></th:block>
+    </div>
+
+    <div class="public-footer-meta">
+        <p th:text="${'© ' + #temporals.year(#temporals.createNow()) + ' LumiNa. All rights reserved.'}">
+            © 2026 LumiNa. All rights reserved.
+        </p>
+
+        <div class="public-footer-socials" aria-label="Social media">
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="Facebook — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/facebook.svg}" src="/images/social/facebook.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="YouTube — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/youtube.svg}" src="/images/social/youtube.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="TikTok — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/tiktok.svg}" src="/images/social/tiktok.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="GitHub — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/github.svg}" src="/images/social/github.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="LinkedIn — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/linkedin.svg}" src="/images/social/linkedin.svg" alt="" aria-hidden="true">
+            </span>
+            <span class="public-footer-social"
+                  role="img"
+                  aria-label="Discord — Coming soon"
+                  title="Coming soon">
+                <img th:src="@{/images/social/discord.svg}" src="/images/social/discord.svg" alt="" aria-hidden="true">
+            </span>
+        </div>
+    </div>
+</div>
+
+</html>
