@@ -315,9 +315,10 @@ function initTeacherQuestionManager(panel) {
         return;
     }
     var quizId = card.dataset.quizId;
-    var select = panel.querySelector('[data-question-select]');
+    var questionList = panel.querySelector('[data-question-list]');
     var previousButton = panel.querySelector('[data-question-previous]');
     var nextButton = panel.querySelector('[data-question-next]');
+    var pageButtons = panel.querySelector('[data-question-page-buttons]');
     var addButton = panel.querySelector('[data-add-question]');
     var pageIndicator = panel.querySelector('[data-question-page-indicator]');
     var pageSummary = panel.querySelector('[data-question-page-summary]');
@@ -330,6 +331,7 @@ function initTeacherQuestionManager(panel) {
     var optionsContainer = panel.querySelector('[data-options-container]');
     var state = {
         page: 0,
+        size: 10,
         totalPages: 0,
         totalItems: 0,
         items: [],
@@ -349,7 +351,7 @@ function initTeacherQuestionManager(panel) {
     }
 
     function questionLabel(question, index) {
-        var number = state.page * 10 + index + 1;
+        var number = state.page * state.size + index + 1;
         var excerpt = String(question.content || '').replace(/\s+/g, ' ').trim();
         if (excerpt.length > 54) {
             excerpt = excerpt.substring(0, 51) + '…';
@@ -406,6 +408,7 @@ function initTeacherQuestionManager(panel) {
     function showQuestion(question) {
         state.creating = false;
         state.selectedId = question.id;
+        syncSelectedQuestion();
         form.hidden = false;
         emptyState.hidden = true;
         form.elements.questionId.value = question.id;
@@ -420,6 +423,7 @@ function initTeacherQuestionManager(panel) {
     function showNewQuestion() {
         state.creating = true;
         state.selectedId = null;
+        syncSelectedQuestion();
         form.hidden = false;
         emptyState.hidden = true;
         form.elements.questionId.value = '';
@@ -432,21 +436,71 @@ function initTeacherQuestionManager(panel) {
         form.elements.content.focus();
     }
 
+    function syncSelectedQuestion() {
+        questionList.querySelectorAll('[data-question-id]').forEach(function(button) {
+            var selected = Number(button.dataset.questionId) === state.selectedId;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-selected', selected ? 'true' : 'false');
+        });
+    }
+
+    function visibleQuestionPages(pageCount) {
+        if (pageCount <= 5) {
+            return Array.from({ length: pageCount }, function(_, index) {
+                return index;
+            });
+        }
+        if (state.page <= 2) {
+            return [0, 1, 2, null, pageCount - 1];
+        }
+        if (state.page >= pageCount - 3) {
+            return [0, null, pageCount - 3, pageCount - 2, pageCount - 1];
+        }
+        return [0, null, state.page, null, pageCount - 1];
+    }
+
     function renderPage(preferredQuestionId) {
-        select.textContent = '';
+        questionList.textContent = '';
         state.items.forEach(function(question, index) {
-            var option = document.createElement('option');
-            option.value = String(question.id);
-            option.textContent = questionLabel(question, index);
-            select.appendChild(option);
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'teacher-question-list-item';
+            button.dataset.questionId = String(question.id);
+            button.setAttribute('role', 'option');
+            button.setAttribute('aria-selected', 'false');
+            button.textContent = questionLabel(question, index);
+            questionList.appendChild(button);
         });
         var pageCount = Math.max(1, state.totalPages);
         pageIndicator.textContent = 'Page ' + String(state.page + 1) + ' / ' + String(pageCount);
-        pageSummary.textContent = String(state.totalItems) + ' / 100 active questions';
+        pageButtons.textContent = '';
+        visibleQuestionPages(pageCount).forEach(function(pageIndex) {
+            if (pageIndex === null) {
+                var ellipsis = document.createElement('span');
+                ellipsis.className = 'teacher-question-page-ellipsis';
+                ellipsis.textContent = '…';
+                ellipsis.setAttribute('aria-hidden', 'true');
+                pageButtons.appendChild(ellipsis);
+                return;
+            }
+            var pageButton = document.createElement('button');
+            pageButton.type = 'button';
+            pageButton.className = 'teacher-question-page-button';
+            pageButton.dataset.questionPage = String(pageIndex);
+            pageButton.textContent = String(pageIndex + 1);
+            pageButton.setAttribute('aria-label', 'Go to question page ' + String(pageIndex + 1));
+            pageButton.classList.toggle('active', pageIndex === state.page);
+            pageButton.disabled = pageIndex === state.page;
+            pageButton.setAttribute('aria-current', pageIndex === state.page ? 'page' : 'false');
+            pageButtons.appendChild(pageButton);
+        });
+        var firstItem = state.totalItems === 0 ? 0 : state.page * state.size + 1;
+        var lastItem = firstItem === 0 ? 0 : firstItem + state.items.length - 1;
+        pageSummary.textContent = 'Showing ' + String(firstItem) + '–' + String(lastItem)
+            + ' of ' + String(state.totalItems) + ' questions';
         previousButton.disabled = state.page <= 0;
         nextButton.disabled = state.totalPages === 0 || state.page >= state.totalPages - 1;
         addButton.disabled = state.totalItems >= 100;
-        select.disabled = state.items.length === 0;
 
         if (state.items.length === 0) {
             state.selectedId = null;
@@ -459,7 +513,6 @@ function initTeacherQuestionManager(panel) {
         var selected = state.items.find(function(item) {
             return item.id === preferredQuestionId;
         }) || state.items[0];
-        select.value = String(selected.id);
         showQuestion(selected);
     }
 
@@ -474,6 +527,7 @@ function initTeacherQuestionManager(panel) {
         }).then(function(body) {
             var data = body.data || {};
             state.page = Number(data.page || 0);
+            state.size = Math.max(1, Number(data.size || state.size));
             state.totalPages = Number(data.totalPages || 0);
             state.totalItems = Number(data.totalItems || 0);
             state.items = Array.isArray(data.items) ? data.items : [];
@@ -528,10 +582,13 @@ function initTeacherQuestionManager(panel) {
         }
     });
 
-    select.addEventListener('change', function() {
-        var nextId = Number(select.value);
+    questionList.addEventListener('click', function(event) {
+        var button = event.target.closest('[data-question-id]');
+        if (!button) {
+            return;
+        }
+        var nextId = Number(button.dataset.questionId);
         if (!canLeaveEditor()) {
-            select.value = state.selectedId == null ? '' : String(state.selectedId);
             return;
         }
         var selected = state.items.find(function(item) {
@@ -550,6 +607,21 @@ function initTeacherQuestionManager(panel) {
     nextButton.addEventListener('click', function() {
         if (state.page < state.totalPages - 1 && canLeaveEditor()) {
             loadPage(state.page + 1);
+        }
+    });
+    pageButtons.addEventListener('click', function(event) {
+        var button = event.target.closest('[data-question-page]');
+        if (!button) {
+            return;
+        }
+        var requestedPage = Number(button.dataset.questionPage);
+        if (!canLeaveEditor()) {
+            return;
+        }
+        if (requestedPage >= 0
+                && requestedPage < state.totalPages
+                && requestedPage !== state.page) {
+            loadPage(requestedPage);
         }
     });
     addButton.addEventListener('click', function() {
@@ -580,7 +652,7 @@ function initTeacherQuestionManager(panel) {
             markDirty(false);
             teacherAssessmentMessage(message, 'Question saved.', 'success');
             var targetPage = state.creating
-                ? Math.floor(state.totalItems / 10)
+                ? Math.floor(state.totalItems / state.size)
                 : state.page;
             return loadPage(targetPage, saved.id);
         }).catch(function(saveError) {

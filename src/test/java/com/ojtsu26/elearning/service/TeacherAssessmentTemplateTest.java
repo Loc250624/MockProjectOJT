@@ -36,6 +36,8 @@ class TeacherAssessmentTemplateTest {
                 Path.of("src/main/resources/templates/teacher/quizzes.html"));
         String script = Files.readString(
                 Path.of("src/main/resources/static/js/teacher/teacher.js"));
+        String stylesheet = Files.readString(
+                Path.of("src/main/resources/static/css/teacher/teacher.css"));
         String combined = (template + script).toLowerCase();
 
         assertFalse(combined.contains("question bank readiness"));
@@ -45,11 +47,20 @@ class TeacherAssessmentTemplateTest {
         assertFalse(combined.contains("name=\"description\""));
         assertFalse(combined.contains("quiz-preview"));
         assertFalse(combined.contains("archive-quiz"));
-        assertTrue(template.contains("data-question-select"));
+        assertFalse(template.contains("data-question-select"));
+        assertTrue(template.contains("data-question-list"));
         assertTrue(template.contains("data-question-previous"));
         assertTrue(template.contains("data-question-next"));
+        assertFalse(template.contains("data-question-page-select"));
+        assertTrue(template.contains("data-question-page-buttons"));
         assertTrue(template.contains("20 minutes"));
+        assertTrue(template.contains("10 random questions"));
+        assertTrue(template.contains("questions in bank"));
         assertTrue(script.contains("Discard unsaved question changes?"));
+        assertTrue(script.contains("state.page * state.size"));
+        assertTrue(script.contains("visibleQuestionPages"));
+        assertTrue(script.contains("Showing "));
+        assertTrue(stylesheet.contains(".teacher-question-manager [hidden]"));
     }
 
     @Test

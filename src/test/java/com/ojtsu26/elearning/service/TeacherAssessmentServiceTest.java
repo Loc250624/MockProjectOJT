@@ -143,6 +143,45 @@ class TeacherAssessmentServiceTest {
     }
 
     @Test
+    void teacherCanOpenLastPageOfOneHundredQuestionBank() {
+        Lesson lesson = Lesson.builder()
+                .id(200)
+                .title("OOP Quiz")
+                .type(LessonType.QUIZ)
+                .course(course)
+                .build();
+        Quiz quiz = Quiz.builder().id(300).lesson(lesson).createdBy(teacher).build();
+        List<Question> questions = IntStream.rangeClosed(91, 100)
+                .mapToObj(index -> Question.builder()
+                        .id(400 + index)
+                        .quiz(quiz)
+                        .questionText("Question " + index)
+                        .optionsJson("[{\"content\":\"A\",\"correct\":true},"
+                                + "{\"content\":\"B\",\"correct\":false}]")
+                        .correctAnswer("0")
+                        .active(true)
+                        .displayOrder(index)
+                        .build())
+                .toList();
+        PageRequest lastPage = PageRequest.of(9, 10);
+        when(currentUserService.getCurrentUser()).thenReturn(teacher);
+        when(quizRepository.findByIdWithCourse(300)).thenReturn(Optional.of(quiz));
+        when(courseRepository.findById(100)).thenReturn(Optional.of(course));
+        when(questionRepository.findByQuizIdAndActiveTrueOrderByDisplayOrderAscIdAsc(
+                300, lastPage))
+                .thenReturn(new PageImpl<>(questions, lastPage, 100));
+
+        var result = service.getTeacherQuestions(300, 9);
+
+        assertEquals(10, result.getItems().size());
+        assertEquals("Question 91", result.getItems().get(0).getContent());
+        assertEquals("Question 100", result.getItems().get(9).getContent());
+        assertEquals(9, result.getPage());
+        assertEquals(100L, result.getTotalItems());
+        assertEquals(10, result.getTotalPages());
+    }
+
+    @Test
     void teacherCannotCreateQuestionOneHundredAndOne() {
         Lesson lesson = Lesson.builder()
                 .id(200)

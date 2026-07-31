@@ -1205,7 +1205,7 @@
 }
 
 .teacher-quiz-settings-grid label,
-.teacher-question-select-label {
+.teacher-question-list-section {
   display: grid;
   min-width: 0;
   gap: 0.35rem;
@@ -1230,6 +1230,10 @@
   margin-top: 1.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid #e2e8f0;
+}
+
+.teacher-question-manager [hidden] {
+  display: none !important;
 }
 
 .teacher-question-browser,
@@ -1258,32 +1262,114 @@
   gap: 0.2rem;
 }
 
-.teacher-question-select-label {
+.teacher-question-list-section {
   margin-top: 1rem;
 }
 
-.teacher-question-select-label select {
+.teacher-question-list {
+  display: grid;
+  gap: 0.45rem;
   min-width: 0;
-  max-width: 100%;
+}
+
+.teacher-question-list-item {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
   overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.teacher-question-pagination {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+.teacher-question-list-item:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
 }
 
-.teacher-question-pagination span {
+.teacher-question-list-item.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.teacher-question-page-indicator {
+  display: block;
+  margin-top: 0.85rem;
   color: #475569;
   font-size: 0.8125rem;
   font-weight: 700;
   text-align: center;
+}
+
+.teacher-question-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
   white-space: nowrap;
+}
+
+.teacher-question-pagination > .btn {
+  flex: 0 0 auto;
+  padding-inline: 0.65rem;
+}
+
+.teacher-question-page-buttons {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.teacher-question-page-button {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.teacher-question-page-button:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.teacher-question-page-button.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.teacher-question-page-button:disabled {
+  cursor: default;
+}
+
+.teacher-question-page-ellipsis {
+  display: inline-grid;
+  min-width: 1rem;
+  place-items: center;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 700;
 }
 
 .teacher-question-editor-form {
@@ -1416,12 +1502,8 @@
   }
 
   .teacher-question-pagination {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .teacher-question-pagination span {
-    grid-column: 1 / -1;
-    grid-row: 1;
+    justify-content: flex-start;
+    overflow-x: auto;
   }
 
   .teacher-answer-row {

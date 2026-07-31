@@ -98,7 +98,7 @@
                 <div class="assessment-heading inline">
                     <div>
                         <h2>Lesson quizzes</h2>
-                        <p>Each published quiz needs at least 10 active questions.</p>
+                        <p>Manage up to 100 questions per quiz. Each student attempt receives 10 random questions.</p>
                     </div>
                 </div>
 
@@ -123,8 +123,8 @@
                             <div class="teacher-quiz-summary-badges">
                                 <span class="teacher-quiz-policy-badge">20 minutes</span>
                                 <span class="teacher-question-count"
-                                      th:text="${quiz.activeQuestionCount + ' / ' + quiz.questionLimit + ' questions'}">
-                                    0 / 100 questions
+                                      th:text="${quiz.activeQuestionCount + ' questions in bank'}">
+                                    0 questions in bank
                                 </span>
                             </div>
                         </header>
@@ -177,16 +177,23 @@
                                     </button>
                                 </div>
 
-                                <label class="teacher-question-select-label">
-                                    <span>Question on this page</span>
-                                    <select data-question-select aria-label="Question on this page"></select>
-                                </label>
+                                <div class="teacher-question-list-section">
+                                    <span>Questions on this page</span>
+                                    <div class="teacher-question-list"
+                                         data-question-list
+                                         role="listbox"
+                                         aria-label="Questions on this page"></div>
+                                </div>
 
+                                <span class="teacher-question-page-indicator"
+                                      data-question-page-indicator>Page 1 / 1</span>
                                 <div class="teacher-question-pagination">
                                     <button class="btn btn-secondary" type="button" data-question-previous>
                                         Previous
                                     </button>
-                                    <span data-question-page-indicator>Page 1 / 1</span>
+                                    <div class="teacher-question-page-buttons"
+                                         data-question-page-buttons
+                                         aria-label="Question pages"></div>
                                     <button class="btn btn-secondary" type="button" data-question-next>
                                         Next
                                     </button>
