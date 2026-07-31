@@ -14,7 +14,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -49,9 +51,9 @@ public class OpenAiResponsesClient implements AiTutorProvider {
                 throw new AiTutorUnavailableException(safeUnavailableMessage(response.statusCode(), error));
             }
             JsonNode root = objectMapper.readTree(response.body());
-            String answer = extractText(root);
+            String outputText = extractText(root);
             String requestId = root.path("id").asText(null);
-            return new AiTutorProviderResponse(answer, requestId);
+            return parseTutorOutput(outputText, requestId);
         } catch (IOException e) {
             throw new AiTutorUnavailableException("AI Chatbot is temporarily unavailable.", e);
         } catch (InterruptedException e) {
@@ -144,6 +146,47 @@ public class OpenAiResponsesClient implements AiTutorProvider {
             }
         }
         return builder.toString();
+    }
+
+    private AiTutorProviderResponse parseTutorOutput(String outputText, String requestId) {
+        String normalized = outputText == null ? "" : outputText.trim();
+        if (AiTutorPromptFactory.OUT_OF_SCOPE_SENTINEL.equals(normalized)) {
+            return new AiTutorProviderResponse(normalized, requestId);
+        }
+        String json = stripJsonFence(normalized);
+        try {
+            JsonNode result = objectMapper.readTree(json);
+            if (!result.isObject() || !result.path("answer").isTextual()) {
+                return new AiTutorProviderResponse(normalized, requestId);
+            }
+            List<String> suggestedQuestions = new ArrayList<>();
+            JsonNode suggestions = result.path("suggestedQuestions");
+            if (suggestions.isArray()) {
+                suggestions.forEach(question -> {
+                    if (question.isTextual()) {
+                        suggestedQuestions.add(question.asText());
+                    }
+                });
+            }
+            return new AiTutorProviderResponse(
+                    result.path("answer").asText(),
+                    requestId,
+                    suggestedQuestions);
+        } catch (IOException ex) {
+            log.warn("AI Chatbot returned non-JSON output; related questions were omitted.");
+            return new AiTutorProviderResponse(normalized, requestId);
+        }
+    }
+
+    private String stripJsonFence(String value) {
+        if (!value.startsWith("```") || !value.endsWith("```")) {
+            return value;
+        }
+        int firstLineEnd = value.indexOf('\n');
+        if (firstLineEnd < 0) {
+            return value;
+        }
+        return value.substring(firstLineEnd + 1, value.length() - 3).trim();
     }
 
     private record OpenAiError(String code, String type) {

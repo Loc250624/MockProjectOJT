@@ -1,0 +1,2 @@
+ALTER TABLE Ai_Chat_Messages
+    MODIFY COLUMN content LONGTEXT NOT NULL;

@@ -43,7 +43,9 @@ class AiTutorEvalCasesTest {
                 new AiTutorPromptFactory(properties),
                 prompt -> new AiTutorProviderResponse("Grounded lesson answer.", "eval_stub"),
                 new AiTutorRateLimiter(properties),
-                properties
+                properties,
+                mock(AiChatHistoryService.class),
+                new AiChatSuggestionService()
         );
         CustomUserDetails principal = new CustomUserDetails(User.builder()
                 .id(99)

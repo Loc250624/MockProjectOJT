@@ -1,4 +1,16 @@
 package com.ojtsu26.elearning.service.ai;
 
-public record AiTutorProviderResponse(String answer, String requestId) {
+import java.util.List;
+
+public record AiTutorProviderResponse(String answer,
+                                      String requestId,
+                                      List<String> suggestedQuestions) {
+
+    public AiTutorProviderResponse {
+        suggestedQuestions = suggestedQuestions == null ? List.of() : List.copyOf(suggestedQuestions);
+    }
+
+    public AiTutorProviderResponse(String answer, String requestId) {
+        this(answer, requestId, List.of());
+    }
 }

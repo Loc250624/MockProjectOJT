@@ -7,6 +7,9 @@ import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.CourseStatus;
 import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
+import com.ojtsu26.elearning.repository.AiChatConversationRepository;
+import com.ojtsu26.elearning.repository.AiChatMessageRepository;
+import com.ojtsu26.elearning.repository.AiChatSuggestionRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.LessonProgressRepository;
@@ -28,6 +31,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -35,6 +39,7 @@ import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,6 +78,15 @@ class AiTutorControllerTest {
     @Autowired
     private AiTutorRateLimiter rateLimiter;
 
+    @Autowired
+    private AiChatConversationRepository chatConversationRepository;
+
+    @Autowired
+    private AiChatMessageRepository chatMessageRepository;
+
+    @Autowired
+    private AiChatSuggestionRepository chatSuggestionRepository;
+
     @MockBean
     private AiTutorProvider aiTutorProvider;
 
@@ -83,6 +97,9 @@ class AiTutorControllerTest {
     @BeforeEach
     void setUp() {
         rateLimiter.clear();
+        chatSuggestionRepository.deleteAll();
+        chatMessageRepository.deleteAll();
+        chatConversationRepository.deleteAll();
         lessonProgressRepository.deleteAll();
         enrollmentRepository.deleteAll();
         lessonRepository.deleteAll();
@@ -284,5 +301,156 @@ class AiTutorControllerTest {
                         .content("{\"message\":\"How do I browse courses?\"}"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message").value("AI Chatbot is temporarily unavailable."));
+    }
+
+    @Test
+    void authenticatedGlobalChatPersistsOneOrderedTurnAndRelatedQuestions() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse(
+                        "Open My Courses from the student dashboard.",
+                        "resp_persist",
+                        List.of(
+                                "How do I resume my latest lesson?",
+                                "Where can I see course progress?",
+                                "Which enrolled courses are completed?",
+                                "How do I open a course curriculum?")));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "message":"Where are my enrolled courses?",
+                                  "pageContext":{
+                                    "path":"/student/my-courses",
+                                    "pageKey":"student-courses",
+                                    "entityType":"course"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.conversationId", matchesPattern(
+                        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")))
+                .andExpect(jsonPath("$.data.suggestedQuestions.length()").value(4));
+
+        var conversation = chatConversationRepository
+                .findFirstByUserIdOrderByLastMessageAtDescIdDesc(student.getId())
+                .orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                2,
+                chatMessageRepository.countByConversationId(conversation.getId()));
+    }
+
+    @Test
+    void latestAndMessagesEndpointsRestoreOnlyCurrentUsersConversation() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse(
+                        "Use the course detail page.",
+                        "resp_history",
+                        List.of(
+                                "Where is the enrollment button?",
+                                "How can I review the course curriculum?",
+                                "Which payment methods are available?",
+                                "How do I confirm my enrollment status?")));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"How do I enroll in a course?\"}"))
+                .andExpect(status().isOk());
+
+        var conversation = chatConversationRepository
+                .findFirstByUserIdOrderByLastMessageAtDescIdDesc(student.getId())
+                .orElseThrow();
+
+        mockMvc.perform(get("/api/ai-chatbot/conversations/latest")
+                        .with(user(new CustomUserDetails(student))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.conversationId").value(conversation.getId()))
+                .andExpect(jsonPath("$.data.suggestedQuestions.length()").value(4));
+
+        mockMvc.perform(get("/api/ai-chatbot/conversations/{conversationId}/messages", conversation.getId())
+                        .param("limit", "50")
+                        .with(user(new CustomUserDetails(student))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages.length()").value(2))
+                .andExpect(jsonPath("$.data.messages[0].role").value("USER"))
+                .andExpect(jsonPath("$.data.messages[1].role").value("ASSISTANT"));
+
+        User other = userRepository.save(User.builder()
+                .fullName("Other Student")
+                .email("other.student.ai@example.com")
+                .role(Role.STUDENT)
+                .status(UserStatus.ACTIVE)
+                .build());
+        mockMvc.perform(get("/api/ai-chatbot/conversations/{conversationId}/messages", conversation.getId())
+                        .with(user(new CustomUserDetails(other))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Conversation not found."));
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(other)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "conversationId":"%s",
+                                  "message":"Continue this conversation"
+                                }
+                                """.formatted(conversation.getId())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Conversation not found."));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                2,
+                chatMessageRepository.countByConversationId(conversation.getId()));
+    }
+
+    @Test
+    void latestConversationReturnsNormalEmptyResponseForNewAccount() throws Exception {
+        mockMvc.perform(get("/api/ai-chatbot/conversations/latest")
+                        .with(user(new CustomUserDetails(student))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void invalidHistoryPaginationIsRejected() throws Exception {
+        when(aiTutorProvider.generate(any()))
+                .thenReturn(new AiTutorProviderResponse("Use the public catalog.", "resp_page_limit"));
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"Where is the course catalog?\"}"))
+                .andExpect(status().isOk());
+        var conversation = chatConversationRepository
+                .findFirstByUserIdOrderByLastMessageAtDescIdDesc(student.getId())
+                .orElseThrow();
+
+        mockMvc.perform(get("/api/ai-chatbot/conversations/{conversationId}/messages", conversation.getId())
+                        .param("limit", "51")
+                        .with(user(new CustomUserDetails(student))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void authenticatedProviderFailureDoesNotPersistConversationOrMessages() throws Exception {
+        doThrow(new AiTutorUnavailableException("AI Chatbot is temporarily unavailable."))
+                .when(aiTutorProvider).generate(any());
+
+        mockMvc.perform(post("/api/ai-chatbot/chat")
+                        .with(user(new CustomUserDetails(student)))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"How do I browse courses?\"}"))
+                .andExpect(status().isServiceUnavailable());
+
+        org.junit.jupiter.api.Assertions.assertTrue(chatConversationRepository
+                .findFirstByUserIdOrderByLastMessageAtDescIdDesc(student.getId())
+                .isEmpty());
+        org.junit.jupiter.api.Assertions.assertEquals(0, chatMessageRepository.count());
     }
 }

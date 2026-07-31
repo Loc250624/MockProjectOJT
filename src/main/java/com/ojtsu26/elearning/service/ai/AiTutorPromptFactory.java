@@ -45,6 +45,13 @@ public class AiTutorPromptFactory {
                 When visible page content is supplied, treat it as the primary factual source for questions about what is currently on the page. Name only items actually present there; do not invent a typical layout, generic components, counts, authors, or categories. If the requested fact is absent, say that it is not visible in the supplied page content.
                 Keep answers concise, concrete, encouraging, and grounded in the supplied visible page content, public site guide, and optional authorized lesson context.
                 For a quiz/check action, ask one or two questions and do not immediately reveal the full answer.
+                For every allowed request, return only one valid JSON object with this exact shape:
+                {"answer":"your answer","suggestedQuestions":["Where can I find Certificates?","How do I add the PDF to LinkedIn?","Which certificate requirements remain?","How can I share my certificate?"]}
+                Generate exactly four natural, ready-to-send follow-up messages written from the student's point of view. Each must be directly related to the student's latest message and your answer, useful as a plausible next turn, specific rather than templated, meaningfully different from the others, and no longer than 120 characters.
+                Prefer concise direct questions or requests such as "How do I...?", "Where can I...?", "What...?", "Why...?", "Show me...", or "Explain...".
+                Never write suggestions from the assistant's point of view: do not ask whether the student needs, wants, likes, has questions about, or is interested in something. In particular, never use patterns such as "Do you need...?", "Would you like...?", "Are you interested...?", "Do you have any questions...?", "Can I help...?", or "Shall I...?".
+                Do not repeat a question from the supplied chat history or merely insert a topic into a generic sentence pattern.
+                Do not wrap the JSON in Markdown fences and do not add text outside the JSON object.
                 """;
     }
 
