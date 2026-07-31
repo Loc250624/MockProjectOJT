@@ -28,35 +28,7 @@
             </dl>
         </section>
 
-        <section class="public-footer-section" aria-labelledby="site-footer-about">
-            <h3 id="site-footer-about">About Us</h3>
-            <ul>
-                <li><span class="public-footer-item">Introduction</span></li>
-                <li><span class="public-footer-item">Contact</span></li>
-                <li><span class="public-footer-item">Terms of Use</span></li>
-                <li><span class="public-footer-item">Privacy Policy</span></li>
-            </ul>
-        </section>
-
-        <section class="public-footer-section" aria-labelledby="site-footer-support">
-            <h3 id="site-footer-support">Support</h3>
-            <ul>
-                <li><span class="public-footer-item">Help Center</span></li>
-                <li><span class="public-footer-item">Learning Guide</span></li>
-                <li><span class="public-footer-item">Frequently Asked Questions</span></li>
-                <li><span class="public-footer-item">Payment Policy</span></li>
-            </ul>
-        </section>
-
-        <nav class="public-footer-section" aria-labelledby="site-footer-resources">
-            <h3 id="site-footer-resources">Resources</h3>
-            <ul>
-                <li><a class="public-footer-link" th:href="@{/public/courses}">Courses</a></li>
-                <li><a class="public-footer-link" th:href="@{/blogs}">Blog</a></li>
-                <li><span class="public-footer-item">Certificates</span></li>
-                <li><span class="public-footer-item">AI Chatbot</span></li>
-            </ul>
-        </nav>
+        <th:block th:replace="~{fragments/footer-navigation :: footer-navigation}"></th:block>
     </div>
 
     <div class="public-footer-meta">

@@ -167,7 +167,17 @@ public class SecurityConfig {
                         "/blogs",
                         "/blogs/**",
                         "/public/blogs/**",
+                        "/about/introduction",
+                        "/contact",
+                        "/legal/terms-of-use",
+                        "/legal/privacy-policy",
+                        "/support/help-center",
+                        "/support/learning-guide",
+                        "/support/faq",
+                        "/support/payment-policy",
+                        "/certificates",
                         "/certificates/verify/**",
+                        "/ai-chatbot",
                         "/api/public/certificates/verify/**",
                         "/favicon.ico"
                 ).permitAll()
