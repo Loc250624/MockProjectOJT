@@ -174,6 +174,50 @@ class StudentViewControllerTest {
     }
 
     @Test
+    void dashboardShowsAtMostSixCoursesAndMyCoursesPaginatesAllEnrollmentsBySix() throws Exception {
+        for (int index = 1; index <= 6; index++) {
+            Course additionalCourse = courseRepository.save(Course.builder()
+                    .title("Additional course " + index)
+                    .description("Pagination test course")
+                    .price(BigDecimal.ZERO)
+                    .status(CourseStatus.APPROVED)
+                    .category(course.getCategory())
+                    .instructor(course.getInstructor())
+                    .build());
+            courseEnrollmentRepository.save(CourseEnrollment.builder()
+                    .student(student)
+                    .course(additionalCourse)
+                    .isCompleted(false)
+                    .enrolledAt(LocalDateTime.now().plusMinutes(index))
+                    .progressPercentage(BigDecimal.ZERO)
+                    .build());
+        }
+
+        mockMvc.perform(get("/student/dashboard")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(model().attribute("enrolledCourseCount", 7));
+
+        mockMvc.perform(get("/student/my-courses")
+                        .param("page", "0")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 2))
+                .andExpect(model().attribute("enrolledCourseCount", 7));
+
+        mockMvc.perform(get("/student/my-courses")
+                        .param("page", "1")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(model().attribute("currentPage", 1))
+                .andExpect(model().attribute("totalPages", 2));
+    }
+
+    @Test
     void dashboardDoesNotRollbackWhenAutoCertificateIsNotYetEligible() throws Exception {
         CourseEnrollment enrollment = courseEnrollmentRepository
                 .findByStudentIdAndCourseId(student.getId(), course.getId())

@@ -79,13 +79,36 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(myCourses.contains(expectedLabel));
         assertTrue(myCourses.contains(expectedRoute));
         assertTrue(myCourses.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
-        assertFalse(myCourses.contains("pointer-events: none"));
+        assertFalse(myCourses.contains("course.completed ? 'pointer-events"));
 
         assertTrue(dashboard.contains(expectedLabel));
         assertTrue(dashboard.contains(expectedRoute));
         assertTrue(dashboard.contains("th:src=\"${course.thumbnailUrl}\""));
         assertTrue(dashboard.contains("${course.completed} ? ' btn-success' : ' btn-primary'"));
         assertFalse(dashboard.contains("course.completed ? '100%' : 'Go'"));
+    }
+
+    @Test
+    void myCoursesTemplateProvidesServerSidePagination() throws Exception {
+        String myCourses = Files.readString(Path.of("src/main/resources/templates/student/my-courses.html"));
+
+        assertTrue(myCourses.contains("totalPages > 1"));
+        assertTrue(myCourses.contains("/student/my-courses(page=${currentPage - 1})"));
+        assertTrue(myCourses.contains("/student/my-courses(page=${currentPage + 1})"));
+        assertTrue(myCourses.contains("'Page ' + (currentPage + 1) + ' of ' + totalPages"));
+    }
+
+    @Test
+    void dashboardCourseGridUsesTheFullWidthWithoutAnEmptyAsideColumn() throws Exception {
+        String dashboard = Files.readString(Path.of("src/main/resources/templates/student/dashboard.html"));
+        String studentCss = Files.readString(Path.of("src/main/resources/static/css/student/student.css"));
+
+        assertTrue(dashboard.contains("student-active-courses-section"));
+        assertTrue(dashboard.contains("student-active-courses-grid"));
+        assertFalse(dashboard.contains("class=\"grid-main-aside\""));
+        assertTrue(studentCss.contains("repeat(3, minmax(0, 1fr))"));
+        assertTrue(studentCss.contains("@media (max-width: 1100px)"));
+        assertTrue(studentCss.contains("@media (max-width: 640px)"));
     }
 
     @Test

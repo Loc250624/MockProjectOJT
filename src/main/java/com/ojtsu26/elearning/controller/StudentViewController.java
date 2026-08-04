@@ -49,6 +49,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StudentViewController {
 
+    private static final int MY_COURSES_PAGE_SIZE = 6;
+
     private final CourseService courseService;
     private final CategoryService categoryService;
     private final LessonService lessonService;
@@ -72,7 +74,7 @@ public class StudentViewController {
         List<com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO> courseCards =
                 studentLearningService.getCurrentStudentCourseCards();
         long completed = courseCards.stream().filter(card -> Boolean.TRUE.equals(card.getCompleted())).count();
-        model.addAttribute("courseCards", courseCards.stream().limit(3).toList());
+        model.addAttribute("courseCards", courseCards.stream().limit(MY_COURSES_PAGE_SIZE).toList());
         model.addAttribute("enrolledCourseCount", courseCards.size());
         model.addAttribute("completedCourseCount", completed);
         model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
@@ -163,11 +165,25 @@ public class StudentViewController {
     }
 
     @GetMapping("/my-courses")
-    public String myCourses(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public String myCourses(@RequestParam(value = "page", defaultValue = "0") int page,
+                            Model model,
+                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null || userDetails.getUser().getStatus() != UserStatus.ACTIVE) {
             return "redirect:/auth/login?error=blocked";
         }
-        model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
+        List<com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO> allCourseCards =
+                studentLearningService.getCurrentStudentCourseCards();
+        int totalPages = (allCourseCards.size() + MY_COURSES_PAGE_SIZE - 1) / MY_COURSES_PAGE_SIZE;
+        int currentPage = totalPages == 0
+                ? 0
+                : Math.min(Math.max(page, 0), totalPages - 1);
+        int fromIndex = currentPage * MY_COURSES_PAGE_SIZE;
+        int toIndex = Math.min(fromIndex + MY_COURSES_PAGE_SIZE, allCourseCards.size());
+
+        model.addAttribute("courseCards", allCourseCards.subList(fromIndex, toIndex));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("enrolledCourseCount", allCourseCards.size());
         return "student/my-courses";
     }
 

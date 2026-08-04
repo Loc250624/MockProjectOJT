@@ -67,6 +67,28 @@
                 </div>
             </div>
 
+            <nav th:if="${totalPages > 1}"
+                 class="pagination-nav student-pagination"
+                 aria-label="My course pages"
+                 style="margin-top:2.5rem;display:flex;gap:1rem;align-items:center;justify-content:center;">
+                <a class="btn btn-secondary btn-sm"
+                   th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+                   th:styleappend="${currentPage == 0 ? 'pointer-events:none;opacity:0.5;' : ''}"
+                   th:href="@{/student/my-courses(page=${currentPage - 1})}">
+                    <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
+                    <span>Previous</span>
+                </a>
+                <span th:text="${'Page ' + (currentPage + 1) + ' of ' + totalPages}"
+                      style="font-size:0.9rem;font-weight:600;color:#475569;">Page 1 of 1</span>
+                <a class="btn btn-secondary btn-sm"
+                   th:classappend="${currentPage + 1 >= totalPages ? 'disabled' : ''}"
+                   th:styleappend="${currentPage + 1 >= totalPages ? 'pointer-events:none;opacity:0.5;' : ''}"
+                   th:href="@{/student/my-courses(page=${currentPage + 1})}">
+                    <span>Next</span>
+                    <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                </a>
+            </nav>
+
             <!-- Empty state -->
             <div th:if="${#lists.isEmpty(courseCards)}" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px solid #eee; margin-top:2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('courses')}"></svg></div>
