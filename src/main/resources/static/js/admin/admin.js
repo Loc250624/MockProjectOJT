@@ -165,7 +165,10 @@ function initUserAdministration() {
         users: [],
         selectedUser: null,
         pendingStatusUserId: null,
-        pendingDeleteUserId: null
+        pendingDeleteUserId: null,
+        exporting: false,
+        creating: false,
+        createModalLastFocus: null
     };
 
     var portal = document.querySelector('.lumina-portal');
@@ -192,7 +195,13 @@ function initUserAdministration() {
         panelCreatedAt: document.getElementById('user-panel-created-at'),
         panelProvider: document.getElementById('user-panel-provider'),
         panelStatusAction: document.getElementById('user-panel-status-action'),
-        panelDeleteAction: document.getElementById('user-panel-delete-action')
+        panelDeleteAction: document.getElementById('user-panel-delete-action'),
+        exportButton: document.getElementById('export-users-csv'),
+        openCreateButton: document.getElementById('open-create-user'),
+        createModal: document.getElementById('create-user-modal'),
+        createForm: document.getElementById('create-user-form'),
+        createError: document.getElementById('create-user-error'),
+        createSubmit: document.getElementById('create-user-submit')
     };
 
     var debouncedLoadUsers = debounce(function() {
@@ -236,22 +245,187 @@ function initUserAdministration() {
         softDeleteSelectedUser();
     });
 
+    elements.exportButton.addEventListener('click', exportUsersCsv);
+    elements.openCreateButton.addEventListener('click', openCreateUserModal);
+    elements.createForm.addEventListener('submit', createUser);
+    elements.createModal.querySelectorAll('[data-create-user-close]').forEach(function(control) {
+        control.addEventListener('click', function() {
+            closeCreateUserModal(true);
+        });
+    });
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !elements.createModal.hidden && !state.creating) {
+            closeCreateUserModal(true);
+        }
+    });
+
     loadUsers();
+
+    function currentUserFilterParams() {
+        var params = new URLSearchParams();
+        appendParam(params, 'keyword', elements.searchInput.value.trim());
+        appendParam(params, 'role', elements.roleFilter.value);
+        appendParam(params, 'status', elements.statusFilter.value);
+        appendParam(params, 'authProvider', elements.providerFilter.value);
+        params.set('sortBy', state.sortBy);
+        params.set('sortDir', state.sortDir);
+        return params;
+    }
+
+    function exportUsersCsv() {
+        if (state.exporting) {
+            return;
+        }
+        state.exporting = true;
+        elements.exportButton.disabled = true;
+        elements.exportButton.textContent = 'Exporting...';
+        setError('');
+
+        fetch('/api/admin/users/export?' + currentUserFilterParams().toString(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'text/csv' }
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.json().catch(function() {
+                        return { message: 'Unable to export users.' };
+                    }).then(function(payload) {
+                        throw new Error(payload.message || 'Unable to export users.');
+                    });
+                }
+                return response.blob().then(function(blob) {
+                    return { blob: blob, disposition: response.headers.get('Content-Disposition') || '' };
+                });
+            })
+            .then(function(download) {
+                var fileNameMatch = /filename="?([^";]+)"?/i.exec(download.disposition);
+                var fileName = fileNameMatch ? fileNameMatch[1] : 'admin-users.csv';
+                var downloadUrl = URL.createObjectURL(download.blob);
+                var link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(function() {
+                    URL.revokeObjectURL(downloadUrl);
+                }, 1000);
+                setFeedback('CSV export downloaded successfully.', true);
+            })
+            .catch(function(error) {
+                setError(error.message || 'Unable to export users.');
+            })
+            .finally(function() {
+                state.exporting = false;
+                elements.exportButton.disabled = false;
+                elements.exportButton.textContent = 'Export CSV';
+            });
+    }
+
+    function openCreateUserModal() {
+        state.createModalLastFocus = document.activeElement;
+        setCreateError('');
+        elements.createModal.hidden = false;
+        document.body.classList.add('admin-user-modal-open');
+        window.setTimeout(function() {
+            elements.createForm.elements.fullName.focus();
+        }, 0);
+    }
+
+    function closeCreateUserModal(resetForm) {
+        if (state.creating) {
+            return;
+        }
+        elements.createModal.hidden = true;
+        document.body.classList.remove('admin-user-modal-open');
+        setCreateError('');
+        if (resetForm) {
+            elements.createForm.reset();
+        }
+        if (state.createModalLastFocus && typeof state.createModalLastFocus.focus === 'function') {
+            state.createModalLastFocus.focus();
+        }
+    }
+
+    function createUser(event) {
+        event.preventDefault();
+        if (state.creating || !elements.createForm.reportValidity()) {
+            return;
+        }
+
+        var form = elements.createForm.elements;
+        if (form.password.value !== form.confirmPassword.value) {
+            setCreateError('Passwords do not match.');
+            form.confirmPassword.focus();
+            return;
+        }
+
+        state.creating = true;
+        setCreateError('');
+        setCreateFormBusy(true);
+        fetch('/api/admin/users', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                fullName: form.fullName.value.trim(),
+                email: form.email.value.trim(),
+                role: form.role.value,
+                password: form.password.value,
+                confirmPassword: form.confirmPassword.value
+            })
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return { message: 'Unable to create user account.' };
+                }).then(function(apiResponse) {
+                    if (!response.ok) {
+                        throw new Error(apiResponse.message || 'Unable to create user account.');
+                    }
+                    return apiResponse;
+                });
+            })
+            .then(function(apiResponse) {
+                state.creating = false;
+                setCreateFormBusy(false);
+                closeCreateUserModal(true);
+                state.page = 0;
+                loadUsers();
+                setFeedback(apiResponse.message || 'User account created successfully.', true);
+            })
+            .catch(function(error) {
+                setCreateError(error.message || 'Unable to create user account.');
+            })
+            .finally(function() {
+                state.creating = false;
+                setCreateFormBusy(false);
+            });
+    }
+
+    function setCreateFormBusy(busy) {
+        Array.prototype.forEach.call(elements.createForm.elements, function(control) {
+            control.disabled = busy;
+        });
+        elements.createSubmit.textContent = busy ? 'Creating...' : 'Create User';
+    }
+
+    function setCreateError(message) {
+        elements.createError.textContent = message;
+        elements.createError.hidden = !message;
+    }
 
     function loadUsers() {
         setLoading(true);
         setError('');
         setFeedback('', false);
 
-        var params = new URLSearchParams();
-        appendParam(params, 'keyword', elements.searchInput.value.trim());
-        appendParam(params, 'role', elements.roleFilter.value);
-        appendParam(params, 'status', elements.statusFilter.value);
-        appendParam(params, 'authProvider', elements.providerFilter.value);
+        var params = currentUserFilterParams();
         params.set('page', state.page);
         params.set('size', state.size);
-        params.set('sortBy', state.sortBy);
-        params.set('sortDir', state.sortDir);
 
         fetch('/api/admin/users?' + params.toString(), {
             method: 'GET',

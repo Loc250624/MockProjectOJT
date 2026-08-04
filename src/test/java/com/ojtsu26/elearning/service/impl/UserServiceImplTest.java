@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -35,11 +36,14 @@ class UserServiceImplTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository, userMapper);
+        userService = new UserServiceImpl(userRepository, userMapper, passwordEncoder);
         lenient().when(userMapper.toDto(any(User.class))).thenAnswer(invocation -> toDto(invocation.getArgument(0)));
     }
 

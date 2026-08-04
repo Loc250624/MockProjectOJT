@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.request.AdminCreateUserRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.AdminPaymentSummaryDTO;
 import com.ojtsu26.elearning.dto.response.AdminTransactionDTO;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +36,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -90,6 +95,55 @@ public class AdminActionController {
 
         Page<UserResponseDTO> users = userService.searchUsers(keyword, parsedRole, parsedStatus, parsedAuthProvider, pageable);
         return ResponseEntity.ok(ApiResponse.success(users));
+    }
+
+    @GetMapping(value = "/users/export", produces = "text/csv")
+    public ResponseEntity<byte[]> exportUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String authProvider,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Role parsedRole = parseEnum(role, Role.class, "role");
+        UserStatus parsedStatus = parseEnum(status, UserStatus.class, "status");
+        AuthProvider parsedAuthProvider = parseEnum(authProvider, AuthProvider.class, "authProvider");
+        Sort sort = buildUserSearchPageable(0, 1, sortBy, sortDir).getSort();
+        List<UserResponseDTO> users = userService.findUsersForExport(
+                keyword, parsedRole, parsedStatus, parsedAuthProvider, sort);
+
+        String fileName = "admin-users-" + LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(buildUsersCsv(users).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String buildUsersCsv(List<UserResponseDTO> users) {
+        StringBuilder csv = new StringBuilder("\uFEFF");
+        csv.append("ID,Full Name,Email,Role,Status,Auth Provider,Join Date\r\n");
+        for (UserResponseDTO user : users) {
+            csv.append(csvCell(user.getId())).append(',')
+                    .append(csvCell(user.getFullName())).append(',')
+                    .append(csvCell(user.getEmail())).append(',')
+                    .append(csvCell(user.getRole())).append(',')
+                    .append(csvCell(user.getStatus())).append(',')
+                    .append(csvCell(user.getAuthProvider())).append(',')
+                    .append(csvCell(user.getCreatedAt()))
+                    .append("\r\n");
+        }
+        return csv.toString();
+    }
+
+    private String csvCell(Object value) {
+        String text = value == null ? "" : String.valueOf(value);
+        if (!text.isEmpty() && (text.charAt(0) == '=' || text.charAt(0) == '+'
+                || text.charAt(0) == '-' || text.charAt(0) == '@'
+                || text.charAt(0) == '\t' || text.charAt(0) == '\r')) {
+            text = "'" + text;
+        }
+        return "\"" + text.replace("\"", "\"\"") + "\"";
     }
 
     private Pageable buildUserSearchPageable(int page, int size, String sortBy, String sortDir) {
@@ -182,8 +236,11 @@ public class AdminActionController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<?> createUser() {
-        return ResponseEntity.ok(Map.of("message", "Create user placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> createUser(
+            @Valid @RequestBody AdminCreateUserRequestDTO request) {
+        UserResponseDTO user = userService.createByAdmin(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(user, "User account created successfully"));
     }
 
     @PatchMapping("/users/{id}")
