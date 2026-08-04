@@ -3,8 +3,50 @@
 document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
+    initProgressDistributionLineChart();
     initTeacherAssessments();
 });
+
+function initProgressDistributionLineChart() {
+    var plot = document.querySelector('[data-progress-line-chart]');
+    if (!plot) {
+        return;
+    }
+
+    var values = [
+        Number(plot.getAttribute('data-not-started')) || 0,
+        Number(plot.getAttribute('data-in-progress')) || 0,
+        Number(plot.getAttribute('data-completed')) || 0
+    ];
+    var maximum = Math.max.apply(null, values.concat([1]));
+    var xPositions = [60, 500, 940];
+    var coordinates = values.map(function(value, index) {
+        var y = 20 + (1 - (value / maximum)) * 200;
+        return {
+            x: xPositions[index],
+            y: y,
+            xPercent: xPositions[index] / 10,
+            yPercent: y / 2.4
+        };
+    });
+    var path = coordinates.map(function(point, index) {
+        return (index === 0 ? 'M ' : 'L ') + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+    }).join(' ');
+
+    plot.innerHTML = '<svg class="report-line-svg" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+        '<path class="report-line-path" vector-effect="non-scaling-stroke" d="' + path + '"></path>' +
+        '</svg>';
+
+    coordinates.forEach(function(point, index) {
+        var marker = document.createElement('span');
+        marker.className = 'report-line-point';
+        marker.style.left = point.xPercent.toFixed(2) + '%';
+        marker.style.top = point.yPercent.toFixed(2) + '%';
+        marker.title = values[index].toLocaleString();
+        marker.setAttribute('aria-hidden', 'true');
+        plot.appendChild(marker);
+    });
+}
 
 function initPortalSidebarNav() {
     var currentPath = normalizePortalPath(window.location.pathname);

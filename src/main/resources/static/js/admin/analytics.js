@@ -109,36 +109,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderSingleBarChart(container, points, valueKey, labelBuilder) {
+    function renderSingleLineChart(container, points, valueKey, labelBuilder) {
         container.innerHTML = '';
         container.setAttribute('role', 'img');
-        container.setAttribute('aria-label', 'Revenue bar chart by period. Hover or focus bars for values.');
+        container.setAttribute('aria-label', 'Revenue line chart by period. Hover or focus data points for values.');
         if (!hasSeriesData(points, [valueKey])) {
             renderChartState(container, 'empty', 'No revenue data', 'No paid orders were found for this period.');
             return;
         }
+
         var maxValue = points.reduce(function(max, point) {
             return Math.max(max, safeNumber(point[valueKey]));
         }, 0);
-        points.forEach(function(point) {
-            var group = document.createElement('div');
-            group.className = 'admin-chart-group';
-            var barWrap = document.createElement('div');
-            barWrap.className = 'admin-bar-single';
-            var bar = document.createElement('div');
-            bar.className = 'admin-chart-bar';
-            bar.style.height = barHeight(point[valueKey], maxValue, container);
-            bar.title = labelBuilder(point);
-            bar.setAttribute('aria-label', bar.title);
-            bar.setAttribute('tabindex', '0');
-            var label = document.createElement('div');
-            label.className = 'admin-chart-label';
-            label.textContent = point.period || 'Period';
-            barWrap.appendChild(bar);
-            group.appendChild(barWrap);
-            group.appendChild(label);
-            container.appendChild(group);
+
+        var chart = document.createElement('div');
+        chart.className = 'admin-line-canvas';
+        chart.style.minWidth = Math.max(680, points.length * 82) + 'px';
+
+        var plot = document.createElement('div');
+        plot.className = 'admin-line-plot-area';
+        var path = points.map(function(point, index) {
+            var x = points.length === 1 ? 500 : (index / (points.length - 1)) * 1000;
+            var y = 12 + (1 - (safeNumber(point[valueKey]) / maxValue)) * 226;
+            return (index === 0 ? 'M ' : 'L ') + x.toFixed(2) + ' ' + y.toFixed(2);
+        }).join(' ');
+        plot.innerHTML = '<svg class="admin-line-svg" viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+            '<path class="admin-line-path admin-line-path-primary" vector-effect="non-scaling-stroke" d="' + path + '"></path>' +
+            '</svg>';
+
+        points.forEach(function(point, index) {
+            var x = points.length === 1 ? 50 : (index / (points.length - 1)) * 100;
+            var y = 4.8 + (1 - (safeNumber(point[valueKey]) / maxValue)) * 90.4;
+            var marker = document.createElement('button');
+            marker.type = 'button';
+            marker.className = 'admin-line-point admin-line-point-primary';
+            marker.style.left = x.toFixed(2) + '%';
+            marker.style.top = y.toFixed(2) + '%';
+            marker.title = labelBuilder(point);
+            marker.setAttribute('aria-label', marker.title);
+            plot.appendChild(marker);
         });
+
+        var labels = document.createElement('div');
+        labels.className = 'admin-line-labels';
+        labels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
+        points.forEach(function(point) {
+            var label = document.createElement('div');
+            label.className = 'admin-line-label';
+            label.textContent = point.period || 'Period';
+            label.title = point.period || 'Period';
+            labels.appendChild(label);
+        });
+
+        chart.appendChild(plot);
+        chart.appendChild(labels);
+        container.appendChild(chart);
     }
 
     function renderStudentLineChart(container, points) {
@@ -207,15 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chart.appendChild(plot);
         chart.appendChild(labels);
         container.appendChild(chart);
-    }
-
-    function barHeight(value, maxValue, container) {
-        if (!maxValue) {
-            return '3px';
-        }
-        var isTallChart = container && container.classList && container.classList.contains('admin-analytics-chart-tall');
-        var availableHeight = isTallChart ? 270 : 210;
-        return Math.max(3, Math.round((safeNumber(value) / maxValue) * availableHeight)) + 'px';
     }
 
     function hasSeriesData(points, valueKeys) {
@@ -750,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderRevenueKpis(data);
                     renderRevenueMetadata(data);
                     document.getElementById('adminRevenueEmpty').hidden = safeNumber(data.totalRevenue) > 0 || safeNumber(data.paidOrderCount) > 0;
-                    renderSingleBarChart(document.getElementById('adminRevenueChart'), data.trend, 'revenue', function(point) {
+                    renderSingleLineChart(document.getElementById('adminRevenueChart'), data.trend, 'revenue', function(point) {
                         return point.period + ': ' + money(point.revenue) + ', ' + number(point.paidOrderCount) + ' paid orders';
                     });
                     renderRevenueTable(data.trend);

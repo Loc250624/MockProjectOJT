@@ -388,60 +388,6 @@ body.admin-user-modal-open {
   min-height: 300px;
 }
 
-.admin-chart-group {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  align-items: end;
-  gap: 0.55rem;
-  min-width: 52px;
-  height: 220px;
-}
-
-.admin-analytics-chart-tall .admin-chart-group {
-  height: 280px;
-}
-
-.admin-bar-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: end;
-  gap: 4px;
-  height: 100%;
-}
-
-.admin-bar-single {
-  display: flex;
-  align-items: end;
-  height: 100%;
-}
-
-.admin-chart-bar {
-  width: 100%;
-  min-height: 3px;
-  border-radius: 6px 6px 0 0;
-  background: var(--lumina-blue);
-}
-
-.admin-chart-bar:focus-visible {
-  outline: 3px solid var(--lumina-blue-pale);
-  outline-offset: 2px;
-}
-
-.admin-chart-bar.secondary {
-  background: var(--lumina-info);
-}
-
-.admin-chart-label {
-  color: var(--lumina-gray-500);
-  font-size: 0.68rem;
-  font-weight: 700;
-  max-width: 5.5rem;
-  overflow: hidden;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Student analytics line chart */
 .admin-analytics-chart.admin-student-line-chart {
   display: block;
@@ -538,6 +484,19 @@ body.admin-user-modal-open {
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Revenue analytics line chart */
+.admin-analytics-chart.admin-revenue-line-chart {
+  display: block;
+  min-height: 320px;
+  padding: 0.75rem 0.25rem 0;
+  overflow-x: auto;
+  background: none;
+}
+
+.admin-revenue-line-chart .admin-chart-state {
+  min-height: 290px;
 }
 
 /* Admin dashboard pie/donut charts */

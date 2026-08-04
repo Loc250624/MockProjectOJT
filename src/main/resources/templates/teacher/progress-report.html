@@ -155,22 +155,27 @@
                             Latest activity
                         </div>
                     </div>
-                    <div class="report-distribution" role="img"
-                         th:attr="aria-label=${'Not started ' + overview.notStartedStudents + ', in progress ' + overview.inProgressStudents + ', completed ' + overview.completedStudents}">
-                        <div class="report-bar-row">
-                            <span>Not started</span>
-                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.notStartedStudents * 100 / overview.totalStudents)} + '%'"></i></div>
-                            <strong th:text="${overview.notStartedStudents}">0</strong>
-                        </div>
-                        <div class="report-bar-row">
-                            <span>In progress</span>
-                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.inProgressStudents * 100 / overview.totalStudents)} + '%'"></i></div>
-                            <strong th:text="${overview.inProgressStudents}">0</strong>
-                        </div>
-                        <div class="report-bar-row">
-                            <span>Completed</span>
-                            <div class="report-bar"><i th:style="'width:' + ${overview.totalStudents == 0 ? 0 : (overview.completedStudents * 100 / overview.totalStudents)} + '%'"></i></div>
-                            <strong th:text="${overview.completedStudents}">0</strong>
+                    <div class="report-distribution report-line-chart">
+                        <div class="report-line-plot"
+                             role="img"
+                             data-progress-line-chart
+                             th:attr="data-not-started=${overview.notStartedStudents},
+                                      data-in-progress=${overview.inProgressStudents},
+                                      data-completed=${overview.completedStudents},
+                                      aria-label=${'Progress distribution line chart: not started ' + overview.notStartedStudents + ', in progress ' + overview.inProgressStudents + ', completed ' + overview.completedStudents}"></div>
+                        <div class="report-line-labels" aria-hidden="true">
+                            <div class="report-line-label">
+                                <span>Not started</span>
+                                <strong th:text="${overview.notStartedStudents}">0</strong>
+                            </div>
+                            <div class="report-line-label">
+                                <span>In progress</span>
+                                <strong th:text="${overview.inProgressStudents}">0</strong>
+                            </div>
+                            <div class="report-line-label">
+                                <span>Completed</span>
+                                <strong th:text="${overview.completedStudents}">0</strong>
+                            </div>
                         </div>
                     </div>
                     <dl class="report-definition-list">

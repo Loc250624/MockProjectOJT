@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         chart.innerHTML = '';
         chart.setAttribute('role', 'img');
-        chart.setAttribute('aria-label', 'Revenue bar chart by period. Hover or focus bars for revenue and paid order values.');
+        chart.setAttribute('aria-label', 'Revenue line chart by period. Hover or focus data points for revenue and paid order values.');
         if (!Array.isArray(points) || !points.length) {
             chart.innerHTML = '<div class="teacher-state report-inline-state"><strong>No trend data.</strong><span>No paid orders were found for this period.</span></div>';
             return;
@@ -270,23 +270,50 @@ document.addEventListener('DOMContentLoaded', function() {
         var maxRevenue = points.reduce(function(max, point) {
             return Math.max(max, safeNumber(point.revenue));
         }, 0);
-        points.forEach(function(point) {
-            var wrap = document.createElement('div');
-            wrap.className = 'analytics-bar-wrap';
-            var bar = document.createElement('div');
-            bar.className = 'analytics-bar';
-            var height = maxRevenue === 0 ? 3 : Math.max(3, Math.round((safeNumber(point.revenue) / maxRevenue) * 220));
-            bar.style.height = height + 'px';
-            bar.title = (point.period || 'Period') + ': ' + asMoney(point.revenue) + ' from ' + asNumber(point.paidOrderCount) + ' paid orders';
-            bar.setAttribute('aria-label', bar.title);
-            bar.setAttribute('tabindex', '0');
-            var label = document.createElement('div');
-            label.className = 'analytics-bar-label';
-            label.textContent = point.period || 'Period';
-            wrap.appendChild(bar);
-            wrap.appendChild(label);
-            chart.appendChild(wrap);
+
+        var safeMaximum = maxRevenue || 1;
+        var canvas = document.createElement('div');
+        canvas.className = 'analytics-line-canvas';
+        canvas.style.minWidth = Math.max(680, points.length * 82) + 'px';
+
+        var plot = document.createElement('div');
+        plot.className = 'analytics-line-plot-area';
+        var path = points.map(function(point, index) {
+            var x = points.length === 1 ? 500 : (index / (points.length - 1)) * 1000;
+            var y = 12 + (1 - (safeNumber(point.revenue) / safeMaximum)) * 226;
+            return (index === 0 ? 'M ' : 'L ') + x.toFixed(2) + ' ' + y.toFixed(2);
+        }).join(' ');
+        plot.innerHTML = '<svg class="analytics-line-svg" viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+            '<path class="analytics-line-path" vector-effect="non-scaling-stroke" d="' + path + '"></path>' +
+            '</svg>';
+
+        points.forEach(function(point, index) {
+            var x = points.length === 1 ? 50 : (index / (points.length - 1)) * 100;
+            var y = 4.8 + (1 - (safeNumber(point.revenue) / safeMaximum)) * 90.4;
+            var marker = document.createElement('button');
+            marker.type = 'button';
+            marker.className = 'analytics-line-point';
+            marker.style.left = x.toFixed(2) + '%';
+            marker.style.top = y.toFixed(2) + '%';
+            marker.title = (point.period || 'Period') + ': ' + asMoney(point.revenue) + ' from ' + asNumber(point.paidOrderCount) + ' paid orders';
+            marker.setAttribute('aria-label', marker.title);
+            plot.appendChild(marker);
         });
+
+        var labels = document.createElement('div');
+        labels.className = 'analytics-line-labels';
+        labels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
+        points.forEach(function(point) {
+            var label = document.createElement('div');
+            label.className = 'analytics-line-label';
+            label.textContent = point.period || 'Period';
+            label.title = point.period || 'Period';
+            labels.appendChild(label);
+        });
+
+        canvas.appendChild(plot);
+        canvas.appendChild(labels);
+        chart.appendChild(canvas);
     }
 
     function renderCourses(payload) {
