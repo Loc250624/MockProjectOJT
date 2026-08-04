@@ -154,6 +154,7 @@ public class SecurityConfig {
                         "/api/ai-chatbot/chat",
                         "/api/payment/vnpay-ipn",
                         "/api/payment/webhook",
+                        "/student/payment-result",
                         "/auth/login",
                         "/auth/register",
                         "/auth/oauth2/complete",

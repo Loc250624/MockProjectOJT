@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller.api;
 
+import com.ojtsu26.elearning.common.VnpayCallbackUtils;
 import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -45,16 +46,7 @@ public class PaymentWebhookController {
     public ResponseEntity<?> handleVnpayIpn(@RequestParam Map<String, String> params) {
         log.info("Received VNPAY IPN callback: {}", callbackSummary(params, "vnp_TxnRef", "vnp_TransactionNo", "vnp_SecureHash"));
         
-        Map<String, String> normalizedParams = new java.util.HashMap<>();
-        normalizedParams.put("orderId", params.get("vnp_TxnRef"));
-        normalizedParams.put("transId", params.get("vnp_TransactionNo"));
-        
-        String responseCode = params.get("vnp_ResponseCode");
-        String resultCode = "00".equals(responseCode) ? "0" : (responseCode != null ? responseCode : "99");
-        normalizedParams.put("resultCode", resultCode);
-        
-        // Include everything for signature check
-        normalizedParams.putAll(params);
+        Map<String, String> normalizedParams = VnpayCallbackUtils.normalize(params);
 
         try {
             paymentService.processWebhook(PaymentMethod.VNPAY, normalizedParams);

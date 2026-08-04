@@ -15,8 +15,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 @ExtendWith(MockitoExtension.class)
 public class VnpayProviderTest {
@@ -73,7 +79,7 @@ public class VnpayProviderTest {
         PaymentRequest request = PaymentRequest.builder()
                 .orderCode("ORD12345")
                 .amount(new BigDecimal("100000")) // 100,000 VND
-                .orderInfo("Purchase React Advanced")
+                .orderInfo("Purchase course: Lập trình Java")
                 .returnUrl("http://localhost:8080/student/payment-result")
                 .notifyUrl("http://localhost:8080/api/payment/vnpay-ipn")
                 .ipAddress("127.0.0.1")
@@ -90,6 +96,14 @@ public class VnpayProviderTest {
         assertTrue(response.getPaymentUrl().contains("vnp_TxnRef=ORD12345"));
         assertTrue(response.getPaymentUrl().contains("vnp_Amount=10000000")); // 100,000 VND * 100
         assertTrue(response.getPaymentUrl().contains("vnp_SecureHash="));
+        assertTrue(response.getPaymentUrl().contains("vnp_OrderInfo=Purchase+course%3A+L%E1%BA%ADp+tr%C3%ACnh+Java"));
+        assertFalse(response.getPaymentUrl().contains("%20"));
+
+        String query = response.getPaymentUrl().substring(response.getPaymentUrl().indexOf('?') + 1);
+        int signatureSeparator = query.lastIndexOf("&vnp_SecureHash=");
+        String signedData = query.substring(0, signatureSeparator);
+        String secureHash = query.substring(signatureSeparator + "&vnp_SecureHash=".length());
+        assertEquals(calculateHmacSha512(signedData, vnpayProperties.getHashSecret()), secureHash);
     }
 
     @Test
@@ -102,9 +116,8 @@ public class VnpayProviderTest {
         params.put("vnp_TxnRef", "ORD12345");
         params.put("vnp_ResponseCode", "00");
         params.put("vnp_TransactionNo", "12345678");
-        // A computed signature for the above parameters using key "MSBUNHXVQPHFLNNEUJWTLKJZPEXXWJCT"
-        // Raw string to sign: vnp_Amount=10000000&vnp_CurrCode=VND&vnp_ResponseCode=00&vnp_TmnCode=2QXUIB0A&vnp_TransactionNo=12345678&vnp_TxnRef=ORD12345
-        String rawSig = "vnp_Amount=10000000&vnp_CurrCode=VND&vnp_ResponseCode=00&vnp_TmnCode=2QXUIB0A&vnp_TransactionNo=12345678&vnp_TxnRef=ORD12345";
+        params.put("vnp_OrderInfo", "Purchase course: Lập trình Java");
+        String rawSig = canonicalVnpayData(params);
         String secureHash = calculateHmacSha512(rawSig, "MSBUNHXVQPHFLNNEUJWTLKJZPEXXWJCT");
         params.put("vnp_SecureHash", secureHash);
 
@@ -144,5 +157,22 @@ public class VnpayProviderTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String canonicalVnpayData(Map<String, String> params) {
+        List<String> fieldNames = new ArrayList<>(params.keySet());
+        Collections.sort(fieldNames);
+        StringJoiner data = new StringJoiner("&");
+        for (String fieldName : fieldNames) {
+            String fieldValue = params.get(fieldName);
+            if (fieldName.startsWith("vnp_")
+                    && !fieldName.equals("vnp_SecureHash")
+                    && !fieldName.equals("vnp_SecureHashType")
+                    && fieldValue != null
+                    && !fieldValue.isEmpty()) {
+                data.add(fieldName + "=" + URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
+            }
+        }
+        return data.toString();
     }
 }
