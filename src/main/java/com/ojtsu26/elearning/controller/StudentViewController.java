@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.VnpayCallbackUtils;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
 import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
@@ -19,7 +20,9 @@ import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.OrderRepository;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,18 +32,24 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/student")
 @RequiredArgsConstructor
 public class StudentViewController {
+
+    private static final int MY_COURSES_PAGE_SIZE = 6;
 
     private final CourseService courseService;
     private final CategoryService categoryService;
@@ -57,12 +66,15 @@ public class StudentViewController {
     private final AssessmentService assessmentService;
     private final StudentDashboardService studentDashboardService;
 
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         List<com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO> courseCards =
                 studentLearningService.getCurrentStudentCourseCards();
         long completed = courseCards.stream().filter(card -> Boolean.TRUE.equals(card.getCompleted())).count();
-        model.addAttribute("courseCards", courseCards.stream().limit(3).toList());
+        model.addAttribute("courseCards", courseCards.stream().limit(MY_COURSES_PAGE_SIZE).toList());
         model.addAttribute("enrolledCourseCount", courseCards.size());
         model.addAttribute("completedCourseCount", completed);
         model.addAttribute("inProgressCourseCount", Math.max(0, courseCards.size() - completed));
@@ -153,11 +165,25 @@ public class StudentViewController {
     }
 
     @GetMapping("/my-courses")
-    public String myCourses(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public String myCourses(@RequestParam(value = "page", defaultValue = "0") int page,
+                            Model model,
+                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null || userDetails.getUser().getStatus() != UserStatus.ACTIVE) {
             return "redirect:/auth/login?error=blocked";
         }
-        model.addAttribute("courseCards", studentLearningService.getCurrentStudentCourseCards());
+        List<com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO> allCourseCards =
+                studentLearningService.getCurrentStudentCourseCards();
+        int totalPages = (allCourseCards.size() + MY_COURSES_PAGE_SIZE - 1) / MY_COURSES_PAGE_SIZE;
+        int currentPage = totalPages == 0
+                ? 0
+                : Math.min(Math.max(page, 0), totalPages - 1);
+        int fromIndex = currentPage * MY_COURSES_PAGE_SIZE;
+        int toIndex = Math.min(fromIndex + MY_COURSES_PAGE_SIZE, allCourseCards.size());
+
+        model.addAttribute("courseCards", allCourseCards.subList(fromIndex, toIndex));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("enrolledCourseCount", allCourseCards.size());
         return "student/my-courses";
     }
 
@@ -334,8 +360,10 @@ public class StudentViewController {
 
     @GetMapping("/payment-result")
     public String paymentResult(
-            @RequestParam java.util.Map<String, String> params,
-            Model model) {
+            @RequestParam Map<String, String> params,
+            Model model,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletRequest request) {
 
         String orderId = params.get("orderId");
         String resultCode = params.get("resultCode");
@@ -345,13 +373,24 @@ public class StudentViewController {
         if (params.containsKey("vnp_TxnRef")) {
             orderId = params.get("vnp_TxnRef");
             String vnpResponseCode = params.get("vnp_ResponseCode");
-            resultCode = "00".equals(vnpResponseCode) ? "0" : (vnpResponseCode != null ? vnpResponseCode : "99");
-            message = "0".equals(resultCode) ? "Payment successful!" : "Payment failed (code: " + vnpResponseCode + ")";
+            Map<String, String> normalizedParams = VnpayCallbackUtils.normalize(params);
+            resultCode = normalizedParams.get("resultCode");
+            message = VnpayCallbackUtils.isSuccessful(params)
+                    ? "Payment successful!"
+                    : "Payment failed (code: " + (vnpResponseCode != null ? vnpResponseCode : resultCode) + ")";
+
+            String resultView = processVnpayReturn(
+                    normalizedParams, orderId, message, model, userDetails);
+            if (isExternalPaymentReturn(request)) {
+                return "redirect:" + buildAppPaymentResultUrl(params);
+            }
+            return resultView;
         }
 
         if (orderId == null) {
             // No order context — just show generic page
             model.addAttribute("paymentSuccess", false);
+            model.addAttribute("paymentStatus", "Failed");
             model.addAttribute("paymentMessage", "No payment information found.");
             return "student/payment-result";
         }
@@ -359,6 +398,7 @@ public class StudentViewController {
         // MoMo and VNPAY mapped success code
         boolean success = "0".equals(resultCode);
         model.addAttribute("paymentSuccess", success);
+        model.addAttribute("paymentStatus", success ? "Paid" : "Failed");
         model.addAttribute("orderId", orderId);
         model.addAttribute("paymentMessage",
                 success ? "Payment successful! Your enrollment has been activated."
@@ -370,6 +410,92 @@ public class StudentViewController {
         }
 
         return "student/payment-result";
+    }
+
+    /**
+     * VNPay normally confirms an order through its server-to-server IPN. During
+     * local sandbox testing VNPay cannot reach localhost, so the signed return
+     * URL is also processed as an idempotent fallback.
+     */
+    private String processVnpayReturn(Map<String, String> normalizedParams,
+                                      String orderId,
+                                      String gatewayMessage,
+                                      Model model,
+                                      CustomUserDetails userDetails) {
+        if (orderId == null || orderId.isBlank()) {
+            return renderPaymentResult(model, orderId, false, "No payment information found.");
+        }
+
+        Order order = orderRepository.findByOrderCode(orderId).orElse(null);
+        if (order == null || order.getUser() == null) {
+            return renderPaymentResult(model, orderId, false, "Unable to verify this payment order.");
+        }
+
+        // The VNPay return may arrive on a public tunnel host without the JWT
+        // cookie issued for localhost. If a user is authenticated, still reject
+        // attempts to display another user's order. Anonymous callbacks remain
+        // safe because processWebhook verifies VNPay's signature and order data.
+        if (userDetails != null
+                && !order.getUser().getId().equals(userDetails.getUser().getId())) {
+            return renderPaymentResult(model, orderId, false, "Unable to verify this payment order.");
+        }
+
+        if (order.getStatus() == OrderStatus.PENDING) {
+            try {
+                paymentService.processWebhook(PaymentMethod.VNPAY, normalizedParams);
+            } catch (IllegalArgumentException ex) {
+                return renderPaymentResult(model, orderId, false,
+                        "Unable to verify the payment result. The order remains pending for safety.");
+            }
+        }
+
+        Order updatedOrder = orderRepository.findByOrderCode(orderId).orElse(order);
+        if (updatedOrder.getStatus() == OrderStatus.PAID) {
+            model.addAttribute("redirectToMyCourses", true);
+            return renderPaymentResult(model, orderId, true,
+                    "Payment successful! Your enrollment has been activated.");
+        }
+
+        if (updatedOrder.getStatus() == OrderStatus.FAILED) {
+            return renderPaymentResult(model, orderId, false,
+                    gatewayMessage != null ? gatewayMessage : "Payment failed or was cancelled.");
+        }
+
+        return renderPaymentResult(model, orderId, false,
+                "The payment is awaiting confirmation. Please check your payment history shortly.");
+    }
+
+    private String renderPaymentResult(Model model, String orderId, boolean success, String message) {
+        model.addAttribute("paymentSuccess", success);
+        model.addAttribute("paymentStatus", success ? "Paid" : "Failed");
+        if (orderId != null) {
+            model.addAttribute("orderId", orderId);
+        }
+        model.addAttribute("paymentMessage", message);
+        return "student/payment-result";
+    }
+
+    private boolean isExternalPaymentReturn(HttpServletRequest request) {
+        try {
+            URI appUri = URI.create(appBaseUrl);
+            if (appUri.getHost() == null) {
+                return false;
+            }
+            int appPort = appUri.getPort() >= 0
+                    ? appUri.getPort()
+                    : ("https".equalsIgnoreCase(appUri.getScheme()) ? 443 : 80);
+            int requestPort = request.getServerPort();
+            return !appUri.getHost().equalsIgnoreCase(request.getServerName()) || appPort != requestPort;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private String buildAppPaymentResultUrl(Map<String, String> params) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(appBaseUrl)
+                .path("/student/payment-result");
+        params.forEach(builder::queryParam);
+        return builder.build().encode(StandardCharsets.UTF_8).toUriString();
     }
 
     @GetMapping("/payment-history")

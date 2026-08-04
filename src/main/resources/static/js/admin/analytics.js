@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             barWrap.className = 'admin-bar-single';
             var bar = document.createElement('div');
             bar.className = 'admin-chart-bar';
-            bar.style.height = barHeight(point[valueKey], maxValue);
+            bar.style.height = barHeight(point[valueKey], maxValue, container);
             bar.title = labelBuilder(point);
             bar.setAttribute('aria-label', bar.title);
             bar.setAttribute('tabindex', '0');
@@ -141,50 +141,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderStudentBarChart(container, points) {
+    function renderStudentLineChart(container, points) {
         container.innerHTML = '';
         container.setAttribute('role', 'img');
-        container.setAttribute('aria-label', 'Student bar chart by period. Blue bars show new students and cyan bars show active students.');
+        container.setAttribute('aria-label', 'Student line chart by period. Blue shows new students and cyan shows active students. Focus data points for values.');
         if (!hasSeriesData(points, ['newStudents', 'activeStudents'])) {
             renderChartState(container, 'empty', 'No student activity', 'No new or active students were found for this period.');
             return;
         }
+
         var maxValue = points.reduce(function(max, point) {
             return Math.max(max, safeNumber(point.newStudents), safeNumber(point.activeStudents));
         }, 0);
+
+        var chart = document.createElement('div');
+        chart.className = 'admin-line-canvas';
+        chart.style.minWidth = Math.max(680, points.length * 82) + 'px';
+
+        var plot = document.createElement('div');
+        plot.className = 'admin-line-plot-area';
+
+        function linePath(valueKey) {
+            return points.map(function(point, index) {
+                var x = points.length === 1 ? 500 : (index / (points.length - 1)) * 1000;
+                var y = 12 + (1 - (safeNumber(point[valueKey]) / maxValue)) * 226;
+                return (index === 0 ? 'M ' : 'L ') + x.toFixed(2) + ' ' + y.toFixed(2);
+            }).join(' ');
+        }
+
+        plot.innerHTML = '<svg class="admin-line-svg" viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+            '<path class="admin-line-path admin-line-path-primary" vector-effect="non-scaling-stroke" d="' + linePath('newStudents') + '"></path>' +
+            '<path class="admin-line-path admin-line-path-secondary" vector-effect="non-scaling-stroke" d="' + linePath('activeStudents') + '"></path>' +
+            '</svg>';
+
+        function addPoints(valueKey, seriesLabel, className) {
+            points.forEach(function(point, index) {
+                var x = points.length === 1 ? 50 : (index / (points.length - 1)) * 100;
+                var y = 4.8 + (1 - (safeNumber(point[valueKey]) / maxValue)) * 90.4;
+                var marker = document.createElement('button');
+                var description = (point.period || 'Period') + ': ' + number(point[valueKey]) + ' ' + seriesLabel;
+                marker.type = 'button';
+                marker.className = 'admin-line-point ' + className;
+                marker.style.left = x.toFixed(2) + '%';
+                marker.style.top = y.toFixed(2) + '%';
+                marker.title = description;
+                marker.setAttribute('aria-label', description);
+                plot.appendChild(marker);
+            });
+        }
+
+        addPoints('newStudents', 'new students', 'admin-line-point-primary');
+        addPoints('activeStudents', 'active students', 'admin-line-point-secondary');
+
+        var labels = document.createElement('div');
+        labels.className = 'admin-line-labels';
+        labels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
         points.forEach(function(point) {
-            var group = document.createElement('div');
-            group.className = 'admin-chart-group';
-            var pair = document.createElement('div');
-            pair.className = 'admin-bar-pair';
-            var newBar = document.createElement('div');
-            newBar.className = 'admin-chart-bar';
-            newBar.style.height = barHeight(point.newStudents, maxValue);
-            newBar.title = point.period + ': ' + number(point.newStudents) + ' new students';
-            newBar.setAttribute('aria-label', newBar.title);
-            newBar.setAttribute('tabindex', '0');
-            var activeBar = document.createElement('div');
-            activeBar.className = 'admin-chart-bar secondary';
-            activeBar.style.height = barHeight(point.activeStudents, maxValue);
-            activeBar.title = point.period + ': ' + number(point.activeStudents) + ' active students';
-            activeBar.setAttribute('aria-label', activeBar.title);
-            activeBar.setAttribute('tabindex', '0');
             var label = document.createElement('div');
-            label.className = 'admin-chart-label';
+            label.className = 'admin-line-label';
             label.textContent = point.period || 'Period';
-            pair.appendChild(newBar);
-            pair.appendChild(activeBar);
-            group.appendChild(pair);
-            group.appendChild(label);
-            container.appendChild(group);
+            label.title = point.period || 'Period';
+            labels.appendChild(label);
         });
+
+        chart.appendChild(plot);
+        chart.appendChild(labels);
+        container.appendChild(chart);
     }
 
-    function barHeight(value, maxValue) {
+    function barHeight(value, maxValue, container) {
         if (!maxValue) {
             return '3px';
         }
-        return Math.max(3, Math.round((safeNumber(value) / maxValue) * 210)) + 'px';
+        var isTallChart = container && container.classList && container.classList.contains('admin-analytics-chart-tall');
+        var availableHeight = isTallChart ? 270 : 210;
+        return Math.max(3, Math.round((safeNumber(value) / maxValue) * availableHeight)) + 'px';
     }
 
     function hasSeriesData(points, valueKeys) {
@@ -192,6 +223,204 @@ document.addEventListener('DOMContentLoaded', function() {
             return valueKeys.some(function(key) {
                 return safeNumber(point[key]) > 0;
             });
+        });
+    }
+
+    var DASHBOARD_PIE_COLORS = ['#075ed1', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#0ea5e9'];
+
+    function sumTrend(points, valueKey) {
+        if (!Array.isArray(points)) return 0;
+        return points.reduce(function(total, point) {
+            return total + safeNumber(point[valueKey]);
+        }, 0);
+    }
+
+    function renderDashboardPieChart(container, slices, options) {
+        if (!container) return;
+        options = options || {};
+        var cleanSlices = (Array.isArray(slices) ? slices : []).filter(function(slice) {
+            return slice && safeNumber(slice.value) > 0;
+        }).map(function(slice, index) {
+            return {
+                label: slice.label || 'Value',
+                value: safeNumber(slice.value),
+                color: slice.color || DASHBOARD_PIE_COLORS[index % DASHBOARD_PIE_COLORS.length]
+            };
+        });
+
+        if (!cleanSlices.length) {
+            renderChartState(
+                container,
+                'empty',
+                options.emptyTitle || 'No chart data',
+                options.emptyDescription || 'No data was found for this period.'
+            );
+            return;
+        }
+
+        var total = cleanSlices.reduce(function(sum, slice) {
+            return sum + slice.value;
+        }, 0);
+        var formatter = typeof options.valueFormatter === 'function' ? options.valueFormatter : number;
+        var cursor = 0;
+        var gradientStops = cleanSlices.map(function(slice) {
+            var start = cursor;
+            cursor += (slice.value / total) * 100;
+            return slice.color + ' ' + start.toFixed(2) + '% ' + cursor.toFixed(2) + '%';
+        });
+
+        container.innerHTML = '';
+        container.setAttribute('role', 'img');
+        container.setAttribute(
+            'aria-label',
+            options.ariaLabel || cleanSlices.map(function(slice) {
+                return slice.label + ': ' + formatter(slice.value);
+            }).join('. ')
+        );
+
+        var layout = document.createElement('div');
+        layout.className = 'admin-pie-layout';
+
+        var visual = document.createElement('div');
+        visual.className = 'admin-pie-visual';
+        visual.style.background = 'conic-gradient(' + gradientStops.join(', ') + ')';
+        visual.setAttribute('aria-hidden', 'true');
+
+        var hole = document.createElement('div');
+        hole.className = 'admin-pie-hole';
+
+        var centerValue = document.createElement('strong');
+        centerValue.className = 'admin-pie-center-value';
+        centerValue.textContent = options.centerValue || formatter(total);
+
+        var centerLabel = document.createElement('span');
+        centerLabel.className = 'admin-pie-center-label';
+        centerLabel.textContent = options.centerLabel || 'total';
+
+        hole.appendChild(centerValue);
+        hole.appendChild(centerLabel);
+        visual.appendChild(hole);
+
+        var details = document.createElement('div');
+        details.className = 'admin-pie-details';
+
+        var legend = document.createElement('ul');
+        legend.className = 'admin-pie-legend';
+
+        cleanSlices.forEach(function(slice) {
+            var percentage = total > 0 ? (slice.value / total) * 100 : 0;
+            var item = document.createElement('li');
+            item.className = 'admin-pie-legend-item';
+            item.setAttribute('tabindex', '0');
+            item.setAttribute(
+                'aria-label',
+                slice.label + ': ' + formatter(slice.value) + ', ' + percentage.toFixed(1) + ' percent'
+            );
+
+            var swatch = document.createElement('i');
+            swatch.className = 'admin-pie-swatch';
+            swatch.style.background = slice.color;
+            swatch.setAttribute('aria-hidden', 'true');
+
+            var label = document.createElement('span');
+            label.className = 'admin-pie-legend-label';
+            label.textContent = slice.label;
+
+            var value = document.createElement('strong');
+            value.className = 'admin-pie-legend-value';
+            value.textContent = formatter(slice.value);
+
+            var percent = document.createElement('span');
+            percent.className = 'admin-pie-legend-percent';
+            percent.textContent = percentage.toFixed(1) + '%';
+
+            item.appendChild(swatch);
+            item.appendChild(label);
+            item.appendChild(value);
+            item.appendChild(percent);
+            legend.appendChild(item);
+        });
+
+        details.appendChild(legend);
+
+        if (options.note) {
+            var note = document.createElement('p');
+            note.className = 'admin-pie-note';
+            note.textContent = options.note;
+            details.appendChild(note);
+        }
+
+        layout.appendChild(visual);
+        layout.appendChild(details);
+        container.appendChild(layout);
+    }
+
+    function renderDashboardStudentPieChart(container, points) {
+        var newStudents = sumTrend(points, 'newStudents');
+        var activeStudents = sumTrend(points, 'activeStudents');
+
+        renderDashboardPieChart(container, [
+            { label: 'New students', value: newStudents, color: DASHBOARD_PIE_COLORS[0] },
+            { label: 'Active students', value: activeStudents, color: DASHBOARD_PIE_COLORS[1] }
+        ], {
+            emptyTitle: 'No student activity',
+            emptyDescription: 'No new or active students were found for this period.',
+            centerValue: number(newStudents + activeStudents),
+            centerLabel: 'reported counts',
+            valueFormatter: number,
+            note: 'New and active student groups can overlap.',
+            ariaLabel: 'Student breakdown pie chart. New students: ' + number(newStudents) +
+                '. Active students: ' + number(activeStudents) +
+                '. New and active groups can overlap.'
+        });
+    }
+
+    function renderDashboardRevenuePieChart(container, points) {
+        var slices = (Array.isArray(points) ? points : []).map(function(point) {
+            return {
+                label: point.period || 'Period',
+                value: safeNumber(point.revenue)
+            };
+        }).filter(function(slice) {
+            return slice.value > 0;
+        }).sort(function(left, right) {
+            return right.value - left.value;
+        });
+
+        var maxNamedSlices = 5;
+        if (slices.length > maxNamedSlices) {
+            var remaining = slices.slice(maxNamedSlices);
+            slices = slices.slice(0, maxNamedSlices);
+            slices.push({
+                label: 'Other periods',
+                value: remaining.reduce(function(total, slice) {
+                    return total + slice.value;
+                }, 0)
+            });
+        }
+
+        slices = slices.map(function(slice, index) {
+            return {
+                label: slice.label,
+                value: slice.value,
+                color: DASHBOARD_PIE_COLORS[index % DASHBOARD_PIE_COLORS.length]
+            };
+        });
+
+        var totalRevenue = slices.reduce(function(total, slice) {
+            return total + slice.value;
+        }, 0);
+
+        renderDashboardPieChart(container, slices, {
+            emptyTitle: 'No revenue data',
+            emptyDescription: 'No paid orders were found for this period.',
+            centerValue: money(totalRevenue),
+            centerLabel: 'total revenue',
+            valueFormatter: money,
+            note: 'The top five periods are shown; remaining periods are combined as Other periods.',
+            ariaLabel: 'Revenue breakdown pie chart. ' + slices.map(function(slice) {
+                return slice.label + ': ' + money(slice.value);
+            }).join('. ')
         });
     }
 
@@ -325,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (results[1].status === 'fulfilled') {
                         try {
-                            renderStudentBarChart(studentsChart, validateStudentAnalytics(results[1].value).trend);
+                            renderDashboardStudentPieChart(studentsChart, validateStudentAnalytics(results[1].value).trend);
                             fulfilledCount += 1;
                         } catch (error) {
                             renderChartState(studentsChart, 'error', 'Student chart unavailable', 'Student chart render failed: ' + error.message);
@@ -338,9 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         try {
                             var revenueData = validateRevenueAnalytics(results[2].value);
                             setMoneyCurrency(revenueData.currency, ['[data-dashboard-revenue-currency]']);
-                            renderSingleBarChart(revenueChart, revenueData.trend, 'revenue', function(point) {
-                                return point.period + ': ' + money(point.revenue) + ', ' + number(point.paidOrderCount) + ' paid orders';
-                            });
+                            renderDashboardRevenuePieChart(revenueChart, revenueData.trend);
                             fulfilledCount += 1;
                         } catch (error) {
                             renderChartState(revenueChart, 'error', 'Revenue chart unavailable', 'Revenue chart render failed: ' + error.message);
@@ -445,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderStudentKpis(data);
                     renderStudentMetadata(data);
                     document.getElementById('adminStudentsEmpty').hidden = safeNumber(data.newStudents) > 0 || safeNumber(data.activeStudents) > 0;
-                    renderStudentBarChart(document.getElementById('adminStudentsChart'), data.trend);
+                    renderStudentLineChart(document.getElementById('adminStudentsChart'), data.trend);
                     renderStudentsTable(data.trend);
                     setState('adminStudents', 'content');
                 })

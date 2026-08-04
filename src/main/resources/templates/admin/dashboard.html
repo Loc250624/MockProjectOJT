@@ -176,8 +176,8 @@
                     <section class="card card-padded">
                         <div class="card-header">
                             <div>
-                                <h2 class="card-title">Student Growth</h2>
-                                <p class="card-subtitle">New and active students in the selected period.</p>
+                                <h2 class="card-title">Student Breakdown</h2>
+                                <p class="card-subtitle">New and active student counts in the selected period.</p>
                             </div>
                             <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics}">
                                 <svg th:replace="~{fragments/icons :: icon('analytics')}"></svg>
@@ -187,16 +187,16 @@
                         <div class="admin-chart-meta" aria-hidden="true">
                             <span><i class="admin-chart-key admin-chart-key-primary"></i>New students</span>
                             <span><i class="admin-chart-key admin-chart-key-secondary"></i>Active students</span>
-                            <span class="admin-chart-axis">X-axis: period</span>
+                            <span class="admin-chart-axis">Pie chart: selected-period totals</span>
                         </div>
-                        <div id="dashboardStudentsChart" class="admin-analytics-chart" aria-live="polite"></div>
+                        <div id="dashboardStudentsChart" class="admin-analytics-chart admin-dashboard-pie-chart" aria-live="polite"></div>
                     </section>
 
                     <section class="card card-padded">
                         <div class="card-header">
                             <div>
-                                <h2 class="card-title">Revenue Trend</h2>
-                                <p class="card-subtitle">Paid orders only.</p>
+                                <h2 class="card-title">Revenue Breakdown</h2>
+                                <p class="card-subtitle">Revenue contribution by period from paid orders.</p>
                             </div>
                             <a class="btn btn-secondary btn-sm" th:href="@{/admin/analytics/revenue}">
                                 <svg th:replace="~{fragments/icons :: icon('payments')}"></svg>
@@ -204,10 +204,10 @@
                             </a>
                         </div>
                         <div class="admin-chart-meta" aria-hidden="true">
-                            <span><i class="admin-chart-key admin-chart-key-primary"></i>Revenue, <span data-dashboard-revenue-currency>USD</span></span>
-                            <span class="admin-chart-axis">X-axis: period</span>
+                            <span>Revenue contribution, <span data-dashboard-revenue-currency>USD</span></span>
+                            <span class="admin-chart-axis">Top five periods + Other</span>
                         </div>
-                        <div id="dashboardRevenueChart" class="admin-analytics-chart" aria-live="polite"></div>
+                        <div id="dashboardRevenueChart" class="admin-analytics-chart admin-dashboard-pie-chart" aria-live="polite"></div>
                     </section>
                 </div>
             </section>

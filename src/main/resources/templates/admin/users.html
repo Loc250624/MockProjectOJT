@@ -20,14 +20,14 @@
         <div th:replace="~{fragments/layout :: topbar-admin('User Governance')}"></div>
 
         <main class="lumina-portal-main">
-            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
+            <div class="page-header admin-users-header">
                 <div>
                     <h1 class="page-title">User Governance</h1>
                     <p class="page-subtitle">Manage institutional access, roles, and security compliance.</p>
                 </div>
-                <div style="display:flex;gap:0.75rem;">
-                    <button class="btn btn-secondary" disabled>Export CSV</button>
-                    <button class="btn btn-primary" disabled>+ Create New User</button>
+                <div class="admin-users-header-actions">
+                    <button id="export-users-csv" type="button" class="btn btn-secondary">Export CSV</button>
+                    <button id="open-create-user" type="button" class="btn btn-primary">+ Create New User</button>
                 </div>
             </div>
 
@@ -88,6 +88,63 @@
 
         <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
+</div>
+
+<div id="create-user-modal" class="admin-user-modal" hidden>
+    <button type="button" class="admin-user-modal-backdrop" data-create-user-close aria-label="Close create user dialog"></button>
+    <section class="admin-user-modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
+        <div class="admin-user-modal-header">
+            <div>
+                <h2 id="create-user-title">Create New User</h2>
+                <p>Create a local account with immediate access to the selected portal.</p>
+            </div>
+            <button type="button" class="asp-close" data-create-user-close aria-label="Close create user dialog">&times;</button>
+        </div>
+        <form id="create-user-form" class="admin-user-form">
+            <div id="create-user-error" class="admin-user-form-message" role="alert" hidden></div>
+
+            <div class="form-group">
+                <label class="form-label" for="create-user-name">Full Name</label>
+                <input id="create-user-name" name="fullName" class="form-control" type="text" maxlength="255"
+                       autocomplete="name" required placeholder="e.g. Nguyen Van An">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="create-user-email">Email</label>
+                <input id="create-user-email" name="email" class="form-control" type="email" maxlength="255"
+                       autocomplete="email" required placeholder="name@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="create-user-role">Role</label>
+                <select id="create-user-role" name="role" class="form-control" required>
+                    <option value="STUDENT">Student</option>
+                    <option value="TEACHER">Teacher</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+            </div>
+
+            <div class="admin-user-password-grid">
+                <div class="form-group">
+                    <label class="form-label" for="create-user-password">Temporary Password</label>
+                    <input id="create-user-password" name="password" class="form-control" type="password"
+                           minlength="6" maxlength="72" autocomplete="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="create-user-confirm-password">Confirm Password</label>
+                    <input id="create-user-confirm-password" name="confirmPassword" class="form-control" type="password"
+                           minlength="6" maxlength="72" autocomplete="new-password" required>
+                </div>
+            </div>
+
+            <p class="admin-user-form-note">The account uses email and password sign-in, starts as Active, and can sign in immediately.</p>
+
+            <div class="admin-user-form-actions">
+                <button type="button" class="btn btn-secondary" data-create-user-close>Cancel</button>
+                <button id="create-user-submit" type="submit" class="btn btn-primary">Create User</button>
+            </div>
+        </form>
+    </section>
 </div>
 
 <div class="admin-side-panel" id="user-panel">

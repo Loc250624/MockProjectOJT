@@ -4,6 +4,7 @@ import com.ojtsu26.elearning.dto.response.LearningProgressDTO;
 import com.ojtsu26.elearning.dto.request.VideoProgressRequestDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningCourseDTO;
 import com.ojtsu26.elearning.dto.response.StudentLearningLessonDTO;
+import com.ojtsu26.elearning.dto.response.StudentCourseProgressCardDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.CourseEnrollment;
@@ -592,10 +593,93 @@ class StudentLearningServiceTest {
         assertEquals(102, response.getActiveLessonId());
     }
 
+    @Test
+    void courseCardsPutMostRecentlyEnrolledFirstRegardlessOfCompletionOrProgress() {
+        when(currentUserService.getCurrentUser()).thenReturn(student);
+        when(enrollmentRepository.save(any(CourseEnrollment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        LocalDateTime base = LocalDateTime.of(2026, 1, 1, 8, 0);
+        Course completedCourse = cardCourse(11, "Completed");
+        Course highProgressCourse = cardCourse(12, "Seventy five");
+        Course earlierTieCourse = cardCourse(13, "Fifty earlier");
+        Course laterTieCourse = cardCourse(14, "Fifty later");
+        Course notStartedCourse = cardCourse(15, "Not started");
+
+        CourseEnrollment completedEnrollment = cardEnrollment(21, completedCourse, true, base);
+        CourseEnrollment highProgressEnrollment = cardEnrollment(22, highProgressCourse, false, base.plusDays(1));
+        CourseEnrollment earlierTieEnrollment = cardEnrollment(23, earlierTieCourse, false, base.plusDays(2));
+        CourseEnrollment laterTieEnrollment = cardEnrollment(24, laterTieCourse, false, base.plusDays(3));
+        CourseEnrollment notStartedEnrollment = cardEnrollment(25, notStartedCourse, false, base.plusDays(4));
+
+        when(enrollmentRepository.findByStudentId(1)).thenReturn(List.of(
+                notStartedEnrollment,
+                laterTieEnrollment,
+                completedEnrollment,
+                earlierTieEnrollment,
+                highProgressEnrollment));
+
+        stubCardProgress(completedEnrollment, 0, 0);
+        stubCardProgress(highProgressEnrollment, 4, 3);
+        stubCardProgress(earlierTieEnrollment, 2, 1);
+        stubCardProgress(laterTieEnrollment, 2, 1);
+        stubCardProgress(notStartedEnrollment, 0, 0);
+
+        List<StudentCourseProgressCardDTO> cards = service.getCurrentStudentCourseCards();
+
+        assertEquals(
+                List.of("Not started", "Fifty later", "Fifty earlier", "Seventy five", "Completed"),
+                cards.stream().map(StudentCourseProgressCardDTO::getCourseTitle).toList());
+        assertEquals(new BigDecimal("0"), cards.get(0).getProgressPercentage());
+        assertEquals(new BigDecimal("100.00"), cards.get(4).getProgressPercentage());
+    }
+
     private void stubAccess() {
         when(currentUserService.getCurrentUser()).thenReturn(student);
         when(courseRepository.findById(10)).thenReturn(Optional.of(course));
         when(enrollmentRepository.findByStudentIdAndCourseIdForUpdate(1, 10)).thenReturn(Optional.of(enrollment));
+    }
+
+    private Course cardCourse(Integer id, String title) {
+        return Course.builder()
+                .id(id)
+                .title(title)
+                .status(CourseStatus.APPROVED)
+                .build();
+    }
+
+    private CourseEnrollment cardEnrollment(Integer id, Course cardCourse, boolean completed,
+                                              LocalDateTime enrolledAt) {
+        return CourseEnrollment.builder()
+                .id(id)
+                .student(student)
+                .course(cardCourse)
+                .isCompleted(completed)
+                .progressPercentage(BigDecimal.ZERO)
+                .enrolledAt(enrolledAt)
+                .build();
+    }
+
+    private void stubCardProgress(CourseEnrollment cardEnrollment, int totalLessons, int completedLessons) {
+        List<Lesson> lessons = java.util.stream.IntStream.range(0, totalLessons)
+                .mapToObj(index -> Lesson.builder()
+                        .id(cardEnrollment.getCourse().getId() * 100 + index)
+                        .course(cardEnrollment.getCourse())
+                        .title("Lesson " + index)
+                        .type(LessonType.VIDEO)
+                        .orderIndex(index)
+                        .build())
+                .toList();
+        List<LessonProgress> progresses = java.util.stream.IntStream.range(0, completedLessons)
+                .mapToObj(index -> LessonProgress.builder()
+                        .enrollment(cardEnrollment)
+                        .lesson(lessons.get(index))
+                        .isCompleted(true)
+                        .build())
+                .toList();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(cardEnrollment.getCourse().getId()))
+                .thenReturn(lessons);
+        when(lessonProgressRepository.findByEnrollmentId(cardEnrollment.getId())).thenReturn(progresses);
     }
 
     private LessonProgress completedProgress(Lesson lesson) {

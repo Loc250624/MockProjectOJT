@@ -52,6 +52,13 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private static final int VIDEO_COMPLETION_THRESHOLD_PERCENT = 90;
     private static final int MAX_REASONABLE_VIDEO_SECONDS = 24 * 60 * 60;
+    private static final Comparator<StudentCourseProgressCardDTO> STUDENT_COURSE_ORDER =
+            Comparator.comparing(
+                            StudentCourseProgressCardDTO::getEnrolledAt,
+                            Comparator.nullsLast(Comparator.reverseOrder()))
+                    .thenComparing(
+                            StudentCourseProgressCardDTO::getCourseId,
+                            Comparator.nullsLast(Comparator.reverseOrder()));
     private static final Pattern SCRIPT_OR_STYLE_BLOCK = Pattern.compile("(?is)<\\s*(script|style)[^>]*>.*?<\\s*/\\s*\\1\\s*>");
     private static final Pattern EVENT_HANDLER_ATTRIBUTE = Pattern.compile("(?i)\\s+on[a-z]+\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)");
     private static final Pattern JAVASCRIPT_URL = Pattern.compile("(?i)(href|src)\\s*=\\s*(\"|')\\s*javascript:[^\"']*(\"|')");
@@ -230,6 +237,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                             .completed(snapshot.completed())
                             .build();
                 })
+                .sorted(STUDENT_COURSE_ORDER)
                 .toList();
     }
 

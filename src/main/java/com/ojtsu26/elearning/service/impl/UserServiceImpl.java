@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.service.impl;
 
 import com.ojtsu26.elearning.model.entity.User;
+import com.ojtsu26.elearning.dto.request.AdminCreateUserRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.request.UserRequestDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,6 +36,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<UserResponseDTO> findAll() {
@@ -48,6 +52,46 @@ public class UserServiceImpl implements UserService {
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
         return userRepository.findAll(buildUserSearchSpecification(keyword, role, status, authProvider), effectivePageable)
                 .map(userMapper::toDto);
+    }
+
+    @Override
+    public List<UserResponseDTO> findUsersForExport(String keyword, Role role, UserStatus status,
+                                                     AuthProvider authProvider, Sort sort) {
+        Sort effectiveSort = sort == null || sort.isUnsorted()
+                ? Sort.by(Sort.Direction.DESC, "createdAt")
+                : sort;
+        return userRepository.findAll(buildUserSearchSpecification(keyword, role, status, authProvider), effectiveSort)
+                .stream()
+                .map(userMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO createByAdmin(AdminCreateUserRequestDTO requestDTO) {
+        if (!requestDTO.getPassword().equals(requestDTO.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
+        }
+
+        String normalizedEmail = normalizeEmail(requestDTO.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        User user = User.builder()
+                .fullName(requestDTO.getFullName().trim())
+                .email(normalizedEmail)
+                .passwordHash(passwordEncoder.encode(requestDTO.getPassword()))
+                .role(requestDTO.getRole())
+                .authProvider(AuthProvider.LOCAL)
+                .status(UserStatus.ACTIVE)
+                .build();
+
+        try {
+            return userMapper.toDto(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException ex) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
+        }
     }
 
     private Specification<User> buildUserSearchSpecification(String keyword, Role role, UserStatus status, AuthProvider authProvider) {

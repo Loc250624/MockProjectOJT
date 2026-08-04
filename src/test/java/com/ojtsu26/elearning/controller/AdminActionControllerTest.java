@@ -46,6 +46,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -217,6 +218,64 @@ class AdminActionControllerTest {
         mockMvc.perform(get("/api/admin/users").param("role", "OWNER"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", notNullValue()));
+    }
+
+    @Test
+    void adminCreatesStudentTeacherAndAdminAccounts() throws Exception {
+        createUser("Created Student", "created.student@example.com", "STUDENT")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.role").value("STUDENT"));
+        createUser("Created Teacher", "created.teacher@example.com", "TEACHER")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.role").value("TEACHER"));
+        createUser("Created Admin", "created.admin@example.com", "ADMIN")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.role").value("ADMIN"));
+
+        User teacher = findByEmail("created.teacher@example.com");
+        assertEquals(AuthProvider.LOCAL, teacher.getAuthProvider());
+        assertEquals(UserStatus.ACTIVE, teacher.getStatus());
+        assertNotEquals("Secret123!", teacher.getPasswordHash());
+    }
+
+    @Test
+    void createUserRejectsDuplicateEmailAndPasswordMismatch() throws Exception {
+        mockMvc.perform(post("/api/admin/users")
+                        .with(adminPrincipal())
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("""
+                                {"fullName":"Duplicate","email":"ALICE.STUDENT@example.com","role":"STUDENT","password":"Secret123!","confirmPassword":"Secret123!"}
+                                """))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(post("/api/admin/users")
+                        .with(adminPrincipal())
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("""
+                                {"fullName":"Mismatch","email":"mismatch@example.com","role":"TEACHER","password":"Secret123!","confirmPassword":"Different123!"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Passwords do not match"));
+    }
+
+    @Test
+    void exportsFilteredUsersAsDownloadableUtf8Csv() throws Exception {
+        userRepository.save(user("=Formula Name", "formula@example.com", Role.STUDENT, UserStatus.ACTIVE, AuthProvider.LOCAL));
+
+        mockMvc.perform(get("/api/admin/users/export")
+                        .with(adminPrincipal())
+                        .param("role", "STUDENT")
+                        .param("sortBy", "email")
+                        .param("sortDir", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("attachment; filename=\"admin-users-")))
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(content().string(containsString("ID,Full Name,Email,Role,Status,Auth Provider,Join Date")))
+                .andExpect(content().string(containsString("\"alice.student@example.com\"")))
+                .andExpect(content().string(containsString("\"'=Formula Name\"")))
+                .andExpect(content().string(not(containsString("bob.teacher@example.com"))));
     }
 
     @Test
@@ -582,6 +641,15 @@ class AdminActionControllerTest {
 
     private User findByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow();
+    }
+
+    private org.springframework.test.web.servlet.ResultActions createUser(String name, String email, String role) throws Exception {
+        return mockMvc.perform(post("/api/admin/users")
+                .with(adminPrincipal())
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"fullName\":\"" + name + "\",\"email\":\"" + email + "\",\"role\":\"" + role
+                        + "\",\"password\":\"Secret123!\",\"confirmPassword\":\"Secret123!\"}"));
     }
 
     private RequestPostProcessor adminPrincipal() {

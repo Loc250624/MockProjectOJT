@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,10 @@ public class PaymentServiceImpl implements PaymentService {
             returnUrl = properties.getMomo().getReturnUrl();
             notifyUrl = properties.getMomo().getIpnUrl();
         } else if (order.getPaymentMethod() == PaymentMethod.VNPAY) {
-            returnUrl = properties.getVnpay().getReturnUrl();
+            // The return URL is opened by the customer's browser, so keep it on
+            // the same origin where checkout started. The IPN remains the public
+            // server-to-server URL configured for VNPay.
+            returnUrl = currentRequestReturnUrl(properties.getVnpay().getReturnUrl());
             notifyUrl = properties.getVnpay().getIpnUrl();
         }
 
@@ -67,6 +71,24 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         return provider.initiatePayment(request);
+    }
+
+    private String currentRequestReturnUrl(String fallbackUrl) {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                return ServletUriComponentsBuilder.fromRequest(request)
+                        .replacePath(request.getContextPath() + "/student/payment-result")
+                        .replaceQuery(null)
+                        .build()
+                        .toUriString();
+            }
+        } catch (RuntimeException ex) {
+            log.warn("Unable to derive VNPay return URL from checkout request; using configured fallback");
+        }
+        return fallbackUrl;
     }
 
     private String getClientIp() {
@@ -119,6 +141,7 @@ public class PaymentServiceImpl implements PaymentService {
                 log.warn("Failed to parse resultCode from webhook: {}", resultCodeValue);
             }
         }
+        boolean paymentSuccessful = resultCode == 0;
 
         // Fetch Order
         Order order = orderRepository.findByOrderCode(orderCode)
@@ -132,9 +155,12 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new IllegalArgumentException("Payment method mismatch");
             }
             
-            // 2. Verify currency is VND
+            // 2. VNPay requires VND in the payment request, but its Return URL/IPN
+            // payload does not always echo vnp_CurrCode. Reject an explicit
+            // unexpected currency without blocking a valid signed callback that
+            // omits this request-only field.
             String currCode = params.get("vnp_CurrCode");
-            if (!"VND".equalsIgnoreCase(currCode)) {
+            if (currCode != null && !currCode.isBlank() && !"VND".equalsIgnoreCase(currCode)) {
                 log.error("Currency code mismatch: expected VND, but got {}", currCode);
                 throw new IllegalArgumentException("Currency code mismatch");
             }
@@ -151,6 +177,20 @@ public class PaymentServiceImpl implements PaymentService {
                 log.error("Amount mismatch: expected {}, but received {}", expectedAmount, receivedAmount);
                 throw new IllegalArgumentException("Amount mismatch");
             }
+
+            // 4. Verify the callback belongs to the configured VNPay merchant.
+            String expectedTmnCode = properties.getVnpay().getTmnCode();
+            String receivedTmnCode = params.get("vnp_TmnCode");
+            if (expectedTmnCode != null
+                    && !expectedTmnCode.isBlank()
+                    && !expectedTmnCode.equals(receivedTmnCode)) {
+                log.error("VNPAY terminal code mismatch");
+                throw new IllegalArgumentException("Terminal code mismatch");
+            }
+
+            // 5. VNPay is successful only when both official status fields are 00.
+            paymentSuccessful = "00".equals(params.get("vnp_ResponseCode"))
+                    && "00".equals(params.get("vnp_TransactionStatus"));
         }
 
         // 2. Idempotency validation: check if already processed
@@ -170,12 +210,19 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (transaction != null && transaction.getStatus() == TransactionStatus.SUCCESS) {
-            log.info("Transaction for order {} already completed. Skipping.", orderCode);
+            if (paymentSuccessful && order.getStatus() == OrderStatus.PENDING) {
+                order.setStatus(OrderStatus.PAID);
+                orderRepository.save(order);
+                courseEnrollmentService.activateEnrollmentAfterVerifiedPayment(order, transaction);
+                log.info("Reconciled pending order {} from an existing successful transaction.", orderCode);
+            } else {
+                log.info("Transaction for order {} already completed. Skipping.", orderCode);
+            }
             return;
         }
 
         // 3. Update Transaction & Order status
-        if (resultCode == 0) {
+        if (paymentSuccessful) {
             order.setStatus(OrderStatus.PAID);
             orderRepository.save(order);
 
@@ -196,6 +243,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             if (transaction != null) {
                 transaction.setStatus(TransactionStatus.FAILED);
+                transaction.setTransactionRef(transId);
                 transaction.setWebhookResponse(params.toString());
                 transactionRepository.save(transaction);
             }

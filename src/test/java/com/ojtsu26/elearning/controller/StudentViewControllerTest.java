@@ -36,7 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "payment.gateway.vnpay.tmnCode=2QXUIB0A",
+        "payment.gateway.vnpay.hashSecret=MSBUNHXVQPHFLNNEUJWTLKJZPEXXWJCT"
 })
 class StudentViewControllerTest {
 
@@ -172,6 +174,50 @@ class StudentViewControllerTest {
     }
 
     @Test
+    void dashboardShowsAtMostSixCoursesAndMyCoursesPaginatesAllEnrollmentsBySix() throws Exception {
+        for (int index = 1; index <= 6; index++) {
+            Course additionalCourse = courseRepository.save(Course.builder()
+                    .title("Additional course " + index)
+                    .description("Pagination test course")
+                    .price(BigDecimal.ZERO)
+                    .status(CourseStatus.APPROVED)
+                    .category(course.getCategory())
+                    .instructor(course.getInstructor())
+                    .build());
+            courseEnrollmentRepository.save(CourseEnrollment.builder()
+                    .student(student)
+                    .course(additionalCourse)
+                    .isCompleted(false)
+                    .enrolledAt(LocalDateTime.now().plusMinutes(index))
+                    .progressPercentage(BigDecimal.ZERO)
+                    .build());
+        }
+
+        mockMvc.perform(get("/student/dashboard")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(model().attribute("enrolledCourseCount", 7));
+
+        mockMvc.perform(get("/student/my-courses")
+                        .param("page", "0")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 2))
+                .andExpect(model().attribute("enrolledCourseCount", 7));
+
+        mockMvc.perform(get("/student/my-courses")
+                        .param("page", "1")
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("courseCards", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(model().attribute("currentPage", 1))
+                .andExpect(model().attribute("totalPages", 2));
+    }
+
+    @Test
     void dashboardDoesNotRollbackWhenAutoCertificateIsNotYetEligible() throws Exception {
         CourseEnrollment enrollment = courseEnrollmentRepository
                 .findByStudentIdAndCourseId(student.getId(), course.getId())
@@ -294,6 +340,7 @@ class StudentViewControllerTest {
         ipnParams.put("vnp_Amount", amount);
         ipnParams.put("vnp_TxnRef", orderCode);
         ipnParams.put("vnp_ResponseCode", responseCode);
+        ipnParams.put("vnp_TransactionStatus", "00");
         ipnParams.put("vnp_TransactionNo", transId);
         ipnParams.put("vnp_OrderInfo", "Purchase course: " + course2.getTitle());
         ipnParams.put("vnp_Command", "pay");
@@ -308,7 +355,7 @@ class StudentViewControllerTest {
             if (fieldValue != null && !fieldValue.isEmpty()) {
                 hashData.append(fieldName);
                 hashData.append('=');
-                hashData.append(java.net.URLEncoder.encode(fieldValue, "UTF-8").replace("+", "%20"));
+                hashData.append(java.net.URLEncoder.encode(fieldValue, "UTF-8"));
                 if (itr.hasNext()) {
                     hashData.append('&');
                 }
@@ -323,6 +370,7 @@ class StudentViewControllerTest {
                         .param("vnp_Amount", amount)
                         .param("vnp_TxnRef", orderCode)
                         .param("vnp_ResponseCode", responseCode)
+                        .param("vnp_TransactionStatus", "00")
                         .param("vnp_TransactionNo", transId)
                         .param("vnp_OrderInfo", "Purchase course: " + course2.getTitle())
                         .param("vnp_Command", "pay")
@@ -336,6 +384,225 @@ class StudentViewControllerTest {
         Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
         assertEquals(OrderStatus.PAID, updatedOrder.getStatus());
         assertTrue(courseEnrollmentRepository.existsByStudentIdAndCourseId(student.getId(), course2.getId()));
+    }
+
+    @Test
+    void vnpayReturnMarksSuccessfulPaymentAsPaidWhenIpnCannotReachLocalhost() throws Exception {
+        Course purchasableCourse = createPurchasableCourse("VNPay return success");
+        Order order = checkoutWithVnpay(purchasableCourse);
+        Map<String, String> returnParams = signedVnpayParams(order, purchasableCourse, "00");
+        removeCurrencyAndResign(returnParams);
+
+        org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
+                get("/student/payment-result")
+                        .with(mockRequest -> {
+                            mockRequest.setServerPort(8080);
+                            return mockRequest;
+                        });
+        returnParams.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(view().name("student/payment-result"))
+                .andExpect(model().attribute("paymentSuccess", true))
+                .andExpect(model().attribute("redirectToMyCourses", true));
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatus.PAID, updatedOrder.getStatus());
+        assertTrue(courseEnrollmentRepository.existsByStudentIdAndCourseId(
+                student.getId(), purchasableCourse.getId()));
+    }
+
+    @Test
+    void vnpayReturnMarksFailedPaymentAsFailedWhenIpnCannotReachLocalhost() throws Exception {
+        Course purchasableCourse = createPurchasableCourse("VNPay return failure");
+        Order order = checkoutWithVnpay(purchasableCourse);
+        Map<String, String> returnParams = signedVnpayParams(order, purchasableCourse, "24");
+        removeCurrencyAndResign(returnParams);
+
+        org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
+                get("/student/payment-result")
+                        .secure(true)
+                        .with(mockRequest -> {
+                            mockRequest.setServerName("sandbox-return.trycloudflare.com");
+                            mockRequest.setServerPort(443);
+                            return mockRequest;
+                        });
+        returnParams.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("http://localhost:8080/student/payment-result?*"));
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatus.FAILED, updatedOrder.getStatus());
+        assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
+                student.getId(), purchasableCourse.getId()));
+    }
+
+    @Test
+    void vnpayReturnDoesNotPayWhenResponseIsSuccessfulButTransactionStatusFailed() throws Exception {
+        Course purchasableCourse = createPurchasableCourse("VNPay transaction status failure");
+        Order order = checkoutWithVnpay(purchasableCourse);
+        Map<String, String> returnParams = signedVnpayParams(
+                order, purchasableCourse, "00", "02");
+
+        org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
+                get("/student/payment-result")
+                        .with(mockRequest -> {
+                            mockRequest.setServerPort(8080);
+                            return mockRequest;
+                        })
+                        .cookie(new Cookie("jwt_token", studentToken));
+        returnParams.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(view().name("student/payment-result"))
+                .andExpect(model().attribute("paymentSuccess", false))
+                .andExpect(model().attribute("paymentStatus", "Failed"));
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatus.FAILED, updatedOrder.getStatus());
+        assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
+                student.getId(), purchasableCourse.getId()));
+    }
+
+    @Test
+    void vnpayReturnRejectsAValidSignatureForTheWrongMerchantCode() throws Exception {
+        Course purchasableCourse = createPurchasableCourse("VNPay wrong merchant callback");
+        Order order = checkoutWithVnpay(purchasableCourse);
+        Map<String, String> returnParams = signedVnpayParams(order, purchasableCourse, "00");
+        returnParams.remove("vnp_SecureHash");
+        returnParams.put("vnp_TmnCode", "WRONGCODE");
+        signVnpayParams(returnParams);
+
+        org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
+                get("/student/payment-result")
+                        .with(mockRequest -> {
+                            mockRequest.setServerPort(8080);
+                            return mockRequest;
+                        })
+                        .cookie(new Cookie("jwt_token", studentToken));
+        returnParams.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("paymentSuccess", false));
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
+        assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
+                student.getId(), purchasableCourse.getId()));
+    }
+
+    @Test
+    void vnpayReturnRejectsAnExplicitNonVndCurrency() throws Exception {
+        Course purchasableCourse = createPurchasableCourse("VNPay wrong currency callback");
+        Order order = checkoutWithVnpay(purchasableCourse);
+        Map<String, String> returnParams = signedVnpayParams(order, purchasableCourse, "00");
+        returnParams.remove("vnp_SecureHash");
+        returnParams.put("vnp_CurrCode", "USD");
+        signVnpayParams(returnParams);
+
+        org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
+                get("/student/payment-result")
+                        .with(mockRequest -> {
+                            mockRequest.setServerPort(8080);
+                            return mockRequest;
+                        })
+                        .cookie(new Cookie("jwt_token", studentToken));
+        returnParams.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("paymentSuccess", false));
+
+        Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
+        assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
+                student.getId(), purchasableCourse.getId()));
+    }
+
+    private Course createPurchasableCourse(String title) {
+        return courseRepository.save(Course.builder()
+                .title(title)
+                .description("Course used to verify the VNPay return callback")
+                .price(new BigDecimal("99.99"))
+                .status(CourseStatus.APPROVED)
+                .category(category)
+                .instructor(instructor)
+                .build());
+    }
+
+    private Order checkoutWithVnpay(Course purchasableCourse) throws Exception {
+        org.springframework.test.web.servlet.MvcResult checkoutResult = mockMvc.perform(post("/student/checkout")
+                        .param("courseId", purchasableCourse.getId().toString())
+                        .param("pay", "vnpay")
+                        .with(csrf())
+                        .with(mockRequest -> {
+                            mockRequest.setServerPort(8080);
+                            return mockRequest;
+                        })
+                        .cookie(new Cookie("jwt_token", studentToken)))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+
+        assertTrue(checkoutResult.getResponse().getRedirectedUrl()
+                .contains("vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A8080%2Fstudent%2Fpayment-result"));
+
+        return orderRepository.findByStudentIdAndCourseIdAndStatus(
+                        student.getId(), purchasableCourse.getId(), OrderStatus.PENDING)
+                .stream()
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private Map<String, String> signedVnpayParams(Order order, Course purchasableCourse,
+                                                   String responseCode) throws Exception {
+        return signedVnpayParams(order, purchasableCourse, responseCode,
+                "00".equals(responseCode) ? "00" : "02");
+    }
+
+    private Map<String, String> signedVnpayParams(Order order, Course purchasableCourse,
+                                                   String responseCode,
+                                                   String transactionStatus) throws Exception {
+        Map<String, String> params = new java.util.TreeMap<>();
+        params.put("vnp_TmnCode", "2QXUIB0A");
+        params.put("vnp_Amount", order.getPaidAmount().multiply(new BigDecimal("100")).toPlainString());
+        params.put("vnp_TxnRef", order.getOrderCode());
+        params.put("vnp_ResponseCode", responseCode);
+        params.put("vnp_TransactionStatus", transactionStatus);
+        params.put("vnp_TransactionNo", "return-test-" + System.nanoTime());
+        params.put("vnp_OrderInfo", "Purchase course: " + purchasableCourse.getTitle());
+        params.put("vnp_Command", "pay");
+        params.put("vnp_Version", "2.1.0");
+        params.put("vnp_CurrCode", "VND");
+
+        signVnpayParams(params);
+        return params;
+    }
+
+    private void signVnpayParams(Map<String, String> params) throws Exception {
+        StringBuilder hashData = new StringBuilder();
+        java.util.Iterator<String> iterator = params.keySet().iterator();
+        while (iterator.hasNext()) {
+            String fieldName = iterator.next();
+            hashData.append(fieldName)
+                    .append('=')
+                    .append(java.net.URLEncoder.encode(params.get(fieldName), "UTF-8"));
+            if (iterator.hasNext()) {
+                hashData.append('&');
+            }
+        }
+        params.put("vnp_SecureHash", calculateHmacSha512(hashData.toString(),
+                "MSBUNHXVQPHFLNNEUJWTLKJZPEXXWJCT"));
+    }
+
+    private void removeCurrencyAndResign(Map<String, String> params) throws Exception {
+        params.remove("vnp_CurrCode");
+        params.remove("vnp_SecureHash");
+        signVnpayParams(params);
     }
 
     private String calculateHmacSha512(String data, String key) {

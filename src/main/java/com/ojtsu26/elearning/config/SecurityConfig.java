@@ -155,6 +155,7 @@ public class SecurityConfig {
                         "/api/payment/vnpay-ipn",
                         "/api/payment/webhook",
                         "/health",
+                        "/student/payment-result",
                         "/auth/login",
                         "/auth/register",
                         "/auth/oauth2/complete",

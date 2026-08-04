@@ -71,7 +71,7 @@
                 <!-- Success State -->
                 <th:block th:if="${paymentSuccess}">
                     <div class="result-icon success"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></div>
-                    <h1 class="result-title success">Payment Successful!</h1>
+                    <h1 class="result-title success" th:text="${paymentStatus}">Paid</h1>
                     <p class="result-message" th:text="${paymentMessage}">Your enrollment has been activated.</p>
                     <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
                     <div class="action-buttons">
@@ -92,7 +92,7 @@
                 <!-- Failure / Cancelled State -->
                 <th:block th:unless="${paymentSuccess}">
                     <div class="result-icon failure"><svg th:replace="~{fragments/icons :: icon('reject')}"></svg></div>
-                    <h1 class="result-title failure">Payment Failed</h1>
+                    <h1 class="result-title failure" th:text="${paymentStatus}">Failed</h1>
                     <p class="result-message" th:text="${paymentMessage}">Your payment was not completed.</p>
                     <div class="result-order" th:if="${orderId}" th:text="'Order: ' + ${orderId}">Order: ORD123</div>
                     <div class="action-buttons">
