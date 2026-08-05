@@ -145,7 +145,7 @@
             </section>
 
             <section th:if="${overview != null}" class="progress-report-layout">
-                <article class="admin-table-container report-chart-panel" aria-labelledby="distribution-title">
+                <article class="admin-table-container report-chart-panel teacher-line-card" aria-labelledby="distribution-title">
                     <div class="admin-table-toolbar">
                         <div>
                             <span id="distribution-title" class="teacher-table-title">Progress distribution</span>
@@ -156,27 +156,33 @@
                         </div>
                     </div>
                     <div class="report-distribution report-line-chart">
-                        <div class="report-line-plot"
-                             role="img"
-                             data-progress-line-chart
-                             th:attr="data-not-started=${overview.notStartedStudents},
-                                      data-in-progress=${overview.inProgressStudents},
-                                      data-completed=${overview.completedStudents},
-                                      aria-label=${'Progress distribution line chart: not started ' + overview.notStartedStudents + ', in progress ' + overview.inProgressStudents + ', completed ' + overview.completedStudents}"></div>
-                        <div class="report-line-labels" aria-hidden="true">
-                            <div class="report-line-label">
-                                <span>Not started</span>
-                                <strong th:text="${overview.notStartedStudents}">0</strong>
-                            </div>
-                            <div class="report-line-label">
-                                <span>In progress</span>
-                                <strong th:text="${overview.inProgressStudents}">0</strong>
-                            </div>
-                            <div class="report-line-label">
-                                <span>Completed</span>
-                                <strong th:text="${overview.completedStudents}">0</strong>
+                        <div class="report-line-body">
+                            <div class="report-line-y-axis" data-progress-line-y-axis aria-hidden="true"></div>
+                            <div class="report-line-plot-column">
+                                <div class="report-line-plot"
+                                     role="img"
+                                     data-progress-line-chart
+                                     th:attr="data-not-started=${overview.notStartedStudents},
+                                              data-in-progress=${overview.inProgressStudents},
+                                              data-completed=${overview.completedStudents},
+                                              aria-label=${'Progress distribution line chart: not started ' + overview.notStartedStudents + ', in progress ' + overview.inProgressStudents + ', completed ' + overview.completedStudents}"></div>
+                                <div class="report-line-labels" aria-hidden="true">
+                                    <div class="report-line-label">
+                                        <span>Not started</span>
+                                        <strong th:text="${overview.notStartedStudents}">0</strong>
+                                    </div>
+                                    <div class="report-line-label">
+                                        <span>In progress</span>
+                                        <strong th:text="${overview.inProgressStudents}">0</strong>
+                                    </div>
+                                    <div class="report-line-label">
+                                        <span>Completed</span>
+                                        <strong th:text="${overview.completedStudents}">0</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        <div class="report-line-stats" data-progress-line-stats></div>
                     </div>
                     <dl class="report-definition-list">
                         <div><dt>Not started</dt><dd>No stored course progress and not completed.</dd></div>
