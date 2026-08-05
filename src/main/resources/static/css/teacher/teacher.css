@@ -1808,3 +1808,84 @@ pre {
     width: 100%;
   }
 }
+
+html[data-theme="dark"] :is(
+  .chart-container,
+  .donut-hole,
+  .builder-module,
+  .b-settings-panel,
+  .teacher-student-count,
+  .teacher-state,
+  .teacher-student-card,
+  .report-kpi,
+  .assessment-panel,
+  .assessment-card,
+  .result-row,
+  .assessment-summary-card,
+  .quiz-preview-question,
+  .teacher-quiz-card,
+  .teacher-question-list-item,
+  .teacher-question-page-button
+) {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(
+  .filter-field input,
+  .filter-field select,
+  .assessment-form select,
+  .assessment-filter-bar select,
+  .assessment-status-badge,
+  .teacher-assessment-table small,
+  .quiz-preview-options span,
+  .teacher-question-page-button,
+  .teacher-answer-editor
+) {
+  color: var(--theme-text);
+  background: var(--theme-input);
+  border-color: var(--theme-border-strong);
+}
+
+html[data-theme="dark"] :is(.teacher-option-row, .teacher-question-browser, .teacher-question-editor, pre) {
+  background: var(--theme-surface-muted);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(
+  .eyebrow,
+  .assessment-message,
+  .assessment-filter-bar label,
+  .assessment-pagination,
+  .assessment-summary-card span,
+  .teacher-assessment-table th,
+  .assessment-form label,
+  .assessment-form label small,
+  .teacher-option-editor-head,
+  .teacher-option-editor-head small,
+  .quiz-preview-options span,
+  .teacher-quiz-card-header p,
+  .teacher-question-count,
+  .teacher-question-list-section,
+  .teacher-question-list-item,
+  .teacher-question-page-indicator,
+  .teacher-question-page-ellipsis,
+  .teacher-answer-editor > p,
+  .empty-state
+) {
+  color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] :is(.assessment-summary-card strong, .teacher-empty-state strong, .teacher-answer-editor legend) {
+  color: var(--theme-text-strong);
+}
+
+html[data-theme="dark"] .teacher-quick-action {
+  background: linear-gradient(180deg, var(--theme-surface), var(--theme-surface-muted));
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .teacher-unsaved-indicator {
+  color: var(--theme-warning-text);
+  background: var(--theme-warning-surface);
+}

@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
@@ -82,7 +83,7 @@
                             <div th:id="'reject-blog-modal-' + ${blog.id}"
                                  class="blog-reject-modal"
                                  style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:1rem;">
-                                <div style="width:min(520px,100%);background:white;border-radius:8px;border:1px solid var(--lumina-gray-200);box-shadow:var(--shadow-xl);padding:1.5rem;text-align:left;">
+                                <div style="width:min(520px,100%);background:var(--theme-surface);border-radius:8px;border:1px solid var(--lumina-gray-200);box-shadow:var(--shadow-xl);padding:1.5rem;text-align:left;">
                                     <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1rem;">
                                         <div>
                                             <h2 style="font-size:1.05rem;color:var(--lumina-gray-900);margin:0;">Reject Blog</h2>
@@ -126,7 +127,6 @@
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

@@ -24,6 +24,10 @@
         <svg th:replace="~{fragments/icons :: icon('more')}"></svg>
     </button>
 
+    <div class="public-theme-switch-mobile">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
+    </div>
+
     <div class="public-nav-panel" id="public-navigation" data-public-nav>
         <nav aria-label="Public navigation">
             <a th:href="@{/}" th:classappend="${role == 'public'} ? 'active' : ''">Home</a>
@@ -42,6 +46,8 @@
                     <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
                 </button>
             </form>
+
+            <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
 
             <!-- Anonymous Users -->
             <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
@@ -88,6 +94,7 @@
             </div>
         </div>
     </div>
+    <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/public/public.js}" defer></script>
 </header>
 
@@ -345,6 +352,7 @@
         </div>
     </div>
     <div class="topbar-right">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
         <span class="badge badge-success badge-dot system-health-badge"
               aria-label="System healthy"
               style="font-size:0.75rem;"> System Healthy</span>
@@ -381,6 +389,7 @@
                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>
     <div th:replace="~{fragments/help :: help-drawer('admin', ${pageTitle})}"></div>
 </div>
@@ -403,6 +412,7 @@
         </div>
     </div>
     <div class="topbar-right">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
         <button class="icon-btn notification-bell tooltip-trigger" id="btn-teacher-notif" type="button" data-notification-bell="true"
             aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
             <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
@@ -437,6 +447,7 @@
                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>
     <div th:replace="~{fragments/help :: help-drawer('teacher', ${pageTitle})}"></div>
 </div>
@@ -459,6 +470,7 @@
         </div>
     </div>
     <div class="topbar-right">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
         <button class="icon-btn notification-bell tooltip-trigger" id="btn-student-notif" type="button" data-notification-bell="true"
             aria-label="Open notifications" aria-expanded="false" data-tooltip="Notifications" title="Notifications">
             <span aria-hidden="true"><svg th:replace="~{fragments/icons :: icon('bell')}"></svg></span>
@@ -493,6 +505,7 @@
                 onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
         </a>
     </div>
+    <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>
     <div th:replace="~{fragments/help :: help-drawer('student', ${pageTitle})}"></div>
 </div>

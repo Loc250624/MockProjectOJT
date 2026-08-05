@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -21,6 +22,7 @@
         <span class="sep">›</span>
         <span class="current" th:text="${selectedCourse != null ? selectedCourse.title : 'Course'}">Course Title</span>
     </div>
+    <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
 </header>
 
 <main style="max-width:1200px;margin:2.5rem auto;padding:0 2rem;">
@@ -126,6 +128,7 @@
 </main>
 
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+<script th:src="@{/js/theme.js}" defer></script>
 <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

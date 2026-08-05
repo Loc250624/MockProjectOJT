@@ -315,3 +315,27 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+html[data-theme="dark"] .ai-chatbot {
+  --ai-chatbot-border: var(--theme-border);
+  --ai-chatbot-muted: var(--theme-text-muted);
+  --ai-chatbot-text: var(--theme-text);
+}
+
+html[data-theme="dark"] :is(
+  .ai-chatbot-panel,
+  .ai-chatbot-header,
+  .ai-chatbot-close,
+  .ai-chatbot-bubble,
+  .ai-chatbot-suggestion-groups,
+  .ai-chatbot-form,
+  .ai-chatbot-form textarea
+) {
+  color: var(--theme-text);
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(.ai-chatbot-content, .ai-chatbot-messages) {
+  background: var(--theme-surface-muted);
+}

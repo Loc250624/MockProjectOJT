@@ -571,3 +571,30 @@
     width: 100%;
   }
 }
+
+html[data-theme="dark"] :is(
+  .public-course-card,
+  .public-course-card .price-badge,
+  .feature-card,
+  .faq-section,
+  .accordion-item,
+  .catalog-sidebar,
+  .catalog-search-row .search-wrap
+) {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .btn-hero-primary {
+  color: var(--theme-text-strong);
+  background: var(--theme-surface-elevated);
+  border-color: color-mix(in srgb, var(--theme-chart-1) 45%, var(--theme-border));
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.32);
+}
+
+html[data-theme="dark"] .btn-hero-primary:hover,
+html[data-theme="dark"] .btn-hero-primary:focus-visible {
+  color: var(--theme-text-strong);
+  background: color-mix(in srgb, var(--theme-chart-1) 16%, var(--theme-surface-elevated));
+  border-color: var(--theme-chart-1);
+}

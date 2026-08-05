@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
@@ -47,6 +48,11 @@
                         <input type="text" id="categorySearch" placeholder="Search categories..." oninput="filterTable(this.value)">
                     </div>
                 </div>
+                <div class="admin-category-table-scroll"
+                     role="region"
+                     aria-label="Categories table"
+                     tabindex="0"
+                     style="max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;">
                 <table class="data-table lumina-table admin-category-table" style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr>
@@ -92,10 +98,10 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

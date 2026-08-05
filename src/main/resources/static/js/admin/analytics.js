@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var moneyFormatter = createMoneyFormatter(currentCurrency);
     var ACTIVE_STUDENT_SUMMARY = 'Students with learning activity in the selected period.';
     var ACTIVE_STUDENT_UNAVAILABLE = 'Active student definition unavailable.';
+    var dashboardChartCache = {
+        students: null,
+        revenue: null
+    };
 
     function normalizeCurrency(currency) {
         return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
@@ -226,7 +230,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    var DASHBOARD_PIE_COLORS = ['#075ed1', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#0ea5e9'];
+    function themeCssValue(name, fallback) {
+        var value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value || fallback;
+    }
+
+    function getDashboardPieColors() {
+        return [
+            themeCssValue('--theme-chart-1', '#4f46e5'),
+            themeCssValue('--theme-chart-2', '#0ea5e9'),
+            themeCssValue('--theme-chart-3', '#14b8a6'),
+            themeCssValue('--theme-chart-4', '#f59e0b'),
+            themeCssValue('--theme-chart-5', '#ec4899'),
+            themeCssValue('--theme-chart-6', '#8b5cf6')
+        ];
+    }
 
     function sumTrend(points, valueKey) {
         if (!Array.isArray(points)) return 0;
@@ -238,13 +256,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDashboardPieChart(container, slices, options) {
         if (!container) return;
         options = options || {};
+        var palette = getDashboardPieColors();
         var cleanSlices = (Array.isArray(slices) ? slices : []).filter(function(slice) {
             return slice && safeNumber(slice.value) > 0;
         }).map(function(slice, index) {
             return {
                 label: slice.label || 'Value',
                 value: safeNumber(slice.value),
-                color: slice.color || DASHBOARD_PIE_COLORS[index % DASHBOARD_PIE_COLORS.length]
+                color: slice.color || palette[index % palette.length]
             };
         });
 
@@ -358,10 +377,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDashboardStudentPieChart(container, points) {
         var newStudents = sumTrend(points, 'newStudents');
         var activeStudents = sumTrend(points, 'activeStudents');
+        var palette = getDashboardPieColors();
 
         renderDashboardPieChart(container, [
-            { label: 'New students', value: newStudents, color: DASHBOARD_PIE_COLORS[0] },
-            { label: 'Active students', value: activeStudents, color: DASHBOARD_PIE_COLORS[1] }
+            { label: 'New students', value: newStudents, color: palette[0] },
+            { label: 'Active students', value: activeStudents, color: palette[1] }
         ], {
             emptyTitle: 'No student activity',
             emptyDescription: 'No new or active students were found for this period.',
@@ -376,6 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderDashboardRevenuePieChart(container, points) {
+        var palette = getDashboardPieColors();
         var slices = (Array.isArray(points) ? points : []).map(function(point) {
             return {
                 label: point.period || 'Period',
@@ -403,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return {
                 label: slice.label,
                 value: slice.value,
-                color: DASHBOARD_PIE_COLORS[index % DASHBOARD_PIE_COLORS.length]
+                color: palette[index % palette.length]
             };
         });
 
@@ -554,7 +575,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (results[1].status === 'fulfilled') {
                         try {
-                            renderDashboardStudentPieChart(studentsChart, validateStudentAnalytics(results[1].value).trend);
+                            var studentData = validateStudentAnalytics(results[1].value);
+                            dashboardChartCache.students = studentData.trend;
+                            renderDashboardStudentPieChart(studentsChart, studentData.trend);
                             fulfilledCount += 1;
                         } catch (error) {
                             renderChartState(studentsChart, 'error', 'Student chart unavailable', 'Student chart render failed: ' + error.message);
@@ -567,6 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         try {
                             var revenueData = validateRevenueAnalytics(results[2].value);
                             setMoneyCurrency(revenueData.currency, ['[data-dashboard-revenue-currency]']);
+                            dashboardChartCache.revenue = revenueData.trend;
                             renderDashboardRevenuePieChart(revenueChart, revenueData.trend);
                             fulfilledCount += 1;
                         } catch (error) {
@@ -821,6 +845,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
     }
+
+    window.addEventListener('lumina:themechange', function() {
+        var studentsChart = document.getElementById('dashboardStudentsChart');
+        var revenueChart = document.getElementById('dashboardRevenueChart');
+
+        if (studentsChart && dashboardChartCache.students) {
+            renderDashboardStudentPieChart(studentsChart, dashboardChartCache.students);
+        }
+        if (revenueChart && dashboardChartCache.revenue) {
+            renderDashboardRevenuePieChart(revenueChart, dashboardChartCache.revenue);
+        }
+    });
 
     initDashboard();
     initStudents();
