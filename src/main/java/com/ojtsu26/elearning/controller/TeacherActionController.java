@@ -91,7 +91,7 @@ public class TeacherActionController {
         UserResponseDTO updatedProfile = userService.updateCurrentProfile(currentUser.getUser().getId(), request);
 
         if (authProvider == AuthProvider.LOCAL && !Objects.equals(previousEmail, updatedProfile.getEmail())) {
-            jwtCookieService.addJwtCookie(response, updatedProfile.getEmail());
+            jwtCookieService.addJwtCookie(response, updatedProfile.getId());
         }
 
         return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Profile updated successfully"));

@@ -21,6 +21,7 @@
         <span class="sep">›</span>
         <span class="current" th:text="${selectedCourse != null ? selectedCourse.title : 'Course'}">Course Title</span>
     </div>
+    <a th:replace="~{fragments/layout :: private-user-chip('/teacher/profile', 'Teacher', 'TEACHER')}"></a>
 </header>
 
 <main style="max-width:1200px;margin:2.5rem auto;padding:0 2rem;">

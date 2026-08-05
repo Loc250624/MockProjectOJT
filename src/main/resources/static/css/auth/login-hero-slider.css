@@ -1,0 +1,163 @@
+/* Login hero slideshow only. This file deliberately avoids changing register.html. */
+.auth-page-refined .auth-hero.auth-hero-login {
+  isolation: isolate;
+  background: linear-gradient(135deg, #0f172a 0%, #164e63 55%, #1d4ed8 100%);
+  color: #fff;
+}
+
+.auth-page-refined .auth-hero-login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.84) 0%, rgba(2, 6, 23, 0.62) 48%, rgba(2, 6, 23, 0.3) 100%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.18) 0%, rgba(2, 6, 23, 0.12) 58%, rgba(2, 6, 23, 0.72) 100%);
+}
+
+.auth-hero-login::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset -70px 0 100px rgba(2, 6, 23, 0.12);
+}
+
+.auth-hero-slides,
+.auth-hero-slide {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-hero-slides {
+  z-index: 0;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.auth-hero-slide {
+  z-index: 0;
+  opacity: 0;
+  transform: translateX(-7%) scale(1.035);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  will-change: transform, opacity;
+  transition:
+    transform 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.85s ease;
+}
+
+.auth-hero-slide.is-active {
+  z-index: 2;
+  opacity: 1;
+  transform: translateX(0) scale(1.015);
+}
+
+.auth-hero-slide.is-exiting-right {
+  z-index: 3;
+  opacity: 0;
+  transform: translateX(7%) scale(1.025);
+}
+
+/* Curated, landscape-oriented Unsplash education images. */
+.auth-hero-slide-students {
+  background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1800&q=86');
+  background-position: 54% center;
+}
+
+.auth-hero-slide-classroom {
+  background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1800&q=86');
+  background-position: 52% center;
+}
+
+.auth-hero-slide-online-learning {
+  background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=86');
+  background-position: 58% center;
+}
+
+.auth-hero-slide-virtual-classroom {
+  background-image: url('https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?auto=format&fit=crop&w=1800&q=86');
+  background-position: center;
+}
+
+.auth-hero-login .auth-hero-brand,
+.auth-hero-login .auth-hero-content,
+.auth-hero-login .auth-hero-dots {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-hero-login .auth-hero-content {
+  max-width: 40rem;
+  padding-inline: clamp(0rem, 2vw, 1rem);
+}
+
+.auth-hero-login .auth-kicker {
+  color: #dbeafe;
+  text-shadow: 0 2px 12px rgba(2, 6, 23, 0.35);
+}
+
+.auth-hero-login .auth-hero-title {
+  max-width: 10ch;
+  margin-bottom: 0;
+  font-size: clamp(2.6rem, 5.25vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  text-shadow: 0 4px 24px rgba(2, 6, 23, 0.42);
+}
+
+.auth-hero-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1rem;
+}
+
+.auth-hero-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 5px rgba(2, 6, 23, 0.3);
+  transition: width 0.35s ease, background-color 0.35s ease;
+}
+
+.auth-hero-dot.is-active {
+  width: 1.8rem;
+  background: #fff;
+}
+
+@media (max-width: 1100px) {
+  .auth-hero-login .auth-hero-title {
+    font-size: clamp(2.35rem, 5vw, 4rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-page-refined .auth-hero.auth-hero-login {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-hero-slide,
+  .auth-hero-dot {
+    transition: none;
+  }
+
+  .auth-hero-slide:first-child {
+    display: block;
+    opacity: 1;
+    transform: none;
+  }
+
+  .auth-hero-slide:not(:first-child),
+  .auth-hero-dot:not(:first-child) {
+    display: none;
+  }
+}

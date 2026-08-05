@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('[data-profile-field="' + field + '"]').forEach(function(node) {
             node.textContent = value || '';
         });
+        if (field === 'fullName') {
+            var initial = (value || 'U').trim().charAt(0).toUpperCase() || 'U';
+            document.querySelectorAll('[data-user-chip-initial]').forEach(function(node) {
+                node.textContent = initial;
+            });
+        }
     }
 
     function setPreview(src) {
@@ -82,7 +88,28 @@ document.addEventListener('DOMContentLoaded', function() {
         avatarImages.forEach(function(image) {
             image.src = resolvedSrc;
         });
+        syncUserChipAvatar(src);
         setPreview(resolvedSrc);
+    }
+
+    function syncUserChipAvatar(src) {
+        document.querySelectorAll('[data-user-chip-avatar]').forEach(function(shell) {
+            var image = shell.querySelector('[data-user-chip-image]');
+            if (!src) {
+                if (image) image.remove();
+                return;
+            }
+            if (!image) {
+                image = document.createElement('img');
+                image.className = 'user-chip-avatar-image';
+                image.dataset.userChipImage = 'true';
+                image.alt = '';
+                image.referrerPolicy = 'no-referrer';
+                image.addEventListener('error', function() { image.remove(); });
+                shell.appendChild(image);
+            }
+            image.src = src;
+        });
     }
 
     function parseApiResponse(response) {

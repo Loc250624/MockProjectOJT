@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
     <link rel="stylesheet" th:href="@{/css/common/profile.css}">
+    <link rel="stylesheet" th:href="@{/css/common/profile-password.css}">
 </head>
 <body>
 <div class="lumina-portal">
@@ -48,6 +49,8 @@
                     </div>
 
                     <div>
+                        <div th:replace="~{fragments/profile :: password-card}"></div>
+
                         <div class="card card-padded profile-card">
                             <h2 class="section-title">Teacher Quick Actions</h2>
                             <div class="profile-actions-list">
@@ -78,5 +81,6 @@
 
 <script th:src="@{/js/teacher/teacher.js}"></script>
 <script th:src="@{/js/common/profile.js}"></script>
+<script th:src="@{/js/common/profile-password.js}"></script>
 </body>
 </html>

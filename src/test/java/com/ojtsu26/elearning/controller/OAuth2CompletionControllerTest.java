@@ -91,7 +91,7 @@ class OAuth2CompletionControllerTest {
                         .sessionAttr(OAuth2LoginSuccessHandler.PENDING_OAUTH_SESSION_ATTRIBUTE,
                                 pending.pendingRegistrationToken())
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request("secret123", "secret123"))))
+                        .content(objectMapper.writeValueAsString(request("Secret@123", "Secret@123"))))
                 .andExpect(status().isForbidden());
 
         assertThat(userRepository.count()).isZero();
@@ -148,15 +148,16 @@ class OAuth2CompletionControllerTest {
                         .sessionAttr(OAuth2LoginSuccessHandler.PENDING_OAUTH_SESSION_ATTRIBUTE,
                                 pending.pendingRegistrationToken())
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request("secret123", "secret123"))))
+                        .content(objectMapper.writeValueAsString(request("Secret@123", "Secret@123"))))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("jwt_token"))
                 .andExpect(jsonPath("$.data.email").value("complete.me@example.com"))
                 .andExpect(jsonPath("$.data.role").value("STUDENT"))
                 .andExpect(jsonPath("$.data.redirectUrl").value("/student/dashboard"));
 
-        var user = userRepository.findByEmailIgnoreCase("complete.me@example.com").orElseThrow();
-        assertThat(passwordEncoder.matches("secret123", user.getPasswordHash())).isTrue();
+        var user = userRepository.findByAuthProviderAndEmailIgnoreCase(
+                AuthProvider.GOOGLE, "complete.me@example.com").orElseThrow();
+        assertThat(passwordEncoder.matches("Secret@123", user.getPasswordHash())).isTrue();
         assertThat(identityRepository.findByProviderAndProviderSubject(AuthProvider.GOOGLE, "google-sub-complete"))
                 .isPresent();
         assertThat(pendingRepository.findByTokenAndUsedAtIsNull(pending.pendingRegistrationToken())).isEmpty();

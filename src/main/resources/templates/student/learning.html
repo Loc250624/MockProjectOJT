@@ -25,15 +25,7 @@
             <svg th:replace="~{fragments/icons :: icon('courses')}"></svg>
             <span>My Courses</span>
         </a>
-        <a th:href="@{/student/dashboard}" class="learning-avatar-link" aria-label="Student dashboard">
-            <span th:if="${#authentication?.principal?.user?.avatarUrl == null || #authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                  class="learning-avatar-fallback"
-                  th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : 'S'}">S</span>
-            <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                 th:src="${#authentication?.principal?.user?.avatarUrl}"
-                 alt="Student avatar"
-                 onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'learning-avatar-fallback', textContent:'S'}));">
-        </a>
+        <a th:replace="~{fragments/layout :: private-user-chip('/student/profile', 'Student', 'STUDENT')}"></a>
     </nav>
 </header>
 

@@ -17,12 +17,10 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecificationExecutor<User> {
-    Optional<User> findByEmail(String email);
-    Optional<User> findByEmailIgnoreCase(String email);
+    Optional<User> findByAuthProviderAndEmailIgnoreCase(AuthProvider authProvider, String email);
     Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
-    boolean existsByEmail(String email);
-    boolean existsByEmailIgnoreCase(String email);
-    boolean existsByEmailIgnoreCaseAndIdNot(String email, Integer id);
+    boolean existsByAuthProviderAndEmailIgnoreCase(AuthProvider authProvider, String email);
+    boolean existsByAuthProviderAndEmailIgnoreCaseAndIdNot(AuthProvider authProvider, String email, Integer id);
     long countByRole(Role role);
     long countByRoleAndStatus(Role role, UserStatus status);
     long countByStatus(UserStatus status);

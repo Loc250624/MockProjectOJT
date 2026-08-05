@@ -456,13 +456,61 @@ a { text-decoration: none; color: inherit; }
 }
 
 .user-chip {
-  display: flex; align-items: center; gap: var(--space-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  min-width: 0;
+  max-width: 18rem;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
 }
 
-.user-chip .user-info { text-align: right; }
-.user-chip .user-name { font-size: 0.8125rem; font-weight: 600; color: var(--lumina-gray-800); line-height: 1.2; }
+.user-chip .user-info {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.user-chip .user-name {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: var(--lumina-gray-800);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .user-chip .user-role { font-size: 0.6875rem; font-weight: 500; color: var(--lumina-gray-500); text-transform: uppercase; letter-spacing: 0.05em; }
+.user-chip:focus-visible { outline: 2px solid var(--lumina-blue); outline-offset: 0.25rem; border-radius: var(--radius-sm); }
+.user-chip-avatar {
+  position: relative;
+  display: inline-grid;
+  flex: 0 0 36px;
+  place-items: center;
+  overflow: hidden;
+  color: var(--lumina-white);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.user-chip-avatar-initial {
+  grid-area: 1 / 1;
+}
+.user-chip-avatar-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
 .topbar-avatar {
   width: 36px;
   height: 36px;
@@ -2339,6 +2387,10 @@ a { text-decoration: none; color: inherit; }
     display: none;
   }
   .portal-topbar .user-chip {
+    display: inline-flex;
+    max-width: 36px;
+  }
+  .portal-topbar .user-chip .user-info {
     display: none;
   }
   .portal-topbar .topbar-right {

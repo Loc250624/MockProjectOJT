@@ -14,6 +14,10 @@ import java.util.List;
         name = "Users",
         uniqueConstraints = {
                 @UniqueConstraint(
+                        name = "uk_users_auth_provider_email",
+                        columnNames = {"auth_provider", "email"}
+                ),
+                @UniqueConstraint(
                         name = "uk_users_provider_identity",
                         columnNames = {"auth_provider", "provider_id"}
                 )
@@ -32,7 +36,7 @@ public class User {
 
     private String fullName;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private String email;
 
     private String passwordHash;
@@ -59,8 +63,9 @@ public class User {
     private Role role;
 
     @Convert(converter = AuthProviderConverter.class)
-    @Column(name = "auth_provider")
-    private AuthProvider authProvider;
+    @Column(name = "auth_provider", nullable = false)
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @Convert(converter = UserStatusConverter.class)
     private UserStatus status;

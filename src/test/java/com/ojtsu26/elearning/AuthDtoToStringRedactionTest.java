@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning;
 
+import com.ojtsu26.elearning.dto.request.ChangePasswordRequestDTO;
 import com.ojtsu26.elearning.dto.request.LoginRequestDTO;
 import com.ojtsu26.elearning.dto.request.OAuth2CompleteRegistrationRequestDTO;
 import com.ojtsu26.elearning.dto.request.RegisterRequestDTO;
@@ -26,6 +27,11 @@ class AuthDtoToStringRedactionTest {
         oauthRequest.setPassword("oauth-password");
         oauthRequest.setConfirmPassword("oauth-password");
 
+        ChangePasswordRequestDTO changeRequest = new ChangePasswordRequestDTO();
+        changeRequest.setCurrentPassword("current-password");
+        changeRequest.setNewPassword("new-password");
+        changeRequest.setConfirmPassword("confirm-password");
+
         AuthResponseDTO authResponse = AuthResponseDTO.builder()
                 .token("jwt-token-value")
                 .id(99)
@@ -35,11 +41,15 @@ class AuthDtoToStringRedactionTest {
                 .redirectUrl("/student/dashboard")
                 .build();
 
-        String combined = loginRequest + "\n" + registerRequest + "\n" + oauthRequest + "\n" + authResponse;
+        String combined = loginRequest + "\n" + registerRequest + "\n" + oauthRequest
+                + "\n" + changeRequest + "\n" + authResponse;
 
         assertFalse(combined.contains("plain-password"));
         assertFalse(combined.contains("register-password"));
         assertFalse(combined.contains("oauth-password"));
+        assertFalse(combined.contains("current-password"));
+        assertFalse(combined.contains("new-password"));
+        assertFalse(combined.contains("confirm-password"));
         assertFalse(combined.contains("jwt-token-value"));
         assertFalse(combined.contains("student@example.test"));
         assertFalse(combined.contains("new-student@example.test"));

@@ -13,6 +13,7 @@ import com.ojtsu26.elearning.model.enums.Role;
 import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.service.UserService;
+import com.ojtsu26.elearning.validation.PasswordPolicy;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -69,12 +70,15 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponseDTO createByAdmin(AdminCreateUserRequestDTO requestDTO) {
+        if (!PasswordPolicy.isStrong(requestDTO.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
+        }
         if (!requestDTO.getPassword().equals(requestDTO.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
         }
 
         String normalizedEmail = normalizeEmail(requestDTO.getEmail());
-        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+        if (userRepository.existsByAuthProviderAndEmailIgnoreCase(AuthProvider.LOCAL, normalizedEmail)) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
@@ -234,7 +238,8 @@ public class UserServiceImpl implements UserService {
         }
 
         if (!normalizedEmail.equalsIgnoreCase(user.getEmail())
-                && userRepository.existsByEmailIgnoreCaseAndIdNot(normalizedEmail, user.getId())) {
+                && userRepository.existsByAuthProviderAndEmailIgnoreCaseAndIdNot(
+                        user.getAuthProvider(), normalizedEmail, user.getId())) {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
