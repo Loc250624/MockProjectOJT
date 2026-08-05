@@ -72,6 +72,7 @@
                                     <div>
                                         <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);" th:text="${crs.title}">Course Title</div>
                                         <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${crs.categoryId != null ? 'Category ID: ' + crs.categoryId : 'No Category'}">Category</div>
+                                        <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></div>
                                     </div>
                                 </div>
                             </td>

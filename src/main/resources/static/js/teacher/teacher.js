@@ -3,8 +3,310 @@
 document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
+    initTeacherVideoMetadata();
     initTeacherAssessments();
 });
+
+var teacherYouTubeApiPromise = null;
+
+function initTeacherVideoMetadata() {
+    var form = document.querySelector('[data-video-metadata-form]');
+    if (!form) {
+        return;
+    }
+
+    var urlInput = form.querySelector('[data-video-url-input]');
+    var durationInput = form.querySelector('[data-video-duration-input]');
+    var status = form.querySelector('[data-video-metadata-status]');
+    var probe = form.querySelector('[data-video-duration-probe]');
+    var submitButton = form.querySelector('[data-video-submit]');
+    var debounceTimer = null;
+    var detectionSequence = 0;
+    var detectedUrl = '';
+    var submittingAfterDetection = false;
+
+    function setStatus(type, message) {
+        status.classList.remove('is-loading', 'is-ready', 'is-error');
+        if (type) {
+            status.classList.add('is-' + type);
+        }
+        status.textContent = message;
+    }
+
+    function setSubmitEnabled(enabled) {
+        submitButton.disabled = !enabled;
+        submitButton.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    }
+
+    function currentUrl() {
+        return urlInput.value.trim();
+    }
+
+    function detectCurrentUrl() {
+        var url = currentUrl();
+        var sequence = ++detectionSequence;
+        detectedUrl = '';
+        durationInput.value = '';
+        probe.innerHTML = '';
+
+        if (!url) {
+            setSubmitEnabled(false);
+            setStatus('', 'Enter a video URL. Its length will be detected automatically before saving.');
+            return Promise.reject(new Error('Video URL is required.'));
+        }
+
+        setSubmitEnabled(false);
+        setStatus('loading', 'Checking the video and detecting its length...');
+
+        return detectVideoDuration(url, probe).then(function(seconds) {
+            if (sequence !== detectionSequence || url !== currentUrl()) {
+                throw new Error('The video URL changed during detection.');
+            }
+            var roundedSeconds = Math.ceil(Number(seconds));
+            if (!Number.isFinite(roundedSeconds) || roundedSeconds < 1) {
+                throw new Error('The video does not provide a valid length.');
+            }
+            durationInput.value = String(roundedSeconds);
+            detectedUrl = url;
+            setSubmitEnabled(true);
+            setStatus('ready', 'Video ready — ' + formatVideoDuration(roundedSeconds) + ' detected automatically.');
+            return roundedSeconds;
+        }).catch(function(error) {
+            if (sequence === detectionSequence) {
+                durationInput.value = '';
+                detectedUrl = '';
+                setSubmitEnabled(false);
+                setStatus('error', error.message || 'Unable to detect the video length.');
+            }
+            throw error;
+        });
+    }
+
+    urlInput.addEventListener('input', function() {
+        window.clearTimeout(debounceTimer);
+        detectionSequence += 1;
+        detectedUrl = '';
+        durationInput.value = '';
+        setSubmitEnabled(false);
+        setStatus('loading', 'Waiting for the complete video URL...');
+        debounceTimer = window.setTimeout(function() {
+            detectCurrentUrl().catch(function() {});
+        }, 500);
+    });
+
+    urlInput.addEventListener('blur', function() {
+        window.clearTimeout(debounceTimer);
+        if (currentUrl() && detectedUrl !== currentUrl()) {
+            detectCurrentUrl().catch(function() {});
+        }
+    });
+
+    form.addEventListener('submit', function(event) {
+        if (submittingAfterDetection) {
+            return;
+        }
+        if (detectedUrl === currentUrl() && Number(durationInput.value) > 0) {
+            return;
+        }
+        event.preventDefault();
+        window.clearTimeout(debounceTimer);
+        detectCurrentUrl().then(function() {
+            submittingAfterDetection = true;
+            form.requestSubmit();
+        }).catch(function() {
+            urlInput.focus();
+        });
+    });
+
+    setSubmitEnabled(false);
+    if (currentUrl()) {
+        detectCurrentUrl().catch(function() {});
+    }
+}
+
+function detectVideoDuration(url, probe) {
+    var youtubeId = extractTeacherYouTubeId(url);
+    if (youtubeId) {
+        return detectYouTubeDuration(youtubeId, probe);
+    }
+    if (/\.(mp4|webm|ogg|ogv|mov|m4v|m3u8)(?:[?#].*)?$/i.test(url)) {
+        return detectDirectVideoDuration(url, probe);
+    }
+    return Promise.reject(new Error('Use a valid YouTube URL or a direct public video file URL.'));
+}
+
+function extractTeacherYouTubeId(value) {
+    try {
+        var parsed = new URL(value);
+        var host = parsed.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
+        var id = null;
+        if (host === 'youtu.be') {
+            id = parsed.pathname.split('/').filter(Boolean)[0];
+        } else if (host === 'youtube.com') {
+            id = parsed.searchParams.get('v');
+            if (!id) {
+                var parts = parsed.pathname.split('/').filter(Boolean);
+                if (parts[0] === 'embed' || parts[0] === 'shorts') {
+                    id = parts[1];
+                }
+            }
+        }
+        return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+function loadTeacherYouTubeApi() {
+    if (window.YT && typeof window.YT.Player === 'function') {
+        return Promise.resolve(window.YT);
+    }
+    if (teacherYouTubeApiPromise) {
+        return teacherYouTubeApiPromise;
+    }
+
+    teacherYouTubeApiPromise = new Promise(function(resolve, reject) {
+        var previousReady = window.onYouTubeIframeAPIReady;
+        var timeoutId = window.setTimeout(function() {
+            reject(new Error('YouTube took too long to provide the video length. Please try again.'));
+        }, 15000);
+
+        window.onYouTubeIframeAPIReady = function() {
+            if (typeof previousReady === 'function') {
+                previousReady();
+            }
+            window.clearTimeout(timeoutId);
+            resolve(window.YT);
+        };
+
+        var existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+        if (!existingScript) {
+            var script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.async = true;
+            script.onerror = function() {
+                window.clearTimeout(timeoutId);
+                reject(new Error('Unable to load YouTube metadata. Check the network connection and try again.'));
+            };
+            document.head.appendChild(script);
+        }
+    });
+    return teacherYouTubeApiPromise;
+}
+
+function detectYouTubeDuration(videoId, probe) {
+    return loadTeacherYouTubeApi().then(function(YT) {
+        return new Promise(function(resolve, reject) {
+            var playerHost = document.createElement('div');
+            probe.innerHTML = '';
+            probe.appendChild(playerHost);
+            var settled = false;
+            var attempts = 0;
+            var player;
+
+            function finish(error, seconds) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                if (player && typeof player.destroy === 'function') {
+                    player.destroy();
+                }
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(seconds);
+                }
+            }
+
+            function readDuration() {
+                var seconds = player && Number(player.getDuration());
+                if (Number.isFinite(seconds) && seconds > 0) {
+                    finish(null, seconds);
+                    return;
+                }
+                attempts += 1;
+                if (attempts >= 24) {
+                    finish(new Error('Unable to read this YouTube video length. The video may be private, live, or unavailable.'));
+                    return;
+                }
+                window.setTimeout(readDuration, 250);
+            }
+
+            player = new YT.Player(playerHost, {
+                width: '200',
+                height: '200',
+                videoId: videoId,
+                playerVars: { autoplay: 0, controls: 0, playsinline: 1 },
+                events: {
+                    onReady: readDuration,
+                    onError: function() {
+                        finish(new Error('YouTube could not load this video. Check that it is public and available.'));
+                    }
+                }
+            });
+        });
+    });
+}
+
+function detectDirectVideoDuration(url, probe) {
+    return new Promise(function(resolve, reject) {
+        var video = document.createElement('video');
+        var timeoutId;
+        var settled = false;
+        probe.innerHTML = '';
+        probe.appendChild(video);
+
+        function finish(error, seconds) {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            window.clearTimeout(timeoutId);
+            video.removeAttribute('src');
+            video.load();
+            if (error) {
+                reject(error);
+            } else {
+                resolve(seconds);
+            }
+        }
+
+        video.preload = 'metadata';
+        video.muted = true;
+        video.addEventListener('loadedmetadata', function() {
+            var seconds = Number(video.duration);
+            if (Number.isFinite(seconds) && seconds > 0) {
+                finish(null, seconds);
+            } else {
+                finish(new Error('The video file does not provide a valid length.'));
+            }
+        });
+        video.addEventListener('error', function() {
+            finish(new Error('Unable to load the public video URL or read its length.'));
+        });
+        timeoutId = window.setTimeout(function() {
+            finish(new Error('The video took too long to load. Check the URL and try again.'));
+        }, 15000);
+        video.src = url;
+        video.load();
+    });
+}
+
+function formatVideoDuration(totalSeconds) {
+    var hours = Math.floor(totalSeconds / 3600);
+    var minutes = Math.floor((totalSeconds % 3600) / 60);
+    var seconds = totalSeconds % 60;
+    var parts = [];
+    if (hours > 0) {
+        parts.push(hours + 'h');
+    }
+    if (minutes > 0 || hours > 0) {
+        parts.push(minutes + 'm');
+    }
+    parts.push(seconds + 's');
+    return parts.join(' ');
+}
 
 function initPortalSidebarNav() {
     var currentPath = normalizePortalPath(window.location.pathname);

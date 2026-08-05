@@ -25,8 +25,10 @@ import com.ojtsu26.elearning.service.CertificateService;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.StudentLearningService;
+import com.ojtsu26.elearning.service.VideoDurationPrecomputeService;
 import com.ojtsu26.elearning.service.ai.AiTutorLessonContext;
 import com.ojtsu26.elearning.common.VideoUtils;
+import com.ojtsu26.elearning.common.CourseDurationFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     private final CourseEnrollmentRepository enrollmentRepository;
     private final LessonRepository lessonRepository;
     private final LessonProgressRepository lessonProgressRepository;
+    private final VideoDurationPrecomputeService videoDurationPrecomputeService;
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
     private final CertificateService certificateService;
@@ -75,6 +78,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Transactional
     public StudentLearningCourseDTO getLearningCourse(Integer courseId, Integer lessonId) {
         AccessContext context = requireAccess(courseId);
+        videoDurationPrecomputeService.refreshCourseDurations(List.of(courseId));
         List<Lesson> lessons = orderedLessons(courseId);
         Integer activeLessonId = resolveActiveLessonId(context.enrollment(), lessons, lessonId);
         StudentLearningLessonDTO activeLesson = activeLessonId == null ? null : openLessonInternal(context, lessons, activeLessonId);
@@ -82,6 +86,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .findTopByEnrollmentIdAndLastAccessedAtIsNotNullOrderByLastAccessedAtDesc(context.enrollment().getId())
                 .orElse(null);
         CourseProgressSnapshot courseProgress = calculateAndStoreCourseProgress(context.enrollment(), lessons);
+        long estimatedDurationSeconds = estimatedDurationSeconds(lessons);
 
         return StudentLearningCourseDTO.builder()
                 .courseId(context.course().getId())
@@ -95,6 +100,8 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .progressPercentage(courseProgress.percentage())
                 .completed(courseProgress.completed())
                 .courseStatus(courseStatus(courseProgress))
+                .estimatedDurationSeconds(estimatedDurationSeconds)
+                .estimatedDurationDisplay(CourseDurationFormatter.formatSeconds(estimatedDurationSeconds))
                 .activeLesson(activeLesson)
                 .lessons(toLessonSummaries(context.enrollment(), lessons, activeLessonId))
                 .courseResources(Collections.emptyList())
@@ -144,7 +151,11 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         if (lesson.getType() != LessonType.VIDEO || lesson.getVideo() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Only video lessons accept playback progress.");
         }
-        VideoProgressInput input = validateVideoProgressRequest(request, lesson.getVideo().getDurationSeconds());
+        Integer storedDurationSeconds = lesson.getVideo().getDurationSeconds();
+        VideoProgressInput input = validateVideoProgressRequest(request, storedDurationSeconds);
+        if (input.durationSeconds() > valueOrZero(storedDurationSeconds)) {
+            lesson.getVideo().setDurationSeconds(input.durationSeconds());
+        }
         LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
         int previousMax = maxStoredReachedSeconds(progress);
         int maxReached = Math.max(previousMax, input.maxReachedSeconds());
@@ -153,7 +164,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         progress.setWatchedSeconds(maxReached);
         progress.setDurationSeconds(input.durationSeconds());
         progress.setLastAccessedAt(LocalDateTime.now());
-        if (!Boolean.TRUE.equals(progress.getIsCompleted()) && isVideoComplete(progress, lesson, input.eventType())) {
+        if (!Boolean.TRUE.equals(progress.getIsCompleted()) && isVideoComplete(progress, lesson)) {
             markCompleted(progress);
         }
         lessonProgressRepository.save(progress);
@@ -202,8 +213,15 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     public List<StudentCourseProgressCardDTO> getCurrentStudentCourseCards() {
         User student = currentUserService.getCurrentUser();
         validateActiveStudent(student);
-        return enrollmentRepository.findByStudentId(student.getId()).stream()
+        List<CourseEnrollment> enrollments = enrollmentRepository.findByStudentId(student.getId()).stream()
                 .filter(enrollment -> enrollment.getCourse() != null)
+                .toList();
+        videoDurationPrecomputeService.refreshCourseDurations(enrollments.stream()
+                .map(enrollment -> enrollment.getCourse().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
+        return enrollments.stream()
                 .map(enrollment -> {
                     List<Lesson> lessons = orderedLessons(enrollment.getCourse().getId());
                     List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
@@ -223,6 +241,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                     }
                     
                     Course course = enrollment.getCourse();
+                    long estimatedDurationSeconds = estimatedDurationSeconds(lessons);
                     return StudentCourseProgressCardDTO.builder()
                             .courseId(course.getId())
                             .courseTitle(course.getTitle())
@@ -235,6 +254,8 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                             .totalLessons(snapshot.totalLessons())
                             .progressPercentage(snapshot.percentage())
                             .completed(snapshot.completed())
+                            .estimatedDurationSeconds(estimatedDurationSeconds)
+                            .estimatedDurationDisplay(CourseDurationFormatter.formatSeconds(estimatedDurationSeconds))
                             .build();
                 })
                 .sorted(STUDENT_COURSE_ORDER)
@@ -366,9 +387,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .videoPlayable(videoSource.playable())
                 .videoUnavailableReason(videoSource.message())
                 .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())
+                .videoDurationDisplay(CourseDurationFormatter.formatVideoSeconds(
+                        lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds()))
                 .watchedSeconds(maxStoredReachedSeconds(progress))
                 .lastPositionSeconds(lastStoredPositionSeconds(progress))
                 .maxReachedSeconds(maxStoredReachedSeconds(progress))
+                .videoProgressPercentage(videoLessonProgressPercentage(progress, lesson))
                 .previousLessonId(previousLesson == null ? null : previousLesson.getId())
                 .nextLessonId(nextLesson == null ? null : nextLesson.getId())
                 .nextLessonAccessible(nextAccess == null ? null : nextAccess.accessible())
@@ -407,6 +431,8 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                             .lockReason(access == null ? null : access.lockReason())
                             .watchedSeconds(progress == null ? 0 : maxStoredReachedSeconds(progress))
                             .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())
+                            .videoDurationDisplay(CourseDurationFormatter.formatVideoSeconds(
+                                    lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds()))
                             .build();
                 })
                 .toList();
@@ -540,7 +566,9 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         int current = firstNonNull(request.getCurrentTimeSeconds(), request.getWatchedSeconds(), 0);
         int requestedMax = firstNonNull(request.getMaxReachedSeconds(), request.getWatchedSeconds(), current);
         int maxReached = Math.max(current, requestedMax);
-        int duration = firstNonNull(request.getDurationSeconds(), storedDurationSeconds, 0);
+        int duration = Math.max(
+                storedDurationSeconds != null && storedDurationSeconds > 0 ? storedDurationSeconds : 0,
+                valueOrZero(request.getDurationSeconds()));
 
         validateVideoSeconds(current, "Invalid video position.");
         validateVideoSeconds(maxReached, "Invalid watched position.");
@@ -566,15 +594,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         }
     }
 
-    private boolean isVideoComplete(LessonProgress progress, Lesson lesson, String eventType) {
+    private boolean isVideoComplete(LessonProgress progress, Lesson lesson) {
         Integer durationSeconds = progress.getDurationSeconds() != null && progress.getDurationSeconds() > 0
                 ? progress.getDurationSeconds()
                 : lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds();
         if (durationSeconds == null || durationSeconds <= 0) {
             return false;
-        }
-        if ("ENDED".equals(eventType)) {
-            return true;
         }
         return maxStoredReachedSeconds(progress) * 100 >= durationSeconds * VIDEO_COMPLETION_THRESHOLD_PERCENT;
     }
@@ -660,6 +685,17 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         return lessons.stream()
                 .filter(this::isRequiredLesson)
                 .toList();
+    }
+
+    private long estimatedDurationSeconds(List<Lesson> lessons) {
+        return lessons.stream()
+                .filter(lesson -> lesson.getType() == LessonType.VIDEO)
+                .filter(lesson -> lesson.getVideo() != null)
+                .map(lesson -> lesson.getVideo().getDurationSeconds())
+                .filter(Objects::nonNull)
+                .filter(duration -> duration > 0)
+                .mapToLong(Integer::longValue)
+                .sum();
     }
 
     private boolean isRequiredLesson(Lesson lesson) {

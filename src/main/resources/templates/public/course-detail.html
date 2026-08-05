@@ -35,6 +35,13 @@
                 <span th:text="${course.categoryName}" style="color:rgba(255,255,255,0.6);">Computer Science</span>
             </div>
             <h1 style="font-family:'Playfair Display',serif; font-style:italic; font-size:2.25rem; color:white; margin:0.5rem 0;" th:text="${course.title}">Course Title</h1>
+            <div class="course-duration-meta" style="margin-top:0.5rem;color:rgba(255,255,255,0.8);">
+                <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                <span>Estimated duration: <strong data-course-duration-display
+                                                  th:data-course-id="${course.id}"
+                                                  th:data-duration-seconds="${course.estimatedDurationSeconds}"
+                                                  th:text="${course.estimatedDurationDisplay}" style="color:white;">45 mins</strong></span>
+            </div>
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:0.75rem; font-size:0.875rem; color:rgba(255,255,255,0.75);">
                 <span>👤 Instructor: <strong th:text="${course.instructorName}" style="color:white;">Instructor</strong></span>
                 <span>🏷️ Category: <strong th:text="${course.categoryName}" style="color:white;">Category</strong></span>
@@ -63,10 +70,13 @@
                         <span th:if="${lsn.type.name() == 'VIDEO'}">▶</span>
                         <span th:if="${lsn.type.name() == 'QUIZ'}">✏</span>
                     </div>
-                    <div style="flex:1;">
+                    <div style="flex:1;min-width:0;">
                         <div style="font-size:0.9375rem; font-weight:700; color:var(--lumina-gray-800);" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1. Lesson Title</div>
-                        <div style="font-size:0.75rem; color:var(--lumina-gray-400); margin-top:2px;" th:text="${lsn.type.name()} + ' LESSON (Metadata only)'">VIDEO</div>
+                        <div style="font-size:0.75rem; color:var(--lumina-gray-400); margin-top:2px;" th:text="${lsn.type.name()} + ' LESSON'">VIDEO LESSON</div>
                     </div>
+                    <span th:if="${lsn.type.name() == 'VIDEO'}"
+                          style="margin-left:auto;white-space:nowrap;color:var(--lumina-gray-500);font-size:0.8125rem;font-weight:600;"
+                          th:text="${lsn.videoDurationDisplay == null ? 'Duration unavailable' : lsn.videoDurationDisplay}">12 mins</span>
                 </div>
                 <div th:if="${#lists.isEmpty(lessons)}" style="text-align:center; padding:2rem; color:var(--lumina-gray-400); font-style:italic;">
                     No lessons have been added to this course curriculum yet.

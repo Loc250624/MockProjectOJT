@@ -1,0 +1,23 @@
+{
+  "task": "course-estimated-completion-time-from-video-lessons",
+  "project": "OJTSU26 E-Learning",
+  "primary_rule": "Sum duration only from valid video lessons belonging to the current course.",
+  "preferred_unit": "seconds",
+  "preferred_fields": [
+    "estimatedDurationSeconds",
+    "estimatedDurationDisplay"
+  ],
+  "must_avoid": [
+    "quiz duration",
+    "text lesson estimates",
+    "cross-course aggregation",
+    "N+1 queries",
+    "double counting caused by joins",
+    "unrelated refactors"
+  ],
+  "fallback_schema_change": {
+    "allowed_only_if_missing": true,
+    "field": "videoDurationSeconds",
+    "sql_type": "BIGINT NULL"
+  }
+}

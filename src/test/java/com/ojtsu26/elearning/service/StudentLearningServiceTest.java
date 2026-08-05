@@ -53,6 +53,9 @@ class StudentLearningServiceTest {
     private LessonProgressRepository lessonProgressRepository;
 
     @Mock
+    private VideoDurationPrecomputeService videoDurationPrecomputeService;
+
+    @Mock
     private CurrentUserService currentUserService;
 
     @Mock
@@ -75,6 +78,7 @@ class StudentLearningServiceTest {
                 enrollmentRepository,
                 lessonRepository,
                 lessonProgressRepository,
+                videoDurationPrecomputeService,
                 currentUserService,
                 notificationService,
                 certificateService
@@ -442,6 +446,73 @@ class StudentLearningServiceTest {
     }
 
     @Test
+    void storedLessonVideoDurationIsAuthoritativeForCompletion() {
+        stubAccess();
+        LessonProgress progress = LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(secondLesson)
+                .isCompleted(false)
+                .watchedSeconds(0)
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(secondLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(progress));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(progress));
+
+        LearningProgressDTO response = service.recordVideoProgress(
+                10, 102, videoProgressRequest(45, 45, 50, "TIME_UPDATE"));
+
+        assertEquals(90, response.getDurationSeconds());
+        assertEquals(90, progress.getDurationSeconds());
+        assertFalse(response.getCompleted());
+    }
+
+    @Test
+    void longerPlayerDurationCorrectsStaleStoredVideoDuration() {
+        stubAccess();
+        LessonProgress progress = LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(secondLesson)
+                .isCompleted(false)
+                .watchedSeconds(0)
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(secondLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(progress));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(progress));
+
+        LearningProgressDTO response = service.recordVideoProgress(
+                10, 102, videoProgressRequest(10, 10, 8458, "TIME_UPDATE"));
+
+        assertEquals(8458, secondLesson.getVideo().getDurationSeconds());
+        assertEquals(8458, response.getVideoDurationSeconds());
+        assertEquals(8458, response.getDurationSeconds());
+        assertFalse(response.getCompleted());
+    }
+
+    @Test
+    void endedEventBeforeStoredDurationThresholdDoesNotCompleteLesson() {
+        stubAccess();
+        LessonProgress progress = LessonProgress.builder()
+                .enrollment(enrollment)
+                .lesson(secondLesson)
+                .isCompleted(false)
+                .watchedSeconds(0)
+                .build();
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(secondLesson));
+        when(lessonProgressRepository.findByEnrollmentIdAndLessonIdForUpdate(20, 102)).thenReturn(Optional.of(progress));
+        when(lessonProgressRepository.save(any(LessonProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lessonProgressRepository.findByEnrollmentId(20)).thenReturn(List.of(progress));
+
+        LearningProgressDTO response = service.recordVideoProgress(
+                10, 102, videoProgressRequest(40, 40, 40, "ENDED"));
+
+        assertEquals(90, response.getDurationSeconds());
+        assertFalse(response.getCompleted());
+        assertNull(progress.getCompletedAt());
+    }
+
+    @Test
     void negativeVideoPositionIsRejected() {
         stubAccess();
         when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(secondLesson));
@@ -632,6 +703,8 @@ class StudentLearningServiceTest {
                 cards.stream().map(StudentCourseProgressCardDTO::getCourseTitle).toList());
         assertEquals(new BigDecimal("0"), cards.get(0).getProgressPercentage());
         assertEquals(new BigDecimal("100.00"), cards.get(4).getProgressPercentage());
+        verify(videoDurationPrecomputeService).refreshCourseDurations(
+                List.of(15, 14, 11, 13, 12));
     }
 
     private void stubAccess() {

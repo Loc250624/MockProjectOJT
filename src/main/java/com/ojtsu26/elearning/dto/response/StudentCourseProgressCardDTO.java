@@ -20,4 +20,6 @@ public class StudentCourseProgressCardDTO {
     private Integer totalLessons;
     private BigDecimal progressPercentage;
     private Boolean completed;
+    private long estimatedDurationSeconds;
+    private String estimatedDurationDisplay;
 }

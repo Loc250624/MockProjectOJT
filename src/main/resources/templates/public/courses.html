@@ -108,6 +108,10 @@
                             </div>
                             <div class="course-name" th:text="${crs.title}">Quantum Algorithmic Structures</div>
                             <div class="course-desc" th:text="${crs.description}">Master the foundations of quantum computing...</div>
+                            <div class="course-duration-meta" style="margin-top:0.65rem;">
+                                <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                                <span>Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></span>
+                            </div>
                         </div>
                         <div class="course-footer" style="margin-top: 1rem; border-top: 1px solid var(--lumina-gray-100); padding-top: 0.75rem; display:flex; justify-content:space-between; align-items:center;">
                             <div style="font-size: 0.75rem; color: var(--lumina-gray-500);">

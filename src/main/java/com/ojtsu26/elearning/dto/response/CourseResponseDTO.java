@@ -36,4 +36,8 @@ public class CourseResponseDTO {
     private String roadmapTitle;
 
     private String enrollmentStatus;
+
+    private long estimatedDurationSeconds;
+
+    private String estimatedDurationDisplay;
 }

@@ -49,8 +49,10 @@
         .lesson-video { background: var(--lumina-blue-pale); color: var(--lumina-blue); }
         .lesson-read { background: #f0fdf4; color: var(--lumina-success); }
         .lesson-quiz { background: #fef3c7; color: var(--lumina-warning); }
+        .lesson-copy { flex: 1; min-width: 0; }
         .lesson-name { font-size: 0.875rem; font-weight: 600; color: var(--lumina-gray-800); }
         .lesson-meta { font-size: 0.75rem; color: var(--lumina-gray-400); margin-top: 1px; }
+        .lesson-duration { margin-left: auto; color: var(--lumina-gray-500); font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
 
         /* Review item */
         .review-item { display: flex; gap: 0.875rem; padding: 1rem 0; border-bottom: 1px solid var(--lumina-gray-100); }
@@ -82,7 +84,12 @@
         <div class="meta-row">
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> <strong style="color:white;">4.9</strong> (2.1k reviews)</span>
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('students')}"></svg> 12,450 students</span>
-            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('progress')}"></svg> 42 hours</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('clock')}"></svg> Estimated duration:
+                <strong style="color:white;" data-course-duration-display
+                        th:data-course-id="${course.id}"
+                        th:data-duration-seconds="${course.estimatedDurationSeconds}"
+                        th:text="${course.estimatedDurationDisplay}">45 mins</strong>
+            </span>
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg> Last updated Oct 2023</span>
         </div>
         <div class="meta-item" style="margin-top:0.5rem;">
@@ -129,10 +136,13 @@
                             <span th:if="${lsn.type.name() == 'VIDEO'}"><svg th:replace="~{fragments/icons :: icon('videos')}"></svg></span>
                             <span th:if="${lsn.type.name() == 'QUIZ'}"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg></span>
                         </div>
-                        <div>
+                        <div class="lesson-copy">
                             <div class="lesson-name" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1.1 Introduction</div>
-                            <div class="lesson-meta" th:text="${lsn.type.name()} + ' LESSON (Metadata only)'">VIDEO LESSON</div>
+                            <div class="lesson-meta" th:text="${lsn.type.name()} + ' LESSON'">VIDEO LESSON</div>
                         </div>
+                        <span class="lesson-duration"
+                              th:if="${lsn.type.name() == 'VIDEO'}"
+                              th:text="${lsn.videoDurationDisplay == null ? 'Duration unavailable' : lsn.videoDurationDisplay}">12 mins</span>
                     </div>
                     <div th:if="${#lists.isEmpty(lessons)}" class="student-table-empty" style="text-align:center; padding:1.5rem; color:var(--lumina-gray-400); font-style:italic;">
                         <div class="empty-state-icon"><svg th:replace="~{fragments/icons :: icon('lessons')}"></svg></div>

@@ -45,6 +45,10 @@
                         <h3 th:text="${course.courseTitle}" style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">Course Title</h3>
                         <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;"><strong>Instructor:</strong> <span th:text="${course.instructorName ?: 'Unknown instructor'}" style="color: #334155; font-weight: 500;">Instructor</span></p>
                         <p class="student-course-meta" style="font-size: 0.8125rem; color: #64748b; margin-bottom: 0.75rem;">Enrolled on: <span th:text="${course.enrolledAt == null ? 'Unknown' : #temporals.format(course.enrolledAt, 'dd/MM/yyyy')}">Unknown</span></p>
+                        <div class="course-duration-meta" style="margin-bottom:0.75rem;">
+                            <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                            <span>Estimated duration: <strong th:text="${course.estimatedDurationDisplay}">45 mins</strong></span>
+                        </div>
                         
                         <div class="student-progress-line" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: #475569; margin-bottom: 0.25rem;">
                             <span th:text="${course.completedLessons} + ' of ' + ${course.totalLessons} + ' lessons'">0 of 0 lessons</span>

@@ -43,6 +43,13 @@
             <p class="learning-eyebrow">Course player</p>
             <h1 th:text="${learningCourse.courseTitle}">Course title</h1>
             <p th:text="${learningCourse.instructorName == null ? 'Learning workspace' : 'Instructor: ' + learningCourse.instructorName}">Instructor</p>
+            <div class="course-duration-meta" style="margin-top:0.5rem;color:rgba(255,255,255,0.8);">
+                <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                <span>Estimated duration: <strong data-course-duration-display
+                                                  th:data-course-id="${learningCourse.courseId}"
+                                                  th:data-duration-seconds="${learningCourse.estimatedDurationSeconds}"
+                                                  th:text="${learningCourse.estimatedDurationDisplay}">45 mins</strong></span>
+            </div>
         </div>
         <div class="learning-progress-summary"
              th:aria-label="${'Course progress ' + learningCourse.progressPercentage + ' percent'}">
@@ -71,8 +78,13 @@
                 <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
                 <span>
                     <strong th:text="${lesson.title}">Lesson title</strong>
-                    <small th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed' : lesson.type)}">VIDEO</small>
+                    <small th:data-lesson-state="${lesson.id}"
+                           th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed' : lesson.type)}">VIDEO</small>
                 </span>
+                <span class="learning-lesson-duration"
+                      th:if="${lesson.type != null && lesson.type.name() == 'VIDEO'}"
+                      th:data-lesson-duration="${lesson.id}"
+                      th:text="${lesson.videoDurationDisplay == null ? 'Duration unavailable' : lesson.videoDurationDisplay}">12 mins</span>
             </a>
         </div>
     </details>
@@ -99,8 +111,13 @@
                     <span class="learning-lesson-index" th:text="${lesson.orderIndex}">1</span>
                     <span>
                         <strong th:text="${lesson.title}">Lesson title</strong>
-                        <small th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed lesson' : lesson.type + ' lesson')}">VIDEO lesson</small>
+                        <small th:data-lesson-state="${lesson.id}"
+                               th:text="${lesson.locked ? lesson.lockReason : (lesson.completed ? 'Completed lesson' : lesson.type + ' lesson')}">VIDEO lesson</small>
                     </span>
+                    <span class="learning-lesson-duration"
+                          th:if="${lesson.type != null && lesson.type.name() == 'VIDEO'}"
+                          th:data-lesson-duration="${lesson.id}"
+                          th:text="${lesson.videoDurationDisplay == null ? 'Duration unavailable' : lesson.videoDurationDisplay}">12 mins</span>
                 </a>
             </div>
         </aside>
@@ -153,8 +170,17 @@
                         <source th:src="${learningCourse.activeLesson.videoUrl}" type="video/mp4">
                         Your browser cannot play this video.
                     </video>
+                    <div class="learning-video-progress"
+                         role="progressbar"
+                         aria-label="Video lesson progress"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         th:aria-valuenow="${learningCourse.activeLesson.videoProgressPercentage}">
+                        <span id="video-progress-fill"
+                              th:style="'width:' + ${learningCourse.activeLesson.completed ? 100 : learningCourse.activeLesson.videoProgressPercentage} + '%;'"></span>
+                    </div>
                     <p class="learning-help" id="video-progress-help"
-                       th:text="${learningCourse.activeLesson.lastPositionSeconds == null || learningCourse.activeLesson.lastPositionSeconds == 0 ? 'Video progress will save as you watch.' : 'Resume position ' + learningCourse.activeLesson.lastPositionSeconds + ' seconds.'}">
+                       th:text="${learningCourse.activeLesson.completed ? 'Video completed.' : (learningCourse.activeLesson.watchedSeconds != null && learningCourse.activeLesson.watchedSeconds > 0 && learningCourse.activeLesson.videoDurationSeconds != null && learningCourse.activeLesson.videoDurationSeconds > 0 ? 'Watched ' + learningCourse.activeLesson.watchedSeconds + ' of ' + learningCourse.activeLesson.videoDurationSeconds + ' seconds.' : 'Video progress will save as you watch.')}">
                         Video progress will save as you watch.
                     </p>
                     <p class="learning-help" id="video-media-error" hidden></p>

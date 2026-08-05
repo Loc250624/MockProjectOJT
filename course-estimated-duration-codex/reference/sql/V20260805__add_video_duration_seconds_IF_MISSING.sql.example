@@ -1,0 +1,14 @@
+-- CHỈ DÙNG KHI CODEX XÁC NHẬN LESSON/MEDIA CHƯA CÓ TRƯỜNG DURATION.
+-- ĐỔI table/column name theo schema thật.
+-- Không chạy file này nguyên trạng.
+
+ALTER TABLE Lessons
+    ADD COLUMN video_duration_seconds BIGINT NULL;
+
+-- Tùy quy tắc MySQL/version của dự án, có thể thêm CHECK:
+-- ALTER TABLE Lessons
+--     ADD CONSTRAINT chk_lesson_video_duration_non_negative
+--     CHECK (video_duration_seconds IS NULL OR video_duration_seconds >= 0);
+
+-- Không UPDATE duration thành giá trị giả.
+-- Dữ liệu cũ giữ NULL cho đến khi được backfill từ nguồn đáng tin cậy.

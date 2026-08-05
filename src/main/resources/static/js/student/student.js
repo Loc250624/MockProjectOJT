@@ -272,6 +272,12 @@ function applyLearningProgress(progress) {
         lessonStatus.classList.add('completed');
     }
 
+    if (progress.completed && progress.lessonId != null) {
+        document.querySelectorAll('[data-lesson-state="' + progress.lessonId + '"]').forEach(function (state) {
+            state.textContent = 'Completed lesson';
+        });
+    }
+
     var courseStatus = document.getElementById('course-status');
     if (courseStatus && progress.courseStatus) {
         courseStatus.textContent = progress.courseStatus === 'COMPLETED' ? 'Completed'
@@ -290,10 +296,21 @@ function applyLearningProgress(progress) {
     }
 
     var help = document.getElementById('video-progress-help');
-    if (help && typeof progress.lastPositionSeconds === 'number') {
+    if (help && progress.completed) {
+        help.textContent = 'Video completed.';
+    } else if (help && typeof progress.watchedSeconds === 'number' && typeof progress.videoDurationSeconds === 'number') {
+        help.textContent = 'Watched ' + progress.watchedSeconds + ' of ' + progress.videoDurationSeconds + ' seconds.';
+    } else if (help && typeof progress.lastPositionSeconds === 'number') {
         help.textContent = 'Saved at ' + progress.lastPositionSeconds + ' seconds.';
-    } else if (help && typeof progress.watchedSeconds === 'number') {
-        help.textContent = 'Saved through ' + progress.watchedSeconds + ' seconds.';
+    }
+
+    var videoProgressFill = document.getElementById('video-progress-fill');
+    if (videoProgressFill && progress.lessonProgressPercentage != null) {
+        videoProgressFill.style.width = (progress.completed ? 100 : progress.lessonProgressPercentage) + '%';
+        var videoProgress = videoProgressFill.parentElement;
+        if (videoProgress) {
+            videoProgress.setAttribute('aria-valuenow', progress.completed ? '100' : String(progress.lessonProgressPercentage));
+        }
     }
 
     document.querySelectorAll('.learning-progress-summary .progress-bar-fill, .pc-progress .progress-bar-fill').forEach(function (fill) {
@@ -328,7 +345,7 @@ function Html5PlayerWrapper(video, options) {
 
     if (options.onReady) {
         if (video.readyState >= 1) {
-            options.onReady();
+            window.setTimeout(options.onReady, 0);
         } else {
             video.addEventListener('loadedmetadata', options.onReady, { once: true });
         }
@@ -472,13 +489,62 @@ function initVideoProgress(element) {
         return Math.floor(numberValue);
     }
 
-    function currentDuration() {
-        if (!playerWrapper) {
-            return knownDuration;
+    function finiteDurationSeconds(value) {
+        var numberValue = Number(value || 0);
+        if (!Number.isFinite(numberValue) || numberValue <= 0) {
+            return 0;
         }
-        var duration = finiteSeconds(playerWrapper.getDuration());
-        if (duration > 0) {
+        return Math.ceil(numberValue);
+    }
+
+    function formatDuration(totalSeconds) {
+        if (totalSeconds <= 0) {
+            return 'No video duration';
+        }
+        if (totalSeconds < 60) {
+            return 'Less than 1 min';
+        }
+        var totalMinutes = Math.ceil(totalSeconds / 60);
+        var hours = Math.floor(totalMinutes / 60);
+        var minutes = totalMinutes % 60;
+        if (hours === 0) {
+            return totalMinutes + (totalMinutes === 1 ? ' min' : ' mins');
+        }
+        if (minutes === 0) {
+            return hours + (hours === 1 ? ' hr' : ' hrs');
+        }
+        return hours + (hours === 1 ? ' hr ' : ' hrs ')
+            + minutes + (minutes === 1 ? ' min' : ' mins');
+    }
+
+    function updateDurationDisplays(previousDuration, duration) {
+        if (duration <= 0 || duration === previousDuration) {
+            return;
+        }
+        element.dataset.durationSeconds = String(duration);
+        document.querySelectorAll('[data-lesson-duration="' + lessonId + '"]').forEach(function (durationElement) {
+            durationElement.textContent = formatDuration(duration);
+        });
+
+        var courseDuration = document.querySelector('[data-course-duration-display]');
+        if (courseDuration) {
+            var total = finiteDurationSeconds(courseDuration.dataset.durationSeconds);
+            var correctedTotal = Math.max(0, total - Math.max(0, previousDuration) + duration);
+            courseDuration.dataset.durationSeconds = String(correctedTotal);
+            courseDuration.textContent = formatDuration(correctedTotal);
+        }
+    }
+
+    function playerDurationSeconds() {
+        return playerWrapper ? finiteDurationSeconds(playerWrapper.getDuration()) : 0;
+    }
+
+    function currentDuration() {
+        var duration = playerDurationSeconds();
+        if (duration > knownDuration || (knownDuration <= 0 && duration > 0)) {
+            var previousDuration = knownDuration;
             knownDuration = duration;
+            updateDurationDisplays(previousDuration, duration);
         }
         return knownDuration;
     }
@@ -563,6 +629,21 @@ function initVideoProgress(element) {
     function onReady() {
         if (resumePosition > 0) {
             playerWrapper.seekTo(resumePosition);
+        }
+        synchronizePlayerDuration(0);
+    }
+
+    function synchronizePlayerDuration(attempt) {
+        var previousDuration = knownDuration;
+        var detectedDuration = currentDuration();
+        if (detectedDuration > previousDuration) {
+            saveProgress(true, playerWrapper ? playerWrapper.getCurrentTime() : 0, 'TIME_UPDATE');
+            return;
+        }
+        if (playerDurationSeconds() <= 0 && attempt < 20) {
+            window.setTimeout(function () {
+                synchronizePlayerDuration(attempt + 1);
+            }, 250);
         }
     }
 

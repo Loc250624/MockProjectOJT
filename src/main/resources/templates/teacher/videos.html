@@ -95,12 +95,6 @@
                             <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">Video URL</div>
                             <a th:href="${video.videoUrl}" target="_blank" rel="noopener"
                                style="font-size:0.875rem;color:var(--lumina-blue);word-break:break-all;" th:text="${video.videoUrl}"></a>
-                            <div style="margin-top:0.75rem;display:flex;gap:1.5rem;">
-                                <span style="font-size:0.8125rem;color:var(--lumina-gray-500);">
-                                    ⏱ Duration:
-                                    <strong th:text="${video.durationSeconds != null ? video.durationSeconds + ' seconds' : 'N/A'}"></strong>
-                                </span>
-                            </div>
                         </div>
                     </div>
                 </div>
