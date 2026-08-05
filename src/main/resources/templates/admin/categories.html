@@ -73,7 +73,16 @@
                                         <span>Edit</span>
                                     </a>
                                     <form th:action="@{'/admin/categories/delete/' + ${cat.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="danger"
+                                          data-dialog-title="Delete this category?"
+                                          data-dialog-object-label="Category"
+                                          th:data-dialog-object="${cat.name}"
+                                          data-dialog-notice-title="Course classification may be affected"
+                                          data-dialog-notice-text="Only continue if this category is no longer required."
+                                          data-dialog-require-acknowledgement="true"
+                                          data-dialog-confirm-text="Delete category"
+                                          data-dialog-cancel-text="Keep category">
                                         <button type="submit" class="action-btn danger"
                                                 th:id="'btn-delete-cat-' + ${cat.id}">
                                             <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>

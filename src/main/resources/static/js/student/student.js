@@ -761,29 +761,51 @@ function initQuizOverview(panel) {
     }
 
     function startOrOpen(data, button) {
-        if (uiState === 'loading') {
+        if (uiState === 'loading' || uiState === 'confirming') {
             return;
         }
         if (data.attemptId) {
             window.location.assign(attemptUrl(data));
             return;
         }
-        setState('loading');
+        setState('confirming');
         button.disabled = true;
-        button.textContent = 'Starting...';
-        fetch('/api/student/quizzes/' + encodeURIComponent(data.quizId) + '/attempts', {
-            method: 'POST',
-            credentials: 'same-origin'
-        }).then(function (response) {
-            return assessmentJson(response, 'Unable to start this quiz');
-        }).then(function (body) {
-            var attempt = body.data || {};
-            if (!attempt.id) {
-                throw new Error('The quiz attempt could not be opened.');
+        button.textContent = 'Reviewing rules...';
+        LuminaActionDialog.presets.quizStart({
+            quizName: data.title || 'Selected quiz',
+            questionCount: String(data.questionCount || 10) + ' questions',
+            duration: String(data.durationMinutes || 20) + ' minutes',
+            passingScore: data.passingScore == null ? 'Configured score' : data.passingScore + '%',
+            options: {
+                loadingText: 'Creating attempt...',
+                onConfirm: function () {
+                    setState('loading');
+                    button.textContent = 'Starting...';
+                    return fetch('/api/student/quizzes/' + encodeURIComponent(data.quizId) + '/attempts', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    }).then(function (response) {
+                        return assessmentJson(response, 'Unable to start this quiz');
+                    }).then(function (body) {
+                        var attempt = body.data || {};
+                        if (!attempt.id) {
+                            throw new Error('The quiz attempt could not be opened.');
+                        }
+                        data.attemptId = attempt.id;
+                        window.location.assign(attemptUrl(data));
+                    }).catch(function (error) {
+                        setState('error');
+                        throw error;
+                    });
+                }
             }
-            data.attemptId = attempt.id;
-            window.location.assign(attemptUrl(data));
-        }).catch(renderError);
+        }).then(function (result) {
+            if (!result.confirmed && uiState === 'confirming') {
+                setState('ready');
+                button.disabled = false;
+                button.textContent = 'Start Quiz';
+            }
+        });
     }
 
     function renderReady(data) {
@@ -880,13 +902,16 @@ function initDedicatedQuizAttempt() {
         setAssessmentMessage(message, feedback || '', type || null);
         var submitting = nextState === 'submitting';
         var saving = nextState === 'saving';
+        var confirming = nextState === 'confirming';
         document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (button) {
-            button.disabled = submitting || saving;
-            button.textContent = submitting ? 'Submitting...' : 'Submit Quiz';
+            button.disabled = submitting || saving || confirming;
+            button.textContent = submitting
+                ? 'Submitting...'
+                : (confirming ? 'Reviewing...' : 'Submit Quiz');
         });
         var saveButton = document.getElementById('save-quiz-btn');
         if (saveButton) {
-            saveButton.disabled = submitting || saving;
+            saveButton.disabled = submitting || saving || confirming;
             saveButton.textContent = saving ? 'Saving...' : 'Save Draft';
         }
         if (questions.length) {
@@ -896,21 +921,38 @@ function initDedicatedQuizAttempt() {
 
     if (retake) {
         retake.addEventListener('click', function () {
-            if (uiState === 'loading') {
+            if (uiState === 'loading' || uiState === 'confirming') {
                 return;
             }
-            setState('loading', 'Opening a new attempt...');
+            setState('confirming', 'Review the quiz rules before starting again.');
             retake.disabled = true;
-            fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
-                method: 'POST',
-                credentials: 'same-origin'
-            }).then(function (response) {
-                return assessmentJson(response, 'Unable to start a new attempt');
-            }).then(function (body) {
-                window.location.assign(attemptUrl(body.data.id));
-            }).catch(function (error) {
-                retake.disabled = false;
-                setState('error', error.message, 'error');
+            LuminaActionDialog.presets.quizStart({
+                quizName: (document.querySelector('.dedicated-quiz-heading h1') || {}).textContent || 'Selected quiz',
+                questionCount: (page.dataset.questionCount || '10') + ' questions',
+                duration: (page.dataset.durationMinutes || '20') + ' minutes',
+                passingScore: page.dataset.passingScore ? page.dataset.passingScore + '%' : 'Configured score',
+                options: {
+                    loadingText: 'Creating attempt...',
+                    onConfirm: function () {
+                        setState('loading', 'Opening a new attempt...');
+                        return fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
+                            method: 'POST',
+                            credentials: 'same-origin'
+                        }).then(function (response) {
+                            return assessmentJson(response, 'Unable to start a new attempt');
+                        }).then(function (body) {
+                            window.location.assign(attemptUrl(body.data.id));
+                        }).catch(function (error) {
+                            setState('error', error.message, 'error');
+                            throw error;
+                        });
+                    }
+                }
+            }).then(function (result) {
+                if (!result.confirmed && uiState === 'confirming') {
+                    retake.disabled = false;
+                    setState('submitted');
+                }
             });
         });
         return;
@@ -935,7 +977,7 @@ function initDedicatedQuizAttempt() {
     function updateProgress() {
         var answered = 0;
         var firstUnanswered = -1;
-        var busy = uiState === 'saving' || uiState === 'submitting';
+        var busy = uiState === 'saving' || uiState === 'submitting' || uiState === 'confirming';
         questions.forEach(function (question, index) {
             var isAnswered = questionAnswered(question);
             if (isAnswered) {
@@ -1141,6 +1183,31 @@ function initDedicatedQuizAttempt() {
         }
     }
 
+    function performQuizSubmission(automatic) {
+        stopCountdown();
+        setState(
+            'submitting',
+            automatic ? 'Time is up. Your quiz is being submitted automatically.' : '');
+        return updateAttempt(
+            'POST',
+            '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
+            'Unable to submit this quiz'
+        ).then(function () {
+            setState('submitted');
+            window.location.assign(attemptUrl(attemptId));
+        }).catch(function (error) {
+            setState('error', error.message, 'error');
+            if (automatic && automaticSubmitRetry === null) {
+                automaticSubmitRetry = window.setTimeout(function () {
+                    automaticSubmitRetry = null;
+                    submitQuiz(true);
+                }, 5000);
+                return;
+            }
+            throw error;
+        });
+    }
+
     function submitQuiz(automatic) {
         if (uiState === 'submitted' || uiState === 'submitting') {
             return;
@@ -1159,28 +1226,32 @@ function initDedicatedQuizAttempt() {
             requireAnswer(unansweredIndex);
             return;
         }
-        if (!automatic
-                && !window.confirm('Submit this quiz? You cannot edit it after submission.')) {
+        if (automatic) {
+            if (window.LuminaActionDialog && typeof LuminaActionDialog.close === 'function') {
+                LuminaActionDialog.close();
+            }
+            performQuizSubmission(true);
             return;
         }
-        stopCountdown();
-        setState(
-            'submitting',
-            automatic ? 'Time is up. Your quiz is being submitted automatically.' : '');
-        updateAttempt(
-            'POST',
-            '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
-            'Unable to submit this quiz'
-        ).then(function () {
-            setState('submitted');
-            window.location.assign(attemptUrl(attemptId));
-        }).catch(function (error) {
-            setState('error', error.message, 'error');
-            if (automatic && automaticSubmitRetry === null) {
-                automaticSubmitRetry = window.setTimeout(function () {
-                    automaticSubmitRetry = null;
-                    submitQuiz(true);
-                }, 5000);
+
+        setState('confirming');
+        var answeredCount = questions.filter(questionAnswered).length;
+        LuminaActionDialog.presets.quizSubmit({
+            answered: answeredCount + '/' + questions.length,
+            unanswered: String(questions.length - answeredCount),
+            timeRemaining: countdownValue ? countdownValue.textContent : 'Not available',
+            options: {
+                loadingText: 'Submitting quiz...',
+                onConfirm: function () {
+                    if (uiState === 'submitting' || uiState === 'submitted') {
+                        throw new Error('This quiz is already being submitted.');
+                    }
+                    return performQuizSubmission(false);
+                }
+            }
+        }).then(function (result) {
+            if (!result.confirmed && uiState === 'confirming') {
+                setState('ready');
             }
         });
     }

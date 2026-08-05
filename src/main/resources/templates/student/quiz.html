@@ -14,7 +14,9 @@
                data-lesson-id=${quiz.lessonId},
                data-quiz-mode=${attempt.status.name() == 'DRAFT' ? 'active' : 'submitted'},
                data-remaining-seconds=${attempt.remainingSeconds},
-               data-duration-minutes=${quiz.durationMinutes}">
+               data-duration-minutes=${quiz.durationMinutes},
+               data-question-count=${#lists.size(quiz.questions)},
+               data-passing-score=${quiz.passingScore}">
 <header class="dedicated-quiz-header">
     <div class="dedicated-quiz-heading">
         <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
@@ -152,6 +154,7 @@
     <a th:href="@{/student/learning(courseId=${quiz.courseId},lessonId=${quiz.lessonId})}">Return to lesson</a>
 </footer>
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+<th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
 <script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

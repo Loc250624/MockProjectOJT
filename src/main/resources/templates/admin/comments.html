@@ -70,37 +70,45 @@
                             th:text="${comment.createdAt == null ? 'Unknown' : #temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">Created</td>
                         <td style="padding:1rem 1.25rem;min-width:240px;">
                             <div class="admin-comment-actions">
-                            <details th:if="${comment.status.name() == 'VISIBLE'}">
-                                <summary class="action-btn warning">
-                                    <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
-                                    <span>Hide</span>
-                                </summary>
-                                <form th:action="@{'/admin/comments/hide/' + ${comment.id}}" method="post" data-loading-form>
-                                    <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for hiding"
-                                              style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="action-btn warning" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Hide this comment from public pages?');">
+                                <form th:if="${comment.status.name() == 'VISIBLE'}"
+                                      th:action="@{'/admin/comments/hide/' + ${comment.id}}" method="post" data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="danger"
+                                      data-dialog-title="Hide this comment?"
+                                      data-dialog-object-label="Comment preview"
+                                      th:data-dialog-object="${#strings.abbreviate(comment.content, 180)}"
+                                      th:data-dialog-owner="${comment.authorName != null ? comment.authorName : 'User #' + comment.authorId}"
+                                      th:data-dialog-current-status="${comment.status.name()}"
+                                      data-dialog-next-status="HIDDEN"
+                                      data-dialog-confirm-text="Hide comment"
+                                      data-dialog-cancel-text="Keep visible">
+                                    <input type="hidden" name="reason" value="Hidden by administrator.">
+                                    <button type="submit" class="action-btn warning">
                                         <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
-                                        <span>Confirm Hide</span>
+                                        <span>Hide</span>
                                     </button>
                                 </form>
-                            </details>
-                            <details th:if="${comment.status.name() != 'DELETED'}">
-                                <summary class="action-btn danger">
-                                    <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
-                                    <span>Delete</span>
-                                </summary>
-                                <form th:action="@{'/admin/comments/delete/' + ${comment.id}}" method="post" data-loading-form>
-                                    <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for deleting"
-                                              style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="action-btn danger" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Delete this comment from public pages?');">
+                                <form th:if="${comment.status.name() != 'DELETED'}"
+                                      th:action="@{'/admin/comments/delete/' + ${comment.id}}" method="post" data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="danger"
+                                      data-dialog-title="Delete this comment from public pages?"
+                                      data-dialog-object-label="Comment preview"
+                                      th:data-dialog-object="${#strings.abbreviate(comment.content, 180)}"
+                                      th:data-dialog-owner="${comment.authorName != null ? comment.authorName : 'User #' + comment.authorId}"
+                                      th:data-dialog-current-status="${comment.status.name()}"
+                                      data-dialog-next-status="DELETED"
+                                      data-dialog-notice-title="The comment will disappear from public pages"
+                                      data-dialog-notice-text="The moderation record remains available to administrators."
+                                      data-dialog-confirm-text="Delete comment"
+                                      data-dialog-cancel-text="Keep comment">
+                                    <input type="hidden" name="reason" value="Deleted by administrator.">
+                                    <button type="submit" class="action-btn danger">
                                         <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
-                                        <span>Confirm Delete</span>
+                                        <span>Delete</span>
                                     </button>
                                 </form>
-                            </details>
-                            <span th:if="${comment.status.name() == 'DELETED'}" class="badge badge-neutral admin-comment-status-terminal">Deleted</span>
+                                <span th:if="${comment.status.name() == 'DELETED'}" class="badge badge-neutral admin-comment-status-terminal">Deleted</span>
                             </div>
                         </td>
                     </tr>

@@ -1,0 +1,704 @@
+/*
+ * Lumina Action Dialog
+ * Custom-designed confirmation/modal component for the E-Learning project.
+ * No external UI or icon dependency is required.
+ */
+
+:root {
+    --lumina-dialog-font: var(--lumina-font-family, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    --lumina-dialog-surface: var(--lumina-surface, #ffffff);
+    --lumina-dialog-surface-subtle: var(--lumina-surface-muted, #f8fafc);
+    --lumina-dialog-text: var(--lumina-text-primary, #172033);
+    --lumina-dialog-text-muted: var(--lumina-text-secondary, #667085);
+    --lumina-dialog-border: var(--lumina-border, #e4e7ec);
+    --lumina-dialog-primary: var(--lumina-primary, #4f46e5);
+    --lumina-dialog-primary-hover: var(--lumina-primary-hover, #4338ca);
+    --lumina-dialog-radius: var(--lumina-radius-xl, 24px);
+    --lumina-dialog-radius-md: var(--lumina-radius-md, 12px);
+    --lumina-dialog-shadow: 0 32px 90px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="dark"] {
+    --lumina-dialog-surface: var(--lumina-surface, #111827);
+    --lumina-dialog-surface-subtle: var(--lumina-surface-muted, #182235);
+    --lumina-dialog-text: var(--lumina-text-primary, #f8fafc);
+    --lumina-dialog-text-muted: var(--lumina-text-secondary, #a8b3c7);
+    --lumina-dialog-border: var(--lumina-border, #2c384d);
+    --lumina-dialog-shadow: 0 34px 100px rgba(0, 0, 0, 0.58), 0 10px 28px rgba(0, 0, 0, 0.3);
+}
+
+body.lumina-dialog-open {
+    overflow: hidden;
+}
+
+.lumina-action-dialog {
+    width: min(620px, calc(100vw - 32px));
+    max-width: 100%;
+    max-height: min(820px, calc(100dvh - 32px));
+    margin: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--lumina-dialog-radius);
+    color: var(--lumina-dialog-text);
+    background: transparent;
+    box-shadow: var(--lumina-dialog-shadow);
+    font-family: var(--lumina-dialog-font);
+    overflow: visible;
+}
+
+.lumina-action-dialog[data-size="compact"] {
+    width: min(500px, calc(100vw - 32px));
+}
+
+.lumina-action-dialog[data-size="wide"] {
+    width: min(720px, calc(100vw - 32px));
+}
+
+.lumina-action-dialog::backdrop {
+    background: rgba(10, 18, 33, 0.62);
+    backdrop-filter: blur(8px) saturate(115%);
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+}
+
+.lumina-action-dialog[open] {
+    animation: lumina-dialog-in 220ms cubic-bezier(.2, .85, .25, 1);
+}
+
+.lumina-action-dialog.is-closing {
+    animation: lumina-dialog-out 150ms ease-in forwards;
+}
+
+.lumina-action-dialog__shell {
+    --dialog-accent: #4f46e5;
+    --dialog-accent-deep: #3730a3;
+    --dialog-accent-soft: #eef2ff;
+    position: relative;
+    display: flex;
+    max-height: inherit;
+    flex-direction: column;
+    border: 1px solid color-mix(in srgb, var(--lumina-dialog-border) 82%, transparent);
+    border-radius: inherit;
+    background: var(--lumina-dialog-surface);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.lumina-action-dialog[data-variant="info"] .lumina-action-dialog__shell {
+    --dialog-accent: #4f46e5;
+    --dialog-accent-deep: #3730a3;
+    --dialog-accent-soft: #eef2ff;
+}
+
+.lumina-action-dialog[data-variant="success"] .lumina-action-dialog__shell {
+    --dialog-accent: #12b76a;
+    --dialog-accent-deep: #067647;
+    --dialog-accent-soft: #ecfdf3;
+}
+
+.lumina-action-dialog[data-variant="warning"] .lumina-action-dialog__shell {
+    --dialog-accent: #f79009;
+    --dialog-accent-deep: #b54708;
+    --dialog-accent-soft: #fffaeb;
+}
+
+.lumina-action-dialog[data-variant="danger"] .lumina-action-dialog__shell {
+    --dialog-accent: #f04438;
+    --dialog-accent-deep: #b42318;
+    --dialog-accent-soft: #fef3f2;
+}
+
+html[data-theme="dark"] .lumina-action-dialog__shell {
+    --dialog-accent-deep: color-mix(in srgb, var(--dialog-accent) 72%, #ffffff);
+    --dialog-accent-soft: color-mix(in srgb, var(--dialog-accent) 14%, var(--lumina-dialog-surface));
+}
+
+.lumina-action-dialog__accent {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 142px;
+    background:
+        radial-gradient(circle at 11% 4%, color-mix(in srgb, var(--dialog-accent) 24%, transparent), transparent 48%),
+        linear-gradient(110deg, color-mix(in srgb, var(--dialog-accent) 10%, transparent), transparent 68%);
+    pointer-events: none;
+}
+
+.lumina-action-dialog__accent::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, var(--dialog-accent), color-mix(in srgb, var(--dialog-accent) 42%, #ffffff));
+}
+
+.lumina-action-dialog__header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) 40px;
+    gap: 16px;
+    align-items: start;
+    padding: 30px 30px 22px;
+}
+
+.lumina-action-dialog__visual {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--dialog-accent) 20%, transparent);
+    border-radius: 18px;
+    color: var(--dialog-accent-deep);
+    background: var(--dialog-accent-soft);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--dialog-accent) 17%, transparent);
+}
+
+.lumina-action-dialog__visual svg {
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.lumina-action-dialog__heading-copy {
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.lumina-action-dialog__heading-row {
+    display: flex;
+    min-height: 23px;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.lumina-action-dialog__eyebrow {
+    margin: 0;
+    color: var(--dialog-accent-deep);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .075em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.lumina-action-dialog__badge {
+    max-width: 100%;
+    padding: 4px 8px;
+    border: 1px solid color-mix(in srgb, var(--dialog-accent) 20%, transparent);
+    border-radius: 999px;
+    color: var(--dialog-accent-deep);
+    background: color-mix(in srgb, var(--dialog-accent-soft) 75%, var(--lumina-dialog-surface));
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.lumina-action-dialog__title {
+    margin: 0;
+    color: var(--lumina-dialog-text);
+    font-size: clamp(21px, 3.8vw, 26px);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: 1.23;
+    overflow-wrap: anywhere;
+}
+
+.lumina-action-dialog__subtitle {
+    margin: 9px 0 0;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 14.5px;
+    line-height: 1.58;
+    white-space: pre-line;
+}
+
+.lumina-action-dialog__close {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: var(--lumina-dialog-text-muted);
+    background: color-mix(in srgb, var(--lumina-dialog-surface) 78%, transparent);
+    cursor: pointer;
+    transition: color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.lumina-action-dialog__close svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+.lumina-action-dialog__close:hover {
+    color: var(--lumina-dialog-text);
+    background: var(--lumina-dialog-surface-subtle);
+    transform: rotate(3deg);
+}
+
+.lumina-action-dialog__body {
+    display: grid;
+    gap: 16px;
+    padding: 0 30px 24px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.lumina-action-dialog__object {
+    display: grid;
+    gap: 5px;
+    padding: 14px 16px;
+    border: 1px solid var(--lumina-dialog-border);
+    border-left: 4px solid var(--dialog-accent);
+    border-radius: var(--lumina-dialog-radius-md);
+    background: var(--lumina-dialog-surface-subtle);
+}
+
+.lumina-action-dialog__object-label {
+    color: var(--lumina-dialog-text-muted);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.lumina-action-dialog__object-value {
+    color: var(--lumina-dialog-text);
+    font-size: 15px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.lumina-action-dialog__summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.lumina-action-dialog__summary-item {
+    min-width: 0;
+    padding: 13px 14px;
+    border: 1px solid var(--lumina-dialog-border);
+    border-radius: var(--lumina-dialog-radius-md);
+    background: color-mix(in srgb, var(--lumina-dialog-surface-subtle) 72%, var(--lumina-dialog-surface));
+}
+
+.lumina-action-dialog__summary-item dt {
+    margin: 0;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.lumina-action-dialog__summary-item dd {
+    margin: 6px 0 0;
+    color: var(--lumina-dialog-text);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.lumina-action-dialog__notice {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--dialog-accent) 24%, var(--lumina-dialog-border));
+    border-radius: var(--lumina-dialog-radius-md);
+    background: color-mix(in srgb, var(--dialog-accent-soft) 68%, var(--lumina-dialog-surface));
+}
+
+.lumina-action-dialog__notice-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 9px;
+    color: var(--dialog-accent-deep);
+    background: color-mix(in srgb, var(--dialog-accent) 12%, transparent);
+}
+
+.lumina-action-dialog__notice-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.lumina-action-dialog__notice strong {
+    display: block;
+    color: var(--lumina-dialog-text);
+    font-size: 13.5px;
+    line-height: 1.4;
+}
+
+.lumina-action-dialog__notice p {
+    margin: 3px 0 0;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.lumina-action-dialog__checklist {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lumina-action-dialog__checklist-item {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 9px;
+    align-items: start;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 13.5px;
+    line-height: 1.48;
+}
+
+.lumina-action-dialog__checklist-icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    margin-top: 1px;
+    border-radius: 50%;
+    color: var(--dialog-accent-deep);
+    background: var(--dialog-accent-soft);
+}
+
+.lumina-action-dialog__checklist-icon svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.lumina-action-dialog__acknowledgement {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 9px;
+    align-items: start;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.lumina-action-dialog__acknowledgement input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lumina-action-dialog__checkbox {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    place-items: center;
+    margin-top: 1px;
+    border: 1.5px solid var(--lumina-dialog-border);
+    border-radius: 5px;
+    color: #ffffff;
+    background: var(--lumina-dialog-surface);
+    transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.lumina-action-dialog__checkbox svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transform: scale(.7);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.lumina-action-dialog__acknowledgement input:checked + .lumina-action-dialog__checkbox {
+    border-color: var(--dialog-accent);
+    background: var(--dialog-accent);
+}
+
+.lumina-action-dialog__acknowledgement input:checked + .lumina-action-dialog__checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lumina-action-dialog__acknowledgement input:focus-visible + .lumina-action-dialog__checkbox {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dialog-accent) 16%, transparent);
+}
+
+.lumina-action-dialog__error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #b42318;
+    background: #fef3f2;
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+html[data-theme="dark"] .lumina-action-dialog__error {
+    color: #fda29b;
+    background: rgba(240, 68, 56, .12);
+}
+
+.lumina-action-dialog__status {
+    min-height: 0;
+    margin: 0;
+    color: var(--lumina-dialog-text-muted);
+    font-size: 12px;
+}
+
+.lumina-action-dialog__status:empty {
+    display: none;
+}
+
+.lumina-action-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 18px 30px 24px;
+    border-top: 1px solid color-mix(in srgb, var(--lumina-dialog-border) 78%, transparent);
+    background: color-mix(in srgb, var(--lumina-dialog-surface-subtle) 45%, var(--lumina-dialog-surface));
+}
+
+.lumina-action-dialog__button {
+    display: inline-flex;
+    min-height: 44px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 17px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 780;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.lumina-action-dialog__button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.lumina-action-dialog__button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.lumina-action-dialog__button:focus-visible,
+.lumina-action-dialog__close:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dialog-accent) 18%, transparent);
+}
+
+.lumina-action-dialog__button:disabled,
+.lumina-action-dialog__close:disabled {
+    cursor: not-allowed;
+    opacity: .58;
+    transform: none;
+}
+
+.lumina-action-dialog__button--secondary {
+    border-color: var(--lumina-dialog-border);
+    color: var(--lumina-dialog-text);
+    background: var(--lumina-dialog-surface);
+}
+
+.lumina-action-dialog__button--secondary:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--lumina-dialog-text-muted) 45%, var(--lumina-dialog-border));
+    background: var(--lumina-dialog-surface-subtle);
+}
+
+.lumina-action-dialog__button--primary {
+    min-width: 128px;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--dialog-accent), var(--dialog-accent-deep));
+    box-shadow: 0 9px 20px color-mix(in srgb, var(--dialog-accent) 24%, transparent);
+}
+
+.lumina-action-dialog__button--primary:hover:not(:disabled) {
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--dialog-accent) 31%, transparent);
+}
+
+.lumina-action-dialog__button-arrow {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 140ms ease;
+}
+
+.lumina-action-dialog__button--primary:hover:not(:disabled) .lumina-action-dialog__button-arrow {
+    transform: translateX(2px);
+}
+
+.lumina-action-dialog__spinner {
+    display: none;
+    width: 15px;
+    height: 15px;
+    box-sizing: border-box;
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: lumina-dialog-spin 720ms linear infinite;
+}
+
+.lumina-action-dialog[data-loading="true"] .lumina-action-dialog__spinner {
+    display: inline-block;
+}
+
+.lumina-action-dialog[data-loading="true"] .lumina-action-dialog__button-arrow {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .lumina-action-dialog {
+        width: 100%;
+        max-height: min(88dvh, 780px);
+        margin: auto 0 0;
+        border-radius: 24px 24px 0 0;
+    }
+
+    .lumina-action-dialog[open] {
+        animation-name: lumina-dialog-sheet-in;
+    }
+
+    .lumina-action-dialog.is-closing {
+        animation-name: lumina-dialog-sheet-out;
+    }
+
+    .lumina-action-dialog__header {
+        grid-template-columns: 50px minmax(0, 1fr) 36px;
+        gap: 12px;
+        padding: 25px 20px 18px;
+    }
+
+    .lumina-action-dialog__header::before {
+        content: "";
+        position: absolute;
+        top: 9px;
+        left: 50%;
+        width: 42px;
+        height: 4px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--lumina-dialog-text-muted) 28%, transparent);
+        transform: translateX(-50%);
+    }
+
+    .lumina-action-dialog__visual {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+    }
+
+    .lumina-action-dialog__visual svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .lumina-action-dialog__close {
+        width: 36px;
+        height: 36px;
+    }
+
+    .lumina-action-dialog__body {
+        gap: 14px;
+        padding: 0 20px 20px;
+    }
+
+    .lumina-action-dialog__summary {
+        grid-template-columns: 1fr;
+    }
+
+    .lumina-action-dialog__footer {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr;
+        padding: 15px 20px max(18px, env(safe-area-inset-bottom));
+    }
+
+    .lumina-action-dialog__button {
+        width: 100%;
+        padding-inline: 12px;
+    }
+}
+
+@media (max-width: 390px) {
+    .lumina-action-dialog__footer {
+        grid-template-columns: 1fr;
+    }
+
+    .lumina-action-dialog__button--primary {
+        grid-row: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lumina-action-dialog,
+    .lumina-action-dialog *,
+    .lumina-action-dialog *::before,
+    .lumina-action-dialog *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+@keyframes lumina-dialog-in {
+    from { opacity: 0; transform: translateY(10px) scale(.975); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes lumina-dialog-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(7px) scale(.985); }
+}
+
+@keyframes lumina-dialog-sheet-in {
+    from { opacity: .4; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lumina-dialog-sheet-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: .35; transform: translateY(100%); }
+}
+
+@keyframes lumina-dialog-spin {
+    to { transform: rotate(360deg); }
+}

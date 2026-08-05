@@ -85,7 +85,17 @@
                                        th:href="@{/teacher/videos(courseId=${selectedCourseId},lessonId=${lsn.id})}"
                                        class="btn btn-secondary btn-sm">Manage Video</a>
                                     <form th:action="@{'/teacher/lessons/delete/' + ${lsn.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Are you sure you want to delete this lesson?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="danger"
+                                          data-dialog-title="Delete this lesson?"
+                                          data-dialog-object-label="Lesson"
+                                          th:data-dialog-object="${lsn.title}"
+                                          data-dialog-notice-title="Curriculum impact"
+                                          data-dialog-notice-text="The lesson will be removed from this course curriculum."
+                                          data-dialog-checklist="Learners will no longer see this lesson.|Associated progress or assessment content may be affected."
+                                          data-dialog-require-acknowledgement="true"
+                                          data-dialog-confirm-text="Delete lesson"
+                                          data-dialog-cancel-text="Keep lesson">
                                         <input type="hidden" name="courseId" th:value="${selectedCourseId}" />
                                         <button type="submit" class="btn btn-sm"
                                                 style="background:var(--lumina-danger-bg);color:var(--lumina-danger);border:1px solid #fca5a5;">Delete</button>

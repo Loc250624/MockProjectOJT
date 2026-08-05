@@ -104,7 +104,20 @@
                                         <!-- APPROVE: only for PENDING_APPROVAL -->
                                         <form th:if="${crs.status.name() == 'PENDING_APPROVAL'}"
                                               th:action="@{'/admin/courses/approve/' + ${crs.id}}" method="post" style="display:inline;"
-                                              onsubmit="return confirm('Approve this course?');">
+                                              data-lumina-confirm
+                                              data-dialog-variant="warning"
+                                              data-dialog-icon="course"
+                                              data-dialog-eyebrow="Course moderation"
+                                              data-dialog-badge="Publish course"
+                                              data-dialog-title="Approve this course?"
+                                              data-dialog-subtitle="The course will become available according to the current publication rules."
+                                              data-dialog-object-label="Course"
+                                              th:data-dialog-object="${crs.title}"
+                                              th:data-dialog-owner="${crs.instructorId != null ? 'Instructor #' + crs.instructorId : 'Unknown'}"
+                                              th:data-dialog-current-status="${crs.status.name()}"
+                                              data-dialog-next-status="APPROVED"
+                                              data-dialog-confirm-text="Approve course"
+                                              data-dialog-cancel-text="Keep reviewing">
                                             <button type="submit" class="action-btn primary"
                                                     th:id="'btn-approve-' + ${crs.id}">
                                                 <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
@@ -112,20 +125,42 @@
                                             </button>
                                         </form>
 
-                                        <!-- REJECT: only for PENDING_APPROVAL (opens inline reason form) -->
-                                        <span th:if="${crs.status.name() == 'PENDING_APPROVAL'}">
-                                            <button type="button" class="action-btn warning"
-                                                    th:id="'btn-reject-toggle-' + ${crs.id}"
-                                                    th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'block\'; this.style.display=\'none\''">
+                                        <!-- REJECT: only for PENDING_APPROVAL -->
+                                        <form th:if="${crs.status.name() == 'PENDING_APPROVAL'}"
+                                              th:action="@{'/admin/courses/reject/' + ${crs.id}}" method="post" style="display:inline;"
+                                              data-lumina-confirm
+                                              data-dialog-preset="danger"
+                                              data-dialog-title="Reject this course?"
+                                              data-dialog-subtitle="The course will leave the review queue and return to draft."
+                                              data-dialog-object-label="Course"
+                                              th:data-dialog-object="${crs.title}"
+                                              th:data-dialog-owner="${crs.instructorId != null ? 'Instructor #' + crs.instructorId : 'Unknown'}"
+                                              th:data-dialog-current-status="${crs.status.name()}"
+                                              data-dialog-next-status="DRAFT"
+                                              data-dialog-confirm-text="Reject course"
+                                              data-dialog-cancel-text="Keep reviewing">
+                                            <input type="hidden" name="rejectReason" value="Rejected by administrator.">
+                                            <button type="submit" class="action-btn warning"
+                                                    th:id="'btn-reject-' + ${crs.id}">
                                                 <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
                                                 <span>Reject</span>
                                             </button>
-                                        </span>
+                                        </form>
 
                                         <!-- HIDE: only for APPROVED -->
                                         <form th:if="${crs.status.name() == 'APPROVED'}"
                                               th:action="@{'/admin/courses/hide/' + ${crs.id}}" method="post" style="display:inline;"
-                                              onsubmit="return confirm('Hide this course from the public catalog?');">
+                                              data-lumina-confirm
+                                              data-dialog-preset="danger"
+                                              data-dialog-title="Hide this course?"
+                                              data-dialog-object-label="Course"
+                                              th:data-dialog-object="${crs.title}"
+                                              th:data-dialog-current-status="${crs.status.name()}"
+                                              data-dialog-next-status="HIDDEN"
+                                              data-dialog-notice-title="Public visibility will change"
+                                              data-dialog-notice-text="The course will be removed from the public catalog until it is restored."
+                                              data-dialog-confirm-text="Hide course"
+                                              data-dialog-cancel-text="Keep visible">
                                             <button type="submit" class="action-btn warning"
                                                     th:id="'btn-hide-' + ${crs.id}">
                                                 <svg th:replace="~{fragments/icons :: icon('hide')}"></svg>
@@ -136,7 +171,18 @@
                                         <!-- UNHIDE: only for HIDDEN -->
                                         <form th:if="${crs.status.name() == 'HIDDEN'}"
                                               th:action="@{'/admin/courses/unhide/' + ${crs.id}}" method="post" style="display:inline;"
-                                              onsubmit="return confirm('Restore this course to the public catalog?');">
+                                              data-lumina-confirm
+                                              data-dialog-variant="warning"
+                                              data-dialog-icon="course"
+                                              data-dialog-title="Restore this course?"
+                                              data-dialog-object-label="Course"
+                                              th:data-dialog-object="${crs.title}"
+                                              th:data-dialog-current-status="${crs.status.name()}"
+                                              data-dialog-next-status="APPROVED"
+                                              data-dialog-notice-title="The course will be visible again"
+                                              data-dialog-notice-text="Restoring makes the course available in the public catalog."
+                                              data-dialog-confirm-text="Restore course"
+                                              data-dialog-cancel-text="Keep hidden">
                                             <button type="submit" class="action-btn primary"
                                                     th:id="'btn-unhide-' + ${crs.id}">
                                                 <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
@@ -146,7 +192,17 @@
 
                                         <!-- DELETE: always available -->
                                         <form th:action="@{'/admin/courses/delete/' + ${crs.id}}" method="post" style="display:inline;"
-                                              onsubmit="return confirm('Permanently delete this course and all its data?');">
+                                              data-lumina-confirm
+                                              data-dialog-preset="danger"
+                                              data-dialog-title="Permanently delete this course?"
+                                              data-dialog-object-label="Course"
+                                              th:data-dialog-object="${crs.title}"
+                                              data-dialog-notice-title="Course data will be permanently removed"
+                                              data-dialog-notice-text="This action can affect lessons, videos, quizzes, enrollments and learner history."
+                                              data-dialog-require-acknowledgement="true"
+                                              data-dialog-acknowledgement-label="I understand that this course and its related data may not be recoverable."
+                                              data-dialog-confirm-text="Permanently delete"
+                                              data-dialog-cancel-text="Keep course">
                                             <button type="submit" class="action-btn danger"
                                                     th:id="'btn-delete-' + ${crs.id}">
                                                 <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
@@ -156,26 +212,6 @@
 
                                     </div>
 
-                                    <!-- Inline reject reason form (hidden by default) -->
-                                    <div th:if="${crs.status.name() == 'PENDING_APPROVAL'}"
-                                         th:id="'reject-form-' + ${crs.id}"
-                                         style="display:none;margin-top:0.75rem;text-align:left;">
-                                        <form th:action="@{'/admin/courses/reject/' + ${crs.id}}" method="post">
-                                            <textarea name="rejectReason" rows="2" placeholder="Reason for rejection (required)..."
-                                                      style="width:100%;padding:0.5rem;border:1px solid #fca5a5;border-radius:6px;font-size:0.8125rem;resize:vertical;" required></textarea>
-                                            <div class="action-group" style="margin-top:0.4rem;">
-                                                <button type="submit" class="action-btn danger"
-                                                        th:id="'btn-reject-confirm-' + ${crs.id}">
-                                                    <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
-                                                    <span>Confirm Reject</span>
-                                                </button>
-                                                <button type="button" class="action-btn"
-                                                        th:onclick="'document.getElementById(\'reject-form-' + ${crs.id} + '\').style.display=\'none\'; document.getElementById(\'btn-reject-toggle-' + ${crs.id} + '\').style.display=\'inline-flex\''">
-                                                    <span>Cancel</span>
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
                                 </td>
                             </tr>
 

@@ -136,8 +136,9 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(attemptScript.contains("nextState === 'saving'"));
         assertTrue(attemptScript.contains("'/draft'"));
         assertTrue(attemptScript.contains("'/submit'"));
-        assertTrue(attemptScript.contains(
-                "window.confirm('Submit this quiz? You cannot edit it after submission.')"));
+        assertTrue(attemptScript.contains("LuminaActionDialog.presets.quizSubmit"));
+        assertTrue(overviewScript.contains("LuminaActionDialog.presets.quizStart"));
+        assertFalse(attemptScript.contains("window.confirm("));
         assertTrue(attemptScript.contains("function firstUnansweredIndex()"));
         assertTrue(attemptScript.contains("function initCountdown()"));
         assertTrue(attemptScript.contains("submitQuiz(true)"));

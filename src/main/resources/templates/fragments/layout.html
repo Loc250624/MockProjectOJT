@@ -503,7 +503,15 @@
         aria-labelledby="site-footer-title">
     <div th:replace="~{fragments/footer :: content}"></div>
     <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+    <th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
 </footer>
+
+<th:block th:fragment="action-dialog">
+    <link rel="stylesheet" th:href="@{/css/components/lumina-action-dialog.css}">
+    <div th:replace="~{fragments/lumina-action-dialog :: luminaActionDialog}"></div>
+    <script th:src="@{/js/components/lumina-action-dialog.js}"></script>
+    <script th:src="@{/js/components/lumina-action-bindings.js}"></script>
+</th:block>
 
 <!-- ===== PORTAL FOOTER ===== -->
 <div th:fragment="portal-footer"
@@ -517,6 +525,7 @@
           th:data-csrf-parameter="${_csrf.parameterName}"></span>
     <div th:replace="~{fragments/footer :: content}"></div>
     <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+    <th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
     <script th:src="@{/js/csrf-fetch.js}"></script>
     <script th:src="@{/js/auth/auth.js}"></script>
 </div>

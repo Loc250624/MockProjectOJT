@@ -65,53 +65,44 @@
                             <div class="table-action-cell admin-blog-actions">
                                 <form th:action="@{'/admin/blogs/approve/' + ${blog.id}}" method="post" style="display:inline;"
                                       data-loading-form
-                                      onsubmit="return confirm('Approve and publish this blog?');">
+                                      data-lumina-confirm
+                                      data-dialog-variant="warning"
+                                      data-dialog-icon="publish"
+                                      data-dialog-eyebrow="Blog moderation"
+                                      data-dialog-badge="Publish blog"
+                                      data-dialog-title="Approve and publish this blog?"
+                                      data-dialog-subtitle="The post will leave the moderation queue and become visible on public blog pages."
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      data-dialog-current-status="PENDING_REVIEW"
+                                      data-dialog-next-status="PUBLISHED"
+                                      data-dialog-confirm-text="Approve and publish"
+                                      data-dialog-cancel-text="Keep reviewing">
                                     <button type="submit" class="action-btn primary">
                                         <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                                         <span>Approve</span>
                                     </button>
                                 </form>
-                                <button type="button" class="action-btn warning"
-                                        th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                        onclick="openBlogRejectModal(this.dataset.modalId)">
-                                    <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
-                                    <span>Reject</span>
-                                </button>
-                            </div>
-
-                            <div th:id="'reject-blog-modal-' + ${blog.id}"
-                                 class="blog-reject-modal"
-                                 style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:1rem;">
-                                <div style="width:min(520px,100%);background:white;border-radius:8px;border:1px solid var(--lumina-gray-200);box-shadow:var(--shadow-xl);padding:1.5rem;text-align:left;">
-                                    <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1rem;">
-                                        <div>
-                                            <h2 style="font-size:1.05rem;color:var(--lumina-gray-900);margin:0;">Reject Blog</h2>
-                                            <p style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-top:0.25rem;" th:text="${blog.title}">Blog title</p>
-                                        </div>
-                                        <button type="button" class="action-btn"
-                                                th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                                onclick="closeBlogRejectModal(this.dataset.modalId)">
-                                            <span>Close</span>
-                                        </button>
-                                    </div>
-                                    <form th:action="@{'/admin/blogs/reject/' + ${blog.id}}" method="post" data-loading-form>
-                                        <label th:for="'reject-reason-' + ${blog.id}" style="display:block;font-size:0.8125rem;font-weight:600;color:var(--lumina-gray-700);margin-bottom:0.5rem;">Rejection reason <span style="color:var(--lumina-danger);">*</span></label>
-                                        <textarea th:id="'reject-reason-' + ${blog.id}" name="rejectionReason" rows="5" maxlength="1000" required
-                                                  placeholder="Explain what the author needs to fix..."
-                                                  style="width:100%;padding:0.75rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.875rem;resize:vertical;font-family:inherit;"></textarea>
-                                        <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;">
-                                            <button type="button" class="btn btn-secondary"
-                                                    th:attr="data-modal-id='reject-blog-modal-' + ${blog.id}"
-                                                    onclick="closeBlogRejectModal(this.dataset.modalId)">
-                                                <span>Cancel</span>
-                                            </button>
-                                            <button type="submit" class="btn btn-danger-soft">
-                                                <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
-                                                <span>Reject Blog</span>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
+                                <form th:action="@{'/admin/blogs/reject/' + ${blog.id}}" method="post" style="display:inline;"
+                                      data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="danger"
+                                      data-dialog-title="Reject this blog?"
+                                      data-dialog-subtitle="The post will leave the moderation queue and return to the author."
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      data-dialog-current-status="PENDING_REVIEW"
+                                      data-dialog-next-status="REJECTED"
+                                      data-dialog-confirm-text="Reject blog"
+                                      data-dialog-cancel-text="Keep reviewing">
+                                    <input type="hidden" name="rejectionReason" value="Rejected by administrator.">
+                                    <button type="submit" class="action-btn warning">
+                                        <svg th:replace="~{fragments/icons :: icon('reject')}"></svg>
+                                        <span>Reject</span>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -132,24 +123,6 @@
 
 <script th:src="@{/js/admin/admin.js}"></script>
 <script>
-function openBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'flex';
-        var textarea = modal.querySelector('textarea');
-        if (textarea) {
-            textarea.focus();
-        }
-    }
-}
-
-function closeBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
 document.querySelectorAll('[data-loading-form]').forEach(function (form) {
     form.addEventListener('submit', function () {
         var loading = document.querySelector('[data-loading-message]');

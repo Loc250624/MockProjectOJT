@@ -291,19 +291,36 @@ function initTeacherQuizActions() {
     document.querySelectorAll('.delete-quiz-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             var card = button.closest('[data-quiz-id]');
-            if (!card || !window.confirm(
-                'Delete this quiz? Quizzes with student history cannot be deleted.'
-            )) {
+            if (!card) {
                 return;
             }
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId), {
-                method: 'DELETE'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to delete quiz');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
+            var quizTitle = card.querySelector('h3');
+            LuminaActionDialog.presets.danger({
+                title: 'Delete this quiz?',
+                objectLabel: 'Quiz',
+                objectName: quizTitle ? quizTitle.textContent.trim() : 'Selected quiz',
+                notice: {
+                    title: 'Student history is protected',
+                    text: 'Quizzes with student attempt history cannot be deleted.'
+                },
+                checklist: [
+                    'The quiz will be removed from its lesson.',
+                    'Questions belonging to this quiz may also be removed.'
+                ],
+                confirmText: 'Delete quiz',
+                cancelText: 'Keep quiz',
+                options: {
+                    loadingText: 'Deleting quiz...',
+                    onConfirm: function () {
+                        return teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId), {
+                            method: 'DELETE'
+                        }).then(function(response) {
+                            return teacherAssessmentJson(response, 'Unable to delete quiz');
+                        }).then(function() {
+                            window.location.reload();
+                        });
+                    }
+                }
             });
         });
     });
@@ -339,6 +356,7 @@ function initTeacherQuestionManager(panel) {
         dirty: false,
         creating: false
     };
+    var leavePromptOpen = false;
 
     function markDirty(dirty) {
         state.dirty = dirty;
@@ -346,8 +364,37 @@ function initTeacherQuestionManager(panel) {
         unsaved.hidden = !dirty;
     }
 
-    function canLeaveEditor() {
-        return !state.dirty || window.confirm('Discard unsaved question changes?');
+    function leaveEditor(action) {
+        if (!state.dirty) {
+            action();
+            return;
+        }
+        if (leavePromptOpen) {
+            return;
+        }
+        leavePromptOpen = true;
+        LuminaActionDialog.open({
+            variant: 'warning',
+            icon: 'warning',
+            eyebrow: 'Unsaved question',
+            badge: 'Changes not saved',
+            title: 'Discard unsaved question changes?',
+            subtitle: 'Your edits in the question editor have not been saved.',
+            objectLabel: 'Question',
+            objectName: form.elements.content.value.trim() || 'New question',
+            notice: {
+                title: 'Unsaved edits will be lost',
+                text: 'Continue editing if you still need these changes.'
+            },
+            confirmText: 'Discard changes',
+            cancelText: 'Continue editing',
+            initialFocus: 'cancel'
+        }).then(function(result) {
+            leavePromptOpen = false;
+            if (result.confirmed) {
+                action();
+            }
+        });
     }
 
     function questionLabel(question, index) {
@@ -588,25 +635,24 @@ function initTeacherQuestionManager(panel) {
             return;
         }
         var nextId = Number(button.dataset.questionId);
-        if (!canLeaveEditor()) {
-            return;
-        }
-        var selected = state.items.find(function(item) {
-            return item.id === nextId;
+        leaveEditor(function() {
+            var selected = state.items.find(function(item) {
+                return item.id === nextId;
+            });
+            if (selected) {
+                showQuestion(selected);
+            }
         });
-        if (selected) {
-            showQuestion(selected);
-        }
     });
 
     previousButton.addEventListener('click', function() {
-        if (state.page > 0 && canLeaveEditor()) {
-            loadPage(state.page - 1);
+        if (state.page > 0) {
+            leaveEditor(function() { loadPage(state.page - 1); });
         }
     });
     nextButton.addEventListener('click', function() {
-        if (state.page < state.totalPages - 1 && canLeaveEditor()) {
-            loadPage(state.page + 1);
+        if (state.page < state.totalPages - 1) {
+            leaveEditor(function() { loadPage(state.page + 1); });
         }
     });
     pageButtons.addEventListener('click', function(event) {
@@ -615,18 +661,17 @@ function initTeacherQuestionManager(panel) {
             return;
         }
         var requestedPage = Number(button.dataset.questionPage);
-        if (!canLeaveEditor()) {
-            return;
-        }
-        if (requestedPage >= 0
-                && requestedPage < state.totalPages
-                && requestedPage !== state.page) {
-            loadPage(requestedPage);
-        }
+        leaveEditor(function() {
+            if (requestedPage >= 0
+                    && requestedPage < state.totalPages
+                    && requestedPage !== state.page) {
+                loadPage(requestedPage);
+            }
+        });
     });
     addButton.addEventListener('click', function() {
-        if (state.totalItems < 100 && canLeaveEditor()) {
-            showNewQuestion();
+        if (state.totalItems < 100) {
+            leaveEditor(showNewQuestion);
         }
     });
 
@@ -662,21 +707,35 @@ function initTeacherQuestionManager(panel) {
 
     deleteButton.addEventListener('click', function() {
         var questionId = Number(form.elements.questionId.value);
-        if (!questionId || !window.confirm('Delete this question?')) {
+        if (!questionId) {
             return;
         }
-        teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
-            method: 'DELETE'
-        }).then(function(response) {
-            return teacherAssessmentJson(response, 'Unable to delete question');
-        }).then(function() {
-            markDirty(false);
-            var targetPage = state.items.length === 1 && state.page > 0
-                ? state.page - 1
-                : state.page;
-            return loadPage(targetPage);
-        }).catch(function(error) {
-            teacherAssessmentMessage(message, error.message, 'error');
+        LuminaActionDialog.presets.danger({
+            title: 'Delete this question?',
+            objectLabel: 'Question',
+            objectName: form.elements.content.value.trim() || 'Selected question',
+            checklist: [
+                'The question will be removed from the quiz question bank.',
+                'This action is blocked when protected student history depends on it.'
+            ],
+            confirmText: 'Delete question',
+            cancelText: 'Keep question',
+            options: {
+                loadingText: 'Deleting question...',
+                onConfirm: function () {
+                    return teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
+                        method: 'DELETE'
+                    }).then(function(response) {
+                        return teacherAssessmentJson(response, 'Unable to delete question');
+                    }).then(function() {
+                        markDirty(false);
+                        var targetPage = state.items.length === 1 && state.page > 0
+                            ? state.page - 1
+                            : state.page;
+                        return loadPage(targetPage);
+                    });
+                }
+            }
         });
     });
 
