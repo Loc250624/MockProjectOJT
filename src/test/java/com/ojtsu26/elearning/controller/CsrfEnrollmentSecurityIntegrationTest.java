@@ -168,7 +168,7 @@ class CsrfEnrollmentSecurityIntegrationTest {
     }
 
     private Cookie jwtCookie(User user) {
-        return new Cookie("jwt_token", jwtUtils.generateTokenFromEmail(user.getEmail()));
+        return new Cookie("jwt_token", jwtUtils.generateTokenFromUserId(user.getId()));
     }
 
     private record CsrfPair(String headerName, String token, Cookie cookie) {

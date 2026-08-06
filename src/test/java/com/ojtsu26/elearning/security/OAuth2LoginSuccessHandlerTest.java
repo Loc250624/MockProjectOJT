@@ -88,7 +88,7 @@ class OAuth2LoginSuccessHandlerTest {
                 .isNull();
         assertThat(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY))
                 .isNull();
-        verify(jwtCookieService).addJwtCookie(response, "teacher@example.com");
+        verify(jwtCookieService).addJwtCookie(response, 42);
         verify(jwtCookieService, never()).clearJwtCookie(response);
     }
 

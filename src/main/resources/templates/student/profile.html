@@ -15,6 +15,7 @@
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
     <link rel="stylesheet" th:href="@{/css/common/profile.css}">
+    <link rel="stylesheet" th:href="@{/css/common/profile-password.css}">
     <link rel="stylesheet" th:if="${normalizedProfileRole == 'teacher'}" th:href="@{/css/teacher/teacher.css}">
     <link rel="stylesheet" th:if="${normalizedProfileRole == 'admin'}" th:href="@{/css/admin/admin.css}">
 </head>
@@ -340,6 +341,85 @@
                         <span id="profile-message" role="status" aria-live="polite"></span>
                     </div>
                 </form>
+
+                <section class="profile-card profile-password-card"
+                         aria-labelledby="change-password-title">
+                    <div class="profile-section-head compact">
+                        <div>
+                            <span class="profile-password-eyebrow">Account security</span>
+                            <h2 id="change-password-title">Change Password</h2>
+                            <p>Use a strong password that you do not use elsewhere.</p>
+                        </div>
+                    </div>
+
+                    <form id="profile-password-form"
+                          class="profile-password-form"
+                          th:if="${profile.authProvider == T(com.ojtsu26.elearning.model.enums.AuthProvider).LOCAL}"
+                          novalidate>
+                        <div id="profile-password-feedback"
+                             class="profile-password-feedback"
+                             role="status"
+                             aria-live="polite"
+                             hidden></div>
+
+                        <div class="profile-password-field">
+                            <label for="current-password">Current password</label>
+                            <div class="profile-password-input-wrap">
+                                <input id="current-password" name="currentPassword" type="password"
+                                       autocomplete="current-password" maxlength="72" required>
+                                <button type="button" class="profile-password-toggle"
+                                        data-profile-password-toggle="current-password"
+                                        aria-label="Show current password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+
+                        <div class="profile-password-field">
+                            <label for="new-password">New password</label>
+                            <div class="profile-password-input-wrap">
+                                <input id="new-password" name="newPassword" type="password"
+                                       autocomplete="new-password" minlength="8" maxlength="72"
+                                       aria-describedby="profile-password-rules" required>
+                                <button type="button" class="profile-password-toggle"
+                                        data-profile-password-toggle="new-password"
+                                        aria-label="Show new password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+
+                        <div class="profile-password-field">
+                            <label for="confirm-password">Confirm new password</label>
+                            <div class="profile-password-input-wrap">
+                                <input id="confirm-password" name="confirmPassword" type="password"
+                                       autocomplete="new-password" maxlength="72" required>
+                                <button type="button" class="profile-password-toggle"
+                                        data-profile-password-toggle="confirm-password"
+                                        aria-label="Show password confirmation" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+
+                        <ul id="profile-password-rules" class="profile-password-rules" aria-label="Password requirements">
+                            <li data-password-rule="length">8–72 characters</li>
+                            <li data-password-rule="lowercase">At least one lowercase letter</li>
+                            <li data-password-rule="uppercase">At least one uppercase letter</li>
+                            <li data-password-rule="number">At least one number</li>
+                            <li data-password-rule="special">At least one special character</li>
+                            <li data-password-rule="no-space">No spaces</li>
+                            <li data-password-rule="different">Different from current password</li>
+                            <li data-password-rule="match">Confirmation matches</li>
+                        </ul>
+
+                        <div class="profile-password-actions">
+                            <button id="change-password-submit" type="submit" class="btn btn-primary" disabled>
+                                Change Password
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="profile-password-provider-note"
+                         th:unless="${profile.authProvider == T(com.ojtsu26.elearning.model.enums.AuthProvider).LOCAL}"
+                         role="note">
+                        Your password is managed by your Google or GitHub sign-in provider. Change it from that provider's account settings.
+                    </div>
+                </section>
             </section>
 
             <section class="profile-tab-panel" data-profile-panel="security">
@@ -381,5 +461,6 @@
 
 <script th:src="@{/js/student/student.js}"></script>
 <script th:src="@{/js/common/profile.js}"></script>
+<script th:src="@{/js/common/profile-password.js}"></script>
 </body>
 </html>

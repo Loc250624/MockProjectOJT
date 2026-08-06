@@ -92,26 +92,26 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         User user = loginResult.user();
         if (user.getStatus() == UserStatus.DELETED) {
             clearSavedAuthentication(request);
-            log.warn("OAuth2 login attempt by deleted account: {}", user.getEmail());
+            log.warn("OAuth2 login attempt by deleted account: userId={}", user.getId());
             response.sendRedirect("/auth/login?error=deleted");
             return;
         }
         if (user.getStatus() != UserStatus.ACTIVE) {
             clearSavedAuthentication(request);
-            log.warn("OAuth2 login attempt by inactive account: {}", user.getEmail());
+            log.warn("OAuth2 login attempt by inactive account: userId={}", user.getId());
             response.sendRedirect("/auth/login?error=blocked");
             return;
         }
         if (user.getRole() == null) {
             clearSavedAuthentication(request);
-            log.warn("OAuth2 login attempt by account without role: {}", user.getEmail());
+            log.warn("OAuth2 login attempt by account without role: userId={}", user.getId());
             response.sendRedirect("/auth/login?error=role");
             return;
         }
 
-        jwtCookieService.addJwtCookie(response, user.getEmail());
+        jwtCookieService.addJwtCookie(response, user.getId());
         clearSavedAuthentication(request);
-        log.info("OAuth2 login success: provider={}, email={}, role={}", registrationId, user.getEmail(), user.getRole());
+        log.info("OAuth2 login success: provider={}, userId={}, role={}", registrationId, user.getId(), user.getRole());
         response.sendRedirect(resolveRedirectUrl(user.getRole()));
     }
 
@@ -153,7 +153,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 return login;
             }
         }
-        return email;
+        String providerName = registrationId.toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(providerName.charAt(0)) + providerName.substring(1) + " User";
     }
 
     private String resolveAvatarUrl(OAuth2User oAuth2User, String registrationId) {

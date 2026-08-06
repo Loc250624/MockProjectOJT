@@ -35,13 +35,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         request.getMethod(), request.getRequestURI(),
                         request.getHeader("Authorization") != null, hasJwtCookie(request));
             } else if (jwtUtils.validateJwtToken(jwt)) {
-                String email = jwtUtils.getEmailFromJwtToken(jwt);
+                Integer userId = jwtUtils.getUserIdFromJwtToken(jwt);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UserDetails userDetails = userDetailsService.loadUserById(userId);
                 if (!isUsableAccount(userDetails)) {
                     SecurityContextHolder.clearContext();
                     log.debug("JWT account rejected: method={}, uri={}, username={}",
-                            request.getMethod(), request.getRequestURI(), email);
+                            request.getMethod(), request.getRequestURI(), userId);
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -52,7 +52,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.debug("JWT authentication set: method={}, uri={}, username={}, authorities={}",
-                        request.getMethod(), request.getRequestURI(), email, userDetails.getAuthorities());
+                        request.getMethod(), request.getRequestURI(), userId, userDetails.getAuthorities());
             } else {
                 log.debug("JWT validation failed: method={}, uri={}", request.getMethod(), request.getRequestURI());
             }

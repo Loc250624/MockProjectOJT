@@ -21,8 +21,8 @@ public class JwtCookieService {
     @Value("${app.security.cookie-secure:false}")
     private boolean cookieSecure;
 
-    public void addJwtCookie(HttpServletResponse response, String email) {
-        addJwtCookieFromToken(response, jwtUtils.generateTokenFromEmail(email));
+    public void addJwtCookie(HttpServletResponse response, Integer userId) {
+        addJwtCookieFromToken(response, jwtUtils.generateTokenFromUserId(userId));
     }
 
     public void addJwtCookieFromToken(HttpServletResponse response, String token) {

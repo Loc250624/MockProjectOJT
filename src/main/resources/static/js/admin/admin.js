@@ -355,6 +355,11 @@ function initUserAdministration() {
         }
 
         var form = elements.createForm.elements;
+        if (!isStrongPassword(form.password.value)) {
+            setCreateError('Password must be 8–72 characters and include lowercase, uppercase, number, and special character without spaces.');
+            form.password.focus();
+            return;
+        }
         if (form.password.value !== form.confirmPassword.value) {
             setCreateError('Passwords do not match.');
             form.confirmPassword.focus();
@@ -404,6 +409,17 @@ function initUserAdministration() {
                 state.creating = false;
                 setCreateFormBusy(false);
             });
+    }
+
+    function isStrongPassword(value) {
+        return typeof value === 'string'
+            && value.length >= 8
+            && value.length <= 72
+            && /[a-z]/.test(value)
+            && /[A-Z]/.test(value)
+            && /\d/.test(value)
+            && /[^A-Za-z0-9\s]/.test(value)
+            && !/\s/.test(value);
     }
 
     function setCreateFormBusy(busy) {

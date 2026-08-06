@@ -1576,6 +1576,23 @@ function initProfileEditor() {
         document.querySelectorAll('[data-profile-avatar="true"]').forEach(function (image) {
             image.src = nextSrc;
         });
+        document.querySelectorAll('[data-user-chip-avatar]').forEach(function (shell) {
+            var image = shell.querySelector('[data-user-chip-image]');
+            if (!src) {
+                if (image) image.remove();
+                return;
+            }
+            if (!image) {
+                image = document.createElement('img');
+                image.className = 'user-chip-avatar-image';
+                image.dataset.userChipImage = 'true';
+                image.alt = '';
+                image.referrerPolicy = 'no-referrer';
+                image.addEventListener('error', function () { image.remove(); });
+                shell.appendChild(image);
+            }
+            image.src = src;
+        });
         if (avatarPreview) {
             avatarPreview.src = nextSrc;
         }
@@ -1709,7 +1726,14 @@ function initProfileEditor() {
     function applyProfile(profile) {
         nameText.textContent = profile.fullName || '';
         emailText.textContent = profile.email || '';
-        setAvatarPreview(profile.avatarUrl || placeholderSrc);
+        var initial = (profile.fullName || 'U').trim().charAt(0).toUpperCase() || 'U';
+        document.querySelectorAll('[data-profile-field="fullName"]').forEach(function (node) {
+            node.textContent = profile.fullName || '';
+        });
+        document.querySelectorAll('[data-user-chip-initial]').forEach(function (node) {
+            node.textContent = initial;
+        });
+        setAvatarPreview(profile.avatarUrl || '');
         currentAvatarSrc = avatarImage.src;
     }
 

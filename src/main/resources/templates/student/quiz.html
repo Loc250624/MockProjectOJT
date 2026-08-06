@@ -51,6 +51,7 @@
                 th:if="${attempt.status.name() == 'DRAFT'}">
             Submit Quiz
         </button>
+        <a th:replace="~{fragments/layout :: private-user-chip('/student/profile', 'Student', 'STUDENT')}"></a>
     </div>
 </header>
 

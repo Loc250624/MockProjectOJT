@@ -53,44 +53,18 @@
             <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/login}" class="btn btn-secondary btn-sm">Login</a>
             <a sec:authorize="!hasAnyRole('STUDENT','TEACHER','ADMIN')" th:href="@{/auth/register}" class="btn btn-primary btn-sm">Register</a>
 
-            <!-- Authenticated Users (Avatar only) -->
-            <div sec:authorize="hasAnyRole('STUDENT','TEACHER','ADMIN')" class="user-avatar-container"
-                style="display: flex; align-items: center; justify-content: center;">
-            <!-- Student Avatar -->
-            <a sec:authorize="hasRole('STUDENT')" th:href="@{/student/dashboard}" class="header-avatar-link"
-                style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    th:src="${#authentication?.principal?.user?.avatarUrl}"
-                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--lumina-blue);" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    style="width: 36px; height: 36px; border-radius: 50%; background: var(--lumina-blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'S')}">
-                    S</div>
-            </a>
-
-            <!-- Teacher/Instructor Avatar -->
-            <a sec:authorize="hasRole('TEACHER')" th:href="@{/teacher/dashboard}" class="header-avatar-link"
-                style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    th:src="${#authentication?.principal?.user?.avatarUrl}"
-                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #8b5cf6;" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    style="width: 36px; height: 36px; border-radius: 50%; background: #8b5cf6; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'T')}">
-                    T</div>
-            </a>
-
-            <!-- Admin Avatar -->
-            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="header-avatar-link"
-                style="text-decoration: none;">
-                <img th:if="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    th:src="${#authentication?.principal?.user?.avatarUrl}"
-                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444;" />
-                <div th:unless="${#authentication?.principal?.user?.avatarUrl != null && !#authentication?.principal?.user?.avatarUrl?.isEmpty()}"
-                    style="width: 36px; height: 36px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;"
-                    th:text="${#authentication?.principal?.user?.fullName != null && !#authentication?.principal?.user?.fullName?.isEmpty() ? #authentication?.principal?.user?.fullName?.substring(0,1)?.toUpperCase() : (#authentication?.name != null ? #authentication?.name?.substring(0,1)?.toUpperCase() : 'A')}">
-                    A</div>
-            </a>
+            <!-- Authenticated users use the same name, role and profile avatar on every template. -->
+            <div sec:authorize="hasAnyRole('STUDENT','TEACHER','ADMIN')"
+                 class="user-avatar-container authenticated-user-chip">
+                <th:block sec:authorize="hasRole('STUDENT')">
+                    <a th:replace="~{fragments/layout :: private-user-chip('/student/profile', 'Student', 'STUDENT')}"></a>
+                </th:block>
+                <th:block sec:authorize="hasRole('TEACHER')">
+                    <a th:replace="~{fragments/layout :: private-user-chip('/teacher/profile', 'Teacher', 'TEACHER')}"></a>
+                </th:block>
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <a th:replace="~{fragments/layout :: private-user-chip('/admin/profile', 'Administrator', 'ADMIN')}"></a>
+                </th:block>
             </div>
         </div>
     </div>
@@ -334,6 +308,37 @@
     </button>
 </form>
 
+<!-- Shared account chip for every authenticated page. Exactly one avatar is rendered. -->
+<a th:fragment="private-user-chip(profileHref, fallbackName, fallbackRole)"
+   class="user-chip internal-user-chip"
+   th:href="${profileHref}"
+   th:with="currentUser=${#authentication?.principal instanceof T(com.ojtsu26.elearning.security.CustomUserDetails) ? #authentication.principal.user : null},
+            resolvedUser=${portalUser != null ? portalUser : currentUser},
+            chipName=${!#strings.isEmpty(profile?.fullName) ? profile.fullName : (!#strings.isEmpty(resolvedUser?.fullName) ? resolvedUser.fullName : fallbackName)},
+            chipRole=${profile?.role != null ? profile.role : (resolvedUser?.role != null ? resolvedUser.role : fallbackRole)},
+            chipAvatar=${!#strings.isEmpty(profile?.avatarUrl) ? profile.avatarUrl : resolvedUser?.avatarUrl}"
+   th:aria-label="${'Open profile for ' + chipName}"
+   th:data-user-chip-name="${chipName}"
+   th:data-user-chip-role="${chipRole}"
+   th:title="${chipName + ' — ' + chipRole}">
+    <span class="user-info">
+        <strong class="user-name" data-profile-field="fullName" th:text="${chipName}">Account</strong>
+        <span class="user-role" th:text="${chipRole}">ROLE</span>
+    </span>
+    <span class="topbar-avatar user-chip-avatar" data-user-chip-avatar="true" aria-hidden="true">
+        <span class="user-chip-avatar-initial"
+              data-user-chip-initial="true"
+              th:text="${#strings.substring(chipName, 0, 1).toUpperCase()}">U</span>
+        <img th:if="${!#strings.isEmpty(chipAvatar)}"
+             class="user-chip-avatar-image"
+             data-user-chip-image="true"
+             th:src="${chipAvatar}"
+             alt=""
+             referrerpolicy="no-referrer"
+             onerror="this.remove();">
+    </span>
+</a>
+
 <!-- ===== PORTAL TOPBAR (Admin) ===== -->
 <div th:fragment="topbar-admin(pageTitle)" class="portal-topbar">
     <button class="icon-btn sidebar-mobile-toggle tooltip-trigger" type="button" aria-label="Open navigation"
@@ -377,17 +382,7 @@
             <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
             <span>Help</span>
         </button>
-        <a class="user-chip" th:href="@{/admin/profile}" style="text-decoration:none;">
-            <div class="user-info">
-                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Admin'}">Admin</div>
-                <div class="user-role" th:text="${profile?.role ?: 'ADMIN'}">ADMIN</div>
-            </div>
-            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
-                alt="Admin avatar"
-                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
-        </a>
+        <a th:replace="~{fragments/layout :: private-user-chip('/admin/profile', 'Administrator', 'ADMIN')}"></a>
     </div>
     <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>
@@ -434,18 +429,7 @@
             <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
             <span>Help</span>
         </button>
-        <a class="user-chip" th:href="@{/teacher/profile}" style="text-decoration:none;">
-            <div class="user-info">
-                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Instructor'}">
-                    Instructor</div>
-                <div class="user-role" th:text="${profile?.role ?: 'TEACHER'}">TEACHER</div>
-            </div>
-            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
-                alt="Teacher avatar"
-                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
-        </a>
+        <a th:replace="~{fragments/layout :: private-user-chip('/teacher/profile', 'Teacher', 'TEACHER')}"></a>
     </div>
     <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>
@@ -492,18 +476,7 @@
             <svg th:replace="~{fragments/icons :: icon('help')}"></svg>
             <span>Help</span>
         </button>
-        <a class="user-chip" th:href="@{/student/profile}" style="text-decoration:none;">
-            <div class="user-info">
-                <div class="user-name" th:text="${profile?.fullName ?: #authentication?.name ?: 'Student'}">Student
-                </div>
-                <div class="user-role" th:text="${profile?.role ?: 'STUDENT'}">STUDENT</div>
-            </div>
-            <img th:src="${#strings.isEmpty(profile?.avatarUrl)} ? @{/images/avatar-placeholder.png} : ${profile.avatarUrl}"
-                th:data-placeholder-src="@{/images/avatar-placeholder.png}" data-profile-avatar="true"
-                alt="Student avatar"
-                style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--lumina-blue);"
-                onerror="this.onerror=null;this.src=this.dataset.placeholderSrc;">
-        </a>
+        <a th:replace="~{fragments/layout :: private-user-chip('/student/profile', 'Student', 'STUDENT')}"></a>
     </div>
     <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/notifications.js}" defer></script>

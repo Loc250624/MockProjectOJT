@@ -351,7 +351,8 @@ class AdminSettingsControllerTest {
     }
 
     private User admin() {
-        return userRepository.findByEmail("admin.settings@example.com").orElseThrow();
+        return userRepository.findByAuthProviderAndEmailIgnoreCase(
+                AuthProvider.LOCAL, "admin.settings@example.com").orElseThrow();
     }
 
     private User testUser(String fullName, String email, Role role) {

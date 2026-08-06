@@ -1,7 +1,7 @@
 package com.ojtsu26.elearning.dto.request;
 
+import com.ojtsu26.elearning.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.ToString;
 
@@ -9,7 +9,7 @@ import lombok.ToString;
 public class OAuth2CompleteRegistrationRequestDTO {
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @StrongPassword
     @ToString.Exclude
     private String password;
 

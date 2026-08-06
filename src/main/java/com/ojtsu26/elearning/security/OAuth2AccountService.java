@@ -12,6 +12,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.PendingOAuthRegistrationRepository;
 import com.ojtsu26.elearning.repository.UserProviderIdentityRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
+import com.ojtsu26.elearning.validation.PasswordPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,10 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Locale;
@@ -48,6 +52,7 @@ public class OAuth2AccountService {
     private final UserProviderIdentityRepository identityRepository;
     private final PendingOAuthRegistrationRepository pendingRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TransactionTemplate transactionTemplate;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
@@ -60,6 +65,9 @@ public class OAuth2AccountService {
         Optional<UserProviderIdentity> identity = identityRepository.findByProviderAndProviderSubject(
                 normalizedProfile.provider(),
                 normalizedProfile.providerId());
+        if (identity.isPresent() && removeMismatchedIdentity(identity.get(), normalizedProfile.provider())) {
+            identity = Optional.empty();
+        }
         if (identity.isPresent()) {
             User user = identity.get().getUser();
             assertActiveForOAuth(user);
@@ -83,17 +91,6 @@ public class OAuth2AccountService {
             return OAuth2LoginResult.authenticated(userRepository.save(user));
         }
 
-        Optional<User> byEmail = userRepository.findByEmailIgnoreCase(email);
-        if (byEmail.isPresent()) {
-            User user = byEmail.get();
-            assertActiveForOAuth(user);
-            linkProviderIdentity(user, normalizedProfile);
-            updateLoginMetadata(user, normalizedProfile);
-            log.info("Linked OAuth2 provider by verified email: provider={}, userId={}",
-                    normalizedProfile.provider(), user.getId());
-            return OAuth2LoginResult.authenticated(userRepository.save(user));
-        }
-
         PendingOAuthRegistration pending = createPendingRegistration(normalizedProfile);
         log.info("Started pending OAuth2 registration: provider={}", normalizedProfile.provider());
         return OAuth2LoginResult.pending(pending.getToken());
@@ -109,9 +106,32 @@ public class OAuth2AccountService {
         return pending;
     }
 
-    @Transactional
     public User completePendingRegistration(String token, OAuth2CompleteRegistrationRequestDTO request) {
-        PendingOAuthRegistration pending = requireActivePending(token);
+        PendingOAuthRegistration pendingSnapshot = requireActivePending(token);
+        try {
+            return transactionTemplate.execute(status ->
+                    completePendingRegistrationInTransaction(pendingSnapshot.getId(), request));
+        } catch (DataIntegrityViolationException collision) {
+            User recovered = transactionTemplate.execute(status ->
+                    recoverConcurrentRegistration(pendingSnapshot));
+            if (recovered != null) {
+                return recovered;
+            }
+            throw new BusinessException(
+                    ErrorCode.USER_ALREADY_EXISTS,
+                    "Account creation collided with another request. Please sign in again.");
+        }
+    }
+
+    private User completePendingRegistrationInTransaction(
+            Integer pendingId,
+            OAuth2CompleteRegistrationRequestDTO request) {
+        PendingOAuthRegistration pending = pendingRepository.findById(pendingId)
+                .filter(candidate -> candidate.getUsedAt() == null)
+                .filter(candidate -> !candidate.getExpiresAt().isBefore(LocalDateTime.now()))
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.BAD_REQUEST,
+                        "OAuth registration has expired. Please sign in again."));
         validatePasswordConfirmation(request);
 
         OAuth2ProviderProfile profile = new OAuth2ProviderProfile(
@@ -124,6 +144,9 @@ public class OAuth2AccountService {
         Optional<UserProviderIdentity> identity = identityRepository.findByProviderAndProviderSubject(
                 profile.provider(),
                 profile.providerId());
+        if (identity.isPresent() && removeMismatchedIdentity(identity.get(), profile.provider())) {
+            identity = Optional.empty();
+        }
         if (identity.isPresent()) {
             User user = identity.get().getUser();
             assertActiveForCompletion(user);
@@ -132,20 +155,17 @@ public class OAuth2AccountService {
             return userRepository.save(user);
         }
 
-        Optional<User> existing = userRepository.findByEmailIgnoreCase(pending.getEmail());
-        if (existing.isPresent()) {
-            User user = existing.get();
-            assertActiveForCompletion(user);
-            linkProviderIdentity(user, profile);
-            updateLoginMetadata(user, profile);
-            markPendingUsed(pending);
-            return userRepository.save(user);
+        if (userRepository.existsByAuthProviderAndEmailIgnoreCase(
+                pending.getProvider(), pending.getEmail())) {
+            throw new BusinessException(
+                    ErrorCode.USER_ALREADY_EXISTS,
+                    "An account already exists for this sign-in provider and email. Please sign in with that provider.");
         }
 
         User newUser = User.builder()
                 .email(pending.getEmail())
-                .fullName(StringUtils.hasText(pending.getFullName()) ? pending.getFullName().trim() : pending.getEmail())
-                .avatarUrl(normalizeOptional(pending.getAvatarUrl()))
+                .fullName(resolveDisplayName(pending))
+                .avatarUrl(normalizeAvatarUrl(pending.getAvatarUrl()))
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .providerId(pending.getProviderSubject())
                 .authProvider(pending.getProvider())
@@ -154,15 +174,34 @@ public class OAuth2AccountService {
                 .lastLoginAt(LocalDateTime.now())
                 .build();
 
-        try {
-            User saved = userRepository.saveAndFlush(newUser);
-            linkProviderIdentity(saved, profile);
-            markPendingUsed(pending);
-            log.info("Completed OAuth2 registration: provider={}, userId={}", pending.getProvider(), saved.getId());
-            return saved;
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "Account creation collided with another request. Please sign in again.");
+        User saved = userRepository.saveAndFlush(newUser);
+        createRegistrationIdentity(saved, profile);
+        markPendingUsed(pending);
+        log.info("Completed OAuth2 registration: provider={}, userId={}", pending.getProvider(), saved.getId());
+        return saved;
+    }
+
+    private User recoverConcurrentRegistration(PendingOAuthRegistration pendingSnapshot) {
+        Optional<UserProviderIdentity> identity = identityRepository.findByProviderAndProviderSubject(
+                pendingSnapshot.getProvider(), pendingSnapshot.getProviderSubject());
+        if (identity.isEmpty()) {
+            return null;
         }
+
+        if (removeMismatchedIdentity(identity.get(), pendingSnapshot.getProvider())) {
+            return null;
+        }
+
+        User user = identity.get().getUser();
+        assertActiveForCompletion(user);
+        pendingRepository.findById(pendingSnapshot.getId()).ifPresent(pending -> {
+            if (pending.getUsedAt() == null) {
+                markPendingUsed(pending);
+            }
+        });
+        log.info("Recovered concurrent OAuth2 registration: provider={}, userId={}",
+                pendingSnapshot.getProvider(), user.getId());
+        return user;
     }
 
     private PendingOAuthRegistration createPendingRegistration(OAuth2ProviderProfile profile) {
@@ -214,9 +253,26 @@ public class OAuth2AccountService {
         identityRepository.save(identity);
     }
 
+    private boolean removeMismatchedIdentity(UserProviderIdentity identity, AuthProvider loginProvider) {
+        User owner = identity.getUser();
+        if (owner != null && owner.getAuthProvider() == loginProvider) {
+            return false;
+        }
+
+        log.warn(
+                "Removed mismatched OAuth2 identity: loginProvider={}, ownerProvider={}, userId={}",
+                loginProvider,
+                owner == null ? null : owner.getAuthProvider(),
+                owner == null ? null : owner.getId());
+        identityRepository.delete(identity);
+        identityRepository.flush();
+        return true;
+    }
+
     private void updateLoginMetadata(User user, OAuth2ProviderProfile profile) {
-        if (StringUtils.hasText(profile.avatarUrl())) {
-            user.setAvatarUrl(profile.avatarUrl().trim());
+        String avatarUrl = normalizeAvatarUrl(profile.avatarUrl());
+        if (avatarUrl != null) {
+            user.setAvatarUrl(avatarUrl);
         }
         if (StringUtils.hasText(profile.name()) && !profile.name().trim().equals(user.getFullName())) {
             user.setFullName(profile.name().trim());
@@ -247,6 +303,9 @@ public class OAuth2AccountService {
     private void validatePasswordConfirmation(OAuth2CompleteRegistrationRequestDTO request) {
         if (request == null || !StringUtils.hasText(request.getPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Password is required");
+        }
+        if (!PasswordPolicy.isStrong(request.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
         }
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
@@ -283,7 +342,7 @@ public class OAuth2AccountService {
                 profile.providerId().trim(),
                 normalizedEmail,
                 normalizeOptional(profile.name()),
-                normalizeOptional(profile.avatarUrl()));
+                normalizeAvatarUrl(profile.avatarUrl()));
     }
 
     private String normalizeEmail(String email) {
@@ -292,6 +351,42 @@ public class OAuth2AccountService {
 
     private String normalizeOptional(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private void createRegistrationIdentity(User user, OAuth2ProviderProfile profile) {
+        identityRepository.saveAndFlush(UserProviderIdentity.builder()
+                .user(user)
+                .provider(profile.provider())
+                .providerSubject(profile.providerId())
+                .emailAtLink(profile.email())
+                .lastLoginAt(LocalDateTime.now())
+                .build());
+    }
+
+    private String resolveDisplayName(PendingOAuthRegistration pending) {
+        if (StringUtils.hasText(pending.getFullName())
+                && !pending.getFullName().trim().equalsIgnoreCase(pending.getEmail())) {
+            return pending.getFullName().trim();
+        }
+        String providerName = pending.getProvider().name().toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(providerName.charAt(0)) + providerName.substring(1) + " User";
+    }
+
+    private String normalizeAvatarUrl(String avatarUrl) {
+        if (!StringUtils.hasText(avatarUrl)) {
+            return null;
+        }
+        try {
+            URI uri = new URI(avatarUrl.trim());
+            String scheme = uri.getScheme();
+            if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    && StringUtils.hasText(uri.getHost())) {
+                return uri.toString();
+            }
+        } catch (URISyntaxException ignored) {
+            // Invalid provider metadata must not become an executable or malformed image URL.
+        }
+        return null;
     }
 
     private String generatePendingToken() {

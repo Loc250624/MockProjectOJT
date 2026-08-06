@@ -22,7 +22,10 @@
         <span class="sep">›</span>
         <span class="current" th:text="${selectedCourse != null ? selectedCourse.title : 'Course'}">Course Title</span>
     </div>
-    <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
+        <a th:replace="~{fragments/layout :: private-user-chip('/teacher/profile', 'Teacher', 'TEACHER')}"></a>
+    </div>
 </header>
 
 <main style="max-width:1200px;margin:2.5rem auto;padding:0 2rem;">

@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="0; url=/admin/analytics">
     <title>Student Statistics - Admin Portal | LumiNa</title>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
 <body>
+<div th:replace="~{fragments/layout :: topbar-admin('Student Statistics')}"></div>
 <main class="main-content">
     <h1>Student Statistics</h1>
     <p>Student analytics are available from the live admin analytics page.</p>

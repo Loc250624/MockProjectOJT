@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     initPasswordToggles();
+    initAuthPasswordPolicies();
     initOAuthButtons();
     initLoginForm();
     initRegisterForm();
@@ -34,7 +35,7 @@ function initLoginForm() {
 
         var payload = {
             email: getFieldValue('email'),
-            password: getFieldValue('password')
+            password: getSensitiveFieldValue('password')
         };
 
         if (!validateLogin(loginForm, payload)) {
@@ -58,8 +59,8 @@ function initRegisterForm() {
         var payload = {
             fullName: getFieldValue('fullName'),
             email: getFieldValue('email'),
-            password: getFieldValue('password'),
-            confirmPassword: getFieldValue('confirmPassword')
+            password: getSensitiveFieldValue('password'),
+            confirmPassword: getSensitiveFieldValue('confirmPassword')
         };
 
         if (!validateRegister(registerForm, payload)) {
@@ -81,8 +82,8 @@ function initOAuthCompleteForm() {
         clearFormState(completeForm);
 
         var payload = {
-            password: getFieldValue('password'),
-            confirmPassword: getFieldValue('confirmPassword')
+            password: getSensitiveFieldValue('password'),
+            confirmPassword: getSensitiveFieldValue('confirmPassword')
         };
 
         if (!validatePasswordPair(completeForm, payload)) {
@@ -165,9 +166,11 @@ function validateRegister(form, payload) {
 
 function validatePasswordPair(form, payload) {
     var valid = true;
+    var policy = evaluatePasswordPolicy(payload.password);
+    updateAuthPasswordPolicy(form, policy, payload.password, payload.confirmPassword);
 
-    if (!payload.password || payload.password.length < 6) {
-        setFieldError(form, 'password', 'Use at least 6 characters.');
+    if (!Object.values(policy).every(Boolean)) {
+        setFieldError(form, 'password', 'Use 8–72 characters with lowercase, uppercase, number, and special character, without spaces.');
         valid = false;
     }
     if (!payload.confirmPassword) {
@@ -179,6 +182,57 @@ function validatePasswordPair(form, payload) {
     }
 
     return valid;
+}
+
+function evaluatePasswordPolicy(value) {
+    var password = value || '';
+    return {
+        length: password.length >= 8 && password.length <= 72,
+        lowercase: /[a-z]/.test(password),
+        uppercase: /[A-Z]/.test(password),
+        number: /\d/.test(password),
+        special: /[^A-Za-z0-9\s]/.test(password),
+        'no-space': password.length > 0 && !/\s/.test(password)
+    };
+}
+
+function updateAuthPasswordPolicy(form, policy, password, confirmation) {
+    var list = form.querySelector('[data-auth-password-rules]');
+    if (!list) {
+        return;
+    }
+    var passwordTouched = password.length > 0;
+    list.querySelectorAll('[data-auth-password-rule]').forEach(function (item) {
+        var name = item.dataset.authPasswordRule;
+        var touched = name === 'match'
+            ? passwordTouched && confirmation.length > 0
+            : passwordTouched;
+        var passed = name === 'match'
+            ? passwordTouched && confirmation.length > 0 && password === confirmation
+            : Boolean(policy[name]);
+        item.classList.toggle('is-valid', touched && passed);
+        item.classList.toggle('is-invalid', touched && !passed);
+    });
+}
+
+function initAuthPasswordPolicies() {
+    document.querySelectorAll('[data-auth-password-rules]').forEach(function (list) {
+        var form = list.closest('form');
+        if (!form) {
+            return;
+        }
+        var password = form.querySelector('[name="password"]');
+        var confirmation = form.querySelector('[name="confirmPassword"]');
+        if (!password || !confirmation) {
+            return;
+        }
+        [password, confirmation].forEach(function (input) {
+            input.addEventListener('input', function () {
+                updateAuthPasswordPolicy(form, evaluatePasswordPolicy(password.value), password.value, confirmation.value);
+            });
+        });
+        updateAuthPasswordPolicy(form, evaluatePasswordPolicy(password.value), password.value, confirmation.value);
+    });
 }
 
 function initPasswordToggles() {
@@ -386,6 +440,11 @@ async function readJson(response) {
 function getFieldValue(id) {
     var field = document.getElementById(id);
     return field ? field.value.trim() : '';
+}
+
+function getSensitiveFieldValue(id) {
+    var field = document.getElementById(id);
+    return field ? field.value : '';
 }
 
 function isEmail(value) {

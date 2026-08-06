@@ -47,7 +47,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -392,7 +391,7 @@ class AdminActionControllerTest {
     @Test
     void blockedUserCannotUseOldJwt() throws Exception {
         User student = findByEmail("alice.student@example.com");
-        String token = jwtUtils.generateTokenFromEmail(student.getEmail());
+        String token = jwtUtils.generateTokenFromUserId(student.getId());
         student.setStatus(UserStatus.BLOCKED);
         userRepository.save(student);
 
@@ -402,7 +401,7 @@ class AdminActionControllerTest {
     }
 
     @Test
-    void blockedUserCannotLoginWithOAuth2() throws Exception {
+    void blockedLocalUserDoesNotBlockIndependentOAuthRegistrationWithSameEmail() throws Exception {
         User blocked = findByEmail("david.blocked@example.com");
         blocked.setAuthProvider(AuthProvider.LOCAL);
         userRepository.save(blocked);
@@ -420,8 +419,7 @@ class AdminActionControllerTest {
 
         oAuth2LoginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
 
-        assertEquals("/auth/login?error=blocked", response.getRedirectedUrl());
-        assertNull(response.getHeader(HttpHeaders.SET_COOKIE));
+        assertEquals("/auth/oauth2/complete", response.getRedirectedUrl());
         assertEquals(AuthProvider.LOCAL, findByEmail("david.blocked@example.com").getAuthProvider());
         assertEquals(UserStatus.BLOCKED, findByEmail("david.blocked@example.com").getStatus());
     }
@@ -560,7 +558,7 @@ class AdminActionControllerTest {
     @Test
     void deletedUserCannotUseOldJwt() throws Exception {
         User student = findByEmail("alice.student@example.com");
-        String token = jwtUtils.generateTokenFromEmail(student.getEmail());
+        String token = jwtUtils.generateTokenFromUserId(student.getId());
         student.setStatus(UserStatus.DELETED);
         userRepository.save(student);
 
@@ -570,7 +568,7 @@ class AdminActionControllerTest {
     }
 
     @Test
-    void deletedUserCannotLoginWithOAuth2() throws Exception {
+    void deletedLocalUserDoesNotBlockIndependentOAuthRegistrationWithSameEmail() throws Exception {
         User deleted = findByEmail("bob.teacher@example.com");
         deleted.setStatus(UserStatus.DELETED);
         userRepository.save(deleted);
@@ -588,8 +586,7 @@ class AdminActionControllerTest {
 
         oAuth2LoginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
 
-        assertEquals("/auth/login?error=deleted", response.getRedirectedUrl());
-        assertNull(response.getHeader(HttpHeaders.SET_COOKIE));
+        assertEquals("/auth/oauth2/complete", response.getRedirectedUrl());
         assertEquals(UserStatus.DELETED, findByEmail("bob.teacher@example.com").getStatus());
     }
 
@@ -640,7 +637,10 @@ class AdminActionControllerTest {
     }
 
     private User findByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow();
+        return userRepository.findAll().stream()
+                .filter(user -> email.equalsIgnoreCase(user.getEmail()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private org.springframework.test.web.servlet.ResultActions createUser(String name, String email, String role) throws Exception {
