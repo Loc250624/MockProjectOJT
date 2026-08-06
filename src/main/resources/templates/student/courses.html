@@ -75,9 +75,12 @@
                         <p style="font-size: 0.875rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;"><strong>Instructor:</strong> <span th:text="${crs.instructorName}" style="color: var(--theme-text); font-weight: 500;">Tran Van B</span></p>
                         <p style="font-size: 0.875rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;"><strong>Category:</strong> <span th:text="${crs.categoryName}" style="color: var(--theme-text); font-weight: 500;">Programming</span></p>
                         <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.75rem;"><strong>Price:</strong> <span th:text="${crs.price == null || crs.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT')}" style="color: var(--lumina-blue); font-weight: 700;">$199.00</span></p>
+                        <div class="course-duration-meta" style="margin-bottom:0.75rem;">
+                            <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                            <span>Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></span>
+                        </div>
                         <div style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
                             <span th:if="${crs.enrollmentStatus == 'ENROLLED'}" style="background-color: #22c55e; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Enrolled</span>
-                            <span th:if="${crs.enrollmentStatus == 'PENDING'}" style="background-color: #eab308; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Pending Payment</span>
                             <span th:if="${crs.enrollmentStatus == 'NOT_ENROLLED'}" style="background-color: #64748b; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Not Enrolled</span>
                         </div>
                         <p style="color: var(--theme-text-muted); font-size: 0.875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>

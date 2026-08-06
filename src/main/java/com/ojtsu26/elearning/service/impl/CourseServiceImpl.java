@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.service.impl;
 
+import com.ojtsu26.elearning.common.CourseDurationFormatter;
 import com.ojtsu26.elearning.model.entity.Course;
 import com.ojtsu26.elearning.model.entity.Category;
 import com.ojtsu26.elearning.model.entity.Lesson;
@@ -11,8 +12,10 @@ import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.mapper.CourseMapper;
 import com.ojtsu26.elearning.repository.CourseRepository;
+import com.ojtsu26.elearning.repository.VideoRepository;
 import com.ojtsu26.elearning.service.CourseService;
 import com.ojtsu26.elearning.service.NotificationService;
+import com.ojtsu26.elearning.service.VideoDurationPrecomputeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +35,8 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
+    private final VideoRepository videoRepository;
+    private final VideoDurationPrecomputeService videoDurationPrecomputeService;
     private final CourseMapper courseMapper;
     private final NotificationService notificationService;
 
@@ -39,23 +46,17 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseResponseDTO> findAll() {
-        return courseRepository.findAll().stream()
-                .map(courseMapper::toDto)
-                .collect(Collectors.toList());
+        return toDtos(courseRepository.findAll());
     }
 
     @Override
     public List<CourseResponseDTO> findByInstructorId(Integer instructorId) {
-        return courseRepository.findByInstructorId(instructorId).stream()
-                .map(courseMapper::toDto)
-                .collect(Collectors.toList());
+        return toDtos(courseRepository.findByInstructorId(instructorId));
     }
 
     @Override
     public List<CourseResponseDTO> findByStatus(CourseStatus status) {
-        return courseRepository.findByStatus(status).stream()
-                .map(courseMapper::toDto)
-                .collect(Collectors.toList());
+        return toDtos(courseRepository.findByStatus(status));
     }
 
     @Override
@@ -71,9 +72,7 @@ public class CourseServiceImpl implements CourseService {
 
         String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
 
-        return courseRepository.findApprovedCourses(categoryId, cleanKeyword, sort).stream()
-                .map(courseMapper::toDto)
-                .collect(Collectors.toList());
+        return toDtos(courseRepository.findApprovedCourses(categoryId, cleanKeyword, sort));
     }
 
     @Override
@@ -92,15 +91,16 @@ public class CourseServiceImpl implements CourseService {
 
         String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
 
-        return courseRepository.findApprovedCourses(categoryId, cleanKeyword, resolvedPageable)
-                .map(courseMapper::toDto);
+        Page<Course> courses = courseRepository.findApprovedCourses(categoryId, cleanKeyword, resolvedPageable);
+        Map<Integer, Long> durationByCourseId = durationByCourseId(courses.getContent());
+        return courses.map(course -> toDto(course, durationByCourseId));
     }
 
     @Override
     public CourseResponseDTO findById(Integer id) {
         Course entity = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found with id: " + id));
-        return courseMapper.toDto(entity);
+        return toDto(entity);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class CourseServiceImpl implements CourseService {
         entity.setStatus(CourseStatus.DRAFT);   // Always start as DRAFT
         entity.setRejectReason(null);
         Course saved = courseRepository.save(entity);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class CourseServiceImpl implements CourseService {
         }
 
         Course updated = courseRepository.save(existing);
-        return courseMapper.toDto(updated);
+        return toDto(updated);
     }
 
     @Override
@@ -154,6 +154,44 @@ public class CourseServiceImpl implements CourseService {
     private Course resolveCourse(Integer courseId) {
         return courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+    }
+
+    private List<CourseResponseDTO> toDtos(List<Course> courses) {
+        Map<Integer, Long> durationByCourseId = durationByCourseId(courses);
+        return courses.stream()
+                .map(course -> toDto(course, durationByCourseId))
+                .collect(Collectors.toList());
+    }
+
+    private CourseResponseDTO toDto(Course course) {
+        return toDto(course, durationByCourseId(List.of(course)));
+    }
+
+    private CourseResponseDTO toDto(Course course, Map<Integer, Long> durationByCourseId) {
+        CourseResponseDTO dto = courseMapper.toDto(course);
+        long seconds = durationByCourseId.getOrDefault(course.getId(), 0L);
+        dto.setEstimatedDurationSeconds(seconds);
+        dto.setEstimatedDurationDisplay(CourseDurationFormatter.formatSeconds(seconds));
+        return dto;
+    }
+
+    private Map<Integer, Long> durationByCourseId(List<Course> courses) {
+        List<Integer> courseIds = courses.stream()
+                .map(Course::getId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (courseIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        videoDurationPrecomputeService.refreshCourseDurations(courseIds);
+        return videoRepository.sumDurationSecondsByCourseIds(courseIds).stream()
+                .filter(row -> row.getCourseId() != null)
+                .collect(Collectors.toMap(
+                        com.ojtsu26.elearning.repository.projection.CourseDurationProjection::getCourseId,
+                        row -> row.getEstimatedDurationSeconds() == null ? 0L : row.getEstimatedDurationSeconds(),
+                        Long::sum
+                ));
     }
 
     private void verifyOwnership(Course course, Integer instructorId) {
@@ -239,7 +277,7 @@ public class CourseServiceImpl implements CourseService {
         course.setRejectReason(null);   // Clear any previous rejection reason
         Course saved = courseRepository.save(course);
         notificationService.createCourseSubmittedForReviewNotification(saved);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -253,7 +291,7 @@ public class CourseServiceImpl implements CourseService {
         }
 
         course.setStatus(CourseStatus.DRAFT);
-        return courseMapper.toDto(courseRepository.save(course));
+        return toDto(courseRepository.save(course));
     }
 
     // ----------------------------------------------------------------
@@ -276,7 +314,7 @@ public class CourseServiceImpl implements CourseService {
         course.setRejectReason(null);
         Course saved = courseRepository.save(course);
         notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_APPROVED);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -295,7 +333,7 @@ public class CourseServiceImpl implements CourseService {
         course.setRejectReason(reason != null && !reason.isBlank() ? reason : "No reason provided.");
         Course saved = courseRepository.save(course);
         notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_REJECTED);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -310,7 +348,7 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.HIDDEN);
         Course saved = courseRepository.save(course);
         notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_HIDDEN);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 
     @Override
@@ -325,6 +363,6 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.APPROVED);
         Course saved = courseRepository.save(course);
         notificationService.createCourseModerationNotification(saved, NotificationType.COURSE_UNHIDDEN);
-        return courseMapper.toDto(saved);
+        return toDto(saved);
     }
 }

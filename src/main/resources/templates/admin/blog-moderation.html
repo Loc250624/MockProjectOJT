@@ -66,7 +66,20 @@
                             <div class="table-action-cell admin-blog-actions">
                                 <form th:action="@{'/admin/blogs/approve/' + ${blog.id}}" method="post" style="display:inline;"
                                       data-loading-form
-                                      onsubmit="return confirm('Approve and publish this blog?');">
+                                      data-lumina-confirm
+                                      data-dialog-variant="warning"
+                                      data-dialog-icon="publish"
+                                      data-dialog-eyebrow="Blog moderation"
+                                      data-dialog-badge="Publish blog"
+                                      data-dialog-title="Approve and publish this blog?"
+                                      data-dialog-subtitle="The post will leave the moderation queue and become visible on public blog pages."
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      data-dialog-current-status="PENDING_REVIEW"
+                                      data-dialog-next-status="PUBLISHED"
+                                      data-dialog-confirm-text="Approve and publish"
+                                      data-dialog-cancel-text="Keep reviewing">
                                     <button type="submit" class="action-btn primary">
                                         <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                                         <span>Approve</span>
@@ -114,6 +127,7 @@
                                     </form>
                                 </div>
                             </div>
+                            </div>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(blogs)}">
@@ -132,24 +146,6 @@
 
 <script th:src="@{/js/admin/admin.js}"></script>
 <script>
-function openBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'flex';
-        var textarea = modal.querySelector('textarea');
-        if (textarea) {
-            textarea.focus();
-        }
-    }
-}
-
-function closeBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
 document.querySelectorAll('[data-loading-form]').forEach(function (form) {
     form.addEventListener('submit', function () {
         var loading = document.querySelector('[data-loading-message]');

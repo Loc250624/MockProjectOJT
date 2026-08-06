@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface LessonRepository extends JpaRepository<Lesson, Integer> {
     List<Lesson> findByCourseIdOrderByOrderIndexAsc(Integer courseId);
 
-    @Query("select l from Lesson l left join fetch l.quiz where l.course.id = :courseId and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.RETIRED) order by l.orderIndex asc")
+    @Query("select l from Lesson l left join fetch l.quiz left join fetch l.video where l.course.id = :courseId and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.RETIRED) order by l.orderIndex asc")
     List<Lesson> findByCourseIdWithAssessmentOrderByOrderIndexAsc(@Param("courseId") Integer courseId);
 
     @Query("select l from Lesson l left join fetch l.quiz left join fetch l.course c left join fetch c.instructor where l.id = :lessonId and (l.type is null or l.type <> com.ojtsu26.elearning.model.enums.LessonType.RETIRED)")

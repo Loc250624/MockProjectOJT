@@ -54,11 +54,13 @@
                                    ? '/teacher/videos/edit/' + videoId
                                    : '/teacher/videos/create'}"
                       th:object="${video}"
+                      data-video-metadata-form
                       method="post">
 
                     <!-- Hidden fields -->
                     <input type="hidden" th:field="*{lessonId}" />
                     <input type="hidden" name="courseId" th:value="${courseId}" />
+                    <input type="hidden" th:field="*{durationSeconds}" data-video-duration-input />
 
                     <!-- Video URL -->
                     <div class="form-group" style="margin-bottom:1.5rem;">
@@ -70,42 +72,27 @@
                             type="url"
                             class="form-control"
                             th:field="*{videoUrl}"
+                            data-video-url-input
                             placeholder="https://www.youtube.com/watch?v=..."
+                            required
                             style="width:100%;"
                         >
                         <div th:if="${#fields.hasErrors('videoUrl')}"
                              th:errors="*{videoUrl}"
                              style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
                         <p style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-gray-500);">
-                            Must start with <code>http://</code> or <code>https://</code>. Supports YouTube, Vimeo, or any public URL.
+                            Must start with <code>http://</code> or <code>https://</code>. Supports YouTube or a direct public video URL.
                         </p>
                     </div>
 
-                    <!-- Duration (seconds) -->
-                    <div class="form-group" style="margin-bottom:2rem;">
-                        <label class="form-label" for="durationSeconds">
-                            DURATION (SECONDS) <span style="color:var(--lumina-danger);">*</span>
-                        </label>
-                        <input
-                            id="durationSeconds"
-                            type="number"
-                            class="form-control"
-                            th:field="*{durationSeconds}"
-                            placeholder="e.g. 900 (= 15 minutes)"
-                            min="1"
-                            style="width:100%;"
-                        >
-                        <div th:if="${#fields.hasErrors('durationSeconds')}"
-                             th:errors="*{durationSeconds}"
-                             style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
-                        <p style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-gray-500);">
-                            Enter the total length of the video in seconds. 60 = 1 minute, 3600 = 1 hour.
-                        </p>
+                    <div class="video-metadata-status" data-video-metadata-status aria-live="polite">
+                        Enter a video URL. Its length will be detected automatically before saving.
                     </div>
+                    <div class="video-duration-probe" data-video-duration-probe aria-hidden="true"></div>
 
                     <!-- Actions -->
                     <div style="display:flex;gap:0.75rem;">
-                        <button type="submit" class="btn btn-primary" style="flex:1;">
+                        <button type="submit" class="btn btn-primary" data-video-submit disabled style="flex:1;">
                             <span th:text="${editMode != null && editMode ? '💾 Save Changes' : '+ Add Video'}">Save</span>
                         </button>
                         <a th:href="@{'/teacher/videos?lessonId=' + ${lessonId} + '&courseId=' + ${courseId}}"

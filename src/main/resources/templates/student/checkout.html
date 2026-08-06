@@ -120,7 +120,15 @@
                 <!-- Error message from failed payment -->
                 <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
 
-                <form th:action="@{/student/checkout}" method="post" id="payment-form">
+                <form th:action="@{/student/checkout}" method="post" id="payment-form"
+                      data-lumina-confirm
+                      data-dialog-preset="payment"
+                      th:data-dialog-object="${courseName ?: 'Selected course'}"
+                      th:data-dialog-usd="${total != null ? '$' + #numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT') : 'Free'}"
+                      th:data-dialog-vnd="${vndAmount != null ? #numbers.formatInteger(vndAmount, 0, 'COMMA') + ' VND' : 'Calculated by gateway'}"
+                      data-dialog-payment-method="VNPAY"
+                      data-dialog-confirm-text="Continue to VNPAY"
+                      data-dialog-cancel-text="Review order">
                     <input type="hidden" name="courseId" th:value="${courseId}">
 
                     <!-- VNPAY -->

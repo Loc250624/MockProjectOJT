@@ -152,13 +152,11 @@ class CourseEnrollmentServiceTest {
         when(currentUserService.getCurrentUser()).thenReturn(student);
         when(courseRepository.findById(102)).thenReturn(Optional.of(paidCourse));
         when(enrollmentRepository.findByStudentIdAndCourseId(1, 102)).thenReturn(Optional.empty());
-        when(orderRepository.findByStudentIdAndCourseIdAndStatus(1, 102, OrderStatus.PENDING))
-                .thenReturn(List.of(Order.builder().id(10).build()));
 
         CourseEnrollmentStateResponseDTO state = service.getCurrentStudentCourseState(102);
 
-        assertEquals("PAYMENT_PENDING", state.getAction());
-        assertTrue(state.isPaymentPending());
+        assertEquals("BUY_COURSE", state.getAction());
+        assertFalse(state.isPaymentPending());
     }
 
     @Test

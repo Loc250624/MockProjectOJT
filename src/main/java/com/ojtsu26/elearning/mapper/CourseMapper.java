@@ -16,6 +16,8 @@ public interface CourseMapper {
     @Mapping(source = "roadmap.id", target = "roadmapId")
     @Mapping(source = "roadmap.title", target = "roadmapTitle")
     @Mapping(target = "enrollmentStatus", ignore = true)
+    @Mapping(target = "estimatedDurationSeconds", ignore = true)
+    @Mapping(target = "estimatedDurationDisplay", ignore = true)
     CourseResponseDTO toDto(Course entity);
 
     @Mapping(source = "instructorId", target = "instructor.id")

@@ -73,6 +73,7 @@
                                     <div>
                                         <div style="font-size:0.875rem;font-weight:600;color:var(--lumina-gray-900);" th:text="${crs.title}">Course Title</div>
                                         <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${crs.categoryId != null ? 'Category ID: ' + crs.categoryId : 'No Category'}">Category</div>
+                                        <div style="font-size:0.75rem;color:var(--lumina-gray-500);">Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></div>
                                     </div>
                                 </div>
                             </td>
@@ -136,7 +137,14 @@
                                     <!-- Submit: only for DRAFT -->
                                     <form th:if="${crs.status.name() == 'DRAFT'}"
                                           th:action="@{'/teacher/courses/submit/' + ${crs.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Submit this course for admin review?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="course-submit"
+                                          th:data-dialog-object="${crs.title}"
+                                          th:data-dialog-current-status="${crs.status.name()}"
+                                          data-dialog-next-status="PENDING_APPROVAL"
+                                          data-dialog-checklist="Course information and thumbnail are complete.|Lessons and learning content are ready.|Videos and quiz configuration have been reviewed."
+                                          data-dialog-confirm-text="Submit for review"
+                                          data-dialog-cancel-text="Review course">
                                         <button type="submit" class="action-btn primary"
                                                 th:id="'btn-submit-crs-' + ${crs.id}">
                                             <svg th:replace="~{fragments/icons :: icon('upload')}"></svg>
@@ -147,7 +155,15 @@
                                     <!-- Withdraw: only for PENDING_APPROVAL -->
                                     <form th:if="${crs.status.name() == 'PENDING_APPROVAL'}"
                                           th:action="@{'/teacher/courses/withdraw/' + ${crs.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Withdraw this course from review?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="course-submit"
+                                          data-dialog-withdraw="true"
+                                          th:data-dialog-object="${crs.title}"
+                                          th:data-dialog-current-status="${crs.status.name()}"
+                                          data-dialog-next-status="DRAFT"
+                                          data-dialog-checklist="The course will leave the admin review queue.|Editing will be available again after withdrawal."
+                                          data-dialog-confirm-text="Withdraw course"
+                                          data-dialog-cancel-text="Keep in review">
                                         <button type="submit" class="action-btn warning"
                                                 th:id="'btn-withdraw-crs-' + ${crs.id}">
                                             <svg th:replace="~{fragments/icons :: icon('restore')}"></svg>
@@ -158,7 +174,17 @@
                                     <!-- Delete: only for DRAFT -->
                                     <form th:if="${crs.status.name() == 'DRAFT'}"
                                           th:action="@{'/teacher/courses/delete/' + ${crs.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Are you sure you want to delete this course?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="danger"
+                                          data-dialog-title="Delete this course?"
+                                          data-dialog-object-label="Course"
+                                          th:data-dialog-object="${crs.title}"
+                                          data-dialog-notice-title="Course data will be removed"
+                                          data-dialog-notice-text="Deleting a draft course may also remove its curriculum content."
+                                          data-dialog-checklist="The draft will disappear from My Courses.|Related lessons, videos and quizzes may be affected."
+                                          data-dialog-require-acknowledgement="true"
+                                          data-dialog-confirm-text="Delete course"
+                                          data-dialog-cancel-text="Keep course">
                                         <button type="submit" class="action-btn danger"
                                                 th:id="'btn-delete-crs-' + ${crs.id}">
                                             <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>

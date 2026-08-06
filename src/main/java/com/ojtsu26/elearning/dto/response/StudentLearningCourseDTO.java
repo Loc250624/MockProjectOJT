@@ -20,6 +20,8 @@ public class StudentLearningCourseDTO {
     private BigDecimal progressPercentage;
     private Boolean completed;
     private String courseStatus;
+    private long estimatedDurationSeconds;
+    private String estimatedDurationDisplay;
     private StudentLearningLessonDTO activeLesson;
     private List<StudentLearningLessonSummaryDTO> lessons;
     private List<StudentLearningResourceDTO> courseResources;

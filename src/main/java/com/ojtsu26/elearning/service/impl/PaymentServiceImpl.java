@@ -122,81 +122,98 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public void processWebhook(PaymentMethod method, Map<String, String> params) {
-        // 1. Signature verification
-        if (!verifyWebhookSignature(method, params)) {
-            log.error("Webhook signature verification failed for method={}", method);
-            throw new IllegalArgumentException("Invalid signature");
-        }
-
         String orderCode = params.get("orderId");
         String transId = params.get("transId");
-        String resultCodeValue = params.get("resultCode");
-        int resultCode = -1;
-        if (resultCodeValue != null && !resultCodeValue.isBlank()) {
-            try {
-                resultCode = Double.valueOf(resultCodeValue).intValue();
-            } catch (NumberFormatException e) {
-                log.warn("Failed to parse resultCode from webhook: {}", resultCodeValue);
-            }
+
+        if (orderCode == null || orderCode.isBlank()) {
+            log.error("Webhook missing orderId parameter");
+            throw new IllegalArgumentException("Missing orderId parameter");
         }
-        boolean paymentSuccessful = resultCode == 0;
 
         // Fetch Order
         Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with code: " + orderCode));
 
-        // Security Audit Validations for VNPAY
-        if (method == PaymentMethod.VNPAY) {
-            // 1. Verify Payment Method is VNPAY
-            if (order.getPaymentMethod() != PaymentMethod.VNPAY) {
-                log.error("Payment method mismatch: expected VNPAY, but order has {}", order.getPaymentMethod());
-                throw new IllegalArgumentException("Payment method mismatch");
-            }
-            
-            // 2. VNPay requires VND in the payment request, but its Return URL/IPN
-            // payload does not always echo vnp_CurrCode. Reject an explicit
-            // unexpected currency without blocking a valid signed callback that
-            // omits this request-only field.
-            String currCode = params.get("vnp_CurrCode");
-            if (currCode != null && !currCode.isBlank() && !"VND".equalsIgnoreCase(currCode)) {
-                log.error("Currency code mismatch: expected VND, but got {}", currCode);
-                throw new IllegalArgumentException("Currency code mismatch");
-            }
-
-            // 3. Verify amount: vnp_Amount equals Order.paidAmount (multiplied by 100)
-            String vnpAmountStr = params.get("vnp_Amount");
-            if (vnpAmountStr == null || vnpAmountStr.isEmpty()) {
-                log.error("Missing vnp_Amount parameter in callback");
-                throw new IllegalArgumentException("Missing amount parameter");
-            }
-            BigDecimal expectedAmount = order.getPaidAmount().multiply(new BigDecimal("100"));
-            BigDecimal receivedAmount = new BigDecimal(vnpAmountStr);
-            if (expectedAmount.compareTo(receivedAmount) != 0) {
-                log.error("Amount mismatch: expected {}, but received {}", expectedAmount, receivedAmount);
-                throw new IllegalArgumentException("Amount mismatch");
-            }
-
-            // 4. Verify the callback belongs to the configured VNPay merchant.
-            String expectedTmnCode = properties.getVnpay().getTmnCode();
-            String receivedTmnCode = params.get("vnp_TmnCode");
-            if (expectedTmnCode != null
-                    && !expectedTmnCode.isBlank()
-                    && !expectedTmnCode.equals(receivedTmnCode)) {
-                log.error("VNPAY terminal code mismatch");
-                throw new IllegalArgumentException("Terminal code mismatch");
-            }
-
-            // 5. VNPay is successful only when both official status fields are 00.
-            paymentSuccessful = "00".equals(params.get("vnp_ResponseCode"))
-                    && "00".equals(params.get("vnp_TransactionStatus"));
+        // 2. Idempotency validation: check if already PAID
+        if (order.getStatus() == OrderStatus.PAID) {
+            log.warn("Order {} is already PAID. Skipping.", orderCode);
+            return;
         }
 
-        // 2. Idempotency validation: check if already processed
-        if (order.getStatus() != OrderStatus.PENDING) {
-            log.warn("Order {} is already processed (status={}). Skipping.", orderCode, order.getStatus());
-            return;
+        boolean paymentSuccessful = false;
+        IllegalArgumentException validationException = null;
+
+        try {
+            // 1. Signature verification
+            if (!verifyWebhookSignature(method, params)) {
+                log.error("Webhook signature verification failed for method={}", method);
+                throw new IllegalArgumentException("Invalid signature");
+            }
+
+            String resultCodeValue = params.get("resultCode");
+            int resultCode = -1;
+            if (resultCodeValue != null && !resultCodeValue.isBlank()) {
+                try {
+                    resultCode = Double.valueOf(resultCodeValue).intValue();
+                } catch (NumberFormatException e) {
+                    log.warn("Failed to parse resultCode from webhook: {}", resultCodeValue);
+                }
+            }
+            paymentSuccessful = resultCode == 0;
+
+            // Security Audit Validations for VNPAY
+            if (method == PaymentMethod.VNPAY) {
+                // 1. Verify Payment Method is VNPAY
+                if (order.getPaymentMethod() != PaymentMethod.VNPAY) {
+                    log.error("Payment method mismatch: expected VNPAY, but order has {}", order.getPaymentMethod());
+                    throw new IllegalArgumentException("Payment method mismatch");
+                }
+                
+                // 2. VNPay requires VND in the payment request
+                String currCode = params.get("vnp_CurrCode");
+                if (currCode != null && !currCode.isBlank() && !"VND".equalsIgnoreCase(currCode)) {
+                    log.error("Currency code mismatch: expected VND, but got {}", currCode);
+                    throw new IllegalArgumentException("Currency code mismatch");
+                }
+
+                // 3. Verify amount: vnp_Amount equals Order.paidAmount (multiplied by 100)
+                String vnpAmountStr = params.get("vnp_Amount");
+                if (vnpAmountStr == null || vnpAmountStr.isEmpty()) {
+                    log.error("Missing vnp_Amount parameter in callback");
+                    throw new IllegalArgumentException("Missing amount parameter");
+                }
+                BigDecimal expectedAmount = order.getPaidAmount().multiply(new BigDecimal("100"));
+                BigDecimal receivedAmount = new BigDecimal(vnpAmountStr);
+                if (expectedAmount.compareTo(receivedAmount) != 0) {
+                    log.error("Amount mismatch: expected {}, but received {}", expectedAmount, receivedAmount);
+                    throw new IllegalArgumentException("Amount mismatch");
+                }
+
+                // 4. Verify the callback belongs to the configured VNPay merchant.
+                String expectedTmnCode = properties.getVnpay().getTmnCode();
+                String receivedTmnCode = params.get("vnp_TmnCode");
+                if (expectedTmnCode != null
+                        && !expectedTmnCode.isBlank()
+                        && !expectedTmnCode.equals(receivedTmnCode)) {
+                    log.error("VNPAY terminal code mismatch");
+                    throw new IllegalArgumentException("Terminal code mismatch");
+                }
+
+                // 5. VNPay is successful only when both official status fields are 00.
+                paymentSuccessful = "00".equals(params.get("vnp_ResponseCode"))
+                        && "00".equals(params.get("vnp_TransactionStatus"));
+            }
+
+        } catch (IllegalArgumentException ex) {
+            log.error("Validation error during webhook processing for order: " + orderCode, ex);
+            paymentSuccessful = false;
+            validationException = ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error during webhook processing for order: " + orderCode, ex);
+            paymentSuccessful = false;
+            validationException = new IllegalArgumentException("Unexpected webhook processing error", ex);
         }
 
         // Fetch Transaction
@@ -210,13 +227,16 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (transaction != null && transaction.getStatus() == TransactionStatus.SUCCESS) {
-            if (paymentSuccessful && order.getStatus() == OrderStatus.PENDING) {
+            if (paymentSuccessful) {
                 order.setStatus(OrderStatus.PAID);
                 orderRepository.save(order);
                 courseEnrollmentService.activateEnrollmentAfterVerifiedPayment(order, transaction);
                 log.info("Reconciled pending order {} from an existing successful transaction.", orderCode);
             } else {
                 log.info("Transaction for order {} already completed. Skipping.", orderCode);
+            }
+            if (validationException != null) {
+                throw validationException;
             }
             return;
         }
@@ -248,6 +268,10 @@ public class PaymentServiceImpl implements PaymentService {
                 transactionRepository.save(transaction);
             }
             notificationService.createPaymentFailedNotification(order);
+        }
+
+        if (validationException != null) {
+            throw validationException;
         }
     }
 

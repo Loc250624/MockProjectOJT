@@ -76,8 +76,14 @@
                                       th:action="@{'/student/blogs/' + ${blog.id} + '/submit'}"
                                       method="post"
                                       data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="blog-submit"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-current-status="${blog.status.name()}"
+                                      data-dialog-confirm-text="Submit for review"
+                                      data-dialog-cancel-text="Keep editing"
                                       style="display:inline;"
-                                      onsubmit="return confirm('Submit this blog for review?');">
+                                      >
                                     <button type="submit" class="btn btn-primary btn-sm">
                                         <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                                         <span>Submit for Review</span>

@@ -1229,6 +1229,22 @@ a { text-decoration: none; color: inherit; }
   overflow: hidden;
 }
 
+.course-duration-meta {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--lumina-gray-500);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.course-duration-meta .lumina-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
 .course-card .course-meta {
   display: flex;
   align-items: center;

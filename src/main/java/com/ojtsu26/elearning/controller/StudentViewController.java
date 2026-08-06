@@ -114,14 +114,9 @@ public class StudentViewController {
                 .map(e -> e.getCourse().getId())
                 .collect(java.util.stream.Collectors.toSet());
                 
-        // Fetch student's pending order course IDs in a single query
-        java.util.List<Integer> pendingCourseIds = orderRepository.findCourseIdsByStudentIdAndStatus(studentId, OrderStatus.PENDING);
-        
         coursePage.getContent().forEach(c -> {
             if (enrolledCourseIds.contains(c.getId())) {
                 c.setEnrollmentStatus("ENROLLED");
-            } else if (pendingCourseIds.contains(c.getId())) {
-                c.setEnrollmentStatus("PENDING");
             } else {
                 c.setEnrollmentStatus("NOT_ENROLLED");
             }
@@ -154,14 +149,27 @@ public class StudentViewController {
             }
             List<LessonResponseDTO> lessons = lessonService.findByCourseId(id, null);
             CourseEnrollmentStateResponseDTO enrollmentState = courseEnrollmentService.getCurrentStudentCourseState(id);
+            Integer firstPreviewLessonId = studentLearningService.getFirstPreviewableLessonId(id);
             model.addAttribute("course", course);
             model.addAttribute("lessons", lessons);
             model.addAttribute("enrollmentState", enrollmentState);
+            model.addAttribute("firstPreviewLessonId", firstPreviewLessonId);
             return "student/course-detail";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Course not found.");
             return "redirect:/student/courses";
         }
+    }
+
+    @GetMapping("/courses/{courseId}/preview")
+    public String previewCourseFirstLesson(@PathVariable Integer courseId,
+                                           RedirectAttributes redirectAttributes) {
+        Integer firstLessonId = studentLearningService.getFirstPreviewableLessonId(courseId);
+        if (firstLessonId == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No preview lesson available for this course.");
+            return "redirect:/student/courses/detail?id=" + courseId;
+        }
+        return "redirect:/student/learning?courseId=" + courseId + "&lessonId=" + firstLessonId;
     }
 
     @GetMapping("/my-courses")

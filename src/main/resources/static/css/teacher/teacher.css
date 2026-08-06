@@ -1944,6 +1944,46 @@ pre {
   gap: 1.25rem 1.5rem;
 }
 
+.video-metadata-status {
+  margin: -0.5rem 0 2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  color: var(--lumina-gray-600);
+  background: var(--lumina-gray-50);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.video-metadata-status.is-loading {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.video-metadata-status.is-ready {
+  border-color: #86efac;
+  color: #15803d;
+  background: #f0fdf4;
+}
+
+.video-metadata-status.is-error {
+  border-color: #fca5a5;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.video-duration-probe {
+  position: fixed;
+  left: -10000px;
+  top: -10000px;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .teacher-form-actions {
   display: flex;
   gap: 0.75rem;

@@ -676,7 +676,7 @@ pre {
 
 .learning-lesson-link {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: center;
   min-height: 58px;
@@ -735,6 +735,13 @@ pre {
   color: var(--lumina-gray-500);
   font-size: 0.74rem;
   font-weight: 700;
+}
+
+.learning-lesson-duration {
+  color: var(--lumina-gray-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .learning-content {
@@ -796,6 +803,22 @@ pre {
   border-radius: 8px;
   background: #0f172a;
   border: none;
+}
+
+.learning-video-progress {
+    height: 6px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--lumina-gray-200);
+}
+
+.learning-video-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--lumina-success);
+    transition: width 180ms ease;
 }
 
 .learning-video-missing,

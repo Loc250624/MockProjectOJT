@@ -58,6 +58,7 @@
                             <td data-label="ID" style="padding:0.875rem 1.25rem;font-size:0.8125rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${crs.id}"></td>
                             <td class="responsive-primary" data-label="Course" style="padding:0.875rem 1.25rem;">
                                 <div style="font-weight:600;color:var(--lumina-gray-900);font-size:0.875rem;" th:text="${crs.title}"></div>
+                                <div style="font-size:0.75rem;color:var(--lumina-gray-500);margin-top:2px;">Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></div>
                             </td>
                             <td data-label="Instructor" style="padding:0.875rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-700);"
                                 th:text="${crs.instructorId != null ? '#' + crs.instructorId : 'Unknown'}"></td>

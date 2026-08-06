@@ -75,6 +75,10 @@
                         </div>
                         <h3 class="course-name" th:text="${crs.title}">Course title</h3>
                         <p class="course-desc" th:text="${#strings.abbreviate(crs.description ?: 'Course details are available in the catalog.', 140)}">Course description</p>
+                        <div class="course-duration-meta">
+                            <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                            <span>Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></span>
+                        </div>
                         <div class="course-footer">
                             <span th:if="${crs.instructorName != null && !crs.instructorName.isEmpty()}" class="course-instructor" th:text="${crs.instructorName}">Instructor</span>
                             <span class="add-to-cart">

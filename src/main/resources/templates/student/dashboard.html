@@ -76,6 +76,10 @@
                                 <div class="pc-course-info">
                                     <div class="pc-title" th:text="${course.courseTitle}">Course title</div>
                                     <div class="pc-instructor" th:text="${course.instructorName ?: 'Unknown instructor'}">Instructor</div>
+                                    <div class="course-duration-meta" style="margin-top:0.25rem;">
+                                        <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                                        <span>Estimated duration: <strong th:text="${course.estimatedDurationDisplay}">45 mins</strong></span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="pc-progress">
