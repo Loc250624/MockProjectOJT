@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
@@ -79,14 +80,13 @@
                     </table>
                 </div>
 
-                <div style="padding:1rem 1.5rem;border-top:1px solid var(--lumina-gray-200);display:flex;justify-content:space-between;align-items:center;background:white;">
+                <div style="padding:1rem 1.5rem;border-top:1px solid var(--lumina-gray-200);display:flex;justify-content:space-between;align-items:center;background:var(--theme-surface);">
                     <span id="users-result-summary" style="font-size:0.8125rem;color:var(--lumina-gray-500);"></span>
                     <div id="users-pagination" class="pagination"></div>
                 </div>
             </div>
         </main>
 
-        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>
 
@@ -128,16 +128,18 @@
                 <div class="form-group">
                     <label class="form-label" for="create-user-password">Temporary Password</label>
                     <input id="create-user-password" name="password" class="form-control" type="password"
-                           minlength="6" maxlength="72" autocomplete="new-password" required>
+                           minlength="8" maxlength="72" autocomplete="new-password"
+                           title="Use 8–72 characters with lowercase, uppercase, number, special character, and no spaces"
+                           required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="create-user-confirm-password">Confirm Password</label>
                     <input id="create-user-confirm-password" name="confirmPassword" class="form-control" type="password"
-                           minlength="6" maxlength="72" autocomplete="new-password" required>
+                           minlength="8" maxlength="72" autocomplete="new-password" required>
                 </div>
             </div>
 
-            <p class="admin-user-form-note">The account uses email and password sign-in, starts as Active, and can sign in immediately.</p>
+            <p class="admin-user-form-note">Use 8–72 characters with lowercase, uppercase, number, special character, and no spaces. The account starts as Active.</p>
 
             <div class="admin-user-form-actions">
                 <button type="button" class="btn btn-secondary" data-create-user-close>Cancel</button>

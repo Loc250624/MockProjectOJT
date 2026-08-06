@@ -16,7 +16,6 @@ class CourseEnrollmentFrontendTemplateTest {
 
         assertTrue(template.contains("Enroll for free"));
         assertTrue(template.contains("Buy course"));
-        assertTrue(template.contains("Payment pending"));
         assertTrue(template.contains("Continue learning"));
         assertTrue(template.contains("Course unavailable"));
         assertTrue(template.contains("data-enrollment-action=\"free\""));
@@ -136,8 +135,9 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(attemptScript.contains("nextState === 'saving'"));
         assertTrue(attemptScript.contains("'/draft'"));
         assertTrue(attemptScript.contains("'/submit'"));
-        assertTrue(attemptScript.contains(
-                "window.confirm('Submit this quiz? You cannot edit it after submission.')"));
+        assertTrue(attemptScript.contains("LuminaActionDialog.presets.quizSubmit"));
+        assertTrue(overviewScript.contains("LuminaActionDialog.presets.quizStart"));
+        assertFalse(attemptScript.contains("window.confirm("));
         assertTrue(attemptScript.contains("function firstUnansweredIndex()"));
         assertTrue(attemptScript.contains("function initCountdown()"));
         assertTrue(attemptScript.contains("submitQuiz(true)"));

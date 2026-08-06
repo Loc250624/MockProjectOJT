@@ -24,4 +24,8 @@ public class LessonResponseDTO {
 
     private Boolean hasQuiz;
 
+    private Integer videoDurationSeconds;
+
+    private String videoDurationDisplay;
+
 }

@@ -86,7 +86,8 @@ class UserServiceImplTest {
     void updateCurrentProfileAllowsLocalEmailChange() {
         User user = localUser();
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCaseAndIdNot("new@example.com", 1)).thenReturn(false);
+        when(userRepository.existsByAuthProviderAndEmailIgnoreCaseAndIdNot(
+                AuthProvider.LOCAL, "new@example.com", 1)).thenReturn(false);
         when(userRepository.save(user)).thenReturn(user);
 
         UserResponseDTO profile = userService.updateCurrentProfile(1, request("Alex Johnson", "  NEW@Example.COM  "));
@@ -99,7 +100,8 @@ class UserServiceImplTest {
     void updateCurrentProfileRejectsDuplicateEmail() {
         User user = localUser();
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCaseAndIdNot("taken@example.com", 1)).thenReturn(true);
+        when(userRepository.existsByAuthProviderAndEmailIgnoreCaseAndIdNot(
+                AuthProvider.LOCAL, "taken@example.com", 1)).thenReturn(true);
 
         assertThatThrownBy(() -> userService.updateCurrentProfile(1, request("Alex Johnson", "taken@example.com")))
                 .isInstanceOf(BusinessException.class)

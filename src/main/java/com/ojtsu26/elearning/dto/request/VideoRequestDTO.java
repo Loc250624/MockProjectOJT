@@ -16,8 +16,8 @@ public class VideoRequestDTO {
     )
     private String videoUrl;
 
-    @NotNull(message = "Duration in seconds is required")
-    @Min(value = 1, message = "Duration must be at least 1 second")
+    @NotNull(message = "Video duration could not be detected")
+    @Min(value = 1, message = "Detected video duration must be at least 1 second")
     private Integer durationSeconds;
 
     @NotNull(message = "Lesson ID is required")

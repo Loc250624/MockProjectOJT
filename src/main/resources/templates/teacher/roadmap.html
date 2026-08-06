@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -76,7 +77,16 @@
                                        class="btn btn-secondary btn-sm"
                                        th:id="'btn-edit-rdm-' + ${rdm.id}">Edit</a>
                                     <form th:action="@{'/teacher/roadmap/delete/' + ${rdm.id}}" method="post" style="display:inline;"
-                                          onsubmit="return confirm('Are you sure you want to delete this roadmap?');">
+                                          data-lumina-confirm
+                                          data-dialog-preset="danger"
+                                          data-dialog-title="Delete this roadmap?"
+                                          data-dialog-object-label="Roadmap"
+                                          th:data-dialog-object="${rdm.title}"
+                                          data-dialog-notice-title="This roadmap will be removed"
+                                          data-dialog-notice-text="Students and teachers will no longer be able to use this learning path."
+                                          data-dialog-require-acknowledgement="true"
+                                          data-dialog-confirm-text="Delete roadmap"
+                                          data-dialog-cancel-text="Keep roadmap">
                                         <button type="submit" class="btn btn-sm"
                                                 style="background:var(--lumina-danger-bg);color:var(--lumina-danger);border:1px solid #fca5a5;"
                                                 th:id="'btn-delete-rdm-' + ${rdm.id}">Delete</button>
@@ -94,7 +104,6 @@
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

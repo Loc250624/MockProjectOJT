@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/public/public.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
@@ -156,25 +157,6 @@
 
                     <section class="feedback-panel feedback-text-panel">
                         <div class="feedback-field">
-                            <label class="form-label" for="feedback-subject">Subject <span aria-hidden="true">*</span></label>
-                            <input id="feedback-subject"
-                                   class="form-control"
-                                   type="text"
-                                   th:field="*{subject}"
-                                   maxlength="150"
-                                   placeholder="Brief summary"
-                                   autocomplete="off"
-                                   required
-                                   data-character-count="feedback-subject-count">
-                            <div class="field-meta">
-                                <span class="inline-error"
-                                      th:if="${#fields.hasErrors('subject')}"
-                                      th:errors="*{subject}">Subject error</span>
-                                <span id="feedback-subject-count" class="character-count">0/150</span>
-                            </div>
-                        </div>
-
-                        <div class="feedback-field">
                             <label class="form-label" for="feedback-content">Message <span aria-hidden="true">*</span></label>
                             <textarea id="feedback-content"
                                       class="form-control feedback-message"
@@ -204,7 +186,6 @@
         </section>
 </main>
 
-<footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script th:src="@{/js/public/public.js}"></script>
 <script>

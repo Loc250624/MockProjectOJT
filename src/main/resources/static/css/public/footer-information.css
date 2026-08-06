@@ -143,7 +143,13 @@
         padding-block: 2rem 3rem;
     }
 
-    .footer-info-section {
+  .footer-info-section {
         padding: 1.15rem;
     }
+}
+
+html[data-theme="dark"] .footer-info-actions {
+  color: var(--theme-text);
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
 }

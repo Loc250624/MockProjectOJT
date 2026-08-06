@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.service.impl;
 
+import com.ojtsu26.elearning.dto.request.ChangePasswordRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.ProfileOverviewResponseDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
@@ -24,8 +25,10 @@ import com.ojtsu26.elearning.service.AvatarStorageService;
 import com.ojtsu26.elearning.service.CurrentUserService;
 import com.ojtsu26.elearning.service.ExternalImageService;
 import com.ojtsu26.elearning.service.ProfileService;
+import com.ojtsu26.elearning.validation.PasswordPolicy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,6 +58,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final LessonProgressRepository lessonProgressRepository;
     private final CertificateRepository certificateRepository;
     private final SubmissionRepository submissionRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponseDTO getCurrentProfile() {
@@ -84,13 +88,47 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         if (!normalizedEmail.equalsIgnoreCase(user.getEmail())
-                && userRepository.existsByEmailIgnoreCaseAndIdNot(normalizedEmail, user.getId())) {
+                && userRepository.existsByAuthProviderAndEmailIgnoreCaseAndIdNot(
+                        user.getAuthProvider(), normalizedEmail, user.getId())) {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         user.setFullName(request.getFullName().trim());
         user.setEmail(normalizedEmail);
         return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public void changeCurrentPassword(ChangePasswordRequestDTO request) {
+        User user = currentUserService.getCurrentUser();
+
+        String storedHash = user.getPasswordHash();
+        if (user.getAuthProvider() != AuthProvider.LOCAL
+                || storedHash == null
+                || storedHash.isBlank()) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_NOT_AVAILABLE);
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), storedHash)) {
+            throw new BusinessException(ErrorCode.CURRENT_PASSWORD_INCORRECT);
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_CONFIRMATION_MISMATCH);
+        }
+
+        if (!PasswordPolicy.isStrong(request.getNewPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
+        }
+
+        if (request.getNewPassword().equals(request.getCurrentPassword())
+                || passwordEncoder.matches(request.getNewPassword(), storedHash)) {
+            throw new BusinessException(ErrorCode.NEW_PASSWORD_REUSED);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Override

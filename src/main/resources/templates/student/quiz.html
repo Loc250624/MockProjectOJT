@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${quiz.title + ' - LumiNa'}">Quiz - LumiNa</title>
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
 </head>
@@ -14,7 +15,9 @@
                data-lesson-id=${quiz.lessonId},
                data-quiz-mode=${attempt.status.name() == 'DRAFT' ? 'active' : 'submitted'},
                data-remaining-seconds=${attempt.remainingSeconds},
-               data-duration-minutes=${quiz.durationMinutes}">
+               data-duration-minutes=${quiz.durationMinutes},
+               data-question-count=${#lists.size(quiz.questions)},
+               data-passing-score=${quiz.passingScore}">
 <header class="dedicated-quiz-header">
     <div class="dedicated-quiz-heading">
         <a th:href="@{/student/dashboard}" class="learning-brand" aria-label="LumiNa student dashboard">
@@ -28,6 +31,7 @@
         </div>
     </div>
     <div class="dedicated-quiz-header-actions">
+        <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
         <span class="dedicated-quiz-time-limit"
               id="quiz-countdown"
               role="timer"
@@ -47,6 +51,7 @@
                 th:if="${attempt.status.name() == 'DRAFT'}">
             Submit Quiz
         </button>
+        <a th:replace="~{fragments/layout :: private-user-chip('/student/profile', 'Student', 'STUDENT')}"></a>
     </div>
 </header>
 
@@ -147,11 +152,9 @@
     </section>
 </main>
 
-<footer class="dedicated-quiz-footer">
-    <span>&copy; LumiNa Academic Systems</span>
-    <a th:href="@{/student/learning(courseId=${quiz.courseId},lessonId=${quiz.lessonId})}">Return to lesson</a>
-</footer>
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+<script th:src="@{/js/theme.js}" defer></script>
+<th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
 <script th:src="@{/js/student/student.js}"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/public/public.css}">
     <style>
@@ -35,6 +36,13 @@
                 <span th:text="${course.categoryName}" style="color:rgba(255,255,255,0.6);">Computer Science</span>
             </div>
             <h1 style="font-family:'Playfair Display',serif; font-style:italic; font-size:2.25rem; color:white; margin:0.5rem 0;" th:text="${course.title}">Course Title</h1>
+            <div class="course-duration-meta" style="margin-top:0.5rem;color:rgba(255,255,255,0.8);">
+                <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                <span>Estimated duration: <strong data-course-duration-display
+                                                  th:data-course-id="${course.id}"
+                                                  th:data-duration-seconds="${course.estimatedDurationSeconds}"
+                                                  th:text="${course.estimatedDurationDisplay}" style="color:white;">45 mins</strong></span>
+            </div>
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:0.75rem; font-size:0.875rem; color:rgba(255,255,255,0.75);">
                 <span>👤 Instructor: <strong th:text="${course.instructorName}" style="color:white;">Instructor</strong></span>
                 <span>🏷️ Category: <strong th:text="${course.categoryName}" style="color:white;">Category</strong></span>
@@ -47,26 +55,29 @@
 <main class="main-content-full" style="max-width:1200px; margin:2rem auto; padding:0 2rem; display:grid; grid-template-columns:1fr 340px; gap:2rem;">
     <!-- Left Column: Course Detail -->
     <div>
-        <div style="background:white; border:1px solid var(--lumina-gray-200); border-radius:14px; padding:2rem; margin-bottom:1.5rem;">
+        <div style="background:var(--theme-surface); border:1px solid var(--lumina-gray-200); border-radius:14px; padding:2rem; margin-bottom:1.5rem;">
             <h2 style="font-weight:700; font-size:1.25rem; color:var(--lumina-gray-800); margin-bottom:1rem; border-bottom:2px solid var(--lumina-blue); padding-bottom:0.5rem; display:inline-block;">About This Course</h2>
             <p style="color:var(--lumina-gray-600); line-height:1.7; font-size:0.9375rem; white-space:pre-line;" th:text="${course.description}">Course description goes here.</p>
         </div>
 
-        <div style="background:white; border:1px solid var(--lumina-gray-200); border-radius:14px; padding:2rem;">
+        <div style="background:var(--theme-surface); border:1px solid var(--lumina-gray-200); border-radius:14px; padding:2rem;">
             <h2 style="font-weight:700; font-size:1.25rem; color:var(--lumina-gray-800); margin-bottom:1rem; border-bottom:2px solid var(--lumina-blue); padding-bottom:0.5rem; display:inline-block;">Course Curriculum</h2>
             <p style="font-size:0.875rem; color:var(--lumina-gray-500); margin-bottom:1.5rem;" th:text="${#lists.size(lessons)} + ' lessons total'"></p>
 
             <div style="list-style:none; padding-left:0;">
-                <div th:each="lsn : ${lessons}" style="padding:1rem; border:1px solid var(--lumina-gray-200); border-radius:10px; margin-bottom:0.75rem; display:flex; align-items:center; gap:1rem; background:white; transition:background 0.2s;">
+                <div th:each="lsn : ${lessons}" style="padding:1rem; border:1px solid var(--lumina-gray-200); border-radius:10px; margin-bottom:0.75rem; display:flex; align-items:center; gap:1rem; background:var(--theme-surface); transition:background 0.2s;">
                     <div class="lesson-icon"
                          th:classappend="${lsn.type.name() == 'VIDEO' ? 'lesson-video' : (lsn.type.name() == 'QUIZ' ? 'lesson-quiz' : 'lesson-read')}">
                         <span th:if="${lsn.type.name() == 'VIDEO'}">▶</span>
                         <span th:if="${lsn.type.name() == 'QUIZ'}">✏</span>
                     </div>
-                    <div style="flex:1;">
+                    <div style="flex:1;min-width:0;">
                         <div style="font-size:0.9375rem; font-weight:700; color:var(--lumina-gray-800);" th:text="${lsn.orderIndex} + '. ' + ${lsn.title}">1. Lesson Title</div>
-                        <div style="font-size:0.75rem; color:var(--lumina-gray-400); margin-top:2px;" th:text="${lsn.type.name()} + ' LESSON (Metadata only)'">VIDEO</div>
+                        <div style="font-size:0.75rem; color:var(--lumina-gray-400); margin-top:2px;" th:text="${lsn.type.name()} + ' LESSON'">VIDEO LESSON</div>
                     </div>
+                    <span th:if="${lsn.type.name() == 'VIDEO'}"
+                          style="margin-left:auto;white-space:nowrap;color:var(--lumina-gray-500);font-size:0.8125rem;font-weight:600;"
+                          th:text="${lsn.videoDurationDisplay == null ? 'Duration unavailable' : lsn.videoDurationDisplay}">12 mins</span>
                 </div>
                 <div th:if="${#lists.isEmpty(lessons)}" style="text-align:center; padding:2rem; color:var(--lumina-gray-400); font-style:italic;">
                     No lessons have been added to this course curriculum yet.
@@ -77,7 +88,7 @@
 
     <!-- Right Column: Enrollment Widget -->
     <div>
-        <div style="background:white; border-radius:14px; border:1px solid var(--lumina-gray-200); padding:1.5rem; box-shadow:var(--shadow-md); position:sticky; top:20px;">
+        <div style="background:var(--theme-surface); border-radius:14px; border:1px solid var(--lumina-gray-200); padding:1.5rem; box-shadow:var(--shadow-md); position:sticky; top:20px;">
             <div style="font-size:2rem; font-weight:800; color:var(--lumina-blue);" th:text="${course.price == null || course.price.signum() == 0 ? 'Free' : '$' + #numbers.formatDecimal(course.price, 1, 'COMMA', 2, 'POINT')}">$199.00</div>
             <p style="font-size:0.75rem; color:var(--lumina-danger); font-weight:600; margin-top:2px;">⏰ Special pricing available</p>
 
@@ -89,7 +100,6 @@
                 <a th:if="${enrollmentState != null && enrollmentState.action == 'CONTINUE_LEARNING'}" th:href="@{/student/learning(courseId=${course.id})}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-success); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Continue learning</a>
                 <a th:if="${enrollmentState != null && enrollmentState.action == 'ENROLL_FREE'}" th:href="@{/student/courses/detail(id=${course.id})}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-success); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Enroll for free</a>
                 <a th:if="${enrollmentState != null && enrollmentState.action == 'BUY_COURSE'}" th:href="@{/student/checkout(courseId=${course.id})}" class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-success); color:white; border-radius:10px; font-weight:700; font-size:1rem;">Buy course</a>
-                <button th:if="${enrollmentState != null && enrollmentState.action == 'PAYMENT_PENDING'}" disabled class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-gray-400); color:white; border-radius:10px; font-weight:700; font-size:1rem; cursor:not-allowed; border:none; width:100%;">Payment pending</button>
                 <button th:if="${enrollmentState != null && enrollmentState.action == 'UNAVAILABLE'}" disabled class="btn-enroll" style="display:block; text-align:center; text-decoration:none; margin-top:1rem; padding:0.875rem; background:var(--lumina-gray-400); color:white; border-radius:10px; font-weight:700; font-size:1rem; cursor:not-allowed; border:none; width:100%;">Course unavailable</button>
             </th:block>
             

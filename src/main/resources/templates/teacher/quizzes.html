@@ -6,6 +6,7 @@
     <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
     <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}">
     <title>Lesson Quizzes - Teacher Portal | LumiNa</title>
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -247,6 +248,7 @@
     </div>
 </div>
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
+<th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
 <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

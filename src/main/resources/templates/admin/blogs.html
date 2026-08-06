@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
@@ -71,24 +72,42 @@
                         <td style="padding:1rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-600);"
                             th:text="${blog.updatedAt == null ? 'Unknown' : #temporals.format(blog.updatedAt, 'dd/MM/yyyy HH:mm')}">Updated</td>
                         <td style="padding:1rem 1.25rem;min-width:240px;">
-                            <details th:if="${blog.status.name() != 'HIDDEN' && blog.status.name() != 'ARCHIVED'}" style="margin-bottom:0.5rem;">
-                                <summary class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer;">Hide</summary>
-                                <form th:action="@{'/admin/blogs/hide/' + ${blog.id}}" method="post" data-loading-form style="margin-top:0.5rem;">
-                                    <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for hiding"
-                                              style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="btn btn-secondary btn-sm" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Hide this blog from public pages?');">Confirm Hide</button>
+                            <div class="table-action-cell admin-blog-actions">
+                                <form th:if="${blog.status.name() != 'HIDDEN' && blog.status.name() != 'ARCHIVED'}"
+                                      th:action="@{'/admin/blogs/hide/' + ${blog.id}}" method="post" data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="danger"
+                                      data-dialog-title="Hide this blog?"
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      th:data-dialog-current-status="${blog.status.name()}"
+                                      data-dialog-next-status="HIDDEN"
+                                      data-dialog-notice-title="The blog will leave public pages"
+                                      data-dialog-notice-text="Moderation history and the original content will remain available to administrators."
+                                      data-dialog-confirm-text="Hide blog"
+                                      data-dialog-cancel-text="Keep visible">
+                                    <input type="hidden" name="reason" value="Hidden by administrator.">
+                                    <button type="submit" class="btn btn-secondary btn-sm">Hide</button>
                                 </form>
-                            </details>
-                            <details th:if="${blog.status.name() != 'ARCHIVED'}">
-                                <summary class="btn btn-danger btn-sm" style="display:inline-flex;cursor:pointer;">Archive</summary>
-                                <form th:action="@{'/admin/blogs/archive/' + ${blog.id}}" method="post" data-loading-form style="margin-top:0.5rem;">
-                                    <textarea name="reason" rows="2" maxlength="1000" required placeholder="Reason for archiving"
-                                              style="width:100%;padding:0.5rem;border:1px solid var(--lumina-gray-300);border-radius:6px;font-size:0.8125rem;font-family:inherit;"></textarea>
-                                    <button type="submit" class="btn btn-danger btn-sm" style="margin-top:0.4rem;"
-                                            onclick="return confirm('Archive this blog?');">Confirm Archive</button>
+                                <form th:if="${blog.status.name() != 'ARCHIVED'}"
+                                      th:action="@{'/admin/blogs/archive/' + ${blog.id}}" method="post" data-loading-form
+                                      data-lumina-confirm
+                                      data-dialog-preset="danger"
+                                      data-dialog-title="Archive this blog?"
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      th:data-dialog-current-status="${blog.status.name()}"
+                                      data-dialog-next-status="ARCHIVED"
+                                      data-dialog-notice-title="The blog will move to the archive"
+                                      data-dialog-notice-text="Archived content will no longer appear in active moderation or public views."
+                                      data-dialog-confirm-text="Archive blog"
+                                      data-dialog-cancel-text="Keep blog">
+                                    <input type="hidden" name="reason" value="Archived by administrator.">
+                                    <button type="submit" class="btn btn-danger btn-sm">Archive</button>
                                 </form>
-                            </details>
+                            </div>
                             <span th:if="${blog.status.name() == 'ARCHIVED'}" style="font-size:0.8125rem;color:var(--lumina-gray-500);">Archived</span>
                         </td>
                     </tr>
@@ -102,7 +121,6 @@
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -37,7 +38,7 @@
             <div class="admin-table-container" style="padding:1.5rem;margin-bottom:1.5rem;">
                 <p style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.75rem;">Step 1 — Select a Course</p>
                 <form action="/teacher/videos" method="get" style="display:flex;gap:1rem;align-items:center;">
-                    <select name="courseId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:#fff;">
+                    <select name="courseId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:var(--theme-input);">
                         <option value="">-- Select a Course --</option>
                         <option th:each="crs : ${courses}" th:value="${crs.id}" th:text="${crs.title}" th:selected="${crs.id == selectedCourseId}"></option>
                     </select>
@@ -49,7 +50,7 @@
                 <p style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.75rem;">Step 2 — Select a Lesson</p>
                 <form action="/teacher/videos" method="get" style="display:flex;gap:1rem;align-items:center;">
                     <input type="hidden" name="courseId" th:value="${selectedCourseId}" />
-                    <select name="lessonId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:#fff;">
+                    <select name="lessonId" onchange="this.form.submit()" style="flex:1;padding:0.65rem 1rem;border:1px solid var(--lumina-gray-300);border-radius:8px;font-size:0.9375rem;color:var(--lumina-gray-800);background:var(--theme-input);">
                         <option value="">-- Select a Lesson --</option>
                         <option th:each="lsn : ${lessons}" th:value="${lsn.id}" th:text="${lsn.orderIndex + '. ' + lsn.title}" th:selected="${lsn.id == selectedLessonId}"></option>
                     </select>
@@ -70,7 +71,16 @@
                             <a th:href="@{'/teacher/videos/edit/' + ${video.id} + '?lessonId=' + ${selectedLessonId} + '&courseId=' + ${selectedCourseId}}"
                                class="btn btn-secondary btn-sm">Edit Video</a>
                             <form th:action="@{'/teacher/videos/delete/' + ${video.id}}" method="post"
-                                  onsubmit="return confirm('Delete this video? This cannot be undone.');">
+                                  data-lumina-confirm
+                                  data-dialog-preset="danger"
+                                  data-dialog-title="Delete this video?"
+                                  data-dialog-object-label="Lesson video"
+                                  th:data-dialog-object="${selectedLesson != null ? selectedLesson.title : 'Selected video'}"
+                                  data-dialog-notice-title="The video attachment will be removed"
+                                  data-dialog-notice-text="Learners will no longer be able to watch this video from the lesson."
+                                  data-dialog-require-acknowledgement="true"
+                                  data-dialog-confirm-text="Delete video"
+                                  data-dialog-cancel-text="Keep video">
                                 <input type="hidden" name="lessonId" th:value="${selectedLessonId}" />
                                 <input type="hidden" name="courseId" th:value="${selectedCourseId}" />
                                 <button type="submit" class="btn btn-sm"
@@ -86,12 +96,6 @@
                             <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">Video URL</div>
                             <a th:href="${video.videoUrl}" target="_blank" rel="noopener"
                                style="font-size:0.875rem;color:var(--lumina-blue);word-break:break-all;" th:text="${video.videoUrl}"></a>
-                            <div style="margin-top:0.75rem;display:flex;gap:1.5rem;">
-                                <span style="font-size:0.8125rem;color:var(--lumina-gray-500);">
-                                    ⏱ Duration:
-                                    <strong th:text="${video.durationSeconds != null ? video.durationSeconds + ' seconds' : 'N/A'}"></strong>
-                                </span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -121,7 +125,6 @@
 
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.dto.request;
 
 import com.ojtsu26.elearning.model.enums.Role;
+import com.ojtsu26.elearning.validation.StrongPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +22,7 @@ public class AdminCreateUserRequestDTO {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 72, message = "Password must be between 6 and 72 characters")
+    @StrongPassword
     @ToString.Exclude
     private String password;
 

@@ -4,6 +4,7 @@ import com.ojtsu26.elearning.model.enums.LessonType;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -21,9 +22,11 @@ public class StudentLearningLessonDTO {
     private Boolean videoPlayable;
     private String videoUnavailableReason;
     private Integer videoDurationSeconds;
+    private String videoDurationDisplay;
     private Integer watchedSeconds;
     private Integer lastPositionSeconds;
     private Integer maxReachedSeconds;
+    private BigDecimal videoProgressPercentage;
     private Integer previousLessonId;
     private Integer nextLessonId;
     private Boolean nextLessonAccessible;
@@ -33,6 +36,8 @@ public class StudentLearningLessonDTO {
     private Boolean locked;
     private String lockReason;
     private Boolean completed;
+    private Boolean previewMode;
+    private Integer previewPercentLimit;
     private LearningProgressDTO courseProgress;
     private List<StudentLearningResourceDTO> resources;
 }

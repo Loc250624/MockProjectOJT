@@ -13,8 +13,6 @@ public class StudentFeedbackRequestDTO {
 
     private FeedbackCategory category;
 
-    @NotBlank(message = "Subject is required")
-    @Size(max = 150, message = "Subject must not exceed 150 characters")
     private String subject;
 
     @NotBlank(message = "Content is required")

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="luminaActionDialog">
+    <dialog id="luminaActionDialog"
+            class="lumina-action-dialog"
+            data-variant="info"
+            data-size="regular"
+            aria-labelledby="luminaActionDialogTitle"
+            aria-describedby="luminaActionDialogDescription">
+        <div class="lumina-action-dialog__shell">
+            <div class="lumina-action-dialog__accent" aria-hidden="true"></div>
+
+            <header class="lumina-action-dialog__header">
+                <div class="lumina-action-dialog__visual" data-lumina-dialog-icon aria-hidden="true"></div>
+                <div class="lumina-action-dialog__heading-copy">
+                    <div class="lumina-action-dialog__heading-row">
+                        <p class="lumina-action-dialog__eyebrow" data-lumina-dialog-eyebrow>Confirmation</p>
+                        <span class="lumina-action-dialog__badge" data-lumina-dialog-badge hidden></span>
+                    </div>
+                    <h2 id="luminaActionDialogTitle"
+                        class="lumina-action-dialog__title"
+                        data-lumina-dialog-title>
+                        Please confirm this action
+                    </h2>
+                    <p id="luminaActionDialogDescription"
+                       class="lumina-action-dialog__subtitle"
+                       data-lumina-dialog-subtitle></p>
+                </div>
+                <button type="button"
+                        class="lumina-action-dialog__close"
+                        data-lumina-dialog-close
+                        aria-label="Close dialog">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18"></path>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="lumina-action-dialog__body">
+                <section class="lumina-action-dialog__object" data-lumina-dialog-object-wrap hidden>
+                    <span class="lumina-action-dialog__object-label" data-lumina-dialog-object-label>Selected item</span>
+                    <strong class="lumina-action-dialog__object-value" data-lumina-dialog-object></strong>
+                </section>
+
+                <dl class="lumina-action-dialog__summary" data-lumina-dialog-summary hidden></dl>
+
+                <section class="lumina-action-dialog__notice" data-lumina-dialog-notice hidden>
+                    <div class="lumina-action-dialog__notice-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 8v5m0 3h.01M10.3 3.8L2.8 17a2 2 0 001.74 3h14.92A2 2 0 0021.2 17L13.7 3.8a2 2 0 00-3.4 0z"></path></svg>
+                    </div>
+                    <div>
+                        <strong data-lumina-dialog-notice-title></strong>
+                        <p data-lumina-dialog-notice-text></p>
+                    </div>
+                </section>
+
+                <ul class="lumina-action-dialog__checklist" data-lumina-dialog-checklist hidden></ul>
+
+                <label class="lumina-action-dialog__acknowledgement"
+                       data-lumina-dialog-acknowledgement-wrap
+                       hidden>
+                    <input type="checkbox" data-lumina-dialog-acknowledgement>
+                    <span class="lumina-action-dialog__checkbox" aria-hidden="true">
+                        <svg viewBox="0 0 16 16"><path d="M3.2 8.2l3 3 6.6-6.6"></path></svg>
+                    </span>
+                    <span data-lumina-dialog-acknowledgement-label></span>
+                </label>
+
+                <p class="lumina-action-dialog__error"
+                   data-lumina-dialog-error
+                   role="alert"
+                   hidden></p>
+                <p class="lumina-action-dialog__status"
+                   data-lumina-dialog-status
+                   aria-live="polite"></p>
+            </div>
+
+            <footer class="lumina-action-dialog__footer">
+                <button type="button"
+                        class="lumina-action-dialog__button lumina-action-dialog__button--secondary"
+                        data-lumina-dialog-cancel>
+                    Cancel
+                </button>
+                <button type="button"
+                        class="lumina-action-dialog__button lumina-action-dialog__button--primary"
+                        data-lumina-dialog-submit>
+                    <span class="lumina-action-dialog__spinner" aria-hidden="true"></span>
+                    <span data-lumina-dialog-submit-text>Confirm</span>
+                    <svg class="lumina-action-dialog__button-arrow" viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M4 10h12m-4-4l4 4-4 4"></path>
+                    </svg>
+                </button>
+            </footer>
+        </div>
+    </dialog>
+</div>
+</body>
+</html>

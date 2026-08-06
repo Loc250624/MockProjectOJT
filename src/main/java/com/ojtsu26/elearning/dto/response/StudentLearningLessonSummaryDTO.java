@@ -19,4 +19,5 @@ public class StudentLearningLessonSummaryDTO {
     private String lockReason;
     private Integer watchedSeconds;
     private Integer videoDurationSeconds;
+    private String videoDurationDisplay;
 }

@@ -355,6 +355,11 @@ function initUserAdministration() {
         }
 
         var form = elements.createForm.elements;
+        if (!isStrongPassword(form.password.value)) {
+            setCreateError('Password must be 8–72 characters and include lowercase, uppercase, number, and special character without spaces.');
+            form.password.focus();
+            return;
+        }
         if (form.password.value !== form.confirmPassword.value) {
             setCreateError('Passwords do not match.');
             form.confirmPassword.focus();
@@ -404,6 +409,17 @@ function initUserAdministration() {
                 state.creating = false;
                 setCreateFormBusy(false);
             });
+    }
+
+    function isStrongPassword(value) {
+        return typeof value === 'string'
+            && value.length >= 8
+            && value.length <= 72
+            && /[a-z]/.test(value)
+            && /[A-Z]/.test(value)
+            && /\d/.test(value)
+            && /[^A-Za-z0-9\s]/.test(value)
+            && !/\s/.test(value);
     }
 
     function setCreateFormBusy(busy) {
@@ -593,61 +609,70 @@ function initUserAdministration() {
         }
         var shouldUnblock = user.status === 'BLOCKED';
         var action = shouldUnblock ? 'unblock' : 'block';
-        var confirmMessage = shouldUnblock
-            ? 'Unblock this user account?'
-            : 'Block this user account?';
 
         if (Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId) {
             setFeedback('You cannot modify your own admin account.', false);
             return;
         }
-        if (!window.confirm(confirmMessage)) {
-            return;
-        }
-
-        state.pendingStatusUserId = user.id;
-        renderStatusAction(user);
-        setFeedback('', false);
-        setError('');
-
-        fetch('/api/admin/users/' + encodeURIComponent(user.id) + '/' + action, {
-            method: 'PATCH',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-            .then(function(response) {
-                return response.json().catch(function() {
-                    return { message: 'Unable to update user account.' };
-                }).then(function(apiResponse) {
-                    if (!response.ok) {
-                        throw new Error(apiResponse.message || 'Unable to update user account.');
-                    }
-                    return apiResponse;
-                });
-            })
-            .then(function(apiResponse) {
-                var updatedUser = apiResponse.data;
-                state.users = state.users.map(function(item) {
-                    return item.id === updatedUser.id ? updatedUser : item;
-                });
-                state.selectedUser = updatedUser;
-                renderUsers(state.users);
-                openUserPanel(updatedUser);
-                setFeedback(apiResponse.message || 'User account updated successfully.', true);
-            })
-            .catch(function(error) {
-                setFeedback(error.message || 'Unable to update user account.', false);
+        LuminaActionDialog.open({
+            variant: 'warning',
+            icon: 'user',
+            eyebrow: 'Account governance',
+            badge: shouldUnblock ? 'Restore access' : 'Restrict access',
+            title: shouldUnblock ? 'Unblock this user account?' : 'Block this user account?',
+            subtitle: shouldUnblock
+                ? 'The user will be able to sign in and access authorized features again.'
+                : 'The user will no longer be able to sign in until an administrator unblocks the account.',
+            objectLabel: 'User',
+            objectName: user.fullName || user.email || ('User #' + user.id),
+            summary: [
+                { label: 'Email', value: user.email || 'Not available' },
+                { label: 'Current status', value: user.status },
+                { label: 'New status', value: shouldUnblock ? 'ACTIVE' : 'BLOCKED' }
+            ],
+            confirmText: shouldUnblock ? 'Unblock account' : 'Block account',
+            cancelText: 'Keep current status',
+            loadingText: shouldUnblock ? 'Unblocking account...' : 'Blocking account...',
+            onConfirm: function () {
+                state.pendingStatusUserId = user.id;
                 renderStatusAction(user);
-            })
-            .finally(function() {
-                state.pendingStatusUserId = null;
-                if (state.selectedUser) {
-                    renderStatusAction(state.selectedUser);
-                    renderDeleteAction(state.selectedUser);
-                }
-            });
+                setFeedback('', false);
+                setError('');
+                return fetch('/api/admin/users/' + encodeURIComponent(user.id) + '/' + action, {
+                    method: 'PATCH',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                }).then(function(response) {
+                    return response.json().catch(function() {
+                        return { message: 'Unable to update user account.' };
+                    }).then(function(apiResponse) {
+                        if (!response.ok) {
+                            throw new Error(apiResponse.message || 'Unable to update user account.');
+                        }
+                        return apiResponse;
+                    });
+                }).then(function(apiResponse) {
+                    var updatedUser = apiResponse.data;
+                    state.users = state.users.map(function(item) {
+                        return item.id === updatedUser.id ? updatedUser : item;
+                    });
+                    state.selectedUser = updatedUser;
+                    renderUsers(state.users);
+                    openUserPanel(updatedUser);
+                    setFeedback(apiResponse.message || 'User account updated successfully.', true);
+                }).catch(function(error) {
+                    setFeedback(error.message || 'Unable to update user account.', false);
+                    renderStatusAction(user);
+                    throw error;
+                }).finally(function() {
+                    state.pendingStatusUserId = null;
+                    if (state.selectedUser) {
+                        renderStatusAction(state.selectedUser);
+                        renderDeleteAction(state.selectedUser);
+                    }
+                });
+            }
+        });
     }
 
     function softDeleteSelectedUser() {
@@ -661,55 +686,71 @@ function initUserAdministration() {
             setFeedback('This account has already been soft-deleted.', false);
             return;
         }
-        if (!window.confirm('Soft-delete this account? The user will no longer be able to log in, but course history, payments, blogs, comments, and other historical data will be retained.')) {
-            return;
-        }
-
-        state.pendingDeleteUserId = user.id;
-        renderDeleteAction(user);
-        renderStatusAction(user);
-        setFeedback('', false);
-        setError('');
-
-        fetch('/api/admin/users/' + encodeURIComponent(user.id), {
-            method: 'DELETE',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-            .then(function(response) {
-                return response.json().catch(function() {
-                    return { message: 'Unable to soft-delete user account.' };
-                }).then(function(apiResponse) {
-                    if (!response.ok) {
-                        throw new Error(apiResponse.message || 'Unable to soft-delete user account.');
-                    }
-                    return apiResponse;
-                });
-            })
-            .then(function(apiResponse) {
-                var updatedUser = apiResponse.data;
-                state.users = state.users.map(function(item) {
-                    return item.id === updatedUser.id ? updatedUser : item;
-                });
-                state.selectedUser = updatedUser;
-                renderUsers(state.users);
-                openUserPanel(updatedUser);
-                setFeedback(apiResponse.message || 'User account has been soft-deleted. Historical data remains preserved.', true);
-            })
-            .catch(function(error) {
-                setFeedback(error.message || 'Unable to soft-delete user account.', false);
-                renderDeleteAction(user);
-                renderStatusAction(user);
-            })
-            .finally(function() {
-                state.pendingDeleteUserId = null;
-                if (state.selectedUser) {
-                    renderDeleteAction(state.selectedUser);
-                    renderStatusAction(state.selectedUser);
+        LuminaActionDialog.presets.danger({
+            title: 'Soft-delete this account?',
+            subtitle: 'The user will no longer be able to sign in, while historical records remain preserved.',
+            objectLabel: 'User',
+            objectName: user.fullName || user.email || ('User #' + user.id),
+            summary: [
+                { label: 'Email', value: user.email || 'Not available' },
+                { label: 'Current status', value: user.status },
+                { label: 'New status', value: 'DELETED' }
+            ],
+            notice: {
+                title: 'Historical data is retained',
+                text: 'Course history, payments, blogs, comments and other historical data will not be removed.'
+            },
+            acknowledgement: {
+                label: 'I understand that this user will lose account access.',
+                required: true
+            },
+            confirmText: 'Soft-delete account',
+            cancelText: 'Keep account',
+            options: {
+                loadingText: 'Soft-deleting account...',
+                onConfirm: function () {
+                    state.pendingDeleteUserId = user.id;
+                    renderDeleteAction(user);
+                    renderStatusAction(user);
+                    setFeedback('', false);
+                    setError('');
+                    return fetch('/api/admin/users/' + encodeURIComponent(user.id), {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' }
+                    }).then(function(response) {
+                        return response.json().catch(function() {
+                            return { message: 'Unable to soft-delete user account.' };
+                        }).then(function(apiResponse) {
+                            if (!response.ok) {
+                                throw new Error(apiResponse.message || 'Unable to soft-delete user account.');
+                            }
+                            return apiResponse;
+                        });
+                    }).then(function(apiResponse) {
+                        var updatedUser = apiResponse.data;
+                        state.users = state.users.map(function(item) {
+                            return item.id === updatedUser.id ? updatedUser : item;
+                        });
+                        state.selectedUser = updatedUser;
+                        renderUsers(state.users);
+                        openUserPanel(updatedUser);
+                        setFeedback(apiResponse.message || 'User account has been soft-deleted. Historical data remains preserved.', true);
+                    }).catch(function(error) {
+                        setFeedback(error.message || 'Unable to soft-delete user account.', false);
+                        renderDeleteAction(user);
+                        renderStatusAction(user);
+                        throw error;
+                    }).finally(function() {
+                        state.pendingDeleteUserId = null;
+                        if (state.selectedUser) {
+                            renderDeleteAction(state.selectedUser);
+                            renderStatusAction(state.selectedUser);
+                        }
+                    });
                 }
-            });
+            }
+        });
     }
 
     function renderPanelAvatar(user) {

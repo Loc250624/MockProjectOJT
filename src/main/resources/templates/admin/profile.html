@@ -7,9 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
     <link rel="stylesheet" th:href="@{/css/common/profile.css}">
+    <link rel="stylesheet" th:href="@{/css/common/profile-password.css}">
 </head>
 <body>
 <div class="lumina-portal">
@@ -52,6 +54,8 @@
                     </div>
 
                     <div>
+                        <div th:replace="~{fragments/profile :: password-card}"></div>
+
                         <div class="card card-padded profile-card">
                             <h2 class="section-title">Administrative Quick Actions</h2>
                             <div class="profile-actions-list">
@@ -77,11 +81,11 @@
             </div>
         </main>
 
-        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>
 
 <script th:src="@{/js/admin/admin.js}"></script>
 <script th:src="@{/js/common/profile.js}"></script>
+<script th:src="@{/js/common/profile-password.js}"></script>
 </body>
 </html>

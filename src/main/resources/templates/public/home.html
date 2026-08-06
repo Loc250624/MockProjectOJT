@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/public/public.css}">
 </head>
@@ -74,6 +75,10 @@
                         </div>
                         <h3 class="course-name" th:text="${crs.title}">Course title</h3>
                         <p class="course-desc" th:text="${#strings.abbreviate(crs.description ?: 'Course details are available in the catalog.', 140)}">Course description</p>
+                        <div class="course-duration-meta">
+                            <svg th:replace="~{fragments/icons :: icon('clock')}"></svg>
+                            <span>Estimated duration: <strong th:text="${crs.estimatedDurationDisplay}">45 mins</strong></span>
+                        </div>
                         <div class="course-footer">
                             <span th:if="${crs.instructorName != null && !crs.instructorName.isEmpty()}" class="course-instructor" th:text="${crs.instructorName}">Instructor</span>
                             <span class="add-to-cart">

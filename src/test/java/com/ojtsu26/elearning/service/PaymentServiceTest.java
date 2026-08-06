@@ -99,12 +99,14 @@ public class PaymentServiceTest {
         // Arrange
         Map<String, String> params = new HashMap<>();
         params.put("orderId", "ORD123");
+        when(orderRepository.findByOrderCode("ORD123")).thenReturn(Optional.of(order));
         when(paymentProvider.verifyWebhookSignature(params)).thenReturn(false);
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () ->
             paymentService.processWebhook(PaymentMethod.MOMO, params)
         );
+        assertEquals(OrderStatus.FAILED, order.getStatus());
     }
 
     @Test
@@ -139,7 +141,6 @@ public class PaymentServiceTest {
         Map<String, String> params = new HashMap<>();
         params.put("orderId", "ORD123");
 
-        when(paymentProvider.verifyWebhookSignature(params)).thenReturn(true);
         when(orderRepository.findByOrderCode("ORD123")).thenReturn(Optional.of(order));
 
         // Act
@@ -179,7 +180,6 @@ public class PaymentServiceTest {
         // Arrange
         Map<String, String> params = new HashMap<>();
         params.put("orderId", "ORD_UNKNOWN");
-        when(paymentProvider.verifyWebhookSignature(params)).thenReturn(true);
         when(orderRepository.findByOrderCode("ORD_UNKNOWN")).thenReturn(Optional.empty());
 
         // Act & Assert

@@ -3,8 +3,94 @@
 document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
+    initProgressDistributionLineChart();
     initTeacherAssessments();
 });
+
+function initProgressDistributionLineChart() {
+    var plot = document.querySelector('[data-progress-line-chart]');
+    if (!plot) {
+        return;
+    }
+
+    var values = [
+        Number(plot.getAttribute('data-not-started')) || 0,
+        Number(plot.getAttribute('data-in-progress')) || 0,
+        Number(plot.getAttribute('data-completed')) || 0
+    ];
+    var maximum = Math.max.apply(null, values.concat([1]));
+    var xPositions = [60, 500, 940];
+    var coordinates = values.map(function(value, index) {
+        var y = 20 + (1 - (value / maximum)) * 200;
+        return {
+            x: xPositions[index],
+            y: y,
+            xPercent: xPositions[index] / 10,
+            yPercent: y / 2.4
+        };
+    });
+    var path = coordinates.reduce(function(result, point, index) {
+        if (index === 0) return 'M ' + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+        var previous = coordinates[index - 1];
+        var middleX = (previous.x + point.x) / 2;
+        return result + ' C ' + middleX.toFixed(2) + ' ' + previous.y.toFixed(2) + ', ' +
+            middleX.toFixed(2) + ' ' + point.y.toFixed(2) + ', ' + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+    }, '');
+    var grid = [20, 70, 120, 170, 220].map(function(y) {
+        return '<line x1="0" y1="' + y + '" x2="1000" y2="' + y + '"></line>';
+    }).join('');
+
+    plot.innerHTML = '<svg class="report-line-svg" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+        '<defs><linearGradient id="progressDistributionAreaGradient" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#5b61ff" stop-opacity="0.24"></stop>' +
+        '<stop offset="100%" stop-color="#5b61ff" stop-opacity="0"></stop></linearGradient></defs>' +
+        '<g class="report-line-grid">' + grid + '</g>' +
+        '<path class="report-line-area" fill="url(#progressDistributionAreaGradient)" d="' + path + ' L 940 220 L 60 220 Z"></path>' +
+        '<path class="report-line-path" vector-effect="non-scaling-stroke" d="' + path + '"></path>' +
+        '</svg>';
+
+    coordinates.forEach(function(point, index) {
+        var marker = document.createElement('span');
+        marker.className = 'report-line-point';
+        marker.style.left = point.xPercent.toFixed(2) + '%';
+        marker.style.top = point.yPercent.toFixed(2) + '%';
+        marker.title = values[index].toLocaleString();
+        marker.setAttribute('aria-hidden', 'true');
+        plot.appendChild(marker);
+    });
+
+    var yAxis = document.querySelector('[data-progress-line-y-axis]');
+    if (yAxis) {
+        [1, 0.75, 0.5, 0.25, 0].forEach(function(ratio) {
+            var tick = document.createElement('span');
+            tick.textContent = Math.round(maximum * ratio).toLocaleString();
+            yAxis.appendChild(tick);
+        });
+    }
+
+    var stats = document.querySelector('[data-progress-line-stats]');
+    if (stats) {
+        var labels = ['Not started', 'In progress', 'Completed'];
+        var largestIndex = values.indexOf(Math.max.apply(null, values));
+        var total = values.reduce(function(sum, value) { return sum + value; }, 0);
+        [
+            { label: 'Students', value: total.toLocaleString() },
+            { label: 'Largest group', value: total ? labels[largestIndex] : 'None' },
+            { label: 'Completion', value: (total ? ((values[2] / total) * 100).toFixed(1) : '0.0') + '%' },
+            { label: 'Categories', value: '3' }
+        ].forEach(function(item) {
+            var stat = document.createElement('div');
+            stat.className = 'report-line-stat';
+            var name = document.createElement('span');
+            name.textContent = item.label;
+            var value = document.createElement('strong');
+            value.textContent = item.value;
+            stat.appendChild(name);
+            stat.appendChild(value);
+            stats.appendChild(stat);
+        });
+    }
+}
 
 function initPortalSidebarNav() {
     var currentPath = normalizePortalPath(window.location.pathname);

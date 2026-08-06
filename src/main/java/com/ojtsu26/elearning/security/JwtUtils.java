@@ -26,21 +26,31 @@ public class JwtUtils {
 
     public String generateJwtToken(Authentication authentication) {
         CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
-        return generateTokenFromEmail(userPrincipal.getUsername());
+        return generateTokenFromUserId(userPrincipal.getUser().getId());
     }
 
-    public String generateTokenFromEmail(String email) {
+    public String generateTokenFromUserId(Integer userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(String.valueOf(userId))
+                .claim("uid", userId)
+                .claim("token_version", 2)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String getEmailFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
-                .parseClaimsJws(token).getBody().getSubject();
+    public Integer getUserIdFromJwtToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
+                .parseClaimsJws(token).getBody();
+        Object rawUserId = claims.get("uid");
+        if (rawUserId instanceof Number number) {
+            return number.intValue();
+        }
+        throw new JwtException("JWT does not contain a user ID");
     }
 
     public boolean validateJwtToken(String authToken) {

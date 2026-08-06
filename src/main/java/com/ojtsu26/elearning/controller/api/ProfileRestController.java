@@ -2,6 +2,7 @@ package com.ojtsu26.elearning.controller.api;
 
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.AvatarUrlRequestDTO;
+import com.ojtsu26.elearning.dto.request.ChangePasswordRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.ProfileOverviewResponseDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
@@ -55,10 +56,17 @@ public class ProfileRestController {
         UserResponseDTO updatedProfile = profileService.updateCurrentProfile(request);
 
         if (authProvider == AuthProvider.LOCAL && !Objects.equals(previousEmail, updatedProfile.getEmail())) {
-            jwtCookieService.addJwtCookie(response, updatedProfile.getEmail());
+            jwtCookieService.addJwtCookie(response, updatedProfile.getId());
         }
 
         return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Profile updated successfully"));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequestDTO request) {
+        profileService.changeCurrentPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
     }
 
     @PostMapping(value = "/avatar/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

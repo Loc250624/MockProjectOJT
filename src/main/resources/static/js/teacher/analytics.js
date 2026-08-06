@@ -255,6 +255,38 @@ document.addEventListener('DOMContentLoaded', function() {
         return unit === 'currency' ? currentCurrency : unit;
     }
 
+    function compactMoney(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currentCurrency,
+            currencyDisplay: 'narrowSymbol',
+            notation: 'compact',
+            maximumFractionDigits: 1
+        }).format(safeNumber(value));
+    }
+
+    function trendGrowth(points) {
+        if (points.length < 2) return '—';
+        var first = safeNumber(points[0].revenue);
+        var last = safeNumber(points[points.length - 1].revenue);
+        if (first === 0) return last === 0 ? '0%' : 'New';
+        var growth = ((last - first) / first) * 100;
+        return (growth > 0 ? '+' : '') + growth.toFixed(1) + '%';
+    }
+
+    function smoothTrendPath(coordinates) {
+        if (coordinates.length === 1) {
+            return 'M 0 ' + coordinates[0].y.toFixed(2) + ' L 1000 ' + coordinates[0].y.toFixed(2);
+        }
+        return coordinates.reduce(function(path, point, index) {
+            if (index === 0) return 'M ' + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+            var previous = coordinates[index - 1];
+            var middleX = (previous.x + point.x) / 2;
+            return path + ' C ' + middleX.toFixed(2) + ' ' + previous.y.toFixed(2) + ', ' +
+                middleX.toFixed(2) + ' ' + point.y.toFixed(2) + ', ' + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+        }, '');
+    }
+
     function renderTrend(points) {
         var chart = element('revenueTrendChart');
         if (!chart) {
@@ -262,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         chart.innerHTML = '';
         chart.setAttribute('role', 'img');
-        chart.setAttribute('aria-label', 'Revenue bar chart by period. Hover or focus bars for revenue and paid order values.');
+        chart.setAttribute('aria-label', 'Revenue line chart by period. Hover or focus data points for revenue and paid order values.');
         if (!Array.isArray(points) || !points.length) {
             chart.innerHTML = '<div class="teacher-state report-inline-state"><strong>No trend data.</strong><span>No paid orders were found for this period.</span></div>';
             return;
@@ -270,23 +302,97 @@ document.addEventListener('DOMContentLoaded', function() {
         var maxRevenue = points.reduce(function(max, point) {
             return Math.max(max, safeNumber(point.revenue));
         }, 0);
-        points.forEach(function(point) {
-            var wrap = document.createElement('div');
-            wrap.className = 'analytics-bar-wrap';
-            var bar = document.createElement('div');
-            bar.className = 'analytics-bar';
-            var height = maxRevenue === 0 ? 3 : Math.max(3, Math.round((safeNumber(point.revenue) / maxRevenue) * 220));
-            bar.style.height = height + 'px';
-            bar.title = (point.period || 'Period') + ': ' + asMoney(point.revenue) + ' from ' + asNumber(point.paidOrderCount) + ' paid orders';
-            bar.setAttribute('aria-label', bar.title);
-            bar.setAttribute('tabindex', '0');
-            var label = document.createElement('div');
-            label.className = 'analytics-bar-label';
-            label.textContent = point.period || 'Period';
-            wrap.appendChild(bar);
-            wrap.appendChild(label);
-            chart.appendChild(wrap);
+        var safeMaximum = maxRevenue || 1;
+        var totalRevenue = points.reduce(function(total, point) {
+            return total + safeNumber(point.revenue);
+        }, 0);
+        var canvas = document.createElement('div');
+        canvas.className = 'analytics-line-shell';
+        canvas.style.minWidth = Math.max(720, points.length * 82) + 'px';
+
+        var body = document.createElement('div');
+        body.className = 'analytics-line-body';
+        var yAxis = document.createElement('div');
+        yAxis.className = 'analytics-line-y-axis';
+        [1, 0.75, 0.5, 0.25, 0].forEach(function(ratio) {
+            var tick = document.createElement('span');
+            tick.textContent = compactMoney(maxRevenue * ratio);
+            yAxis.appendChild(tick);
         });
+        var plotColumn = document.createElement('div');
+        plotColumn.className = 'analytics-line-plot-column';
+
+        var plot = document.createElement('div');
+        plot.className = 'analytics-line-plot-area';
+        var coordinates = points.map(function(point, index) {
+            return {
+                x: points.length === 1 ? 500 : (index / (points.length - 1)) * 1000,
+                y: 12 + (1 - (safeNumber(point.revenue) / safeMaximum)) * 226
+            };
+        });
+        var path = smoothTrendPath(coordinates);
+        var grid = [12, 68.5, 125, 181.5, 238].map(function(y) {
+            return '<line x1="0" y1="' + y + '" x2="1000" y2="' + y + '"></line>';
+        }).join('');
+        plot.innerHTML = '<svg class="analytics-line-svg" viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+            '<defs><linearGradient id="teacherRevenueAreaGradient" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="#5b61ff" stop-opacity="0.24"></stop>' +
+            '<stop offset="100%" stop-color="#5b61ff" stop-opacity="0"></stop></linearGradient></defs>' +
+            '<g class="analytics-line-grid">' + grid + '</g>' +
+            '<path class="analytics-line-area" fill="url(#teacherRevenueAreaGradient)" d="' + path + ' L 1000 238 L 0 238 Z"></path>' +
+            '<path class="analytics-line-path" vector-effect="non-scaling-stroke" d="' + path + '"></path>' +
+            '</svg>';
+
+        points.forEach(function(point, index) {
+            var x = points.length === 1 ? 50 : (index / (points.length - 1)) * 100;
+            var y = 4.8 + (1 - (safeNumber(point.revenue) / safeMaximum)) * 90.4;
+            var marker = document.createElement('button');
+            marker.type = 'button';
+            marker.className = 'analytics-line-point';
+            marker.style.left = x.toFixed(2) + '%';
+            marker.style.top = y.toFixed(2) + '%';
+            marker.title = (point.period || 'Period') + ': ' + asMoney(point.revenue) + ' from ' + asNumber(point.paidOrderCount) + ' paid orders';
+            marker.setAttribute('aria-label', marker.title);
+            plot.appendChild(marker);
+        });
+
+        var labels = document.createElement('div');
+        labels.className = 'analytics-line-labels';
+        labels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
+        points.forEach(function(point) {
+            var label = document.createElement('div');
+            label.className = 'analytics-line-label';
+            label.textContent = point.period || 'Period';
+            label.title = point.period || 'Period';
+            labels.appendChild(label);
+        });
+
+        var stats = document.createElement('div');
+        stats.className = 'analytics-line-stats';
+        [
+            { label: 'Avg / period', value: asMoney(totalRevenue / points.length) },
+            { label: 'Peak', value: asMoney(maxRevenue) },
+            { label: 'Growth', value: trendGrowth(points) },
+            { label: 'Periods', value: asNumber(points.length) }
+        ].forEach(function(item) {
+            var stat = document.createElement('div');
+            stat.className = 'analytics-line-stat';
+            var name = document.createElement('span');
+            name.textContent = item.label;
+            var value = document.createElement('strong');
+            value.textContent = item.value;
+            stat.appendChild(name);
+            stat.appendChild(value);
+            stats.appendChild(stat);
+        });
+
+        plotColumn.appendChild(plot);
+        plotColumn.appendChild(labels);
+        body.appendChild(yAxis);
+        body.appendChild(plotColumn);
+        canvas.appendChild(body);
+        canvas.appendChild(stats);
+        chart.appendChild(canvas);
     }
 
     function renderCourses(payload) {

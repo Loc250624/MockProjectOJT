@@ -46,7 +46,7 @@ class ResponsiveRouteRenderingTest {
         userRepository.deleteAll();
         teacher = userRepository.save(testUser("Responsive Teacher", "teacher.responsive@example.com", Role.TEACHER));
         admin = userRepository.save(testUser("Responsive Admin", "admin.responsive@example.com", Role.ADMIN));
-        student = userRepository.save(testUser("Responsive Student", "student.responsive@example.com", Role.STUDENT));
+        student = userRepository.save(testUser("Mạnh Cường Hoàng", "student.responsive@example.com", Role.STUDENT));
     }
 
     @Test
@@ -57,6 +57,16 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(content().string(containsString("aria-controls=\"public-navigation\"")))
                 .andExpect(content().string(containsString("/js/public/public.js")))
                 .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+
+        mockMvc.perform(get("/").with(user(new CustomUserDetails(student))))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), student));
+
+        for (User expectedUser : new User[] {student, teacher, admin}) {
+            mockMvc.perform(get("/").with(user(expectedUser.getEmail()).roles(expectedUser.getRole().name())))
+                    .andExpect(status().isOk())
+                    .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), expectedUser));
+        }
     }
 
     @Test
@@ -71,6 +81,7 @@ class ResponsiveRouteRenderingTest {
 
         mockMvc.perform(get("/student/dashboard").with(user(new CustomUserDetails(student))))
                 .andExpect(status().isOk())
+                .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), student))
                 .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
     }
 
@@ -82,6 +93,7 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("teacher-header-actions")))
                 .andExpect(content().string(containsString("help-drawer-panel")))
+                .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), teacher))
                 .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
 
         mockMvc.perform(get("/teacher/courses").with(user(principal)))
@@ -102,7 +114,30 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(content().string(containsString("responsive-data-table")))
                 .andExpect(content().string(containsString("No courses found in the system")))
                 .andExpect(content().string(containsString("system-health-badge")))
+                .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), admin))
                 .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+    }
+
+    private void assertAccountChip(String html, User expectedUser) {
+        org.junit.jupiter.api.Assertions.assertTrue(html.contains(
+                "data-user-chip-name=\"" + expectedUser.getFullName() + "\""));
+        org.junit.jupiter.api.Assertions.assertTrue(html.contains(
+                "data-user-chip-role=\"" + expectedUser.getRole().name() + "\""));
+        if (expectedUser.getAvatarUrl() == null) {
+            String initial = expectedUser.getFullName().substring(0, 1).toUpperCase();
+            org.junit.jupiter.api.Assertions.assertTrue(html.contains(
+                    "data-user-chip-initial=\"true\">" + initial + "</span>"));
+            org.junit.jupiter.api.Assertions.assertFalse(html.contains("data-user-chip-image=\"true\""));
+        } else {
+            org.junit.jupiter.api.Assertions.assertTrue(html.contains(expectedUser.getAvatarUrl()));
+            org.junit.jupiter.api.Assertions.assertTrue(html.contains("data-user-chip-image=\"true\""));
+        }
+        String avatarMarker = "class=\"topbar-avatar user-chip-avatar\"";
+        int first = html.indexOf(avatarMarker);
+        org.junit.jupiter.api.Assertions.assertTrue(first >= 0, "Account chip avatar should render");
+        org.junit.jupiter.api.Assertions.assertEquals(-1, html.indexOf(avatarMarker, first + avatarMarker.length()),
+                "Account chip should render exactly one avatar");
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("user-chip-avatar-fallback"));
     }
 
     private void assertSingleChatbot(String html) {
@@ -118,6 +153,7 @@ class ResponsiveRouteRenderingTest {
                 .fullName(fullName)
                 .email(email)
                 .passwordHash("secret")
+                .avatarUrl(role == Role.STUDENT ? null : "/uploads/test-" + role.name().toLowerCase() + ".png")
                 .role(role)
                 .status(UserStatus.ACTIVE)
                 .authProvider(AuthProvider.LOCAL)

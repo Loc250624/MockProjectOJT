@@ -68,7 +68,7 @@ public class AuthRestController {
 
         User user = oAuth2AccountService.completePendingRegistration(token, request);
         session.removeAttribute(OAuth2LoginSuccessHandler.PENDING_OAUTH_SESSION_ATTRIBUTE);
-        jwtCookieService.addJwtCookie(response, user.getEmail());
+        jwtCookieService.addJwtCookie(response, user.getId());
 
         AuthResponseDTO authResponse = AuthResponseDTO.builder()
                 .id(user.getId())

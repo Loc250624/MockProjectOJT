@@ -38,6 +38,9 @@ class TeacherCourseStudentsTemplateTest {
         assertTrue(template.contains("name=\"lastActivityFrom\""));
         assertTrue(template.contains("name=\"lastActivityTo\""));
         assertTrue(template.contains("${overview.totalStudents}"));
+        assertTrue(template.contains("data-progress-line-chart"));
+        assertTrue(template.contains("Progress distribution line chart"));
+        assertFalse(template.contains("report-bar"));
         assertTrue(template.contains("role=\"progressbar\""));
         assertTrue(template.contains("teacher-student-cards"));
         assertTrue(template.contains("studentDetail.lessons"));

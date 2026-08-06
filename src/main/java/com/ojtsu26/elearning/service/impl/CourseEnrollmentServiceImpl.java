@@ -120,16 +120,9 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
                     "CONTINUE_LEARNING", "Continue learning", existing.getId(), "You are enrolled in this course.");
         }
 
-        boolean paymentPending = !orderRepository
-                .findByStudentIdAndCourseIdAndStatus(student.getId(), courseId, OrderStatus.PENDING)
-                .isEmpty();
         if (!available) {
-            return buildState(courseId, false, freeCourse, false, paymentPending,
+            return buildState(courseId, false, freeCourse, false, false,
                     "UNAVAILABLE", "Course unavailable", null, "This course is not available for enrollment.");
-        }
-        if (paymentPending) {
-            return buildState(courseId, true, freeCourse, false, true,
-                    "PAYMENT_PENDING", "Payment pending", null, "Complete your pending payment to start learning.");
         }
         if (freeCourse) {
             return buildState(courseId, true, true, false, false,

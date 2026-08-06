@@ -272,6 +272,12 @@ function applyLearningProgress(progress) {
         lessonStatus.classList.add('completed');
     }
 
+    if (progress.completed && progress.lessonId != null) {
+        document.querySelectorAll('[data-lesson-state="' + progress.lessonId + '"]').forEach(function (state) {
+            state.textContent = 'Completed lesson';
+        });
+    }
+
     var courseStatus = document.getElementById('course-status');
     if (courseStatus && progress.courseStatus) {
         courseStatus.textContent = progress.courseStatus === 'COMPLETED' ? 'Completed'
@@ -290,10 +296,21 @@ function applyLearningProgress(progress) {
     }
 
     var help = document.getElementById('video-progress-help');
-    if (help && typeof progress.lastPositionSeconds === 'number') {
+    if (help && progress.completed) {
+        help.textContent = 'Video completed.';
+    } else if (help && typeof progress.watchedSeconds === 'number' && typeof progress.videoDurationSeconds === 'number') {
+        help.textContent = 'Watched ' + progress.watchedSeconds + ' of ' + progress.videoDurationSeconds + ' seconds.';
+    } else if (help && typeof progress.lastPositionSeconds === 'number') {
         help.textContent = 'Saved at ' + progress.lastPositionSeconds + ' seconds.';
-    } else if (help && typeof progress.watchedSeconds === 'number') {
-        help.textContent = 'Saved through ' + progress.watchedSeconds + ' seconds.';
+    }
+
+    var videoProgressFill = document.getElementById('video-progress-fill');
+    if (videoProgressFill && progress.lessonProgressPercentage != null) {
+        videoProgressFill.style.width = (progress.completed ? 100 : progress.lessonProgressPercentage) + '%';
+        var videoProgress = videoProgressFill.parentElement;
+        if (videoProgress) {
+            videoProgress.setAttribute('aria-valuenow', progress.completed ? '100' : String(progress.lessonProgressPercentage));
+        }
     }
 
     document.querySelectorAll('.learning-progress-summary .progress-bar-fill, .pc-progress .progress-bar-fill').forEach(function (fill) {
@@ -328,7 +345,7 @@ function Html5PlayerWrapper(video, options) {
 
     if (options.onReady) {
         if (video.readyState >= 1) {
-            options.onReady();
+            window.setTimeout(options.onReady, 0);
         } else {
             video.addEventListener('loadedmetadata', options.onReady, { once: true });
         }
@@ -355,6 +372,11 @@ function Html5PlayerWrapper(video, options) {
     this.seekTo = function (seconds) {
         video.currentTime = seconds;
     };
+    this.pause = function () {
+        if (typeof video.pause === 'function') {
+            video.pause();
+        }
+    };
     this.getCurrentTime = function () {
         return video.currentTime;
     };
@@ -375,7 +397,7 @@ function YouTubePlayerWrapper(iframe, options) {
             if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
                 options.onTimeUpdate(player.getCurrentTime());
             }
-        }, 1000);
+        }, 250);
     }
 
     function stopTracking() {
@@ -390,6 +412,9 @@ function YouTubePlayerWrapper(iframe, options) {
     }
 
     function onPlayerStateChange(event) {
+        if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
+            options.onTimeUpdate(player.getCurrentTime());
+        }
         if (event.data === 1) {
             startTracking();
             if (options.onPlay) options.onPlay();
@@ -436,6 +461,11 @@ function YouTubePlayerWrapper(iframe, options) {
             player.seekTo(seconds, true);
         }
     };
+    this.pause = function () {
+        if (player && typeof player.pauseVideo === 'function') {
+            player.pauseVideo();
+        }
+    };
     this.getCurrentTime = function () {
         return player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
     };
@@ -463,6 +493,53 @@ function initVideoProgress(element) {
     var completionRequestSent = false;
     var pendingCompletionSave = false;
     var playerWrapper = null;
+    var previewMode = element.dataset.previewMode === 'true';
+    var previewPercentLimit = Number(element.dataset.previewLimit || 50);
+    var paywallShown = false;
+
+    function enforcePreviewLimit(currentTime) {
+        if (!previewMode) {
+            return false;
+        }
+        var duration = currentDuration();
+        if (duration <= 0) {
+            return false;
+        }
+        var limit = duration * (previewPercentLimit / 100);
+        if (currentTime >= limit) {
+            if (playerWrapper) {
+                playerWrapper.pause();
+                if (currentTime > limit) {
+                    playerWrapper.seekTo(limit);
+                }
+            }
+            if (!paywallShown) {
+                paywallShown = true;
+                showPaywallDialog();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function showPaywallDialog() {
+        if (window.LuminaActionDialog) {
+            window.LuminaActionDialog.open({
+                variant: 'warning',
+                icon: 'payment',
+                eyebrow: 'Preview Limit',
+                title: 'Unlock Full Course',
+                subtitle: 'You have watched 50% of the first lesson. Purchase the course to continue learning.',
+                cancelText: 'Cancel',
+                confirmText: 'Buy Course',
+                onConfirm: function () {
+                    window.location.href = '/student/checkout?courseId=' + courseId;
+                }
+            });
+        } else {
+            alert('Please purchase the course to continue learning.');
+        }
+    }
 
     function finiteSeconds(value) {
         var numberValue = Number(value || 0);
@@ -472,13 +549,62 @@ function initVideoProgress(element) {
         return Math.floor(numberValue);
     }
 
-    function currentDuration() {
-        if (!playerWrapper) {
-            return knownDuration;
+    function finiteDurationSeconds(value) {
+        var numberValue = Number(value || 0);
+        if (!Number.isFinite(numberValue) || numberValue <= 0) {
+            return 0;
         }
-        var duration = finiteSeconds(playerWrapper.getDuration());
-        if (duration > 0) {
+        return Math.ceil(numberValue);
+    }
+
+    function formatDuration(totalSeconds) {
+        if (totalSeconds <= 0) {
+            return 'No video duration';
+        }
+        if (totalSeconds < 60) {
+            return 'Less than 1 min';
+        }
+        var totalMinutes = Math.ceil(totalSeconds / 60);
+        var hours = Math.floor(totalMinutes / 60);
+        var minutes = totalMinutes % 60;
+        if (hours === 0) {
+            return totalMinutes + (totalMinutes === 1 ? ' min' : ' mins');
+        }
+        if (minutes === 0) {
+            return hours + (hours === 1 ? ' hr' : ' hrs');
+        }
+        return hours + (hours === 1 ? ' hr ' : ' hrs ')
+            + minutes + (minutes === 1 ? ' min' : ' mins');
+    }
+
+    function updateDurationDisplays(previousDuration, duration) {
+        if (duration <= 0 || duration === previousDuration) {
+            return;
+        }
+        element.dataset.durationSeconds = String(duration);
+        document.querySelectorAll('[data-lesson-duration="' + lessonId + '"]').forEach(function (durationElement) {
+            durationElement.textContent = formatDuration(duration);
+        });
+
+        var courseDuration = document.querySelector('[data-course-duration-display]');
+        if (courseDuration) {
+            var total = finiteDurationSeconds(courseDuration.dataset.durationSeconds);
+            var correctedTotal = Math.max(0, total - Math.max(0, previousDuration) + duration);
+            courseDuration.dataset.durationSeconds = String(correctedTotal);
+            courseDuration.textContent = formatDuration(correctedTotal);
+        }
+    }
+
+    function playerDurationSeconds() {
+        return playerWrapper ? finiteDurationSeconds(playerWrapper.getDuration()) : 0;
+    }
+
+    function currentDuration() {
+        var duration = playerDurationSeconds();
+        if (duration > knownDuration || (knownDuration <= 0 && duration > 0)) {
+            var previousDuration = knownDuration;
             knownDuration = duration;
+            updateDurationDisplays(previousDuration, duration);
         }
         return knownDuration;
     }
@@ -503,6 +629,9 @@ function initVideoProgress(element) {
     }
 
     function saveProgress(force, currentTime, eventType) {
+        if (previewMode) {
+            return Promise.resolve();
+        }
         var current = Math.floor(currentTime || 0);
         if (!Number.isFinite(current) || current < 0) {
             return Promise.resolve();
@@ -564,28 +693,62 @@ function initVideoProgress(element) {
         if (resumePosition > 0) {
             playerWrapper.seekTo(resumePosition);
         }
+        synchronizePlayerDuration(0);
     }
 
-    function onPlay() { }
+    function synchronizePlayerDuration(attempt) {
+        var previousDuration = knownDuration;
+        var detectedDuration = currentDuration();
+        if (detectedDuration > previousDuration) {
+            saveProgress(true, playerWrapper ? playerWrapper.getCurrentTime() : 0, 'TIME_UPDATE');
+            return;
+        }
+        if (playerDurationSeconds() <= 0 && attempt < 20) {
+            window.setTimeout(function () {
+                synchronizePlayerDuration(attempt + 1);
+            }, 250);
+        }
+    }
+
+    function onPlay() {
+        if (playerWrapper) {
+            enforcePreviewLimit(playerWrapper.getCurrentTime());
+        }
+    }
 
     function onPause() {
         if (playerWrapper) {
+            if (previewMode) {
+                var duration = currentDuration();
+                if (duration > 0 && playerWrapper.getCurrentTime() >= duration * (previewPercentLimit / 100)) {
+                    return;
+                }
+            }
             saveProgress(true, playerWrapper.getCurrentTime(), 'PAUSE');
         }
     }
 
     function onTimeUpdate(currentTime) {
+        if (enforcePreviewLimit(currentTime)) {
+            return;
+        }
         var duration = currentDuration();
         var nearCompletion = duration > 0 && finiteSeconds(currentTime) * 100 >= duration * 90;
         saveProgress(nearCompletion, currentTime, 'TIME_UPDATE');
     }
 
     function onSeeked(currentTime) {
+        if (enforcePreviewLimit(currentTime)) {
+            return;
+        }
         saveProgress(true, currentTime, 'SEEKED');
     }
 
     function onEnded() {
         if (playerWrapper) {
+            if (previewMode) {
+                return;
+            }
             saveProgress(true, playerWrapper.getDuration(), 'ENDED');
         }
     }
@@ -615,11 +778,15 @@ function initVideoProgress(element) {
             onPlay: onPlay,
             onPause: onPause,
             onTimeUpdate: onTimeUpdate,
-            onEnded: onEnded
+            onEnded: onEnded,
+            onSeeked: onSeeked
         });
     }
 
     window.addEventListener('beforeunload', function () {
+        if (previewMode) {
+            return;
+        }
         if (playerWrapper) {
             var current = Math.floor(playerWrapper.getCurrentTime() || 0);
             var payload = buildProgressPayload(current, 'UNLOAD');
@@ -761,29 +928,51 @@ function initQuizOverview(panel) {
     }
 
     function startOrOpen(data, button) {
-        if (uiState === 'loading') {
+        if (uiState === 'loading' || uiState === 'confirming') {
             return;
         }
         if (data.attemptId) {
             window.location.assign(attemptUrl(data));
             return;
         }
-        setState('loading');
+        setState('confirming');
         button.disabled = true;
-        button.textContent = 'Starting...';
-        fetch('/api/student/quizzes/' + encodeURIComponent(data.quizId) + '/attempts', {
-            method: 'POST',
-            credentials: 'same-origin'
-        }).then(function (response) {
-            return assessmentJson(response, 'Unable to start this quiz');
-        }).then(function (body) {
-            var attempt = body.data || {};
-            if (!attempt.id) {
-                throw new Error('The quiz attempt could not be opened.');
+        button.textContent = 'Reviewing rules...';
+        LuminaActionDialog.presets.quizStart({
+            quizName: data.title || 'Selected quiz',
+            questionCount: String(data.questionCount || 10) + ' questions',
+            duration: String(data.durationMinutes || 20) + ' minutes',
+            passingScore: data.passingScore == null ? 'Configured score' : data.passingScore + '%',
+            options: {
+                loadingText: 'Creating attempt...',
+                onConfirm: function () {
+                    setState('loading');
+                    button.textContent = 'Starting...';
+                    return fetch('/api/student/quizzes/' + encodeURIComponent(data.quizId) + '/attempts', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    }).then(function (response) {
+                        return assessmentJson(response, 'Unable to start this quiz');
+                    }).then(function (body) {
+                        var attempt = body.data || {};
+                        if (!attempt.id) {
+                            throw new Error('The quiz attempt could not be opened.');
+                        }
+                        data.attemptId = attempt.id;
+                        window.location.assign(attemptUrl(data));
+                    }).catch(function (error) {
+                        setState('error');
+                        throw error;
+                    });
+                }
             }
-            data.attemptId = attempt.id;
-            window.location.assign(attemptUrl(data));
-        }).catch(renderError);
+        }).then(function (result) {
+            if (!result.confirmed && uiState === 'confirming') {
+                setState('ready');
+                button.disabled = false;
+                button.textContent = 'Start Quiz';
+            }
+        });
     }
 
     function renderReady(data) {
@@ -880,13 +1069,16 @@ function initDedicatedQuizAttempt() {
         setAssessmentMessage(message, feedback || '', type || null);
         var submitting = nextState === 'submitting';
         var saving = nextState === 'saving';
+        var confirming = nextState === 'confirming';
         document.querySelectorAll('[data-submit-quiz="true"]').forEach(function (button) {
-            button.disabled = submitting || saving;
-            button.textContent = submitting ? 'Submitting...' : 'Submit Quiz';
+            button.disabled = submitting || saving || confirming;
+            button.textContent = submitting
+                ? 'Submitting...'
+                : (confirming ? 'Reviewing...' : 'Submit Quiz');
         });
         var saveButton = document.getElementById('save-quiz-btn');
         if (saveButton) {
-            saveButton.disabled = submitting || saving;
+            saveButton.disabled = submitting || saving || confirming;
             saveButton.textContent = saving ? 'Saving...' : 'Save Draft';
         }
         if (questions.length) {
@@ -896,21 +1088,38 @@ function initDedicatedQuizAttempt() {
 
     if (retake) {
         retake.addEventListener('click', function () {
-            if (uiState === 'loading') {
+            if (uiState === 'loading' || uiState === 'confirming') {
                 return;
             }
-            setState('loading', 'Opening a new attempt...');
+            setState('confirming', 'Review the quiz rules before starting again.');
             retake.disabled = true;
-            fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
-                method: 'POST',
-                credentials: 'same-origin'
-            }).then(function (response) {
-                return assessmentJson(response, 'Unable to start a new attempt');
-            }).then(function (body) {
-                window.location.assign(attemptUrl(body.data.id));
-            }).catch(function (error) {
-                retake.disabled = false;
-                setState('error', error.message, 'error');
+            LuminaActionDialog.presets.quizStart({
+                quizName: (document.querySelector('.dedicated-quiz-heading h1') || {}).textContent || 'Selected quiz',
+                questionCount: (page.dataset.questionCount || '10') + ' questions',
+                duration: (page.dataset.durationMinutes || '20') + ' minutes',
+                passingScore: page.dataset.passingScore ? page.dataset.passingScore + '%' : 'Configured score',
+                options: {
+                    loadingText: 'Creating attempt...',
+                    onConfirm: function () {
+                        setState('loading', 'Opening a new attempt...');
+                        return fetch('/api/student/quizzes/' + encodeURIComponent(quizId) + '/attempts', {
+                            method: 'POST',
+                            credentials: 'same-origin'
+                        }).then(function (response) {
+                            return assessmentJson(response, 'Unable to start a new attempt');
+                        }).then(function (body) {
+                            window.location.assign(attemptUrl(body.data.id));
+                        }).catch(function (error) {
+                            setState('error', error.message, 'error');
+                            throw error;
+                        });
+                    }
+                }
+            }).then(function (result) {
+                if (!result.confirmed && uiState === 'confirming') {
+                    retake.disabled = false;
+                    setState('submitted');
+                }
             });
         });
         return;
@@ -935,7 +1144,7 @@ function initDedicatedQuizAttempt() {
     function updateProgress() {
         var answered = 0;
         var firstUnanswered = -1;
-        var busy = uiState === 'saving' || uiState === 'submitting';
+        var busy = uiState === 'saving' || uiState === 'submitting' || uiState === 'confirming';
         questions.forEach(function (question, index) {
             var isAnswered = questionAnswered(question);
             if (isAnswered) {
@@ -1141,6 +1350,31 @@ function initDedicatedQuizAttempt() {
         }
     }
 
+    function performQuizSubmission(automatic) {
+        stopCountdown();
+        setState(
+            'submitting',
+            automatic ? 'Time is up. Your quiz is being submitted automatically.' : '');
+        return updateAttempt(
+            'POST',
+            '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
+            'Unable to submit this quiz'
+        ).then(function () {
+            setState('submitted');
+            window.location.assign(attemptUrl(attemptId));
+        }).catch(function (error) {
+            setState('error', error.message, 'error');
+            if (automatic && automaticSubmitRetry === null) {
+                automaticSubmitRetry = window.setTimeout(function () {
+                    automaticSubmitRetry = null;
+                    submitQuiz(true);
+                }, 5000);
+                return;
+            }
+            throw error;
+        });
+    }
+
     function submitQuiz(automatic) {
         if (uiState === 'submitted' || uiState === 'submitting') {
             return;
@@ -1159,28 +1393,32 @@ function initDedicatedQuizAttempt() {
             requireAnswer(unansweredIndex);
             return;
         }
-        if (!automatic
-                && !window.confirm('Submit this quiz? You cannot edit it after submission.')) {
+        if (automatic) {
+            if (window.LuminaActionDialog && typeof LuminaActionDialog.close === 'function') {
+                LuminaActionDialog.close();
+            }
+            performQuizSubmission(true);
             return;
         }
-        stopCountdown();
-        setState(
-            'submitting',
-            automatic ? 'Time is up. Your quiz is being submitted automatically.' : '');
-        updateAttempt(
-            'POST',
-            '/api/student/quiz-attempts/' + encodeURIComponent(attemptId) + '/submit',
-            'Unable to submit this quiz'
-        ).then(function () {
-            setState('submitted');
-            window.location.assign(attemptUrl(attemptId));
-        }).catch(function (error) {
-            setState('error', error.message, 'error');
-            if (automatic && automaticSubmitRetry === null) {
-                automaticSubmitRetry = window.setTimeout(function () {
-                    automaticSubmitRetry = null;
-                    submitQuiz(true);
-                }, 5000);
+
+        setState('confirming');
+        var answeredCount = questions.filter(questionAnswered).length;
+        LuminaActionDialog.presets.quizSubmit({
+            answered: answeredCount + '/' + questions.length,
+            unanswered: String(questions.length - answeredCount),
+            timeRemaining: countdownValue ? countdownValue.textContent : 'Not available',
+            options: {
+                loadingText: 'Submitting quiz...',
+                onConfirm: function () {
+                    if (uiState === 'submitting' || uiState === 'submitted') {
+                        throw new Error('This quiz is already being submitted.');
+                    }
+                    return performQuizSubmission(false);
+                }
+            }
+        }).then(function (result) {
+            if (!result.confirmed && uiState === 'confirming') {
+                setState('ready');
             }
         });
     }
@@ -1338,6 +1576,23 @@ function initProfileEditor() {
         document.querySelectorAll('[data-profile-avatar="true"]').forEach(function (image) {
             image.src = nextSrc;
         });
+        document.querySelectorAll('[data-user-chip-avatar]').forEach(function (shell) {
+            var image = shell.querySelector('[data-user-chip-image]');
+            if (!src) {
+                if (image) image.remove();
+                return;
+            }
+            if (!image) {
+                image = document.createElement('img');
+                image.className = 'user-chip-avatar-image';
+                image.dataset.userChipImage = 'true';
+                image.alt = '';
+                image.referrerPolicy = 'no-referrer';
+                image.addEventListener('error', function () { image.remove(); });
+                shell.appendChild(image);
+            }
+            image.src = src;
+        });
         if (avatarPreview) {
             avatarPreview.src = nextSrc;
         }
@@ -1471,7 +1726,14 @@ function initProfileEditor() {
     function applyProfile(profile) {
         nameText.textContent = profile.fullName || '';
         emailText.textContent = profile.email || '';
-        setAvatarPreview(profile.avatarUrl || placeholderSrc);
+        var initial = (profile.fullName || 'U').trim().charAt(0).toUpperCase() || 'U';
+        document.querySelectorAll('[data-profile-field="fullName"]').forEach(function (node) {
+            node.textContent = profile.fullName || '';
+        });
+        document.querySelectorAll('[data-user-chip-initial]').forEach(function (node) {
+            node.textContent = initial;
+        });
+        setAvatarPreview(profile.avatarUrl || '');
         currentAvatarSrc = avatarImage.src;
     }
 

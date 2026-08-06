@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
@@ -65,7 +66,20 @@
                             <div class="table-action-cell admin-blog-actions">
                                 <form th:action="@{'/admin/blogs/approve/' + ${blog.id}}" method="post" style="display:inline;"
                                       data-loading-form
-                                      onsubmit="return confirm('Approve and publish this blog?');">
+                                      data-lumina-confirm
+                                      data-dialog-variant="warning"
+                                      data-dialog-icon="publish"
+                                      data-dialog-eyebrow="Blog moderation"
+                                      data-dialog-badge="Publish blog"
+                                      data-dialog-title="Approve and publish this blog?"
+                                      data-dialog-subtitle="The post will leave the moderation queue and become visible on public blog pages."
+                                      data-dialog-object-label="Blog"
+                                      th:data-dialog-object="${blog.title}"
+                                      th:data-dialog-owner="${blog.authorName != null ? blog.authorName : 'User #' + blog.authorId}"
+                                      data-dialog-current-status="PENDING_REVIEW"
+                                      data-dialog-next-status="PUBLISHED"
+                                      data-dialog-confirm-text="Approve and publish"
+                                      data-dialog-cancel-text="Keep reviewing">
                                     <button type="submit" class="action-btn primary">
                                         <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                                         <span>Approve</span>
@@ -82,7 +96,7 @@
                             <div th:id="'reject-blog-modal-' + ${blog.id}"
                                  class="blog-reject-modal"
                                  style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:1rem;">
-                                <div style="width:min(520px,100%);background:white;border-radius:8px;border:1px solid var(--lumina-gray-200);box-shadow:var(--shadow-xl);padding:1.5rem;text-align:left;">
+                                <div style="width:min(520px,100%);background:var(--theme-surface);border-radius:8px;border:1px solid var(--lumina-gray-200);box-shadow:var(--shadow-xl);padding:1.5rem;text-align:left;">
                                     <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1rem;">
                                         <div>
                                             <h2 style="font-size:1.05rem;color:var(--lumina-gray-900);margin:0;">Reject Blog</h2>
@@ -113,6 +127,7 @@
                                     </form>
                                 </div>
                             </div>
+                            </div>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(blogs)}">
@@ -126,30 +141,11 @@
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 
 <script th:src="@{/js/admin/admin.js}"></script>
 <script>
-function openBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'flex';
-        var textarea = modal.querySelector('textarea');
-        if (textarea) {
-            textarea.focus();
-        }
-    }
-}
-
-function closeBlogRejectModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
 document.querySelectorAll('[data-loading-form]').forEach(function (form) {
     form.addEventListener('submit', function () {
         var loading = document.querySelector('[data-loading-message]');

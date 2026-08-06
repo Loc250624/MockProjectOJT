@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
     <!-- Auto-redirect to My Courses after 4 seconds on success -->
@@ -19,7 +20,7 @@
             flex: 1; padding: 3rem 2rem;
         }
         .result-card {
-            background: white; border-radius: 20px; padding: 3rem 2.5rem;
+            background:var(--theme-surface); border-radius: 20px; padding: 3rem 2.5rem;
             text-align: center; max-width: 480px; width: 100%;
             box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid var(--lumina-gray-100);
         }
@@ -110,7 +111,6 @@
             </div>
         </main>
 
-        <footer th:replace="~{fragments/layout :: portal-footer}"></footer>
     </div>
 </div>
 

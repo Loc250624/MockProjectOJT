@@ -478,12 +478,12 @@ class StudentViewControllerTest {
         signVnpayParams(returnParams);
 
         org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
-                get("/student/payment-result")
-                        .with(mockRequest -> {
-                            mockRequest.setServerPort(8080);
-                            return mockRequest;
-                        })
-                        .cookie(new Cookie("jwt_token", studentToken));
+            get("/student/payment-result")
+                .with(mockRequest -> {
+                    mockRequest.setServerPort(8080);
+                    return mockRequest;
+                })
+                .cookie(new Cookie("jwt_token", studentToken));
         returnParams.forEach(request::param);
 
         mockMvc.perform(request)
@@ -491,7 +491,7 @@ class StudentViewControllerTest {
                 .andExpect(model().attribute("paymentSuccess", false));
 
         Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
-        assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
+        assertEquals(OrderStatus.FAILED, updatedOrder.getStatus());
         assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
                 student.getId(), purchasableCourse.getId()));
     }
@@ -506,12 +506,12 @@ class StudentViewControllerTest {
         signVnpayParams(returnParams);
 
         org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request =
-                get("/student/payment-result")
-                        .with(mockRequest -> {
-                            mockRequest.setServerPort(8080);
-                            return mockRequest;
-                        })
-                        .cookie(new Cookie("jwt_token", studentToken));
+            get("/student/payment-result")
+                .with(mockRequest -> {
+                    mockRequest.setServerPort(8080);
+                    return mockRequest;
+                })
+                .cookie(new Cookie("jwt_token", studentToken));
         returnParams.forEach(request::param);
 
         mockMvc.perform(request)
@@ -519,7 +519,7 @@ class StudentViewControllerTest {
                 .andExpect(model().attribute("paymentSuccess", false));
 
         Order updatedOrder = orderRepository.findById(order.getId()).orElseThrow();
-        assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
+        assertEquals(OrderStatus.FAILED, updatedOrder.getStatus());
         assertFalse(courseEnrollmentRepository.existsByStudentIdAndCourseId(
                 student.getId(), purchasableCourse.getId()));
     }

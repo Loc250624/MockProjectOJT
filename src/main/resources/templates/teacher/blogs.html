@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -71,8 +72,14 @@
                                   th:action="@{'/teacher/blogs/' + ${blog.id} + '/submit'}"
                                   method="post"
                                   data-loading-form
+                                  data-lumina-confirm
+                                  data-dialog-preset="blog-submit"
+                                  th:data-dialog-object="${blog.title}"
+                                  th:data-dialog-current-status="${blog.status.name()}"
+                                  data-dialog-confirm-text="Submit for review"
+                                  data-dialog-cancel-text="Keep editing"
                                   style="display:inline;"
-                                  onsubmit="return confirm('Submit this blog for review?');">
+                                  >
                                 <button type="submit" class="btn btn-primary btn-sm">Submit for Review</button>
                             </form>
                             <a th:if="${blog.status.name() == 'REJECTED'}"
@@ -93,7 +100,6 @@
             </div>
         </main>
 
-        <div th:replace="~{fragments/layout :: portal-footer}"></div>
     </div>
 </div>
 

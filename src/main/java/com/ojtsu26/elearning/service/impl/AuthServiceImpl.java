@@ -13,6 +13,7 @@ import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtUtils;
 import com.ojtsu26.elearning.service.AuthService;
+import com.ojtsu26.elearning.validation.PasswordPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,12 +38,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO register(RegisterRequestDTO request) {
+        if (!PasswordPolicy.isStrong(request.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
+        }
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
         }
 
         String email = normalizeEmail(request.getEmail());
-        if (userRepository.existsByEmailIgnoreCase(email)) {
+        if (userRepository.existsByAuthProviderAndEmailIgnoreCase(AuthProvider.LOCAL, email)) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
