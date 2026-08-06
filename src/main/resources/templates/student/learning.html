@@ -152,6 +152,8 @@
                             th:data-last-position-seconds="${learningCourse.activeLesson.lastPositionSeconds == null ? 0 : learningCourse.activeLesson.lastPositionSeconds}"
                             th:data-max-reached-seconds="${learningCourse.activeLesson.maxReachedSeconds == null ? 0 : learningCourse.activeLesson.maxReachedSeconds}"
                             th:data-duration-seconds="${learningCourse.activeLesson.videoDurationSeconds == null ? 0 : learningCourse.activeLesson.videoDurationSeconds}"
+                            th:data-preview-mode="${learningCourse.activeLesson.previewMode}"
+                            th:data-preview-limit="${learningCourse.activeLesson.previewPercentLimit}"
                             data-learning-video="true"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
@@ -166,6 +168,8 @@
                            th:data-last-position-seconds="${learningCourse.activeLesson.lastPositionSeconds == null ? 0 : learningCourse.activeLesson.lastPositionSeconds}"
                            th:data-max-reached-seconds="${learningCourse.activeLesson.maxReachedSeconds == null ? 0 : learningCourse.activeLesson.maxReachedSeconds}"
                            th:data-duration-seconds="${learningCourse.activeLesson.videoDurationSeconds == null ? 0 : learningCourse.activeLesson.videoDurationSeconds}"
+                           th:data-preview-mode="${learningCourse.activeLesson.previewMode}"
+                           th:data-preview-limit="${learningCourse.activeLesson.previewPercentLimit}"
                            data-learning-video="true">
                         <source th:src="${learningCourse.activeLesson.videoUrl}" type="video/mp4">
                         Your browser cannot play this video.
@@ -257,7 +261,7 @@
                             data-lesson-complete="true"
                             th:data-course-id="${learningCourse.courseId}"
                             th:data-lesson-id="${learningCourse.activeLesson.id}"
-                            th:disabled="${learningCourse.activeLesson.completed}">
+                            th:disabled="${learningCourse.activeLesson.completed or learningCourse.activeLesson.previewMode}">
                         <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
                         <span>Mark complete</span>
                     </button>
@@ -272,7 +276,15 @@
                         <svg th:replace="~{fragments/icons :: icon('previous')}"></svg>
                         <span>Previous</span>
                     </a>
-                    <a class="btn btn-primary"
+                    <a th:if="${learningCourse.activeLesson.previewMode}"
+                       class="btn btn-primary"
+                       id="next-lesson-link"
+                       th:href="@{/student/checkout(courseId=${learningCourse.courseId})}">
+                        <span>Buy Course to Continue</span>
+                        <svg th:replace="~{fragments/icons :: icon('next')}"></svg>
+                    </a>
+                    <a th:unless="${learningCourse.activeLesson.previewMode}"
+                       class="btn btn-primary"
                        id="next-lesson-link"
                        th:data-course-id="${learningCourse.courseId}"
                        th:data-next-lesson-id="${learningCourse.activeLesson.nextLessonId}"

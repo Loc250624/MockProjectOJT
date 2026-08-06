@@ -226,16 +226,6 @@
                 <span>Buy course</span>
             </a>
 
-            <button th:if="${enrollmentState.action == 'PAYMENT_PENDING'}"
-                    type="button"
-                    class="btn-enroll"
-                    id="btn-enroll-now"
-                    disabled
-                    data-enrollment-action="pending">
-                <svg th:replace="~{fragments/icons :: icon('progress')}"></svg>
-                <span>Payment pending</span>
-            </button>
-
             <button th:if="${enrollmentState.action == 'UNAVAILABLE'}"
                     type="button"
                     class="btn-enroll"
@@ -245,9 +235,22 @@
                 <svg th:replace="~{fragments/icons :: icon('info')}"></svg>
                 <span>Course unavailable</span>
             </button>
-            <button class="btn-try" id="btn-try-free">
+
+            <a th:if="${firstPreviewLessonId != null}"
+               th:href="@{/student/courses/{courseId}/preview(courseId=${course.id})}"
+               class="btn-try"
+               id="btn-try-free"
+               style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <svg th:replace="~{fragments/icons :: icon('videos')}"></svg>
                 <span>Try First Lesson Free</span>
+            </a>
+            <button th:if="${firstPreviewLessonId == null}"
+                    class="btn-try"
+                    id="btn-try-free"
+                    disabled
+                    style="opacity: 0.6; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <svg th:replace="~{fragments/icons :: icon('videos')}"></svg>
+                <span>No preview lesson available</span>
             </button>
 
             <p style="font-size:0.75rem;color:var(--lumina-gray-400);text-align:center;margin-top:0.75rem;">30-Day Money-Back Guarantee</p>

@@ -77,29 +77,74 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Override
     @Transactional
     public StudentLearningCourseDTO getLearningCourse(Integer courseId, Integer lessonId) {
-        AccessContext context = requireAccess(courseId);
+        User student = currentUserService.getCurrentUser();
+        validateActiveStudent(student);
+        
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
+        if (course.getStatus() != CourseStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.COURSE_UNAVAILABLE);
+        }
+
+        CourseEnrollment enrollment = enrollmentRepository.findByStudentIdAndCourseIdForUpdate(student.getId(), courseId)
+                .orElse(null);
+
+        if (enrollment == null) {
+            boolean isFree = course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) <= 0;
+            if (isFree) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course.");
+            }
+            List<Lesson> lessons = orderedLessons(courseId);
+            if (lessons.isEmpty()) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "No preview lesson available for this course.");
+            }
+            Integer firstLessonId = lessons.get(0).getId();
+            if (lessonId != null && !lessonId.equals(firstLessonId)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "Please purchase the course to access this lesson.");
+            }
+            lessonId = firstLessonId;
+        }
+
+        AccessContext context = new AccessContext(student, course, enrollment);
         videoDurationPrecomputeService.refreshCourseDurations(List.of(courseId));
         List<Lesson> lessons = orderedLessons(courseId);
         Integer activeLessonId = resolveActiveLessonId(context.enrollment(), lessons, lessonId);
         StudentLearningLessonDTO activeLesson = activeLessonId == null ? null : openLessonInternal(context, lessons, activeLessonId);
-        LessonProgress lastAccessed = lessonProgressRepository
-                .findTopByEnrollmentIdAndLastAccessedAtIsNotNullOrderByLastAccessedAtDesc(context.enrollment().getId())
-                .orElse(null);
-        CourseProgressSnapshot courseProgress = calculateAndStoreCourseProgress(context.enrollment(), lessons);
+        
+        Integer lastAccessedLessonId = null;
+        BigDecimal progressPercentage = BigDecimal.ZERO;
+        int completedLessonsCount = 0;
+        boolean isCompleted = false;
+        String progressStatus = "Not Started";
+        
+        if (context.enrollment() != null) {
+            LessonProgress lastAccessed = lessonProgressRepository
+                    .findTopByEnrollmentIdAndLastAccessedAtIsNotNullOrderByLastAccessedAtDesc(context.enrollment().getId())
+                    .orElse(null);
+            if (lastAccessed != null && lastAccessed.getLesson() != null) {
+                lastAccessedLessonId = lastAccessed.getLesson().getId();
+            }
+            CourseProgressSnapshot courseProgress = calculateAndStoreCourseProgress(context.enrollment(), lessons);
+            completedLessonsCount = courseProgress.completedLessons();
+            progressPercentage = courseProgress.percentage();
+            isCompleted = courseProgress.completed();
+            progressStatus = courseStatus(courseProgress);
+        }
+        
         long estimatedDurationSeconds = estimatedDurationSeconds(lessons);
 
         return StudentLearningCourseDTO.builder()
                 .courseId(context.course().getId())
                 .courseTitle(context.course().getTitle())
                 .instructorName(context.course().getInstructor() == null ? null : context.course().getInstructor().getFullName())
-                .enrollmentId(context.enrollment().getId())
+                .enrollmentId(context.enrollment() == null ? null : context.enrollment().getId())
                 .activeLessonId(activeLessonId)
-                .lastAccessedLessonId(lastAccessed == null || lastAccessed.getLesson() == null ? null : lastAccessed.getLesson().getId())
-                .completedLessons(courseProgress.completedLessons())
-                .totalLessons(courseProgress.totalLessons())
-                .progressPercentage(courseProgress.percentage())
-                .completed(courseProgress.completed())
-                .courseStatus(courseStatus(courseProgress))
+                .lastAccessedLessonId(lastAccessedLessonId)
+                .completedLessons(completedLessonsCount)
+                .totalLessons(lessons.size())
+                .progressPercentage(progressPercentage)
+                .completed(isCompleted)
+                .courseStatus(progressStatus)
                 .estimatedDurationSeconds(estimatedDurationSeconds)
                 .estimatedDurationDisplay(CourseDurationFormatter.formatSeconds(estimatedDurationSeconds))
                 .activeLesson(activeLesson)
@@ -111,7 +156,35 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Override
     @Transactional
     public StudentLearningLessonDTO openLesson(Integer courseId, Integer lessonId) {
-        AccessContext context = requireAccess(courseId);
+        User student = currentUserService.getCurrentUser();
+        validateActiveStudent(student);
+        
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
+        if (course.getStatus() != CourseStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.COURSE_UNAVAILABLE);
+        }
+
+        CourseEnrollment enrollment = enrollmentRepository.findByStudentIdAndCourseIdForUpdate(student.getId(), courseId)
+                .orElse(null);
+
+        if (enrollment == null) {
+            boolean isFree = course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) <= 0;
+            if (isFree) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course.");
+            }
+            List<Lesson> lessons = orderedLessons(courseId);
+            if (lessons.isEmpty()) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "No preview lesson available for this course.");
+            }
+            Integer firstLessonId = lessons.get(0).getId();
+            if (lessonId != null && !lessonId.equals(firstLessonId)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "Please purchase the course to access this lesson.");
+            }
+            lessonId = firstLessonId;
+        }
+
+        AccessContext context = new AccessContext(student, course, enrollment);
         return openLessonInternal(context, orderedLessons(courseId), lessonId);
     }
 
@@ -126,7 +199,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         if (referencedLesson.getCourse() == null || referencedLesson.getCourse().getId() == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "Lesson is not available.");
         }
-        AccessContext context = requireAccess(referencedLesson.getCourse().getId());
+        AccessContext context = requireAccess(referencedLesson.getCourse().getId(), lessonId);
         List<Lesson> lessons = orderedLessons(context.course().getId());
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
         assertLessonAccessible(context.enrollment(), lessons, lesson);
@@ -144,9 +217,31 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Override
     @Transactional
     public LearningProgressDTO recordVideoProgress(Integer courseId, Integer lessonId, VideoProgressRequestDTO request) {
-        AccessContext context = requireAccess(courseId);
+        AccessContext context = requireAccess(courseId, lessonId);
         List<Lesson> lessons = orderedLessons(courseId);
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
+        
+        if (context.enrollment() == null) {
+            // Preview mode - do not save progress in database
+            Integer duration = request.getDurationSeconds();
+            if (duration == null || duration <= 0) {
+                duration = lesson.getVideo() != null ? lesson.getVideo().getDurationSeconds() : 0;
+            }
+            int current = request.getCurrentTimeSeconds() != null ? request.getCurrentTimeSeconds() : 0;
+            int limit = (int) (duration * 0.5);
+            if (current > limit) {
+                current = limit;
+            }
+            return LearningProgressDTO.builder()
+                    .courseId(courseId)
+                    .enrollmentId(null)
+                    .completedLessons(0)
+                    .totalLessons(lessons.size())
+                    .progressPercentage(BigDecimal.ZERO)
+                    .completed(false)
+                    .build();
+        }
+
         assertLessonAccessible(context.enrollment(), lessons, lesson);
         if (lesson.getType() != LessonType.VIDEO || lesson.getVideo() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Only video lessons accept playback progress.");
@@ -175,7 +270,10 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Override
     @Transactional
     public LearningProgressDTO completeLesson(Integer courseId, Integer lessonId) {
-        AccessContext context = requireAccess(courseId);
+        AccessContext context = requireAccess(courseId, lessonId);
+        if (context.enrollment() == null) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "Cannot complete lesson in preview mode.");
+        }
         List<Lesson> lessons = orderedLessons(courseId);
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
         assertLessonAccessible(context.enrollment(), lessons, lesson);
@@ -196,7 +294,17 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     @Override
     @Transactional
     public LearningProgressDTO getCourseProgress(Integer courseId) {
-        AccessContext context = requireAccess(courseId);
+        AccessContext context = requireAccess(courseId, null);
+        if (context.enrollment() == null) {
+            return LearningProgressDTO.builder()
+                    .courseId(courseId)
+                    .enrollmentId(null)
+                    .completedLessons(0)
+                    .totalLessons(orderedLessons(courseId).size())
+                    .progressPercentage(BigDecimal.ZERO)
+                    .completed(false)
+                    .build();
+        }
         CourseProgressSnapshot snapshot = calculateAndStoreCourseProgress(context.enrollment(), orderedLessons(courseId));
         return LearningProgressDTO.builder()
                 .courseId(courseId)
@@ -262,7 +370,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .toList();
     }
 
-    private AccessContext requireAccess(Integer courseId) {
+    private AccessContext requireAccess(Integer courseId, Integer lessonId) {
         User student = currentUserService.getCurrentUser();
         validateActiveStudent(student);
 
@@ -273,7 +381,19 @@ public class StudentLearningServiceImpl implements StudentLearningService {
         }
 
         CourseEnrollment enrollment = enrollmentRepository.findByStudentIdAndCourseIdForUpdate(student.getId(), courseId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course."));
+                .orElse(null);
+                
+        if (enrollment == null) {
+            boolean isFree = course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) <= 0;
+            if (isFree) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "You are not enrolled in this course.");
+            }
+            List<Lesson> lessons = orderedLessons(courseId);
+            if (lessons.isEmpty() || lessonId == null || !lessonId.equals(lessons.get(0).getId())) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "Please purchase the course to access this lesson.");
+            }
+        }
+        
         return new AccessContext(student, course, enrollment);
     }
 
@@ -289,12 +409,13 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     private List<Lesson> orderedLessons(Integer courseId) {
         return lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(courseId).stream()
                 .filter(lesson -> lesson.getType() != LessonType.RETIRED)
-                .sorted(Comparator.comparing(Lesson::getOrderIndex, Comparator.nullsLast(Integer::compareTo)))
+                .sorted(Comparator.comparing(Lesson::getOrderIndex, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(Lesson::getId))
                 .toList();
     }
 
     private Integer resolveActiveLessonId(CourseEnrollment enrollment, List<Lesson> lessons, Integer requestedLessonId) {
-        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
+        List<LessonProgress> progresses = enrollment != null ? lessonProgressRepository.findByEnrollmentId(enrollment.getId()) : Collections.emptyList();
         return resolveActiveLessonId(enrollment, lessons, requestedLessonId, progresses);
     }
 
@@ -357,13 +478,30 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private StudentLearningLessonDTO openLessonInternal(AccessContext context, List<Lesson> lessons, Integer lessonId) {
         Lesson lesson = requireLessonInCourse(lessons, lessonId);
-        List<LessonProgress> existingProgresses = lessonProgressRepository.findByEnrollmentId(context.enrollment().getId());
+        List<LessonProgress> existingProgresses = context.enrollment() != null
+                ? lessonProgressRepository.findByEnrollmentId(context.enrollment().getId())
+                : null;
         Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, existingProgresses);
         assertLessonAccessible(accessByLesson.get(lesson.getId()));
-        LessonProgress progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
-        progress.setLastAccessedAt(LocalDateTime.now());
-        lessonProgressRepository.save(progress);
-        CourseProgressSnapshot snapshot = calculateAndStoreCourseProgress(context.enrollment(), lessons);
+        
+        LessonProgress progress;
+        if (context.enrollment() != null) {
+            progress = findOrCreateProgressForUpdate(context.enrollment(), lesson);
+            progress.setLastAccessedAt(LocalDateTime.now());
+            lessonProgressRepository.save(progress);
+        } else {
+            // Transient progress for preview mode
+            progress = new LessonProgress();
+            progress.setLesson(lesson);
+            progress.setIsCompleted(false);
+            progress.setWatchedSeconds(0);
+            progress.setLastPositionSeconds(0);
+            progress.setMaxReachedSeconds(0);
+        }
+
+        CourseProgressSnapshot snapshot = context.enrollment() != null
+                ? calculateAndStoreCourseProgress(context.enrollment(), lessons)
+                : new CourseProgressSnapshot(0, lessons.size(), BigDecimal.ZERO, false, false);
 
         Lesson previousLesson = previousRequiredLesson(lessons, lesson);
         Lesson nextLesson = nextRequiredLesson(lessons, lesson);
@@ -402,16 +540,20 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .locked(activeAccess != null && activeAccess.locked())
                 .lockReason(activeAccess == null ? null : activeAccess.lockReason())
                 .completed(Boolean.TRUE.equals(progress.getIsCompleted()))
+                .previewMode(context.enrollment() == null)
+                .previewPercentLimit(50)
                 .courseProgress(toCourseOnlyProgressDto(context, snapshot))
                 .resources(Collections.emptyList())
                 .build();
     }
 
     private List<StudentLearningLessonSummaryDTO> toLessonSummaries(CourseEnrollment enrollment, List<Lesson> lessons, Integer activeLessonId) {
-        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
-        Map<Integer, LessonProgress> progressByLesson = progresses.stream()
-                .filter(progress -> progress.getLesson() != null)
-                .collect(Collectors.toMap(progress -> progress.getLesson().getId(), Function.identity(), (left, right) -> right));
+        List<LessonProgress> progresses = enrollment != null ? lessonProgressRepository.findByEnrollmentId(enrollment.getId()) : null;
+        Map<Integer, LessonProgress> progressByLesson = progresses != null
+                ? progresses.stream()
+                        .filter(progress -> progress.getLesson() != null)
+                        .collect(Collectors.toMap(progress -> progress.getLesson().getId(), Function.identity(), (left, right) -> right))
+                : Collections.emptyMap();
         Map<Integer, LessonAccessState> accessByLesson = lessonAccessStates(lessons, progresses);
 
         return lessons.stream()
@@ -473,7 +615,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     }
 
     private void assertLessonAccessible(CourseEnrollment enrollment, List<Lesson> lessons, Lesson lesson) {
-        List<LessonProgress> progresses = lessonProgressRepository.findByEnrollmentId(enrollment.getId());
+        List<LessonProgress> progresses = enrollment != null ? lessonProgressRepository.findByEnrollmentId(enrollment.getId()) : null;
         assertLessonAccessible(lessonAccessStates(lessons, progresses).get(lesson.getId()));
     }
 
@@ -484,6 +626,24 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     }
 
     private Map<Integer, LessonAccessState> lessonAccessStates(List<Lesson> lessons, List<LessonProgress> progresses) {
+        if (progresses == null) {
+            // Preview mode - only the first lesson is accessible
+            return lessons.stream()
+                    .collect(Collectors.toMap(
+                            Lesson::getId,
+                            lesson -> {
+                                boolean isFirst = !lessons.isEmpty() && Objects.equals(lessons.get(0).getId(), lesson.getId());
+                                return new LessonAccessState(
+                                        true,
+                                        isFirst,
+                                        !isFirst,
+                                        isFirst ? null : "Purchase this course to unlock all lessons."
+                                );
+                            },
+                            (left, right) -> right
+                    ));
+        }
+
         Set<Integer> requiredLessonIds = requiredLessons(lessons).stream()
                 .map(Lesson::getId)
                 .collect(Collectors.toSet());
@@ -735,7 +895,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
     private LearningProgressDTO toCourseOnlyProgressDto(AccessContext context, CourseProgressSnapshot snapshot) {
         return LearningProgressDTO.builder()
                 .courseId(context.course().getId())
-                .enrollmentId(context.enrollment().getId())
+                .enrollmentId(context.enrollment() == null ? null : context.enrollment().getId())
                 .completedLessons(snapshot.completedLessons())
                 .totalLessons(snapshot.totalLessons())
                 .progressPercentage(snapshot.percentage())
@@ -806,6 +966,12 @@ public class StudentLearningServiceImpl implements StudentLearningService {
 
     private int valueOrZero(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    @Override
+    public Integer getFirstPreviewableLessonId(Integer courseId) {
+        List<Lesson> lessons = orderedLessons(courseId);
+        return lessons.isEmpty() ? null : lessons.get(0).getId();
     }
 
     private record AccessContext(User student, Course course, CourseEnrollment enrollment) {

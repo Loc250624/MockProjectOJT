@@ -16,7 +16,6 @@ class CourseEnrollmentFrontendTemplateTest {
 
         assertTrue(template.contains("Enroll for free"));
         assertTrue(template.contains("Buy course"));
-        assertTrue(template.contains("Payment pending"));
         assertTrue(template.contains("Continue learning"));
         assertTrue(template.contains("Course unavailable"));
         assertTrue(template.contains("data-enrollment-action=\"free\""));

@@ -372,6 +372,11 @@ function Html5PlayerWrapper(video, options) {
     this.seekTo = function (seconds) {
         video.currentTime = seconds;
     };
+    this.pause = function () {
+        if (typeof video.pause === 'function') {
+            video.pause();
+        }
+    };
     this.getCurrentTime = function () {
         return video.currentTime;
     };
@@ -392,7 +397,7 @@ function YouTubePlayerWrapper(iframe, options) {
             if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
                 options.onTimeUpdate(player.getCurrentTime());
             }
-        }, 1000);
+        }, 250);
     }
 
     function stopTracking() {
@@ -407,6 +412,9 @@ function YouTubePlayerWrapper(iframe, options) {
     }
 
     function onPlayerStateChange(event) {
+        if (player && typeof player.getCurrentTime === 'function' && options.onTimeUpdate) {
+            options.onTimeUpdate(player.getCurrentTime());
+        }
         if (event.data === 1) {
             startTracking();
             if (options.onPlay) options.onPlay();
@@ -453,6 +461,11 @@ function YouTubePlayerWrapper(iframe, options) {
             player.seekTo(seconds, true);
         }
     };
+    this.pause = function () {
+        if (player && typeof player.pauseVideo === 'function') {
+            player.pauseVideo();
+        }
+    };
     this.getCurrentTime = function () {
         return player && typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
     };
@@ -480,6 +493,53 @@ function initVideoProgress(element) {
     var completionRequestSent = false;
     var pendingCompletionSave = false;
     var playerWrapper = null;
+    var previewMode = element.dataset.previewMode === 'true';
+    var previewPercentLimit = Number(element.dataset.previewLimit || 50);
+    var paywallShown = false;
+
+    function enforcePreviewLimit(currentTime) {
+        if (!previewMode) {
+            return false;
+        }
+        var duration = currentDuration();
+        if (duration <= 0) {
+            return false;
+        }
+        var limit = duration * (previewPercentLimit / 100);
+        if (currentTime >= limit) {
+            if (playerWrapper) {
+                playerWrapper.pause();
+                if (currentTime > limit) {
+                    playerWrapper.seekTo(limit);
+                }
+            }
+            if (!paywallShown) {
+                paywallShown = true;
+                showPaywallDialog();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function showPaywallDialog() {
+        if (window.LuminaActionDialog) {
+            window.LuminaActionDialog.open({
+                variant: 'warning',
+                icon: 'payment',
+                eyebrow: 'Preview Limit',
+                title: 'Unlock Full Course',
+                subtitle: 'You have watched 50% of the first lesson. Purchase the course to continue learning.',
+                cancelText: 'Cancel',
+                confirmText: 'Buy Course',
+                onConfirm: function () {
+                    window.location.href = '/student/checkout?courseId=' + courseId;
+                }
+            });
+        } else {
+            alert('Please purchase the course to continue learning.');
+        }
+    }
 
     function finiteSeconds(value) {
         var numberValue = Number(value || 0);
@@ -569,6 +629,9 @@ function initVideoProgress(element) {
     }
 
     function saveProgress(force, currentTime, eventType) {
+        if (previewMode) {
+            return Promise.resolve();
+        }
         var current = Math.floor(currentTime || 0);
         if (!Number.isFinite(current) || current < 0) {
             return Promise.resolve();
@@ -647,26 +710,45 @@ function initVideoProgress(element) {
         }
     }
 
-    function onPlay() { }
+    function onPlay() {
+        if (playerWrapper) {
+            enforcePreviewLimit(playerWrapper.getCurrentTime());
+        }
+    }
 
     function onPause() {
         if (playerWrapper) {
+            if (previewMode) {
+                var duration = currentDuration();
+                if (duration > 0 && playerWrapper.getCurrentTime() >= duration * (previewPercentLimit / 100)) {
+                    return;
+                }
+            }
             saveProgress(true, playerWrapper.getCurrentTime(), 'PAUSE');
         }
     }
 
     function onTimeUpdate(currentTime) {
+        if (enforcePreviewLimit(currentTime)) {
+            return;
+        }
         var duration = currentDuration();
         var nearCompletion = duration > 0 && finiteSeconds(currentTime) * 100 >= duration * 90;
         saveProgress(nearCompletion, currentTime, 'TIME_UPDATE');
     }
 
     function onSeeked(currentTime) {
+        if (enforcePreviewLimit(currentTime)) {
+            return;
+        }
         saveProgress(true, currentTime, 'SEEKED');
     }
 
     function onEnded() {
         if (playerWrapper) {
+            if (previewMode) {
+                return;
+            }
             saveProgress(true, playerWrapper.getDuration(), 'ENDED');
         }
     }
@@ -696,11 +778,15 @@ function initVideoProgress(element) {
             onPlay: onPlay,
             onPause: onPause,
             onTimeUpdate: onTimeUpdate,
-            onEnded: onEnded
+            onEnded: onEnded,
+            onSeeked: onSeeked
         });
     }
 
     window.addEventListener('beforeunload', function () {
+        if (previewMode) {
+            return;
+        }
         if (playerWrapper) {
             var current = Math.floor(playerWrapper.getCurrentTime() || 0);
             var payload = buildProgressPayload(current, 'UNLOAD');

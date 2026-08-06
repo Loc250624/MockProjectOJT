@@ -80,7 +80,6 @@
                         </div>
                         <div style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
                             <span th:if="${crs.enrollmentStatus == 'ENROLLED'}" style="background-color: #22c55e; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Enrolled</span>
-                            <span th:if="${crs.enrollmentStatus == 'PENDING'}" style="background-color: #eab308; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Pending Payment</span>
                             <span th:if="${crs.enrollmentStatus == 'NOT_ENROLLED'}" style="background-color: #64748b; color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Not Enrolled</span>
                         </div>
                         <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" th:text="${crs.description}">Learn Java from scratch to advanced level...</p>

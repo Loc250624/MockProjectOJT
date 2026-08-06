@@ -773,4 +773,45 @@ class StudentLearningServiceTest {
         request.setEventType(eventType);
         return request;
     }
+
+    @Test
+    void previewAccessOnlyAllowsFirstLesson() {
+        when(currentUserService.getCurrentUser()).thenReturn(student);
+        course.setPrice(new BigDecimal("100.00"));
+        when(courseRepository.findById(10)).thenReturn(Optional.of(course));
+        when(enrollmentRepository.findByStudentIdAndCourseIdForUpdate(1, 10)).thenReturn(Optional.empty());
+
+        firstLesson.setOrderIndex(1);
+        secondLesson.setOrderIndex(2);
+        List<Lesson> lessons = List.of(firstLesson, secondLesson);
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(lessons);
+
+        // Accessing first lesson should succeed
+        StudentLearningCourseDTO response = service.getLearningCourse(10, firstLesson.getId());
+        assertNotNull(response);
+        assertTrue(response.getActiveLesson().getPreviewMode());
+
+        // Accessing second lesson should fail
+        assertThrows(BusinessException.class, () -> {
+            service.getLearningCourse(10, secondLesson.getId());
+        });
+    }
+
+    @Test
+    void recordVideoProgressInPreviewModeDoesNotSave() {
+        when(currentUserService.getCurrentUser()).thenReturn(student);
+        course.setPrice(new BigDecimal("100.00"));
+        when(courseRepository.findById(10)).thenReturn(Optional.of(course));
+        when(enrollmentRepository.findByStudentIdAndCourseIdForUpdate(1, 10)).thenReturn(Optional.empty());
+
+        firstLesson.setOrderIndex(1);
+        when(lessonRepository.findByCourseIdWithVideoOrderByOrderIndexAsc(10)).thenReturn(List.of(firstLesson));
+
+        VideoProgressRequestDTO request = videoProgressRequest(10, 10, 100, "TIME_UPDATE");
+        LearningProgressDTO response = service.recordVideoProgress(10, firstLesson.getId(), request);
+
+        assertNotNull(response);
+        assertNull(response.getEnrollmentId());
+        verify(lessonProgressRepository, never()).save(any());
+    }
 }

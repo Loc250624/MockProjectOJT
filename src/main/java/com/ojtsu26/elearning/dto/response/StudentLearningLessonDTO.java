@@ -36,6 +36,8 @@ public class StudentLearningLessonDTO {
     private Boolean locked;
     private String lockReason;
     private Boolean completed;
+    private Boolean previewMode;
+    private Integer previewPercentLimit;
     private LearningProgressDTO courseProgress;
     private List<StudentLearningResourceDTO> resources;
 }
