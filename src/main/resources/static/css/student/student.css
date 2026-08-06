@@ -3428,3 +3428,129 @@ pre {
     flex-direction: column;
   }
 }
+
+html[data-theme="dark"] :is(.learning-player-header, .dedicated-quiz-header) {
+  background: color-mix(in srgb, var(--theme-surface) 96%, transparent);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(
+  .progress-card,
+  .quiz-nav,
+  .q-nav-btn,
+  .quiz-area,
+  .assessment-topbar,
+  .assessment-panel,
+  .result-row,
+  .assessment-status-badge,
+  .cert-card,
+  .cert-card-inner,
+  .ms-dot,
+  .learning-progress-summary,
+  .learning-curriculum,
+  .learning-lesson-card,
+  .learning-mobile-curriculum,
+  .learning-code-meta select,
+  .learning-code-editor,
+  .learning-quiz-result,
+  .learning-result-score,
+  .learning-result-item,
+  .learning-code-result,
+  .student-empty-state,
+  .profile-hero,
+  .profile-avatar,
+  .profile-stat-card,
+  .profile-card,
+  .profile-filters select,
+  .profile-form-grid input,
+  .profile-form-grid textarea,
+  .profile-url-panel input,
+  .feedback-success-icon,
+  .quiz-overview-skeleton,
+  .quiz-overview-card,
+  .quiz-overview-error,
+  .dedicated-quiz-progress,
+  .dedicated-quiz-workspace,
+  .dedicated-quiz-result,
+  .dedicated-quiz-option
+) {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(
+  .learning-empty,
+  .learning-video-missing,
+  .learning-code-example pre,
+  .profile-empty,
+  .profile-scope-list > div,
+  .profile-security-grid > article,
+  .system-summary-grid div,
+  .profile-form-grid input[readonly],
+  .profile-form-grid textarea[readonly]
+) {
+  background: var(--theme-surface-muted);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(.learning-player-page, .profile-page) {
+  background: var(--theme-page);
+}
+
+html[data-theme="dark"] .profile-badge.muted {
+  color: var(--theme-text-muted);
+  background: var(--theme-surface-muted);
+}
+
+html[data-theme="dark"] .dedicated-quiz-time-limit.is-warning {
+  color: var(--theme-warning-text);
+  background: var(--theme-warning-surface);
+}
+
+html[data-theme="dark"] .feedback-page {
+  --feedback-surface: var(--theme-surface);
+  --feedback-surface-soft: var(--theme-surface-muted);
+  --feedback-text: var(--theme-text-strong);
+  --feedback-muted: var(--theme-text-muted);
+  --feedback-border: var(--theme-border);
+  --feedback-border-strong: var(--theme-border-strong);
+  --feedback-accent: var(--theme-chart-1);
+  --feedback-accent-soft: color-mix(in srgb, var(--theme-chart-1) 14%, var(--theme-surface));
+  --feedback-star: #fcd34d;
+  --feedback-star-empty: #61718a;
+  --feedback-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  background: var(--theme-page);
+}
+
+html[data-theme="dark"] .feedback-main {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(79, 70, 229, 0.14), transparent 28rem),
+    linear-gradient(180deg, var(--theme-page), #0e1728);
+}
+
+html[data-theme="dark"] .feedback-hero,
+html[data-theme="dark"] .feedback-success-card,
+html[data-theme="dark"] .feedback-panel {
+  border-color: var(--feedback-border);
+  background: linear-gradient(145deg, var(--theme-surface-elevated), var(--feedback-surface));
+}
+
+html[data-theme="dark"] .feedback-success-card {
+  background: linear-gradient(135deg, var(--theme-success-surface), var(--feedback-surface));
+}
+
+html[data-theme="dark"] .rating-row {
+  border-color: var(--feedback-border);
+  background: var(--feedback-surface-soft);
+}
+
+html[data-theme="dark"] .rating-row--overall {
+  border-color: var(--feedback-border-strong);
+  background: var(--feedback-accent-soft);
+}
+
+html[data-theme="dark"] .feedback-field .form-control {
+  color: var(--theme-text);
+  border-color: var(--theme-border-strong);
+  background: var(--theme-input);
+}

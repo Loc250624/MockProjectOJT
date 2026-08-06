@@ -60,6 +60,8 @@ class ResponsiveFrontendTemplateTest {
         assertTrue(dashboard.contains("responsive-data-table"));
         assertTrue(designSystem.contains("content: attr(data-label)"));
         assertTrue(designSystem.contains(".responsive-row-details:not([open])"));
+        assertTrue(designSystem.contains("content: \"\\002315\";"));
+        assertTrue(designSystem.contains("content: \"\\002212\";"));
     }
 
     @Test

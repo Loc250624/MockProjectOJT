@@ -952,6 +952,28 @@ body.admin-user-modal-open {
   }
 }
 
+html[data-theme="dark"] :is(
+  .admin-table-container,
+  .admin-table-toolbar,
+  .admin-user-modal-panel,
+  .admin-side-panel,
+  .settlement-card,
+  .admin-inline-loader,
+  .admin-pie-hole,
+  .admin-pie-legend-item,
+  .admin-settings-category,
+  .admin-table-footer
+) {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(.admin-analytics-filter-row select, .admin-setting-input) {
+  color: var(--theme-text);
+  background: var(--theme-input);
+  border-color: var(--theme-border);
+}
+
 /* Admin system settings */
 .admin-settings-header {
   display: flex;

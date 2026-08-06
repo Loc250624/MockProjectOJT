@@ -234,3 +234,9 @@
     border-radius: 8px 8px 0 0;
   }
 }
+
+html[data-theme="dark"] :is(.profile-action-link, .profile-modal-panel) {
+  color: var(--theme-text);
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}

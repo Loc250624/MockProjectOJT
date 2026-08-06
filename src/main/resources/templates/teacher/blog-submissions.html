@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog Submissions - Teacher - OJTSU26 E-Learning</title>
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/teacher/teacher.css}">
 </head>
@@ -16,7 +17,6 @@
             <table class="table"><thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Reviewer Comments</th><th>Actions</th></tr></thead><tbody><tr><td>1</td><td>Java Tips</td><td>Rejected</td><td>Needs more info</td><td><button class="btn btn-info">Edit/Resubmit</button></td></tr></tbody></table>
         </main>
     </div>
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
     <script th:src="@{/js/teacher/teacher.js}"></script>
 </body>
 </html>

@@ -37,8 +37,8 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
     @Override
     public StudentFeedbackResponseDTO createForCurrentStudent(StudentFeedbackRequestDTO request) {
         User student = requireCurrentUserWithRole(Role.STUDENT);
-        String subject = normalizeRequired(request == null ? null : request.getSubject(), "Subject is required.");
         String content = normalizeRequired(request == null ? null : request.getContent(), "Content is required.");
+        String subject = subjectOrMessagePreview(request == null ? null : request.getSubject(), content);
         FeedbackCategory category = categoryOrDefault(request == null ? null : request.getCategory());
         Integer courseContentRating = requireRating(request == null ? null : request.getCourseContentRating(), "Course content rating");
         Integer instructorSupportRating = requireRating(request == null ? null : request.getInstructorSupportRating(), "Instructor support rating");
@@ -114,6 +114,16 @@ public class StudentFeedbackServiceImpl implements StudentFeedbackService {
         // persisted/admin contract. Preserve explicit legacy callers and use
         // the existing general-purpose enum value for the simplified form.
         return category == null ? DEFAULT_FEEDBACK_CATEGORY : category;
+    }
+
+    private String subjectOrMessagePreview(String subject, String content) {
+        // Subject is no longer user-selectable. Keep legacy service callers
+        // compatible and satisfy the persisted/admin contract with a preview.
+        String normalized = subject == null ? "" : subject.trim();
+        if (!normalized.isBlank()) {
+            return normalized.length() <= 150 ? normalized : normalized.substring(0, 150);
+        }
+        return content.length() <= 150 ? content : content.substring(0, 150);
     }
 
     private Integer requireRating(Integer rating, String label) {

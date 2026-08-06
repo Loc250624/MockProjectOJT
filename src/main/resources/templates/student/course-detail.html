@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
     <style>
@@ -21,7 +22,7 @@
         @media (max-width: 1024px) { .cd-body { grid-template-columns: 1fr; } }
 
         /* Enrollment card */
-        .enroll-card { background: white; border-radius: 14px; border: 1px solid var(--lumina-gray-200); padding: 1.5rem; box-shadow: var(--shadow-md); position: sticky; top: 80px; }
+        .enroll-card { background:var(--theme-surface); border-radius: 14px; border: 1px solid var(--lumina-gray-200); padding: 1.5rem; box-shadow: var(--shadow-md); position: sticky; top: 80px; }
         .enroll-card .price-display { font-size: 2rem; font-weight: 800; color: var(--lumina-gray-900); }
         .enroll-card .btn-enroll { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 3rem; padding: 0.875rem; background: var(--lumina-blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
         .enroll-card .btn-enroll:hover { background: var(--lumina-blue-light); }
@@ -35,7 +36,7 @@
 
         /* Curriculum accordion */
         .curriculum-module { border: 1px solid var(--lumina-gray-200); border-radius: 10px; margin-bottom: 0.625rem; overflow: hidden; }
-        .module-header { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; cursor: pointer; background: white; transition: background 0.2s; }
+        .module-header { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; cursor: pointer; background:var(--theme-surface); transition: background 0.2s; }
         .module-header:hover { background: var(--lumina-gray-50); }
         .module-badge { background: var(--lumina-blue-pale); color: var(--lumina-blue); font-size: 0.6875rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
         .module-title { flex: 1; font-weight: 700; color: var(--lumina-gray-800); font-size: 0.9375rem; }
@@ -254,9 +255,6 @@
     </div>
 
 </div>
-
-<!-- Footer -->
-<footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script th:src="@{/js/csrf-fetch.js}"></script>
 <script th:src="@{/js/student/student.js}"></script>

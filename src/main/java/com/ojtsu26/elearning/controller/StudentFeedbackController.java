@@ -31,7 +31,6 @@ public class StudentFeedbackController {
     @InitBinder("feedback")
     void initFeedbackBinder(WebDataBinder binder) {
         binder.setAllowedFields(
-                "subject",
                 "content",
                 "courseContentRating",
                 "instructorSupportRating",

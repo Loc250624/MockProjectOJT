@@ -79,7 +79,7 @@ class StudentFeedbackSecurityTest {
         StudentFeedback saved = feedbackRepository.findAll().get(0);
         assertEquals(student.getId(), saved.getStudent().getId());
         assertEquals(FeedbackCategory.OTHER, saved.getCategory());
-        assertEquals("Search feedback", saved.getSubject());
+        assertEquals("Search should remember filters.", saved.getSubject());
         assertEquals("Search should remember filters.", saved.getContent());
         assertEquals(5, saved.getCourseContentRating());
         assertEquals(4, saved.getInstructorSupportRating());
@@ -95,6 +95,7 @@ class StudentFeedbackSecurityTest {
                 .andExpect(content().string(not(containsString("sidebar-student"))))
                 .andExpect(content().string(not(containsString("portal-topbar"))))
                 .andExpect(content().string(containsString("Submit Feedback")))
+                .andExpect(content().string(not(containsString("feedback-subject"))))
                 .andExpect(content().string(containsString("rating-row rating-row--overall")))
                 .andExpect(content().string(not(containsString("feedback-category-panel"))))
                 .andExpect(content().string(not(containsString("category-grid"))))
