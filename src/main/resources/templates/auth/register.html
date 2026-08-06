@@ -10,14 +10,23 @@
     <title>Create Account - LumiNa E-Learning</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/auth/auth.css}">
+    <link rel="stylesheet" th:href="@{/css/auth/register-hero-slider.css}">
     <link rel="stylesheet" th:href="@{/css/auth/password-policy.css}">
 </head>
 <body>
 <div class="auth-page auth-page-refined">
-    <aside class="auth-hero auth-hero-register" aria-label="Create a LumiNa student account">
+    <aside class="auth-hero auth-hero-register" aria-label="Create a LumiNa student account" data-auth-hero-slider>
+        <div class="auth-hero-slides" aria-hidden="true">
+            <div class="auth-hero-slide auth-hero-slide-register-1 is-active"></div>
+            <div class="auth-hero-slide auth-hero-slide-register-2"></div>
+            <div class="auth-hero-slide auth-hero-slide-register-3"></div>
+            <div class="auth-hero-slide auth-hero-slide-register-4"></div>
+        </div>
+
         <a th:href="@{/}" class="auth-hero-brand" aria-label="LumiNa home">
             <span class="auth-logo-mark"><svg th:replace="~{fragments/icons :: icon('students')}"></svg></span>
             <span>LumiNa</span>
@@ -26,14 +35,13 @@
         <div class="auth-hero-content">
             <span class="auth-kicker">Student registration</span>
             <h1 class="auth-hero-title">Start with a student workspace.</h1>
-            <p class="auth-hero-copy">
-                Public registration creates a student account. Teacher and admin roles are reviewed and assigned separately.
-            </p>
-            <ul class="auth-hero-list" aria-label="Registration rules">
-                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> New accounts are created as students</li>
-                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> Passwords are stored with BCrypt</li>
-                <li><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> OAuth2 remains available from login</li>
-            </ul>
+        </div>
+
+        <div class="auth-hero-dots" aria-hidden="true">
+            <span class="auth-hero-dot is-active"></span>
+            <span class="auth-hero-dot"></span>
+            <span class="auth-hero-dot"></span>
+            <span class="auth-hero-dot"></span>
         </div>
     </aside>
 
@@ -144,5 +152,6 @@
 
 <div th:replace="~{fragments/ai-chatbot :: widget}"></div>
 <script th:src="@{/js/auth/auth.js}"></script>
+<script th:src="@{/js/auth/login-hero-slider.js}"></script>
 </body>
 </html>
