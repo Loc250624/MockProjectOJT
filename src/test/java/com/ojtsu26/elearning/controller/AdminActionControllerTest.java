@@ -220,10 +220,7 @@ class AdminActionControllerTest {
     }
 
     @Test
-    void adminCreatesStudentTeacherAndAdminAccounts() throws Exception {
-        createUser("Created Student", "created.student@example.com", "STUDENT")
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.role").value("STUDENT"));
+    void adminCreatesTeacherAndAdminAccountsOnly() throws Exception {
         createUser("Created Teacher", "created.teacher@example.com", "TEACHER")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.role").value("TEACHER"));
@@ -238,13 +235,24 @@ class AdminActionControllerTest {
     }
 
     @Test
+    void adminCannotCreateStudentAccount() throws Exception {
+        createUser("Created Student", "created.student@example.com", "STUDENT")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Admin-created accounts can only use Teacher or Admin roles"));
+
+        assertEquals(0, userRepository.findAll().stream()
+                .filter(user -> "created.student@example.com".equalsIgnoreCase(user.getEmail()))
+                .count());
+    }
+
+    @Test
     void createUserRejectsDuplicateEmailAndPasswordMismatch() throws Exception {
         mockMvc.perform(post("/api/admin/users")
                         .with(adminPrincipal())
                         .with(csrf())
                         .contentType("application/json")
                         .content("""
-                                {"fullName":"Duplicate","email":"ALICE.STUDENT@example.com","role":"STUDENT","password":"Secret123!","confirmPassword":"Secret123!"}
+                                {"fullName":"Duplicate","email":"ALICE.STUDENT@example.com","role":"TEACHER","password":"Secret123!","confirmPassword":"Secret123!"}
                                 """))
                 .andExpect(status().isConflict());
 
