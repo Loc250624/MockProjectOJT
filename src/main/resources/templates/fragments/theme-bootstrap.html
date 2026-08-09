@@ -2,6 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <th:block th:fragment="bootstrap">
+    <!-- CSRF Meta Tags for AJAX/Fetch Requests -->
+    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
+    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta th:if="${_csrf != null}" name="_csrf_parameter" th:content="${_csrf.parameterName}">
+
     <script>
         (function () {
             var storageKey = 'lumina-theme';
@@ -27,6 +32,8 @@
             document.documentElement.style.colorScheme = theme;
         }());
     </script>
+    <!-- CSRF Protection Interceptor for Fetch -->
+    <script th:src="@{/js/csrf-fetch.js}"></script>
 </th:block>
 </body>
 </html>
