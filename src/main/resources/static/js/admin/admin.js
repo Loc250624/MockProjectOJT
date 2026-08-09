@@ -365,6 +365,11 @@ function initUserAdministration() {
             form.confirmPassword.focus();
             return;
         }
+        if (form.role.value !== 'TEACHER' && form.role.value !== 'ADMIN') {
+            setCreateError('Admin can only create Teacher or Admin accounts.');
+            form.role.focus();
+            return;
+        }
 
         state.creating = true;
         setCreateError('');

@@ -76,6 +76,12 @@ public class UserServiceImpl implements UserService {
         if (!requestDTO.getPassword().equals(requestDTO.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Passwords do not match");
         }
+        if (requestDTO.getRole() != Role.TEACHER && requestDTO.getRole() != Role.ADMIN) {
+            throw new BusinessException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "Admin-created accounts can only use Teacher or Admin roles"
+            );
+        }
 
         String normalizedEmail = normalizeEmail(requestDTO.getEmail());
         if (userRepository.existsByAuthProviderAndEmailIgnoreCase(AuthProvider.LOCAL, normalizedEmail)) {
