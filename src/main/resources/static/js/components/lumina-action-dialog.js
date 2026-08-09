@@ -114,8 +114,8 @@
             notice: options.notice && typeof options.notice === 'object' ? options.notice : null,
             checklist: Array.isArray(options.checklist) ? options.checklist.slice(0, 10) : [],
             acknowledgement,
-            cancelText: normalizedText(options.cancelText, 'Cancel'),
-            confirmText: normalizedText(options.confirmText, 'Confirm'),
+            cancelText: normalizedText(options.cancelText, 'No'),
+            confirmText: normalizedText(options.confirmText, 'Yes'),
             loadingText: normalizedText(options.loadingText, 'Processing...'),
             errorText: normalizedText(options.errorText, 'The action could not be completed. Please try again.'),
             closeOnEscape: options.closeOnEscape !== false,
@@ -397,9 +397,9 @@
                 variant: 'info',
                 icon: 'quiz',
                 eyebrow: 'Quiz attempt',
-                badge: 'Timer starts immediately',
+                badge: '',
                 title: 'Ready to start the quiz?',
-                subtitle: 'Review the quiz rules before the attempt is created.',
+                subtitle: '',
                 objectLabel: 'Quiz',
                 objectName: values.quizName || 'Selected quiz',
                 summary: [
@@ -412,8 +412,8 @@
                     title: 'The timer begins after confirmation',
                     text: 'Do not close or refresh the page while your attempt is being created.'
                 },
-                confirmText: 'Start quiz',
-                cancelText: 'Not yet',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         },
@@ -437,8 +437,8 @@
                     label: 'I understand that this attempt will be finalized.',
                     required: true
                 },
-                confirmText: 'Submit quiz',
-                cancelText: 'Review answers',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         },
@@ -458,7 +458,8 @@
                     { label: 'Current status', value: values.currentStatus || 'Draft' },
                     { label: 'New status', value: 'Pending Review' }
                 ],
-                confirmText: values.isResubmit ? 'Resubmit blog' : 'Submit blog',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         },
@@ -482,7 +483,8 @@
                     'Lessons and videos are available to learners.',
                     'Quiz configuration and question bank are ready.'
                 ],
-                confirmText: values.withdraw ? 'Withdraw course' : 'Submit for approval',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         },
@@ -508,8 +510,8 @@
                     title: 'Complete the payment on the gateway page',
                     text: 'Do not close the browser until the result is returned to the E-Learning website.'
                 },
-                confirmText: 'Continue to payment',
-                cancelText: 'Go back',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         },
@@ -535,8 +537,8 @@
                     label: 'I understand the effect of this action.',
                     required: true
                 },
-                confirmText: values.confirmText || 'Delete item',
-                cancelText: values.cancelText || 'Keep item',
+                confirmText: 'Yes',
+                cancelText: 'No',
                 ...values.options
             });
         }

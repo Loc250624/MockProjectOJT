@@ -116,6 +116,13 @@ html[data-theme="dark"] .lumina-action-dialog__shell {
     --dialog-accent-soft: color-mix(in srgb, var(--dialog-accent) 14%, var(--lumina-dialog-surface));
 }
 
+html[data-theme="dark"] .lumina-action-dialog__subtitle,
+html[data-theme="dark"] .lumina-action-dialog__status,
+html[data-theme="dark"] .lumina-action-dialog__checklist-item,
+html[data-theme="dark"] .lumina-action-dialog__acknowledgement {
+    color: var(--theme-text);
+}
+
 .lumina-action-dialog__accent {
     position: absolute;
     inset: 0 0 auto;
@@ -358,6 +365,29 @@ html[data-theme="dark"] .lumina-action-dialog__shell {
     font-size: 13px;
     line-height: 1.5;
     white-space: pre-line;
+}
+
+html[data-theme="dark"] .lumina-action-dialog__notice {
+    background: color-mix(in srgb, var(--dialog-accent) 18%, var(--theme-surface-elevated));
+    border-color: color-mix(in srgb, var(--dialog-accent) 34%, var(--theme-border-strong));
+}
+
+html[data-theme="dark"] .lumina-action-dialog__notice strong {
+    color: var(--theme-text-strong);
+}
+
+html[data-theme="dark"] .lumina-action-dialog__notice p {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .lumina-action-dialog__notice-icon {
+    color: color-mix(in srgb, var(--dialog-accent) 42%, #ffffff);
+    background: color-mix(in srgb, var(--dialog-accent) 24%, var(--theme-surface));
+    border: 1px solid color-mix(in srgb, var(--dialog-accent) 36%, var(--theme-border-strong));
+}
+
+html[data-theme="dark"] .lumina-action-dialog__notice-icon svg {
+    stroke-width: 2.15;
 }
 
 .lumina-action-dialog__checklist {

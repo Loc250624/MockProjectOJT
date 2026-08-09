@@ -14,7 +14,10 @@
             aria-label="Open AI Chatbot"
             aria-controls="ai-chatbot-panel"
             aria-expanded="false">
-        <img th:src="@{/images/hubot.svg}" class="ai-chatbot-toggle-icon" alt="" aria-hidden="true">
+        <span class="ai-chatbot-toggle-icon" aria-hidden="true">
+            <img th:src="@{/images/hubot.svg}" class="ai-chatbot-logo-image" alt="">
+        </span>
+        <span class="ai-chatbot-launcher-status" data-ai-chatbot-launcher-status aria-hidden="true"></span>
         <span class="sr-only">Open AI Chatbot</span>
     </button>
 
@@ -25,7 +28,15 @@
              aria-labelledby="ai-chatbot-title"
              hidden>
         <header class="ai-chatbot-header">
-            <strong id="ai-chatbot-title">AI Chatbot</strong>
+            <span class="ai-chatbot-avatar" aria-hidden="true">
+                <img th:src="@{/images/hubot.svg}" class="ai-chatbot-logo-image" alt="">
+            </span>
+            <span class="ai-chatbot-header-copy">
+                <strong id="ai-chatbot-title">AI Chatbot</strong>
+                <span class="ai-chatbot-header-status"
+                      data-ai-chatbot-header-status
+                      aria-live="polite">Online · Ready to help</span>
+            </span>
             <button type="button"
                     class="ai-chatbot-close"
                     data-ai-chatbot-close
@@ -35,31 +46,46 @@
         </header>
 
         <div class="ai-chatbot-content" data-ai-chatbot-content>
+            <div class="ai-chatbot-context-badge"
+                 data-ai-chatbot-context-badge
+                 hidden></div>
             <div class="ai-chatbot-messages"
                  data-ai-chatbot-messages
                  role="log"
                  aria-live="polite"
                  aria-relevant="additions">
                 <div class="ai-chatbot-message assistant" data-ai-chatbot-greeting>
-                    <strong>AI Chatbot</strong>
-                    <div class="ai-chatbot-bubble">Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?</div>
+                    <span class="ai-chatbot-message-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"></path>
+                            <path d="M19 14l.7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14z"></path>
+                            <path d="M5 14l.7 2.3L8 17l-2.3.7L5 20l-.7-2.3L2 17l2.3-.7L5 14z"></path>
+                        </svg>
+                    </span>
+                    <div class="ai-chatbot-message-body">
+                        <strong>AI Chatbot</strong>
+                        <div class="ai-chatbot-bubble">Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?</div>
+                    </div>
                 </div>
             </div>
 
             <div class="ai-chatbot-suggestion-groups">
+                <button type="button"
+                        class="ai-chatbot-suggestions-toggle"
+                        data-ai-chatbot-suggestions-toggle
+                        aria-expanded="false"
+                        hidden>
+                    <span aria-hidden="true">+</span>
+                    <span>Suggestions</span>
+                </button>
                 <div class="ai-chatbot-quick-actions"
                      data-ai-chatbot-quick-actions
-                     aria-label="Initial quick questions">
-                    <button type="button" data-ai-chatbot-action="SUMMARY">Summarize</button>
-                    <button type="button" data-ai-chatbot-action="EXPLAIN_SIMPLY">Explain simply</button>
-                    <button type="button" data-ai-chatbot-action="EXAMPLE">Give an example</button>
-                    <button type="button" data-ai-chatbot-action="QUIZ_ME">Quiz me</button>
-                </div>
+                     aria-label="Quick Actions"></div>
                 <div class="ai-chatbot-related-actions"
                      data-ai-chatbot-related-actions
                      aria-label="Related questions"
                      hidden>
-                    <span>Ask next</span>
+                    <span>Follow-up suggestions</span>
                     <div class="ai-chatbot-quick-actions" data-ai-chatbot-related-buttons></div>
                 </div>
             </div>

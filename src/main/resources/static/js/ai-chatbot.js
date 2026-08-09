@@ -17,22 +17,25 @@
 
     var root = roots[0];
     var toggle = root.querySelector('[data-ai-chatbot-toggle]');
+    var launcherStatus = root.querySelector('[data-ai-chatbot-launcher-status]');
     var panel = root.querySelector('[data-ai-chatbot-panel]');
     var closeButton = root.querySelector('[data-ai-chatbot-close]');
     var content = root.querySelector('[data-ai-chatbot-content]');
+    var contextBadge = root.querySelector('[data-ai-chatbot-context-badge]');
     var messages = root.querySelector('[data-ai-chatbot-messages]');
     var greeting = root.querySelector('[data-ai-chatbot-greeting]');
     var quickActionsContainer = root.querySelector('[data-ai-chatbot-quick-actions]');
-    var quickActions = Array.from(root.querySelectorAll('[data-ai-chatbot-action]'));
+    var suggestionsToggle = root.querySelector('[data-ai-chatbot-suggestions-toggle]');
     var relatedActionsContainer = root.querySelector('[data-ai-chatbot-related-actions]');
     var relatedButtonsContainer = root.querySelector('[data-ai-chatbot-related-buttons]');
     var form = root.querySelector('[data-ai-chatbot-form]');
     var input = root.querySelector('[data-ai-chatbot-input]');
     var sendButton = root.querySelector('[data-ai-chatbot-send]');
     var status = root.querySelector('[data-ai-chatbot-status]');
+    var headerStatus = root.querySelector('[data-ai-chatbot-header-status]');
 
     if (!toggle || !panel || !closeButton || !content || !messages || !greeting || !quickActionsContainer
-        || !relatedActionsContainer || !relatedButtonsContainer || !form || !input) {
+        || !suggestionsToggle || !relatedActionsContainer || !relatedButtonsContainer || !form || !input) {
         return;
     }
 
@@ -43,27 +46,39 @@
     var conversationId = authenticated ? null : (readStored(conversationStorageKey) || createConversationId());
     var history = [];
     var shownRelatedQuestions = [];
+    var recentlyShownSuggestions = [];
     var sending = false;
     var previouslyFocused = null;
+    var latestPageData = currentPageContext();
 
     if (!authenticated) {
         writeStored(conversationStorageKey, conversationId);
     }
+    setAvailability('online');
+    renderContextUi(latestPageData.uiContext);
     renderInitialQuestions();
-    renderRelatedQuestions([]);
+    relatedActionsContainer.hidden = true;
 
     toggle.addEventListener('click', function () {
         setPanelOpen(panel.hidden);
     });
     closeButton.addEventListener('click', closePanel);
 
-    quickActions.forEach(function (button) {
-        button.addEventListener('click', function () {
-            if (sending) {
-                return;
-            }
-            sendChat(button.textContent.trim(), button.dataset.aiChatbotAction || '');
-        });
+    suggestionsToggle.addEventListener('click', function () {
+        if (sending) {
+            return;
+        }
+        if (quickActionsContainer.hidden) {
+            renderQuickActions(contextualActions('initial'), false);
+            quickActionsContainer.hidden = false;
+            relatedActionsContainer.hidden = true;
+            suggestionsToggle.setAttribute('aria-expanded', 'true');
+        } else {
+            quickActionsContainer.hidden = true;
+            suggestionsToggle.setAttribute('aria-expanded', 'false');
+        }
+        updateSuggestionsToggle();
+        scrollContent();
     });
 
     form.addEventListener('submit', function (event) {
@@ -100,6 +115,8 @@
         toggle.hidden = isOpen;
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         if (isOpen) {
+            latestPageData = currentPageContext();
+            renderContextUi(latestPageData.uiContext);
             if (wasHidden) {
                 previouslyFocused = document.activeElement;
             }
@@ -139,14 +156,20 @@
     }
 
     function renderInitialQuestions() {
-        quickActionsContainer.hidden = history.some(function (turn) {
+        var hasUserHistory = history.some(function (turn) {
             return turn.role === 'user';
         });
+        renderQuickActions(contextualActions('initial'), hasUserHistory);
+        quickActionsContainer.hidden = hasUserHistory;
+        suggestionsToggle.setAttribute('aria-expanded', hasUserHistory ? 'false' : 'true');
+        updateSuggestionsToggle();
     }
 
     function beginSuggestionTransition() {
         quickActionsContainer.hidden = true;
         relatedActionsContainer.hidden = true;
+        suggestionsToggle.setAttribute('aria-expanded', 'false');
+        updateSuggestionsToggle();
     }
 
     function setLoading(isLoading) {
@@ -155,14 +178,32 @@
         if (sendButton) {
             sendButton.disabled = isLoading;
         }
-        quickActions.forEach(function (button) {
-            button.disabled = isLoading;
-        });
-        Array.from(relatedButtonsContainer.querySelectorAll('button')).forEach(function (button) {
-            button.disabled = isLoading;
-        });
+        Array.from(root.querySelectorAll('[data-ai-chatbot-action], [data-ai-chatbot-related-action]'))
+            .forEach(function (button) {
+                button.disabled = isLoading;
+            });
         if (isLoading) {
-            setStatus('Thinking...', false);
+            setAvailability('thinking');
+            setStatus('', false);
+        }
+    }
+
+    function setAvailability(nextState) {
+        var state = nextState === 'thinking' || nextState === 'unavailable' ? nextState : 'online';
+        root.dataset.aiChatbotState = state;
+        if (launcherStatus) {
+            launcherStatus.classList.toggle('is-thinking', state === 'thinking');
+            launcherStatus.classList.toggle('is-unavailable', state === 'unavailable');
+        }
+        if (!headerStatus) {
+            return;
+        }
+        if (state === 'thinking') {
+            headerStatus.textContent = 'Thinking...';
+        } else if (state === 'unavailable') {
+            headerStatus.textContent = 'Temporarily unavailable';
+        } else {
+            headerStatus.textContent = 'Online · Ready to help';
         }
     }
 
@@ -196,6 +237,7 @@
         setLoading(true);
 
         var pageData = currentPageContext();
+        latestPageData = pageData;
         var requestBody = {
             conversationId: conversationId,
             lessonId: pageData.lessonId,
@@ -204,6 +246,7 @@
             pageContext: pageData.pageContext
         };
         if (!authenticated) {
+            requestBody.history = requestHistory;
             requestBody.recentMessages = requestHistory;
         }
         fetch('/api/ai-chatbot/chat', {
@@ -233,14 +276,23 @@
             history.push({ role: 'assistant', content: answer });
             history = history.slice(-50);
             renderRelatedQuestions(data.suggestedQuestions || []);
-            setStatus(data.refused ? 'This request is outside the available website guidance.' : '', Boolean(data.refused));
+            if (data.refused) {
+                setStatus('This request is outside the available website guidance.', true);
+            } else {
+                setStatus('', false);
+            }
+            setAvailability('online');
         }).catch(function (error) {
+            setAvailability('unavailable');
             setStatus(error.message || 'AI Chatbot could not respond. Please try again later.', true);
             if (relatedButtonsContainer.childElementCount > 0) {
                 relatedActionsContainer.hidden = false;
             }
         }).finally(function () {
             setLoading(false);
+            if (root.dataset.aiChatbotState !== 'unavailable') {
+                setAvailability('online');
+            }
             input.focus();
         });
     }
@@ -249,6 +301,17 @@
         var item = document.createElement('div');
         item.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'assistant');
         item.setAttribute('data-ai-chatbot-persisted-message', '');
+
+        if (role === 'assistant') {
+            var avatar = document.createElement('span');
+            avatar.className = 'ai-chatbot-message-avatar';
+            avatar.setAttribute('aria-hidden', 'true');
+            avatar.appendChild(svgIcon('sparkles'));
+            item.appendChild(avatar);
+        }
+
+        var body = document.createElement('div');
+        body.className = 'ai-chatbot-message-body';
         var label = document.createElement('strong');
         label.textContent = role === 'user' ? 'You' : 'AI Chatbot';
         var bubble = document.createElement('div');
@@ -258,56 +321,598 @@
         } else {
             bubble.textContent = text || '';
         }
-        item.appendChild(label);
-        item.appendChild(bubble);
+        body.appendChild(label);
+        body.appendChild(bubble);
+        if (role === 'assistant') {
+            body.appendChild(messageTools(text || ''));
+        }
+        item.appendChild(body);
         messages.appendChild(item);
         scrollMessages();
     }
 
+    function messageTools(text) {
+        var tools = document.createElement('div');
+        tools.className = 'ai-chatbot-message-tools';
+        [
+            { label: 'Helpful', icon: 'thumbs-up', action: markFeedback },
+            { label: 'Not helpful', icon: 'thumbs-down', action: markFeedback },
+            { label: 'Copy', icon: 'copy', action: copyAnswer }
+        ].forEach(function (tool) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.appendChild(svgIcon(tool.icon));
+            button.appendChild(document.createTextNode(tool.label));
+            button.addEventListener('click', function () {
+                tool.action(button, text);
+            });
+            tools.appendChild(button);
+        });
+        return tools;
+    }
+
+    function markFeedback(button) {
+        Array.from(button.parentElement.querySelectorAll('button')).forEach(function (sibling) {
+            sibling.removeAttribute('aria-pressed');
+        });
+        button.setAttribute('aria-pressed', 'true');
+        setStatus('Thanks for the feedback.', false);
+    }
+
+    function copyAnswer(button, text) {
+        var value = String(text || '');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(function () {
+                setStatus('Copied.', false);
+            }).catch(function () {
+                fallbackCopy(value);
+            });
+            return;
+        }
+        fallbackCopy(value);
+        button.setAttribute('aria-pressed', 'true');
+    }
+
+    function fallbackCopy(value) {
+        var helper = document.createElement('textarea');
+        helper.value = value;
+        helper.setAttribute('readonly', '');
+        helper.style.position = 'fixed';
+        helper.style.left = '-9999px';
+        root.appendChild(helper);
+        helper.select();
+        try {
+            document.execCommand('copy');
+            setStatus('Copied.', false);
+        } catch (error) {
+            setStatus('Copy is unavailable in this browser.', true);
+        }
+        helper.remove();
+    }
+
+    function renderQuickActions(actions, excludeRecentlyShown) {
+        quickActionsContainer.replaceChildren();
+        selectUniqueActions(actions, excludeRecentlyShown ? recentSuggestionKeys() : [], 4).forEach(function (action) {
+            quickActionsContainer.appendChild(actionButton(action, false));
+            rememberSuggestion(action.label);
+        });
+        quickActionsContainer.hidden = quickActionsContainer.childElementCount === 0;
+    }
+
     function renderRelatedQuestions(candidates) {
         quickActionsContainer.hidden = true;
-        var excluded = quickActions.map(function (button) {
-            return button.textContent.trim();
-        }).concat(history.filter(function (turn) {
+        var fallbackActions = contextualActions('followup');
+        var candidateActions = (Array.isArray(candidates) ? candidates : []).map(function (candidate) {
+            return {
+                icon: 'message-circle',
+                label: String(candidate || ''),
+                prompt: String(candidate || ''),
+                action: ''
+            };
+        }).concat(fallbackActions);
+        var excluded = history.filter(function (turn) {
             return turn.role === 'user';
         }).map(function (turn) {
             return turn.content;
-        })).concat(shownRelatedQuestions);
-        var selected = selectUniqueQuestions(candidates, excluded, 4);
+        }).concat(shownRelatedQuestions).concat(recentlyShownSuggestions);
+        var selected = selectUniqueActions(candidateActions, excluded, 3);
         relatedButtonsContainer.replaceChildren();
-        selected.forEach(function (question) {
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = question;
-            button.setAttribute('data-ai-chatbot-related-action', '');
-            button.disabled = sending;
-            button.addEventListener('click', function () {
-                if (!sending) {
-                    sendChat(question, '');
-                }
-            });
-            relatedButtonsContainer.appendChild(button);
+        selected.forEach(function (action) {
+            relatedButtonsContainer.appendChild(actionButton(action, true));
+            shownRelatedQuestions.push(action.label);
+            rememberSuggestion(action.label);
         });
-        shownRelatedQuestions = shownRelatedQuestions.concat(selected);
         relatedActionsContainer.hidden = selected.length === 0;
+        updateSuggestionsToggle();
         scrollContent();
     }
 
-    function selectUniqueQuestions(candidates, excluded, maxItems) {
+    function actionButton(action, related) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute(related ? 'data-ai-chatbot-related-action' : 'data-ai-chatbot-action', action.action || '');
+        button.disabled = sending;
+        button.appendChild(svgIcon(action.icon || 'message-circle'));
+        var label = document.createElement('span');
+        label.textContent = action.label;
+        button.appendChild(label);
+        button.addEventListener('click', function () {
+            if (!sending) {
+                sendChat(action.prompt || action.label, action.action || '');
+            }
+        });
+        return button;
+    }
+
+    function updateSuggestionsToggle() {
+        var hasActions = contextualActions('initial').length > 0;
+        suggestionsToggle.hidden = !hasActions || (!history.some(function (turn) {
+            return turn.role === 'user';
+        }) && !quickActionsContainer.hidden);
+    }
+
+    function selectUniqueActions(candidates, excluded, maxItems) {
         var selected = [];
         var existing = Array.isArray(excluded) ? excluded.slice() : [];
-        (Array.isArray(candidates) ? candidates : []).some(function (rawCandidate) {
-            var candidate = String(rawCandidate || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
-            if (!candidate
-                    || candidate.length > 120
-                    || isAssistantLedPrompt(candidate)
-                    || isDuplicateQuestion(candidate, existing.concat(selected))) {
+        (Array.isArray(candidates) ? candidates : []).some(function (rawAction) {
+            var label = String(rawAction.label || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+            var prompt = String(rawAction.prompt || label).normalize('NFKC').replace(/\s+/g, ' ').trim();
+            if (!label
+                    || label.length > 72
+                    || prompt.length > 220
+                    || isAssistantLedPrompt(label)
+                    || isDuplicateQuestion(label, existing.concat(selected.map(function (item) {
+                        return item.label;
+                    })))) {
                 return false;
             }
-            selected.push(candidate);
+            selected.push({
+                icon: rawAction.icon || 'message-circle',
+                label: label,
+                prompt: prompt,
+                action: rawAction.action || ''
+            });
             return selected.length >= maxItems;
         });
         return selected;
+    }
+
+    function contextualActions(kind) {
+        var pageData = latestPageData || currentPageContext();
+        var context = pageData.uiContext || {};
+        var pageType = context.pageType || 'navigation';
+        var role = context.role || 'ANONYMOUS';
+        var isFollowup = kind === 'followup';
+        if (role === 'TEACHER') {
+            return teacherActions(pageType, isFollowup);
+        }
+        if (role === 'ADMIN') {
+            return adminActions(pageType, isFollowup);
+        }
+        if (pageType === 'lesson') {
+            return [
+                action('sparkles', 'Explain this lesson', 'Explain this lesson in simple terms.', 'EXPLAIN_LESSON'),
+                action('list', 'Summarize', 'Summarize the current lesson.', 'SUMMARY'),
+                action('brain', 'Test my understanding', 'Test my understanding of this lesson with one or two questions.', 'QUIZ_ME'),
+                action('lightbulb', 'Give me a hint', 'Give me a hint about the current lesson without giving away quiz answers.', 'HINT')
+            ];
+        }
+        if (pageType === 'quiz') {
+            return [
+                action('lightbulb', 'Give me a hint', 'Give me a hint for this quiz topic without revealing the correct answer.', 'QUIZ_HINT'),
+                action('brain', 'Review the concept', 'Review the concept behind this quiz question.', 'CONCEPT_REVIEW'),
+                action('code', 'Similar example', 'Show a similar example and explain the reasoning.', 'SIMILAR_EXAMPLE')
+            ];
+        }
+        if (pageType === 'course') {
+            return [
+                action('book-open', 'What will I learn?', 'What will I learn from this course?', 'COURSE_OUTCOMES'),
+                action('clock', 'Course duration', 'How long is this course?', 'COURSE_DURATION'),
+                action('target', 'Is this for me?', 'Is this course suitable for my goals?', 'COURSE_FIT')
+            ];
+        }
+        if (pageType === 'payment') {
+            return [
+                action('credit-card', 'How payment works', 'Explain how payment works on this page.', 'PAYMENT_HELP'),
+                action('shield', 'Is payment secure?', 'Is payment secure on LumiNa?', 'PAYMENT_SECURITY'),
+                action('file-text', 'Payment status help', 'Help me understand payment status on LumiNa.', 'PAYMENT_STATUS')
+            ];
+        }
+        if (pageType === 'certificate') {
+            return [
+                action('award', 'Certificate steps', 'How do certificates work on LumiNa?', 'CERTIFICATE_HELP'),
+                action('target', 'Eligibility', 'How can I check certificate eligibility?', 'CERTIFICATE_ELIGIBILITY'),
+                action('file-text', 'Share certificate', 'How can I share a certificate from LumiNa?', 'CERTIFICATE_SHARE')
+            ];
+        }
+        if (pageType === 'profile') {
+            return [
+                action('user', 'Profile help', 'What can I manage from my profile?', 'PROFILE_HELP'),
+                action('shield', 'Account security', 'How do account and sign-in settings work here?', 'ACCOUNT_SECURITY'),
+                action('message-circle', 'Where to update info', 'Where can I update my visible profile information?', 'PROFILE_NAVIGATION')
+            ];
+        }
+        if (pageType === 'authentication') {
+            return [
+                action('user', 'Sign-in help', 'Help me understand sign-in and registration options.', 'AUTH_HELP'),
+                action('shield', 'Login security', 'How does login security work on LumiNa?', 'AUTH_SECURITY'),
+                action('message-circle', 'Account access', 'What should I do if I cannot access my account?', 'AUTH_ACCESS')
+            ];
+        }
+        if (isFollowup) {
+            return [
+                action('message-circle', 'Show page guidance', 'What can I do from this page?', 'PAGE_HELP'),
+                action('book-open', 'Find learning features', 'Where are the main learning features?', 'NAVIGATION_HELP'),
+                action('target', 'Suggest next step', 'What is a sensible next step on this page?', 'NEXT_STEP')
+            ];
+        }
+        return [
+            action('message-circle', 'Show page guidance', 'What can I do from this page?', 'PAGE_HELP'),
+            action('book-open', 'Find courses', 'Where can I find courses?', 'FIND_COURSES'),
+            action('award', 'Certificates', 'How do certificates work?', 'CERTIFICATE_HELP')
+        ];
+    }
+
+    function teacherActions(pageType) {
+        if (pageType === 'quiz') {
+            return [
+                action('brain', 'Quiz setup help', 'Help me understand quiz management on this page.', 'TEACHER_QUIZ_HELP'),
+                action('book-open', 'Lesson alignment', 'How should I align quizzes with lessons?', 'TEACHER_LESSON_HELP'),
+                action('message-circle', 'Teacher navigation', 'Where can I manage related teacher features?', 'TEACHER_NAVIGATION')
+            ];
+        }
+        if (pageType === 'course' || pageType === 'lesson') {
+            return [
+                action('book-open', 'Course management', 'Help me understand course and lesson management here.', 'TEACHER_COURSE_HELP'),
+                action('file-text', 'Content guidance', 'What existing teacher tools can help with this content?', 'TEACHER_CONTENT_HELP'),
+                action('message-circle', 'Teacher navigation', 'Where can I manage related teacher features?', 'TEACHER_NAVIGATION')
+            ];
+        }
+        return [
+            action('message-circle', 'Teacher screen help', 'What can teachers do from this screen?', 'TEACHER_SCREEN_HELP'),
+            action('book-open', 'Course tools', 'Where are course and lesson tools?', 'TEACHER_COURSE_HELP'),
+            action('target', 'Student progress', 'Where can I review student progress?', 'TEACHER_PROGRESS_HELP')
+        ];
+    }
+
+    function adminActions(pageType) {
+        if (pageType === 'payment') {
+            return [
+                action('credit-card', 'Payment workflows', 'Explain the admin payment workflow on LumiNa.', 'ADMIN_PAYMENT_HELP'),
+                action('file-text', 'Transactions', 'Where can admins review transaction details?', 'ADMIN_TRANSACTION_HELP'),
+                action('shield', 'Refund guidance', 'How should admins review refund-related screens?', 'ADMIN_REFUND_HELP')
+            ];
+        }
+        return [
+            action('message-circle', 'Admin screen help', 'What can admins do from this screen?', 'ADMIN_SCREEN_HELP'),
+            action('user', 'User management', 'Where can admins manage users and roles?', 'ADMIN_USER_HELP'),
+            action('book-open', 'Course governance', 'How does course approval or moderation work?', 'ADMIN_COURSE_HELP')
+        ];
+    }
+
+    function action(icon, label, prompt, code) {
+        return { icon: icon, label: label, prompt: prompt, action: code };
+    }
+
+    function renderContextUi(context) {
+        var greetingBubble = greeting.querySelector('.ai-chatbot-bubble');
+        if (greetingBubble) {
+            greetingBubble.textContent = context.greeting;
+        }
+        if (contextBadge) {
+            contextBadge.replaceChildren();
+            if (context.badge) {
+                contextBadge.appendChild(svgIcon(context.badgeIcon || 'message-circle'));
+                contextBadge.appendChild(document.createTextNode(context.badge));
+                contextBadge.hidden = false;
+            } else {
+                contextBadge.hidden = true;
+            }
+        }
+    }
+
+    function currentPageContext() {
+        var path = safePath(window.location.pathname);
+        var params = new URLSearchParams(window.location.search);
+        var role = currentRole(path);
+        var pageKey = 'navigation';
+        var pageType = 'navigation';
+        var entityType = 'navigation';
+        var entityId = '';
+        var lessonId = null;
+        var courseId = numericId(params.get('courseId') || params.get('id'));
+        var lessonTitle = '';
+        var courseTitle = '';
+        var badge = '';
+        var badgeIcon = 'message-circle';
+        var greetingText = 'Hello! I can help you navigate LumiNa, understand website features, and explain authorized lesson content. What would you like to know?';
+
+        if (path === '/') {
+            pageKey = 'public-home';
+        } else if (path.indexOf('/auth/') === 0) {
+            pageKey = 'authentication';
+            pageType = 'authentication';
+            entityType = 'authentication';
+            badge = 'Account access';
+            badgeIcon = 'user';
+            greetingText = 'I can help explain LumiNa sign-in, registration, and account access options.';
+        } else if (path.indexOf('/student/learning') === 0) {
+            pageKey = 'student-learning';
+            pageType = 'lesson';
+            entityType = 'lesson';
+            entityId = numericId(params.get('lessonId')) || dataValue('[data-learning-video], [data-quiz-panel], [data-lesson-complete]', 'lessonId');
+            lessonId = entityId ? Number(entityId) : null;
+            courseId = courseId || dataValue('[data-learning-video], [data-quiz-panel], [data-lesson-complete], [data-course-duration-display]', 'courseId');
+            courseTitle = textFrom('main .learning-hero h1');
+            lessonTitle = textFrom('main .learning-lesson-header h2').replace(/^\d+\.\s*/, '');
+            badge = compactJoin([courseTitle, lessonTitle], ' > ');
+            badgeIcon = 'book-open';
+            greetingText = lessonTitle
+                ? 'You are learning ' + lessonTitle + '. Ask me about this lesson or choose a suggestion below.'
+                : 'You are in the course player. Ask me about the current lesson or choose a suggestion below.';
+        } else if (path.indexOf('/quiz') >= 0) {
+            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-quiz' : 'student-quiz';
+            pageType = 'quiz';
+            entityType = 'quiz';
+            entityId = numericId(params.get('quizId') || params.get('id')) || dataValue('body', 'quizId');
+            courseId = courseId || dataValue('body', 'courseId');
+            lessonId = Number(dataValue('body', 'lessonId') || 0) || null;
+            lessonTitle = textFrom('.dedicated-quiz-module');
+            badge = compactJoin([textFrom('main h1') || textFrom('header h1') || 'Quiz', lessonTitle], ' > ');
+            badgeIcon = 'brain';
+            greetingText = 'I can help with concepts, hints, and reasoning for this quiz without giving away active graded answers.';
+        } else if (path.indexOf('code-assignment') >= 0 || path.indexOf('/assignments') >= 0) {
+            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-assignments' : 'student-coding-assignment';
+            pageType = 'lesson';
+            entityType = 'coding-assignment';
+            entityId = numericId(params.get('id') || params.get('assignmentId'));
+            badge = 'Coding assignment';
+            badgeIcon = 'code';
+        } else if (path.indexOf('/certificates') >= 0) {
+            pageKey = 'certificates';
+            pageType = 'certificate';
+            entityType = 'certificate';
+            entityId = numericId(params.get('id'));
+            badge = 'Certificates';
+            badgeIcon = 'award';
+        } else if (path.indexOf('/payment') >= 0 || path.indexOf('/checkout') >= 0 || path.indexOf('/transactions') >= 0 || path.indexOf('/refunds') >= 0) {
+            pageKey = 'payment';
+            pageType = 'payment';
+            entityType = 'payment';
+            entityId = numericId(params.get('id') || params.get('orderId'));
+            badge = 'Payment';
+            badgeIcon = 'credit-card';
+            greetingText = 'I can explain LumiNa payment, checkout, and payment-status guidance using only what is visible here.';
+        } else if (path.indexOf('/blogs') >= 0) {
+            pageKey = 'blogs';
+            pageType = 'blog';
+            entityType = 'blog';
+            entityId = numericId(params.get('id')) || pathId(path);
+            badge = 'Blog';
+            badgeIcon = 'file-text';
+        } else if (path.indexOf('/profile') >= 0) {
+            pageKey = 'profile';
+            pageType = 'profile';
+            entityType = 'profile';
+            badge = 'Profile';
+            badgeIcon = 'user';
+        } else if (path.indexOf('/dashboard') >= 0) {
+            pageKey = path.replace(/^\/+/, '').replace(/\//g, '-');
+            pageType = 'dashboard';
+            entityType = 'dashboard';
+            badge = role === 'ANONYMOUS' ? 'Dashboard' : titleCase(role) + ' dashboard';
+            badgeIcon = 'target';
+        } else if (path.indexOf('/courses') >= 0 || path.indexOf('/learning') >= 0) {
+            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-courses' : 'courses';
+            pageType = 'course';
+            entityType = 'course';
+            entityId = courseId || pathId(path);
+            courseTitle = textFrom('main h1') || textFrom('.cd-hero h1') || textFrom('h1');
+            badge = courseTitle || 'Course Details';
+            badgeIcon = 'book-open';
+            greetingText = courseTitle
+                ? 'You are viewing ' + courseTitle + '. Ask me about this course or choose a suggestion below.'
+                : 'You are viewing course details. Ask me about the course or choose a suggestion below.';
+        }
+
+        return {
+            lessonId: lessonId,
+            pageContext: {
+                path: path,
+                pageKey: safeToken(pageKey),
+                entityType: safeToken(entityType),
+                entityId: String(entityId || ''),
+                visibleText: collectVisiblePageText(pageKey)
+            },
+            uiContext: {
+                role: role,
+                pageType: pageType,
+                courseId: String(courseId || ''),
+                courseTitle: courseTitle,
+                lessonId: String(lessonId || ''),
+                lessonTitle: lessonTitle,
+                badge: badge,
+                badgeIcon: badgeIcon,
+                greeting: greetingText
+            }
+        };
+    }
+
+    function collectVisiblePageText(pageKey) {
+        var selectors = [
+            'main h1',
+            'main h2',
+            'main .section-lead',
+            'main [data-ai-page-context]'
+        ];
+        if (pageKey === 'blogs') {
+            selectors.push('main article', 'main tbody tr');
+        }
+        if (pageKey === 'courses' || pageKey === 'public-home' || pageKey === 'teacher-courses') {
+            selectors.push('main .public-course-card', 'main .course-card');
+        }
+
+        var snippets = [];
+        var seen = new Set();
+        var totalChars = 0;
+        Array.from(document.querySelectorAll(selectors.join(','))).some(function (element) {
+            if (!isAllowedContextElement(element)) {
+                return false;
+            }
+            var text = normalizeVisibleText(element.innerText || element.textContent);
+            if (!text || seen.has(text)) {
+                return false;
+            }
+            var snippet = text.slice(0, 420);
+            if (totalChars + snippet.length > 3600) {
+                return true;
+            }
+            seen.add(text);
+            snippets.push(snippet);
+            totalChars += snippet.length;
+            return snippets.length >= 14;
+        });
+        return snippets;
+    }
+
+    function isAllowedContextElement(element) {
+        if (!element || element.closest('[hidden], [aria-hidden="true"]')) {
+            return false;
+        }
+        if (element.closest('[data-ai-chatbot-root], form, nav, header, footer')) {
+            return false;
+        }
+        var summaryContainer = element.closest('[data-ai-page-context], .public-course-card, .course-card');
+        if (summaryContainer && summaryContainer !== element) {
+            return false;
+        }
+        var style = window.getComputedStyle ? window.getComputedStyle(element) : null;
+        return !style || (style.display !== 'none' && style.visibility !== 'hidden');
+    }
+
+    function renderMarkdown(container, rawText) {
+        var lines = String(rawText || '').replace(/\r\n?/g, '\n').split('\n');
+        var paragraphLines = [];
+        var list = null;
+        var listType = '';
+        var codeLines = [];
+        var inCodeBlock = false;
+
+        function flushParagraph() {
+            if (!paragraphLines.length) {
+                return;
+            }
+            var paragraph = document.createElement('p');
+            appendInlineMarkdown(paragraph, paragraphLines.join(' '));
+            container.appendChild(paragraph);
+            paragraphLines = [];
+        }
+
+        function flushList() {
+            if (list) {
+                container.appendChild(list);
+                list = null;
+                listType = '';
+            }
+        }
+
+        function flushCodeBlock() {
+            var pre = document.createElement('pre');
+            var code = document.createElement('code');
+            code.textContent = codeLines.join('\n');
+            pre.appendChild(code);
+            container.appendChild(pre);
+            codeLines = [];
+        }
+
+        lines.forEach(function (line) {
+            if (/^\s*```/.test(line)) {
+                if (inCodeBlock) {
+                    flushCodeBlock();
+                    inCodeBlock = false;
+                } else {
+                    flushParagraph();
+                    flushList();
+                    inCodeBlock = true;
+                    codeLines = [];
+                }
+                return;
+            }
+            if (inCodeBlock) {
+                codeLines.push(line);
+                return;
+            }
+
+            var unordered = line.match(/^\s*[-*+]\s+(.+)$/);
+            var ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+            var heading = line.match(/^\s{0,3}#{1,3}\s+(.+)$/);
+            var itemText = unordered ? unordered[1] : (ordered ? ordered[1] : '');
+            var nextListType = unordered ? 'ul' : (ordered ? 'ol' : '');
+
+            if (!line.trim()) {
+                flushParagraph();
+                flushList();
+                return;
+            }
+            if (heading) {
+                flushParagraph();
+                flushList();
+                var headingParagraph = document.createElement('p');
+                headingParagraph.className = 'ai-chatbot-markdown-heading';
+                appendInlineMarkdown(headingParagraph, heading[1]);
+                container.appendChild(headingParagraph);
+                return;
+            }
+            if (nextListType) {
+                flushParagraph();
+                if (!list || listType !== nextListType) {
+                    flushList();
+                    list = document.createElement(nextListType);
+                    listType = nextListType;
+                }
+                var item = document.createElement('li');
+                appendInlineMarkdown(item, itemText);
+                list.appendChild(item);
+                return;
+            }
+            flushList();
+            paragraphLines.push(line.trim());
+        });
+
+        if (inCodeBlock) {
+            flushCodeBlock();
+        }
+        flushParagraph();
+        flushList();
+        if (!container.hasChildNodes()) {
+            container.textContent = '';
+        }
+    }
+
+    function appendInlineMarkdown(container, text) {
+        var value = String(text || '');
+        var pattern = /(`([^`]+)`)|(\*\*|__)(.+?)\3/g;
+        var lastIndex = 0;
+        var match;
+
+        while ((match = pattern.exec(value)) !== null) {
+            if (match.index > lastIndex) {
+                container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
+            }
+            if (match[2]) {
+                var code = document.createElement('code');
+                code.textContent = match[2];
+                container.appendChild(code);
+            } else {
+                var strong = document.createElement('strong');
+                strong.textContent = match[4];
+                container.appendChild(strong);
+            }
+            lastIndex = pattern.lastIndex;
+        }
+        if (lastIndex < value.length) {
+            container.appendChild(document.createTextNode(value.slice(lastIndex)));
+        }
     }
 
     function isAssistantLedPrompt(value) {
@@ -395,7 +1000,9 @@
             history = history.slice(-50);
             renderInitialQuestions();
             setStatus('', false);
+            setAvailability('online');
         }).catch(function () {
+            setAvailability('unavailable');
             setStatus('Chat history could not be restored. You can still ask a question.', true);
         }).finally(function () {
             setLoading(false);
@@ -413,210 +1020,40 @@
         });
     }
 
-    function renderMarkdown(container, rawText) {
-        var lines = String(rawText || '').replace(/\r\n?/g, '\n').split('\n');
-        var paragraphLines = [];
-        var list = null;
-        var listType = '';
-
-        function flushParagraph() {
-            if (!paragraphLines.length) {
-                return;
-            }
-            var paragraph = document.createElement('p');
-            appendInlineMarkdown(paragraph, paragraphLines.join(' '));
-            container.appendChild(paragraph);
-            paragraphLines = [];
-        }
-
-        function flushList() {
-            if (list) {
-                container.appendChild(list);
-                list = null;
-                listType = '';
-            }
-        }
-
-        lines.forEach(function (line) {
-            var unordered = line.match(/^\s*[-*+]\s+(.+)$/);
-            var ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
-            var heading = line.match(/^\s{0,3}#{1,3}\s+(.+)$/);
-            var itemText = unordered ? unordered[1] : (ordered ? ordered[1] : '');
-            var nextListType = unordered ? 'ul' : (ordered ? 'ol' : '');
-
-            if (!line.trim()) {
-                flushParagraph();
-                flushList();
-                return;
-            }
-            if (heading) {
-                flushParagraph();
-                flushList();
-                var headingParagraph = document.createElement('p');
-                headingParagraph.className = 'ai-chatbot-markdown-heading';
-                appendInlineMarkdown(headingParagraph, heading[1]);
-                container.appendChild(headingParagraph);
-                return;
-            }
-            if (nextListType) {
-                flushParagraph();
-                if (!list || listType !== nextListType) {
-                    flushList();
-                    list = document.createElement(nextListType);
-                    listType = nextListType;
-                }
-                var item = document.createElement('li');
-                appendInlineMarkdown(item, itemText);
-                list.appendChild(item);
-                return;
-            }
-            flushList();
-            paragraphLines.push(line.trim());
+    function svgIcon(name) {
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('focusable', 'false');
+        svg.setAttribute('aria-hidden', 'true');
+        iconPaths(name).forEach(function (pathValue) {
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathValue);
+            svg.appendChild(path);
         });
-
-        flushParagraph();
-        flushList();
-        if (!container.hasChildNodes()) {
-            container.textContent = '';
-        }
+        return svg;
     }
 
-    function appendInlineMarkdown(container, text) {
-        var value = String(text || '');
-        var boldPattern = /(\*\*|__)(.+?)\1/g;
-        var lastIndex = 0;
-        var match;
-
-        while ((match = boldPattern.exec(value)) !== null) {
-            if (match.index > lastIndex) {
-                container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
-            }
-            var strong = document.createElement('strong');
-            strong.textContent = match[2];
-            container.appendChild(strong);
-            lastIndex = boldPattern.lastIndex;
-        }
-        if (lastIndex < value.length) {
-            container.appendChild(document.createTextNode(value.slice(lastIndex)));
-        }
-    }
-
-    function currentPageContext() {
-        var path = safePath(window.location.pathname);
-        var params = new URLSearchParams(window.location.search);
-        var pageKey = 'navigation';
-        var entityType = 'navigation';
-        var entityId = '';
-        var lessonId = null;
-
-        if (path === '/') {
-            pageKey = 'public-home';
-        } else if (path.indexOf('/auth/') === 0) {
-            pageKey = 'authentication';
-            entityType = 'authentication';
-        } else if (path.indexOf('/student/learning') === 0) {
-            pageKey = 'student-learning';
-            entityType = 'lesson';
-            entityId = numericId(params.get('lessonId'));
-            lessonId = entityId ? Number(entityId) : null;
-        } else if (path.indexOf('/quiz') >= 0) {
-            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-quiz' : 'student-quiz';
-            entityType = 'quiz';
-            entityId = numericId(params.get('quizId') || params.get('id'));
-        } else if (path.indexOf('code-assignment') >= 0 || path.indexOf('/assignments') >= 0) {
-            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-assignments' : 'student-coding-assignment';
-            entityType = 'coding-assignment';
-            entityId = numericId(params.get('id') || params.get('assignmentId'));
-        } else if (path.indexOf('/certificates') >= 0) {
-            pageKey = 'certificates';
-            entityType = 'certificate';
-            entityId = numericId(params.get('id'));
-        } else if (path.indexOf('/payment') >= 0 || path.indexOf('/checkout') >= 0 || path.indexOf('/transactions') >= 0) {
-            pageKey = 'payment';
-            entityType = 'payment';
-            entityId = numericId(params.get('id') || params.get('orderId'));
-        } else if (path.indexOf('/blogs') >= 0) {
-            pageKey = 'blogs';
-            entityType = 'blog';
-            entityId = numericId(params.get('id')) || pathId(path);
-        } else if (path.indexOf('/profile') >= 0) {
-            pageKey = 'profile';
-            entityType = 'profile';
-        } else if (path.indexOf('/dashboard') >= 0) {
-            pageKey = path.replace(/^\/+/, '').replace(/\//g, '-');
-            entityType = 'dashboard';
-        } else if (path.indexOf('/courses') >= 0 || path.indexOf('/learning') >= 0) {
-            pageKey = path.indexOf('/teacher/') === 0 ? 'teacher-courses' : 'courses';
-            entityType = 'course';
-            entityId = numericId(params.get('id') || params.get('courseId')) || pathId(path);
-        }
-
-        return {
-            lessonId: lessonId,
-            pageContext: {
-                path: path,
-                pageKey: safeToken(pageKey),
-                entityType: safeToken(entityType),
-                entityId: entityId,
-                visibleText: collectVisiblePageText(pageKey)
-            }
+    function iconPaths(name) {
+        var icons = {
+            'award': ['M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10z', 'M8.5 14.5 7 22l5-3 5 3-1.5-7.5'],
+            'book-open': ['M4 5h6a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4z', 'M20 5h-6a3 3 0 0 0-3 3v13a3 3 0 0 1 3-3h6z'],
+            'brain': ['M8 6a3 3 0 0 1 5.5-1.7A3 3 0 0 1 19 6v1a3 3 0 0 1 1 5.5 3 3 0 0 1-2 5.2V18a3 3 0 0 1-5.5 1.7A3 3 0 0 1 7 18v-.3a3 3 0 0 1-2-5.2A3 3 0 0 1 6 7V6a3 3 0 0 1 2-2.8'],
+            'clock': ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 6v6l4 2'],
+            'code': ['M8 9 4 12l4 3', 'M16 9l4 3-4 3', 'M14 5l-4 14'],
+            'copy': ['M9 9h10v10H9z', 'M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1'],
+            'credit-card': ['M3 6h18v12H3z', 'M3 10h18', 'M7 15h3'],
+            'file-text': ['M6 2h8l4 4v16H6z', 'M14 2v4h4', 'M8 13h8', 'M8 17h6'],
+            'lightbulb': ['M9 18h6', 'M10 22h4', 'M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 3H9c0-1 0-2-1-3z'],
+            'list': ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+            'message-circle': ['M21 11.5a8.5 8.5 0 0 1-12.7 7.4L3 21l2.1-5.1A8.5 8.5 0 1 1 21 11.5z'],
+            'shield': ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
+            'sparkles': ['M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z', 'M19 14l.7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14z', 'M5 14l.7 2.3L8 17l-2.3.7L5 20l-.7-2.3L2 17l2.3-.7L5 14z'],
+            'target': ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z', 'M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],
+            'thumbs-down': ['M10 15v4a2 2 0 0 0 2 2l4-8V3H5.7a2 2 0 0 0-2 1.7L2 13a2 2 0 0 0 2 2h6z', 'M16 3h3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-3'],
+            'thumbs-up': ['M14 9V5a2 2 0 0 0-2-2L8 11v10h10.3a2 2 0 0 0 2-1.7L22 11a2 2 0 0 0-2-2h-6z', 'M8 21H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h3'],
+            'user': ['M20 21a8 8 0 0 0-16 0', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z']
         };
-    }
-
-    function collectVisiblePageText(pageKey) {
-        var selectors = [
-            'main h1',
-            'main h2',
-            'main .section-lead',
-            'main [data-ai-page-context]'
-        ];
-        if (pageKey === 'blogs') {
-            selectors.push('main article', 'main tbody tr');
-        }
-        if (pageKey === 'courses' || pageKey === 'public-home' || pageKey === 'teacher-courses') {
-            selectors.push('main .public-course-card', 'main .course-card');
-        }
-
-        var snippets = [];
-        var seen = new Set();
-        var totalChars = 0;
-        Array.from(document.querySelectorAll(selectors.join(','))).some(function (element) {
-            if (!isAllowedContextElement(element)) {
-                return false;
-            }
-            var text = normalizeVisibleText(element.innerText || element.textContent);
-            if (!text || seen.has(text)) {
-                return false;
-            }
-            var snippet = text.slice(0, 420);
-            if (totalChars + snippet.length > 3600) {
-                return true;
-            }
-            seen.add(text);
-            snippets.push(snippet);
-            totalChars += snippet.length;
-            return snippets.length >= 14;
-        });
-        return snippets;
-    }
-
-    function isAllowedContextElement(element) {
-        if (!element || element.closest('[hidden], [aria-hidden="true"]')) {
-            return false;
-        }
-        if (element.closest('[data-ai-chatbot-root], form, nav, header, footer')) {
-            return false;
-        }
-        var summaryContainer = element.closest('[data-ai-page-context], .public-course-card, .course-card');
-        if (summaryContainer && summaryContainer !== element) {
-            return false;
-        }
-        var style = window.getComputedStyle ? window.getComputedStyle(element) : null;
-        return !style || (style.display !== 'none' && style.visibility !== 'hidden');
-    }
-
-    function normalizeVisibleText(value) {
-        return String(value || '').replace(/\s+/g, ' ').trim();
+        return icons[name] || icons['message-circle'];
     }
 
     function scrollMessages() {
@@ -670,6 +1107,63 @@
     function isUuid(value) {
         return typeof value === 'string'
             && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    }
+
+    function currentRole(path) {
+        var chip = document.querySelector('[data-user-chip-role]');
+        var chipRole = chip ? safeToken(chip.dataset.userChipRole).toUpperCase() : '';
+        if (chipRole === 'STUDENT' || chipRole === 'TEACHER' || chipRole === 'ADMIN') {
+            return chipRole;
+        }
+        if (path.indexOf('/student/') === 0) {
+            return 'STUDENT';
+        }
+        if (path.indexOf('/teacher/') === 0) {
+            return 'TEACHER';
+        }
+        if (path.indexOf('/admin/') === 0) {
+            return 'ADMIN';
+        }
+        return authenticated ? 'USER' : 'ANONYMOUS';
+    }
+
+    function dataValue(selector, name) {
+        var element = document.querySelector(selector);
+        return element && element.dataset ? numericId(element.dataset[name]) : '';
+    }
+
+    function textFrom(selector) {
+        var element = document.querySelector(selector);
+        return normalizeVisibleText(element ? (element.innerText || element.textContent) : '');
+    }
+
+    function compactJoin(values, separator) {
+        return values.filter(function (value) {
+            return String(value || '').trim();
+        }).join(separator);
+    }
+
+    function titleCase(value) {
+        var lower = String(value || '').toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+    }
+
+    function rememberSuggestion(value) {
+        var normalized = normalizeQuestion(value);
+        if (!normalized) {
+            return;
+        }
+        recentlyShownSuggestions = recentlyShownSuggestions.filter(function (item) {
+            return item !== normalized;
+        }).concat(normalized).slice(-18);
+    }
+
+    function recentSuggestionKeys() {
+        return recentlyShownSuggestions.slice();
+    }
+
+    function normalizeVisibleText(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
     }
 
     function normalizeScope(value) {
