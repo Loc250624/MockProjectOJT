@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
     initUserAdministration();
+    initAdminCategories();
     initAdminTransactions();
 });
 
@@ -164,6 +165,8 @@ function initUserAdministration() {
         sortDir: 'desc',
         users: [],
         selectedUser: null,
+        pendingResetUserId: null,
+        pendingRoleUserId: null,
         pendingStatusUserId: null,
         pendingDeleteUserId: null,
         exporting: false,
@@ -194,6 +197,8 @@ function initUserAdministration() {
         panelAvatar: document.getElementById('user-panel-avatar'),
         panelCreatedAt: document.getElementById('user-panel-created-at'),
         panelProvider: document.getElementById('user-panel-provider'),
+        panelResetAction: document.getElementById('user-panel-reset-action'),
+        panelRoleAction: document.getElementById('user-panel-role-action'),
         panelStatusAction: document.getElementById('user-panel-status-action'),
         panelDeleteAction: document.getElementById('user-panel-delete-action'),
         exportButton: document.getElementById('export-users-csv'),
@@ -229,6 +234,20 @@ function initUserAdministration() {
         if (user) {
             openUserPanel(user);
         }
+    });
+
+    elements.panelResetAction.addEventListener('click', function() {
+        if (!state.selectedUser || state.pendingResetUserId) {
+            return;
+        }
+        createPasswordResetLink();
+    });
+
+    elements.panelRoleAction.addEventListener('click', function() {
+        if (!state.selectedUser || state.pendingRoleUserId) {
+            return;
+        }
+        openChangeRoleModal();
     });
 
     elements.panelStatusAction.addEventListener('click', function() {
@@ -565,9 +584,41 @@ function initUserAdministration() {
         elements.panelCreatedAt.textContent = formatDate(user.createdAt);
         elements.panelProvider.textContent = user.authProvider || '--';
         renderPanelAvatar(user);
+        renderResetAction(user);
+        renderRoleAction(user);
         renderStatusAction(user);
         renderDeleteAction(user);
         elements.panel.classList.add('open');
+    }
+
+    function renderResetAction(user) {
+        var isDeleted = user.status === 'DELETED';
+        var isLocal = user.authProvider === 'LOCAL';
+        elements.panelResetAction.disabled = isDeleted || !isLocal || state.pendingResetUserId === user.id;
+        if (isDeleted) {
+            elements.panelResetAction.textContent = 'Password Reset Locked for Deleted Account';
+        } else if (!isLocal) {
+            elements.panelResetAction.textContent = 'Password Managed by ' + formatEnum(user.authProvider);
+        } else if (state.pendingResetUserId === user.id) {
+            elements.panelResetAction.textContent = 'Generating Reset Link...';
+        } else {
+            elements.panelResetAction.textContent = 'Reset Password';
+        }
+    }
+
+    function renderRoleAction(user) {
+        var isSelfAdmin = Number.isFinite(currentAdminId) && user.role === 'ADMIN' && Number(user.id) === currentAdminId;
+        var isDeleted = user.status === 'DELETED';
+        elements.panelRoleAction.disabled = isSelfAdmin || isDeleted || state.pendingRoleUserId === user.id;
+        if (isSelfAdmin) {
+            elements.panelRoleAction.textContent = 'Cannot Change Own Admin Role';
+        } else if (isDeleted) {
+            elements.panelRoleAction.textContent = 'Role Locked for Deleted Account';
+        } else if (state.pendingRoleUserId === user.id) {
+            elements.panelRoleAction.textContent = 'Updating Role...';
+        } else {
+            elements.panelRoleAction.textContent = 'Change Role';
+        }
     }
 
     function renderStatusAction(user) {
@@ -604,6 +655,138 @@ function initUserAdministration() {
         } else {
             elements.panelDeleteAction.textContent = 'Soft-delete Account';
         }
+    }
+
+    function createPasswordResetLink() {
+        var user = state.selectedUser;
+        if (user.authProvider !== 'LOCAL') {
+            setFeedback('Password is managed by ' + formatEnum(user.authProvider) + '.', false);
+            return;
+        }
+        if (user.status === 'DELETED') {
+            setFeedback('Deleted accounts cannot receive reset links.', false);
+            return;
+        }
+
+        LuminaActionDialog.open({
+            variant: 'warning',
+            icon: 'shield',
+            eyebrow: 'Account security',
+            badge: 'One-time link',
+            title: 'Generate Password Reset Link',
+            subtitle: 'Create a one-time password reset link for this user. The link will expire automatically.',
+            objectLabel: 'User',
+            objectName: user.fullName || user.email || ('User #' + user.id),
+            summary: [
+                { label: 'Email', value: user.email || 'Not available' },
+                { label: 'Auth provider', value: user.authProvider || '--' }
+            ],
+            confirmText: 'Yes',
+            cancelText: 'No',
+            loadingText: 'Generating link...',
+            onConfirm: function () {
+                state.pendingResetUserId = user.id;
+                renderResetAction(user);
+                setFeedback('', false);
+                setError('');
+                return fetch('/api/admin/users/' + encodeURIComponent(user.id) + '/password-reset-link', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                }).then(readAdminJson('Unable to create password reset link.'))
+                    .then(function(apiResponse) {
+                        var reset = apiResponse.data || {};
+                        showResetLinkModal(reset.resetLink || '', reset.expiresAt || '');
+                        setFeedback(apiResponse.message || 'Password reset link created successfully.', true);
+                    }).catch(function(error) {
+                        setFeedback(error.message || 'Unable to create password reset link.', false);
+                        throw error;
+                    }).finally(function() {
+                        state.pendingResetUserId = null;
+                        if (state.selectedUser) {
+                            renderResetAction(state.selectedUser);
+                        }
+                    });
+            }
+        });
+    }
+
+    function showResetLinkModal(resetLink, expiresAt) {
+        var linkId = 'admin-reset-link-' + Date.now();
+        openAdminRuntimeModal({
+            title: 'Password reset link created',
+            description: 'Share this one-time link with the user through an approved support channel.',
+            bodyHtml: '<label class="form-label" for="' + linkId + '">Reset link</label>' +
+                '<input id="' + linkId + '" class="form-control" readonly value="' + escapeHtml(resetLink) + '">' +
+                '<p class="admin-user-form-note" style="margin-top:0.75rem;">Expires: ' + escapeHtml(formatDateTime(expiresAt)) + '</p>',
+            confirmText: 'Copy reset link',
+            cancelText: 'Close',
+            onConfirm: function() {
+                var input = document.getElementById(linkId);
+                if (input) {
+                    input.select();
+                }
+                return navigator.clipboard && resetLink
+                    ? navigator.clipboard.writeText(resetLink)
+                    : Promise.resolve(document.execCommand('copy'));
+            }
+        });
+    }
+
+    function openChangeRoleModal() {
+        var user = state.selectedUser;
+        var selectId = 'admin-change-role-' + Date.now();
+        openAdminRuntimeModal({
+            title: 'Change User Role',
+            description: 'Current role: ' + (user.role || '--'),
+            bodyHtml: '<label class="form-label" for="' + selectId + '">New role</label>' +
+                '<select id="' + selectId + '" class="form-control">' +
+                    roleOption('STUDENT', user.role) +
+                    roleOption('TEACHER', user.role) +
+                    roleOption('ADMIN', user.role) +
+                '</select>',
+            confirmText: 'Yes',
+            cancelText: 'No',
+            onConfirm: function() {
+                var select = document.getElementById(selectId);
+                var nextRole = select ? select.value : user.role;
+                state.pendingRoleUserId = user.id;
+                renderRoleAction(user);
+                setFeedback('', false);
+                setError('');
+                return fetch('/api/admin/users/' + encodeURIComponent(user.id) + '/role', {
+                    method: 'PATCH',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: nextRole })
+                }).then(readAdminJson('Unable to update user role.'))
+                    .then(function(apiResponse) {
+                        var updatedUser = apiResponse.data;
+                        state.users = state.users.map(function(item) {
+                            return item.id === updatedUser.id ? updatedUser : item;
+                        });
+                        state.selectedUser = updatedUser;
+                        renderUsers(state.users);
+                        openUserPanel(updatedUser);
+                        setFeedback(apiResponse.message || 'User role updated successfully.', true);
+                    }).catch(function(error) {
+                        setFeedback(error.message || 'Unable to update user role.', false);
+                        throw error;
+                    }).finally(function() {
+                        state.pendingRoleUserId = null;
+                        if (state.selectedUser) {
+                            renderRoleAction(state.selectedUser);
+                        }
+                    });
+            }
+        });
+    }
+
+    function roleOption(role, currentRole) {
+        return '<option value="' + role + '"' + (role === currentRole ? ' selected' : '') + '>' + formatEnum(role) + '</option>';
     }
 
     function changeSelectedUserStatus() {
@@ -802,6 +985,113 @@ function initUserAdministration() {
         elements.feedback.textContent = message;
         elements.feedback.style.display = message ? 'block' : 'none';
         elements.feedback.style.color = success ? 'var(--lumina-success)' : 'var(--lumina-danger)';
+    }
+}
+
+function initAdminCategories() {
+    var tableBody = document.getElementById('categoryTableBody');
+    if (!tableBody) {
+        return;
+    }
+
+    tableBody.querySelectorAll('.admin-category-delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            var categoryId = Number(form.getAttribute('data-category-id'));
+            var categoryName = form.getAttribute('data-category-name') || ('Category #' + categoryId);
+            openDeleteCategoryModal(categoryId, categoryName, form);
+        });
+    });
+
+    function openDeleteCategoryModal(categoryId, categoryName, form) {
+        openAdminRuntimeModal({
+            title: 'Delete this category?',
+            description: 'Only unused categories can be deleted immediately.',
+            bodyHtml: '<p class="admin-user-form-note">Category: <strong>' + escapeHtml(categoryName) + '</strong></p>',
+            confirmText: 'Delete category',
+            cancelText: 'Keep category',
+            danger: true,
+            onConfirm: function() {
+                return fetch('/api/admin/categories/' + encodeURIComponent(categoryId), {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                }).then(function(response) {
+                    return response.json().catch(function() {
+                        return { message: 'Unable to delete category.' };
+                    }).then(function(apiResponse) {
+                        if (response.status === 409 && apiResponse.data) {
+                            openCategoryDependencyModal(apiResponse.data);
+                            return null;
+                        }
+                        if (!response.ok) {
+                            throw new Error(apiResponse.message || 'Unable to delete category.');
+                        }
+                        return apiResponse;
+                    });
+                }).then(function(apiResponse) {
+                    if (!apiResponse) {
+                        return;
+                    }
+                    var row = form.closest('tr');
+                    if (row) {
+                        row.remove();
+                    }
+                    showInlineAdminMessage(apiResponse.message || 'Category deleted successfully.', true);
+                });
+            }
+        });
+    }
+
+    function openCategoryDependencyModal(dependency) {
+        var replacements = categoryReplacementOptions(dependency.categoryId);
+        var hasReplacement = replacements.length > 0;
+        var selectId = 'category-replacement-' + Date.now();
+        var body = '<p class="admin-user-form-note">' + escapeHtml(dependency.message || 'This category is assigned to existing courses.') + '</p>';
+        if (hasReplacement) {
+            body += '<label class="form-label" for="' + selectId + '" style="margin-top:1rem;">Move courses to</label>' +
+                '<select id="' + selectId + '" class="form-control">' + replacements.join('') + '</select>';
+        } else {
+            body += '<p class="admin-user-form-note" style="margin-top:1rem;">Create another category before reassigning these courses.</p>';
+        }
+
+        openAdminRuntimeModal({
+            title: 'Category is in use',
+            description: (dependency.dependentCourseCount || 0) + ' course(s) depend on this category.',
+            bodyHtml: body,
+            confirmText: hasReplacement ? 'Reassign & Delete' : 'Close',
+            cancelText: hasReplacement ? 'Cancel' : '',
+            danger: hasReplacement,
+            onConfirm: hasReplacement ? function() {
+                var select = document.getElementById(selectId);
+                var replacementCategoryId = select ? Number(select.value) : NaN;
+                return fetch('/api/admin/categories/' + encodeURIComponent(dependency.categoryId) + '/reassign-and-delete', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ replacementCategoryId: replacementCategoryId })
+                }).then(readAdminJson('Unable to reassign courses and delete category.'))
+                    .then(function(apiResponse) {
+                        showInlineAdminMessage(apiResponse.message || 'Courses reassigned and category deleted.', true);
+                        window.location.reload();
+                    });
+            } : null
+        });
+    }
+
+    function categoryReplacementOptions(sourceCategoryId) {
+        return Array.prototype.slice.call(tableBody.querySelectorAll('tr[data-category-id]'))
+            .filter(function(row) {
+                return Number(row.getAttribute('data-category-id')) !== Number(sourceCategoryId);
+            })
+            .map(function(row) {
+                var id = row.getAttribute('data-category-id');
+                var name = row.getAttribute('data-category-name') || ('Category #' + id);
+                return '<option value="' + escapeHtml(id) + '">' + escapeHtml(name) + '</option>';
+            });
     }
 }
 
@@ -1158,6 +1448,104 @@ function initAdminTransactions() {
     }
 }
 
+function readAdminJson(fallbackMessage) {
+    return function(response) {
+        return response.json().catch(function() {
+            return { message: fallbackMessage };
+        }).then(function(apiResponse) {
+            if (!response.ok) {
+                throw new Error(apiResponse.message || fallbackMessage);
+            }
+            return apiResponse;
+        });
+    };
+}
+
+function openAdminRuntimeModal(options) {
+    options = options || {};
+    var modal = document.createElement('div');
+    modal.className = 'admin-user-modal';
+    modal.innerHTML =
+        '<button type="button" class="admin-user-modal-backdrop" data-admin-modal-cancel aria-label="Close dialog"></button>' +
+        '<section class="admin-user-modal-panel" role="dialog" aria-modal="true">' +
+            '<div class="admin-user-modal-header">' +
+                '<div>' +
+                    '<h2>' + escapeHtml(options.title || 'Confirm action') + '</h2>' +
+                    (options.description ? '<p>' + escapeHtml(options.description) + '</p>' : '') +
+                '</div>' +
+                '<button type="button" class="asp-close" data-admin-modal-cancel aria-label="Close dialog">&times;</button>' +
+            '</div>' +
+            '<div class="admin-user-form">' +
+                '<div class="admin-user-form-message" data-admin-modal-error hidden></div>' +
+                (options.bodyHtml || '') +
+                '<div class="admin-user-form-actions">' +
+                    (options.cancelText ? '<button type="button" class="btn btn-secondary" data-admin-modal-cancel>' + escapeHtml(options.cancelText) + '</button>' : '') +
+                    '<button type="button" class="btn ' + (options.danger ? 'btn-danger' : 'btn-primary') + '" data-admin-modal-confirm>' + escapeHtml(options.confirmText || 'Confirm') + '</button>' +
+                '</div>' +
+            '</div>' +
+        '</section>';
+    document.body.appendChild(modal);
+    document.body.classList.add('admin-user-modal-open');
+
+    var confirm = modal.querySelector('[data-admin-modal-confirm]');
+    var error = modal.querySelector('[data-admin-modal-error]');
+    var previousFocus = document.activeElement;
+
+    function close() {
+        modal.remove();
+        document.body.classList.remove('admin-user-modal-open');
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+            previousFocus.focus();
+        }
+    }
+
+    modal.querySelectorAll('[data-admin-modal-cancel]').forEach(function(button) {
+        button.addEventListener('click', close);
+    });
+
+    confirm.addEventListener('click', function() {
+        if (!options.onConfirm) {
+            close();
+            return;
+        }
+        confirm.disabled = true;
+        var originalText = confirm.textContent;
+        confirm.textContent = options.loadingText || 'Working...';
+        error.hidden = true;
+        Promise.resolve()
+            .then(options.onConfirm)
+            .then(close)
+            .catch(function(err) {
+                error.textContent = err && err.message ? err.message : 'Unable to complete action.';
+                error.hidden = false;
+                confirm.disabled = false;
+                confirm.textContent = originalText;
+            });
+    });
+
+    window.setTimeout(function() {
+        var focusTarget = modal.querySelector('select, input, button[data-admin-modal-confirm]');
+        if (focusTarget) {
+            focusTarget.focus();
+        }
+    }, 0);
+}
+
+function showInlineAdminMessage(message, success) {
+    var main = document.querySelector('.lumina-portal-main');
+    if (!main || !message) {
+        return;
+    }
+    var notice = document.createElement('div');
+    notice.className = success ? 'badge badge-success' : 'badge badge-danger';
+    notice.style.cssText = 'margin-bottom:1rem;display:block;padding:0.65rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;text-transform:none;';
+    notice.textContent = message;
+    main.insertBefore(notice, main.firstElementChild ? main.firstElementChild.nextSibling : null);
+    window.setTimeout(function() {
+        notice.remove();
+    }, 5000);
+}
+
 function transactionStatusBadge(status) {
     return '<span class="' + transactionStatusBadgeClass(status) + '">' + escapeHtml(formatEnum(status)) + '</span>';
 }
@@ -1187,6 +1575,14 @@ function formatMoney(amount, currency) {
         return '--';
     }
     var currencyCode = currency || 'VND';
+    if (currencyCode === 'VND') {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(numericAmount);
+    }
     return new Intl.NumberFormat(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2

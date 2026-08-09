@@ -8,6 +8,5 @@ public class CategoryRequestDTO {
     @jakarta.validation.constraints.NotBlank
     private String name;
 
-    @jakarta.validation.constraints.NotBlank
     private String description;
 }

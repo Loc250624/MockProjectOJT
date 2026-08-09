@@ -154,6 +154,33 @@ class UserServiceImplTest {
     }
 
     @Test
+    void updateUserRolePersistsNewRole() {
+        User user = localUser();
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserResponseDTO profile = userService.updateUserRole(1, Role.TEACHER, 99);
+
+        assertThat(profile.getRole()).isEqualTo(Role.TEACHER);
+        assertThat(user.getRole()).isEqualTo(Role.TEACHER);
+    }
+
+    @Test
+    void updateUserRoleRejectsRemovingLastActiveAdmin() {
+        User admin = localUser();
+        admin.setRole(Role.ADMIN);
+        when(userRepository.findById(1)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRoleAndStatus(Role.ADMIN, UserStatus.ACTIVE)).thenReturn(1L);
+
+        assertThatThrownBy(() -> userService.updateUserRole(1, Role.TEACHER, 99))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.CANNOT_REMOVE_LAST_ADMIN);
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void updateCurrentAvatarUpdatesAvatarUrl() {
         User user = localUser();
         when(userRepository.findById(1)).thenReturn(Optional.of(user));

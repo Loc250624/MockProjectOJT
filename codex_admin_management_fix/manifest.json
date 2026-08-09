@@ -1,0 +1,15 @@
+{
+  "package": "codex_admin_management_fix",
+  "created_for": "E-Learning Admin Console",
+  "scope": [
+    "Admin All Users administrative actions",
+    "Admin Categories edit/delete",
+    "Admin Transactions VND currency display"
+  ],
+  "references": [
+    "01-admin-all-users.png",
+    "02-admin-categories.png",
+    "03-admin-transactions.png"
+  ],
+  "note": "No repository source files were supplied in this turn; this package is an implementation specification for Codex to apply to the existing project repository."
+}

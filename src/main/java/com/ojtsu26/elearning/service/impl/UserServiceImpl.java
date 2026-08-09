@@ -169,6 +169,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponseDTO updateUserRole(Integer targetUserId, Role role, Integer currentAdminId) {
+        if (role == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Role is required");
+        }
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if (user.getStatus() == UserStatus.DELETED) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_DELETED);
+        }
+        if (targetUserId != null && targetUserId.equals(currentAdminId)
+                && user.getRole() == Role.ADMIN && role != Role.ADMIN) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_OWN_ACCOUNT);
+        }
+        if (user.getRole() == Role.ADMIN && role != Role.ADMIN) {
+            ensureNotLastActiveAdmin(user);
+        }
+
+        user.setRole(role);
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
     public UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId) {
         User user = getTargetUserForAdminAction(targetUserId, currentAdminId);
         if (user.getStatus() == UserStatus.DELETED) {
@@ -177,6 +200,7 @@ public class UserServiceImpl implements UserService {
         if (user.getStatus() == UserStatus.BLOCKED) {
             throw new BusinessException(ErrorCode.USER_ALREADY_BLOCKED);
         }
+        ensureNotLastActiveAdmin(user);
 
         user.setStatus(UserStatus.BLOCKED);
         return userMapper.toDto(userRepository.save(user));
@@ -216,6 +240,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (user.getStatus() != UserStatus.DELETED) {
+            ensureNotLastActiveAdmin(user);
             user.setStatus(UserStatus.DELETED);
             user = userRepository.save(user);
         }
@@ -271,6 +296,13 @@ public class UserServiceImpl implements UserService {
     private User getUserOrThrow(Integer id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void ensureNotLastActiveAdmin(User user) {
+        if (user.getRole() == Role.ADMIN && user.getStatus() == UserStatus.ACTIVE
+                && userRepository.countByRoleAndStatus(Role.ADMIN, UserStatus.ACTIVE) <= 1) {
+            throw new BusinessException(ErrorCode.CANNOT_REMOVE_LAST_ADMIN);
+        }
     }
 
     private String normalizeEmail(String email) {

@@ -19,6 +19,8 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     List<Course> findByInstructorId(Integer instructorId);
     List<Course> findByStatus(CourseStatus status);
     List<Course> findByInstructorIdAndStatus(Integer instructorId, CourseStatus status);
+    long countByCategoryId(Integer categoryId);
+    List<Course> findByCategoryId(Integer categoryId);
 
     @Query("SELECT c FROM Course c " +
            "LEFT JOIN FETCH c.instructor " +

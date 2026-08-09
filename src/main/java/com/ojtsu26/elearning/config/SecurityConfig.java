@@ -157,6 +157,8 @@ public class SecurityConfig {
                         "/student/payment-result",
                         "/auth/login",
                         "/auth/register",
+                        "/auth/forgot-password",
+                        "/auth/reset-password",
                         "/auth/oauth2/complete",
                         "/oauth2/**",
                         "/login/oauth2/**",

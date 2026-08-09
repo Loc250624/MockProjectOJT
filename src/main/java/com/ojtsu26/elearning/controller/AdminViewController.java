@@ -299,7 +299,7 @@ public class AdminViewController {
         try {
             categoryService.create(requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category created successfully!");
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/create";
@@ -320,7 +320,7 @@ public class AdminViewController {
         try {
             categoryService.update(id, requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/edit/" + id;

@@ -122,7 +122,7 @@ public class TransactionServiceImpl implements TransactionService {
         return AdminTransactionDTO.builder()
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
-                .currency(currency(order))
+                .currency("VND")
                 .paymentMethod(transaction.getPaymentMethod())
                 .transactionRef(transaction.getTransactionRef())
                 .status(transaction.getStatus())
@@ -146,7 +146,7 @@ public class TransactionServiceImpl implements TransactionService {
         return AdminTransactionDetailDTO.builder()
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
-                .currency(currency(order))
+                .currency("VND")
                 .paymentMethod(transaction.getPaymentMethod())
                 .transactionRef(transaction.getTransactionRef())
                 .status(transaction.getStatus())
@@ -159,14 +159,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .courseTitle(course == null ? null : course.getTitle())
                 .orderId(order == null ? null : order.getId())
                 .orderCode(order == null ? null : order.getOrderCode())
-                .orderTotalAmount(order == null ? null : order.getTotalAmount())
+                .orderTotalAmount(order == null ? null : order.getPaidAmount())
                 .orderPaidAmount(order == null ? null : order.getPaidAmount())
                 .build();
-    }
-
-    private String currency(Order order) {
-        return order == null || order.getCurrency() == null || order.getCurrency().isBlank()
-                ? "VND"
-                : order.getCurrency();
     }
 }

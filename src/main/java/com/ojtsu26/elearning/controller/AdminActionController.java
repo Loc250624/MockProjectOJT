@@ -1,11 +1,17 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.dto.request.AdminCategoryReassignRequestDTO;
+import com.ojtsu26.elearning.dto.request.AdminChangeUserRoleRequestDTO;
 import com.ojtsu26.elearning.dto.request.AdminCreateUserRequestDTO;
+import com.ojtsu26.elearning.dto.request.CategoryRequestDTO;
 import com.ojtsu26.elearning.dto.request.UpdateProfileRequestDTO;
 import com.ojtsu26.elearning.dto.response.AdminPaymentSummaryDTO;
+import com.ojtsu26.elearning.dto.response.AdminPasswordResetLinkResponseDTO;
 import com.ojtsu26.elearning.dto.response.AdminTransactionDTO;
 import com.ojtsu26.elearning.dto.response.AdminTransactionDetailDTO;
+import com.ojtsu26.elearning.dto.response.CategoryDependencyResponseDTO;
+import com.ojtsu26.elearning.dto.response.CategoryResponseDTO;
 import com.ojtsu26.elearning.dto.response.UserResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.AuthProvider;
@@ -17,6 +23,8 @@ import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.security.JwtCookieService;
 import com.ojtsu26.elearning.service.TransactionService;
 import com.ojtsu26.elearning.service.UserService;
+import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.PasswordResetService;
 import com.ojtsu26.elearning.service.BlogCommentService;
 import com.ojtsu26.elearning.service.BlogPostService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -60,6 +68,8 @@ public class AdminActionController {
     private final BlogPostService blogPostService;
     private final BlogCommentService blogCommentService;
     private final TransactionService transactionService;
+    private final CategoryService categoryService;
+    private final PasswordResetService passwordResetService;
 
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
@@ -248,6 +258,21 @@ public class AdminActionController {
         return ResponseEntity.ok(Map.of("message", "Update user " + id + " placeholder - not yet implemented"));
     }
 
+    @PostMapping("/users/{id}/password-reset-link")
+    public ResponseEntity<ApiResponse<AdminPasswordResetLinkResponseDTO>> createPasswordResetLink(@PathVariable Integer id) {
+        AdminPasswordResetLinkResponseDTO resetLink = passwordResetService.createAdminResetLink(id);
+        return ResponseEntity.ok(ApiResponse.success(resetLink, "Password reset link created successfully."));
+    }
+
+    @PatchMapping("/users/{id}/role")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateUserRole(
+            @PathVariable Integer id,
+            @Valid @RequestBody AdminChangeUserRoleRequestDTO request,
+            @AuthenticationPrincipal CustomUserDetails currentAdmin) {
+        UserResponseDTO user = userService.updateUserRole(id, request.getRole(), currentAdmin.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(user, "User role updated successfully."));
+    }
+
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<UserResponseDTO>> softDeleteUser(
             @PathVariable Integer id,
@@ -273,18 +298,42 @@ public class AdminActionController {
     }
 
     @PostMapping("/categories")
-    public ResponseEntity<?> createCategory() {
-        return ResponseEntity.ok(Map.of("message", "Create category placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<CategoryResponseDTO>> createCategory(
+            @Valid @RequestBody CategoryRequestDTO request) {
+        CategoryResponseDTO category = categoryService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(category, "Category created successfully."));
     }
 
     @PatchMapping("/categories/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Update category " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<CategoryResponseDTO>> updateCategory(
+            @PathVariable Integer id,
+            @Valid @RequestBody CategoryRequestDTO request) {
+        CategoryResponseDTO category = categoryService.update(id, request);
+        return ResponseEntity.ok(ApiResponse.success(category, "Category updated successfully."));
     }
 
     @DeleteMapping("/categories/{id}")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
-        return ResponseEntity.ok(Map.of("message", "Delete category " + id + " placeholder - not yet implemented"));
+    public ResponseEntity<ApiResponse<?>> deleteCategory(@PathVariable Integer id) {
+        CategoryDependencyResponseDTO dependency = categoryService.dependencyInfo(id);
+        if (dependency.getDependentCourseCount() > 0) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.<CategoryDependencyResponseDTO>builder()
+                            .code(HttpStatus.CONFLICT.value())
+                            .message(dependency.getMessage())
+                            .data(dependency)
+                            .build());
+        }
+        categoryService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Category deleted successfully."));
+    }
+
+    @PostMapping("/categories/{id}/reassign-and-delete")
+    public ResponseEntity<ApiResponse<CategoryDependencyResponseDTO>> reassignCoursesAndDeleteCategory(
+            @PathVariable Integer id,
+            @Valid @RequestBody AdminCategoryReassignRequestDTO request) {
+        CategoryDependencyResponseDTO result = categoryService.reassignCoursesAndDelete(id, request.getReplacementCategoryId());
+        return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
     }
 
     @PatchMapping("/courses/{id}/approve")

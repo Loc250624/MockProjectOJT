@@ -64,6 +64,10 @@
                     </thead>
                     <tbody id="categoryTableBody">
                         <tr th:each="cat : ${categories}"
+                            th:data-category-id="${cat.id}"
+                            th:data-category-name="${cat.name}"
+                            th:data-category-description="${cat.description}"
+                            th:data-category-course-count="${cat.courseCount}"
                             style="border-bottom:1px solid var(--lumina-gray-100);transition:background 0.15s;">
                             <td style="padding:1rem 1.5rem;font-size:0.875rem;color:var(--lumina-gray-500);font-family:monospace;" th:text="${cat.id}">1</td>
                             <td style="padding:1rem 1.5rem;">
@@ -79,16 +83,9 @@
                                         <span>Edit</span>
                                     </a>
                                     <form th:action="@{'/admin/categories/delete/' + ${cat.id}}" method="post" style="display:inline;"
-                                          data-lumina-confirm
-                                          data-dialog-preset="danger"
-                                          data-dialog-title="Delete this category?"
-                                          data-dialog-object-label="Category"
-                                          th:data-dialog-object="${cat.name}"
-                                          data-dialog-notice-title="Course classification may be affected"
-                                          data-dialog-notice-text="Only continue if this category is no longer required."
-                                          data-dialog-require-acknowledgement="true"
-                                          data-dialog-confirm-text="Delete category"
-                                          data-dialog-cancel-text="Keep category">
+                                          class="admin-category-delete-form"
+                                          th:data-category-id="${cat.id}"
+                                          th:data-category-name="${cat.name}">
                                         <button type="submit" class="action-btn danger"
                                                 th:id="'btn-delete-cat-' + ${cat.id}">
                                             <svg th:replace="~{fragments/icons :: icon('delete')}"></svg>
@@ -114,6 +111,7 @@
     </div>
 </div>
 
+<script th:src="@{/js/csrf-fetch.js}"></script>
 <script th:src="@{/js/admin/admin.js}"></script>
 <script>
 function filterTable(query) {
