@@ -365,6 +365,11 @@ function initUserAdministration() {
             form.confirmPassword.focus();
             return;
         }
+        if (form.role.value !== 'TEACHER' && form.role.value !== 'ADMIN') {
+            setCreateError('Admin can only create Teacher or Admin accounts.');
+            form.role.focus();
+            return;
+        }
 
         state.creating = true;
         setCreateError('');
@@ -630,8 +635,8 @@ function initUserAdministration() {
                 { label: 'Current status', value: user.status },
                 { label: 'New status', value: shouldUnblock ? 'ACTIVE' : 'BLOCKED' }
             ],
-            confirmText: shouldUnblock ? 'Unblock account' : 'Block account',
-            cancelText: 'Keep current status',
+            confirmText: 'Yes',
+            cancelText: 'No',
             loadingText: shouldUnblock ? 'Unblocking account...' : 'Blocking account...',
             onConfirm: function () {
                 state.pendingStatusUserId = user.id;
@@ -704,8 +709,6 @@ function initUserAdministration() {
                 label: 'I understand that this user will lose account access.',
                 required: true
             },
-            confirmText: 'Soft-delete account',
-            cancelText: 'Keep account',
             options: {
                 loadingText: 'Soft-deleting account...',
                 onConfirm: function () {

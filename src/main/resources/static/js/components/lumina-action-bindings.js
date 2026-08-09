@@ -46,8 +46,8 @@
                 label: data.dialogAcknowledgementLabel || 'I understand the effect of this action.',
                 required: true
             } : null,
-            confirmText: data.dialogConfirmText || 'Confirm',
-            cancelText: data.dialogCancelText || 'Cancel',
+            confirmText: 'Yes',
+            cancelText: 'No',
             loadingText: data.dialogLoadingText || 'Processing...'
         };
     }
@@ -58,8 +58,6 @@
         if (data.dialogTitle) options.title = data.dialogTitle;
         if (data.dialogSubtitle) options.subtitle = data.dialogSubtitle;
         if (data.dialogBadge) options.badge = data.dialogBadge;
-        if (data.dialogConfirmText) options.confirmText = data.dialogConfirmText;
-        if (data.dialogCancelText) options.cancelText = data.dialogCancelText;
         if (data.dialogLoadingText) options.loadingText = data.dialogLoadingText;
         return options;
     }

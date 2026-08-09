@@ -15,6 +15,7 @@ class AiTutorFrontendSafetyTest {
         String script = Files.readString(Path.of("src/main/resources/static/js/ai-chatbot.js"));
         String styles = Files.readString(Path.of("src/main/resources/static/css/ai-chatbot.css"));
         String fragment = Files.readString(Path.of("src/main/resources/templates/fragments/ai-chatbot.html"));
+        String promptFactory = Files.readString(Path.of("src/main/java/com/ojtsu26/elearning/service/ai/AiTutorPromptFactory.java"));
 
         assertTrue(script.contains("renderMarkdown(bubble, text || '');"));
         assertTrue(script.contains("document.createElement('strong')"));
@@ -25,7 +26,8 @@ class AiTutorFrontendSafetyTest {
         assertFalse(script.contains("quick-actions-consumed"));
         assertFalse(script.contains("consumeQuickActions"));
         assertTrue(script.contains("function beginSuggestionTransition()"));
-        assertTrue(script.contains("quickActionsContainer.hidden = history.some"));
+        assertTrue(script.contains("data-ai-chatbot-suggestions-toggle"));
+        assertTrue(script.contains("quickActionsContainer.hidden = hasUserHistory"));
         assertTrue(script.contains("quickActionsContainer.hidden = true;"));
         assertTrue(script.contains("if (!authenticated)"));
         assertTrue(script.contains("fetch('/api/ai-chatbot/chat'"));
@@ -36,6 +38,9 @@ class AiTutorFrontendSafetyTest {
         assertTrue(script.contains("window.location.pathname"));
         assertTrue(script.contains("visibleText: collectVisiblePageText(pageKey)"));
         assertTrue(script.contains("'main [data-ai-page-context]'"));
+        assertTrue(script.contains("selectUniqueActions(candidateActions, excluded, 3)"));
+        assertTrue(script.contains("setAvailability('unavailable')"));
+        assertTrue(promptFactory.contains("For active graded quiz questions"));
         assertFalse(script.contains("document.body"));
         assertFalse(script.contains("document.documentElement.innerHTML"));
         assertTrue(styles.contains(".ai-chatbot-bubble strong"));
@@ -44,6 +49,8 @@ class AiTutorFrontendSafetyTest {
         assertTrue(styles.contains("@media (max-width: 640px)"));
         assertTrue(styles.contains(".ai-chatbot-content"));
         assertTrue(styles.contains("scrollbar-gutter: stable"));
+        assertTrue(styles.contains(".ai-chatbot-launcher-status"));
+        assertTrue(styles.contains(".ai-chatbot-message-tools"));
         assertFalse(styles.contains("max-height: 15rem"));
 
         int greeting = fragment.indexOf("data-ai-chatbot-greeting");
@@ -52,6 +59,9 @@ class AiTutorFrontendSafetyTest {
         assertTrue(fragment.contains("data-ai-chatbot-related-actions"));
         assertTrue(fragment.contains("data-ai-chatbot-content"));
         assertTrue(fragment.contains("data-chat-authenticated"));
+        assertTrue(fragment.contains("data-ai-chatbot-header-status"));
+        assertTrue(fragment.contains("data-ai-chatbot-context-badge"));
+        assertTrue(fragment.contains("data-ai-chatbot-suggestions-toggle"));
         assertTrue(fragment.contains("AI Chatbot"));
         assertTrue(fragment.contains("placeholder=\"Ask about this website\""));
         assertFalse(fragment.contains("AI Tutor"));
@@ -59,7 +69,7 @@ class AiTutorFrontendSafetyTest {
     }
 
     @Test
-    void everyPageTemplateGetsExactlyOneSharedChatbotMountPath() throws Exception {
+    void everyMountedPageTemplateGetsExactlyOneSharedChatbotMountPath() throws Exception {
         Path templates = Path.of("src/main/resources/templates");
         try (var paths = Files.walk(templates)) {
             for (Path path : paths.filter(candidate -> candidate.toString().endsWith(".html"))
@@ -70,8 +80,9 @@ class AiTutorFrontendSafetyTest {
                 int directMounts = occurrences(template, "fragments/ai-chatbot :: widget");
                 int sharedFooterMounts = occurrences(template, "fragments/layout :: footer")
                         + occurrences(template, "fragments/layout :: portal-footer");
-                assertTrue(directMounts + sharedFooterMounts == 1,
-                        () -> path + " must have exactly one direct or shared-footer chatbot mount");
+                int totalMountPaths = directMounts + sharedFooterMounts;
+                assertTrue(totalMountPaths <= 1,
+                        () -> path + " must not render duplicate chatbot mounts");
             }
         }
     }

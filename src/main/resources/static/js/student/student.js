@@ -530,8 +530,8 @@ function initVideoProgress(element) {
                 eyebrow: 'Preview Limit',
                 title: 'Unlock Full Course',
                 subtitle: 'You have watched 50% of the first lesson. Purchase the course to continue learning.',
-                cancelText: 'Cancel',
-                confirmText: 'Buy Course',
+                cancelText: 'No',
+                confirmText: 'Yes',
                 onConfirm: function () {
                     window.location.href = '/student/checkout?courseId=' + courseId;
                 }
