@@ -16,6 +16,7 @@ public class TeacherDashboardStatsDTO {
     private String completionRateChangeClass;
     private BigDecimal totalRevenueMtd;
     private String revenueCurrencyCode;
+    private String totalRevenueMtdDisplay;
     private String revenueChangeText;
     private String revenueChangeClass;
 }

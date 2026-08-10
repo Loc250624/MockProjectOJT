@@ -17,13 +17,13 @@ import com.ojtsu26.elearning.repository.projection.TeacherEnrollmentCountProject
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueEventProjection;
 import com.ojtsu26.elearning.service.CurrentUserService;
+import com.ojtsu26.elearning.service.CurrencyDisplayService;
 import com.ojtsu26.elearning.service.TeacherRevenueAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -42,12 +42,12 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
     private static final String GROUP_DAY = "day";
     private static final String GROUP_MONTH = "month";
     private static final String GROUP_YEAR = "year";
-    private static final String REVENUE_CURRENCY = "USD";
 
     private final CurrentUserService currentUserService;
     private final CourseRepository courseRepository;
     private final OrderItemRepository orderItemRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
+    private final CurrencyDisplayService currencyDisplayService;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +63,7 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
 
         LocalDateTime fromDateTime = filter.from().atStartOfDay();
         LocalDateTime toDateTime = filter.to().plusDays(1).atStartOfDay();
-        BigDecimal totalRevenue = money(orderItemRepository.sumTeacherRevenue(
+        BigDecimal totalRevenue = displayMoney(orderItemRepository.sumTeacherRevenue(
                 teacher.getId(), OrderStatus.PAID, fromDateTime, toDateTime, courseId));
         long paidOrderCount = orderItemRepository.countTeacherPaidOrders(
                 teacher.getId(), OrderStatus.PAID, fromDateTime, toDateTime, courseId);
@@ -88,7 +88,7 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
                 .to(filter.to())
                 .groupBy(cleanGroupBy)
                 .courseId(courseId)
-                .currency(REVENUE_CURRENCY)
+                .currency(currencyDisplayService.getDisplayCurrency())
                 .totalRevenue(totalRevenue)
                 .paidOrderCount(paidOrderCount)
                 .paidStudentCount(paidStudentCount)
@@ -143,7 +143,7 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
         return TeacherRevenueCourseDTO.builder()
                 .courseId(course.getId())
                 .courseTitle(course.getTitle())
-                .revenue(money(revenue == null ? null : revenue.getRevenue()))
+                .revenue(displayMoney(revenue == null ? null : revenue.getRevenue()))
                 .paidOrderCount(revenue == null || revenue.getPaidOrderCount() == null ? 0 : revenue.getPaidOrderCount())
                 .unitsSold(revenue == null || revenue.getUnitsSold() == null ? 0 : revenue.getUnitsSold())
                 .enrollmentCount(enrollment == null || enrollment.getEnrollmentCount() == null ? 0 : enrollment.getEnrollmentCount())
@@ -166,7 +166,7 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
         return buckets.entrySet().stream()
                 .map(entry -> TeacherRevenueTrendPointDTO.builder()
                         .period(entry.getKey())
-                        .revenue(money(entry.getValue().revenue))
+                        .revenue(displayMoney(entry.getValue().revenue))
                         .paidOrderCount(entry.getValue().orderIds.size())
                         .build())
                 .toList();
@@ -238,8 +238,8 @@ public class TeacherRevenueAnalyticsServiceImpl implements TeacherRevenueAnalyti
         }
     }
 
-    private BigDecimal money(BigDecimal value) {
-        return (value == null ? BigDecimal.ZERO : value).setScale(2, RoundingMode.HALF_UP);
+    private BigDecimal displayMoney(BigDecimal usdValue) {
+        return currencyDisplayService.convertUsdToDisplay(usdValue);
     }
 
     private record DateFilter(LocalDate from, LocalDate to) {

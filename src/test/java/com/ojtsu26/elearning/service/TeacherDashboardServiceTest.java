@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,7 @@ class TeacherDashboardServiceTest {
     @Mock private CourseEnrollmentRepository enrollmentRepository;
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private LessonProgressRepository lessonProgressRepository;
+    @Mock private CurrencyDisplayService currencyDisplayService;
 
     private TeacherDashboardServiceImpl service;
 
@@ -49,7 +51,16 @@ class TeacherDashboardServiceTest {
                 courseRepository,
                 enrollmentRepository,
                 orderItemRepository,
-                lessonProgressRepository);
+                lessonProgressRepository,
+                currencyDisplayService);
+        lenient().when(currencyDisplayService.convertUsdToDisplay(any()))
+                .thenAnswer(invocation -> {
+                    BigDecimal value = invocation.getArgument(0);
+                    return (value == null ? BigDecimal.ZERO : value).setScale(2, java.math.RoundingMode.HALF_UP);
+                });
+        lenient().when(currencyDisplayService.formatDisplayMoney(any()))
+                .thenAnswer(invocation -> "$" + invocation.getArgument(0).toString());
+        lenient().when(currencyDisplayService.getDisplayCurrency()).thenReturn("USD");
     }
 
     @Test

@@ -374,7 +374,7 @@ public class SystemSettingServiceImpl implements SystemSettingService {
                         SystemSettingType.ENUM,
                         "Commerce",
                         "Default currency",
-                        "Administrative display preference only. Current orders and analytics store business revenue in USD; payment gateway settlement uses VND.",
+                        "Currency used for course prices and revenue analytics outside payment gateway screens. Orders keep USD business amounts and payment gateways settle in VND.",
                         true,
                         false,
                         true,
@@ -383,7 +383,7 @@ public class SystemSettingServiceImpl implements SystemSettingService {
                         List.of("VND", "USD"),
                         null,
                         STORAGE,
-                        "Metadata only in the current release; order, payment, and analytics services do not read this setting."),
+                        "Applies immediately to catalog, admin/teacher revenue dashboards, and non-payment course price displays."),
                 new SettingDefinition(
                         "commerce.teacherCommissionRate",
                         "0.70",

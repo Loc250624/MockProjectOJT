@@ -17,6 +17,7 @@ import com.ojtsu26.elearning.repository.OrderItemRepository;
 import com.ojtsu26.elearning.repository.projection.TeacherCourseMetricProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.service.CurrentUserService;
+import com.ojtsu26.elearning.service.CurrencyDisplayService;
 import com.ojtsu26.elearning.service.TeacherDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Comparator;
@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 public class TeacherDashboardServiceImpl implements TeacherDashboardService {
 
     private static final int COURSE_LIMIT = 5;
-    private static final String BUSINESS_CURRENCY = "USD";
     private static final String CHANGE_UP = "stat-change-up";
     private static final String CHANGE_DOWN = "stat-change-down";
     private static final String CHANGE_NEUTRAL = "stat-change-neutral";
@@ -49,6 +48,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     private final CourseEnrollmentRepository enrollmentRepository;
     private final OrderItemRepository orderItemRepository;
     private final LessonProgressRepository lessonProgressRepository;
+    private final CurrencyDisplayService currencyDisplayService;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,7 +78,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .map(course -> toCourseDashboardDto(course, metricsByCourse.get(course.getId()), revenueByCourse.get(course.getId())))
                 .toList();
 
-        BigDecimal totalRevenue = money(orderItemRepository.sumTeacherRevenue(
+        BigDecimal totalRevenue = displayMoney(orderItemRepository.sumTeacherRevenue(
                 teacher.getId(), OrderStatus.PAID, monthStart, nextMonthStart, null));
         BigDecimal averageProgress = enrollmentRepository.averageProgressByTeacherId(teacher.getId());
 
@@ -95,7 +95,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                                                            TeacherCourseMetricProjection metric,
                                                            TeacherRevenueCourseProjection revenue) {
         int averageProgress = clampPercent(metric == null ? null : metric.getAverageProgress());
-        BigDecimal revenueValue = money(revenue == null ? null : revenue.getRevenue());
+        BigDecimal revenueValue = displayMoney(revenue == null ? null : revenue.getRevenue());
         CourseStatus status = course.getStatus();
         String actionLabel = status == CourseStatus.DRAFT ? "Resume" : "Edit";
 
@@ -128,14 +128,8 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         return Math.max(0, Math.min(100, rounded));
     }
 
-    private BigDecimal money(BigDecimal value) {
-        return (value == null ? BigDecimal.ZERO : value).setScale(2, RoundingMode.HALF_UP);
-    }
-
     private String formatMoney(BigDecimal value) {
-        NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.US);
-        formatter.setCurrency(java.util.Currency.getInstance(BUSINESS_CURRENCY));
-        return formatter.format(money(value));
+        return currencyDisplayService.formatDisplayMoney(value);
     }
 
     private String formatStatus(CourseStatus status) {
@@ -184,12 +178,10 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         BigDecimal previousCompletionRate = enrollmentRepository.averageProgressByTeacherIdAndEnrolledAtBetween(
                 teacher.getId(), previousMonth.from(), previousMonth.to());
 
-        BigDecimal totalRevenueMtd = money(orderItemRepository.sumTeacherRevenue(
+        BigDecimal totalRevenueMtd = displayMoney(orderItemRepository.sumTeacherRevenue(
                 teacher.getId(), OrderStatus.PAID, currentMonth.from(), currentMonth.to(), null));
-        BigDecimal previousRevenue = money(orderItemRepository.sumTeacherRevenue(
+        BigDecimal previousRevenue = displayMoney(orderItemRepository.sumTeacherRevenue(
                 teacher.getId(), OrderStatus.PAID, previousMonth.from(), previousMonth.to(), null));
-        List<String> revenueCurrencies = orderItemRepository.findTeacherPaidRevenueCurrencies(
-                teacher.getId(), OrderStatus.PAID, currentMonth.from(), currentMonth.to());
 
         Trend activeTrend = trendPercent(BigDecimal.valueOf(currentActiveStudents), BigDecimal.valueOf(previousActiveStudents),
                 "No active students last month");
@@ -204,20 +196,11 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .completionRateChangeText(completionTrend.text())
                 .completionRateChangeClass(completionTrend.cssClass())
                 .totalRevenueMtd(totalRevenueMtd)
-                .revenueCurrencyCode(revenueCurrencyCode(revenueCurrencies))
+                .revenueCurrencyCode(currencyDisplayService.getDisplayCurrency())
+                .totalRevenueMtdDisplay(formatMoney(totalRevenueMtd))
                 .revenueChangeText(revenueTrend.text())
                 .revenueChangeClass(revenueTrend.cssClass())
                 .build();
-    }
-
-    private String revenueCurrencyCode(List<String> currencyCodes) {
-        if (currencyCodes == null || currencyCodes.isEmpty()) {
-            return "";
-        }
-        if (currencyCodes.size() == 1) {
-            return currencyCodes.get(0);
-        }
-        return "Mixed";
     }
 
     private Trend completionTrend(BigDecimal currentCompletionRate, BigDecimal previousCompletionRate) {
@@ -256,6 +239,10 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
 
     private BigDecimal percent(BigDecimal value) {
         return (value == null ? BigDecimal.ZERO : value).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal displayMoney(BigDecimal usdValue) {
+        return currencyDisplayService.convertUsdToDisplay(usdValue);
     }
 
     private record Trend(String text, String cssClass) {

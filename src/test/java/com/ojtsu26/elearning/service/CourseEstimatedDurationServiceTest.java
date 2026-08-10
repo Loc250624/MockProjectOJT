@@ -42,16 +42,21 @@ class CourseEstimatedDurationServiceTest {
     @Mock
     private VideoDurationPrecomputeService videoDurationPrecomputeService;
 
+    @Mock
+    private CurrencyDisplayService currencyDisplayService;
+
     private CourseServiceImpl service;
 
     @BeforeEach
     void setUp() {
+        when(currencyDisplayService.getDisplayCurrency()).thenReturn("USD");
         service = new CourseServiceImpl(
                 courseRepository,
                 videoRepository,
                 videoDurationPrecomputeService,
                 courseMapper,
-                notificationService);
+                notificationService,
+                currencyDisplayService);
     }
 
     @Test

@@ -50,9 +50,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "payment.gateway.exchange-rate=25000"
 })
 class AdminAnalyticsControllerTest {
+
+    private static final BigDecimal TEST_EXCHANGE_RATE = new BigDecimal("25000");
 
     @Autowired
     private MockMvc mockMvc;
@@ -197,8 +200,8 @@ class AdminAnalyticsControllerTest {
                 .andExpect(jsonPath("$.data.totalCourses").value(1))
                 .andExpect(jsonPath("$.data.totalEnrollments").value(2))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(150.00))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("150.00")))
                 .andExpect(jsonPath("$.data.newStudents").value(2))
                 .andExpect(jsonPath("$.data.activeStudents").value(1));
     }
@@ -218,7 +221,7 @@ class AdminAnalyticsControllerTest {
                 .andExpect(jsonPath("$.data.totalCourses").value(0))
                 .andExpect(jsonPath("$.data.totalEnrollments").value(0))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(0))
-                .andExpect(jsonPath("$.data.currency").value("USD"))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
                 .andExpect(jsonPath("$.data.totalRevenue").value(0.00))
                 .andExpect(jsonPath("$.data.newStudents").value(0))
                 .andExpect(jsonPath("$.data.activeStudents").value(0));
@@ -237,8 +240,8 @@ class AdminAnalyticsControllerTest {
                 .andExpect(jsonPath("$.data.totalCourses").value((int) courseRepository.count()))
                 .andExpect(jsonPath("$.data.totalEnrollments").value((int) enrollmentRepository.count()))
                 .andExpect(jsonPath("$.data.paidOrderCount").value((int) orderRepository.countByStatus(OrderStatus.PAID)))
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(orderItemRepository.sumPaidRevenue(OrderStatus.PAID).doubleValue()))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd(orderItemRepository.sumPaidRevenue(OrderStatus.PAID))))
                 .andExpect(jsonPath("$.data.activeStudents").value((int) lessonProgressRepository.countActiveStudentsForAnalytics(
                         today.minusDays(1).atStartOfDay(),
                         today.plusDays(2).atStartOfDay(),
@@ -253,11 +256,11 @@ class AdminAnalyticsControllerTest {
                         .param("to", today.plusDays(1).toString())
                         .param("groupBy", "day"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(150.00))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("150.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
                 .andExpect(jsonPath("$.data.trend[1].period").value(today.toString()))
-                .andExpect(jsonPath("$.data.trend[1].revenue").value(150.00))
+                .andExpect(jsonPath("$.data.trend[1].revenue").value(vnd("150.00")))
                 .andExpect(jsonPath("$.data.trend[1].paidOrderCount").value(2));
     }
 
@@ -283,15 +286,15 @@ class AdminAnalyticsControllerTest {
                         .param("groupBy", "day"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.groupBy").value("day"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(60.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("60.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
                 .andExpect(jsonPath("$.data.timeZone").isNotEmpty())
                 .andExpect(jsonPath("$.data.revenueRecognitionMethod").isNotEmpty())
                 .andExpect(jsonPath("$.data.trend[0].period").value("2026-01-01"))
-                .andExpect(jsonPath("$.data.trend[0].revenue").value(10.00))
+                .andExpect(jsonPath("$.data.trend[0].revenue").value(vnd("10.00")))
                 .andExpect(jsonPath("$.data.trend[0].paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.trend[1].period").value("2026-01-02"))
-                .andExpect(jsonPath("$.data.trend[1].revenue").value(50.00))
+                .andExpect(jsonPath("$.data.trend[1].revenue").value(vnd("50.00")))
                 .andExpect(jsonPath("$.data.trend[1].paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.trend[2].period").value("2026-01-03"))
                 .andExpect(jsonPath("$.data.trend[2].revenue").value(0.00))
@@ -318,14 +321,14 @@ class AdminAnalyticsControllerTest {
                         .param("groupBy", "month"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.groupBy").value("month"))
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(100.00))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("100.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
                 .andExpect(jsonPath("$.data.trend[0].period").value("2025-12"))
-                .andExpect(jsonPath("$.data.trend[0].revenue").value(40.00))
+                .andExpect(jsonPath("$.data.trend[0].revenue").value(vnd("40.00")))
                 .andExpect(jsonPath("$.data.trend[0].paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.trend[1].period").value("2026-01"))
-                .andExpect(jsonPath("$.data.trend[1].revenue").value(60.00))
+                .andExpect(jsonPath("$.data.trend[1].revenue").value(vnd("60.00")))
                 .andExpect(jsonPath("$.data.trend[1].paidOrderCount").value(1));
     }
 
@@ -350,13 +353,13 @@ class AdminAnalyticsControllerTest {
                         .param("groupBy", "year"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.groupBy").value("year"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(60.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("60.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(3))
                 .andExpect(jsonPath("$.data.trend[0].period").value("2025"))
-                .andExpect(jsonPath("$.data.trend[0].revenue").value(10.00))
+                .andExpect(jsonPath("$.data.trend[0].revenue").value(vnd("10.00")))
                 .andExpect(jsonPath("$.data.trend[0].paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.trend[1].period").value("2026"))
-                .andExpect(jsonPath("$.data.trend[1].revenue").value(50.00))
+                .andExpect(jsonPath("$.data.trend[1].revenue").value(vnd("50.00")))
                 .andExpect(jsonPath("$.data.trend[1].paidOrderCount").value(2));
     }
 
@@ -377,10 +380,10 @@ class AdminAnalyticsControllerTest {
                         .param("to", day.toString())
                         .param("groupBy", "day"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(25.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("25.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.trend[0].period").value(day.toString()))
-                .andExpect(jsonPath("$.data.trend[0].revenue").value(25.00))
+                .andExpect(jsonPath("$.data.trend[0].revenue").value(vnd("25.00")))
                 .andExpect(jsonPath("$.data.trend[0].paidOrderCount").value(1));
     }
 
@@ -780,5 +783,13 @@ class AdminAnalyticsControllerTest {
                 .courseName(course.getTitle())
                 .unitPrice(new BigDecimal(amount))
                 .build());
+    }
+
+    private static int vnd(String usdAmount) {
+        return vnd(new BigDecimal(usdAmount));
+    }
+
+    private static int vnd(BigDecimal usdAmount) {
+        return usdAmount.multiply(TEST_EXCHANGE_RATE).intValueExact();
     }
 }

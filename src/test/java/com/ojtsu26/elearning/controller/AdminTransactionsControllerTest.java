@@ -324,7 +324,7 @@ class AdminTransactionsControllerTest {
         assertThat(script)
                 .contains("initAdminTransactions")
                 .contains("/api/admin/transactions")
-                .contains("currency: 'VND'")
+                .contains("+ ' VND'")
                 .contains("maximumFractionDigits: 0")
                 .doesNotContain("webhookResponse")
                 .doesNotContain(".00 USD")

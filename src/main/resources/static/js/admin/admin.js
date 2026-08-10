@@ -1575,12 +1575,10 @@ function formatMoney(amount, currency) {
     }
     var currencyCode = currency || 'VND';
     if (currencyCode === 'VND') {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
+        return new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
-        }).format(numericAmount);
+        }).format(numericAmount) + ' VND';
     }
     return new Intl.NumberFormat(undefined, {
         minimumFractionDigits: 2,
