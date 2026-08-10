@@ -182,6 +182,30 @@ class ProfilePasswordControllerTest {
     }
 
     @Test
+    void allPortalProfilesOnlyExposeOverviewAndUpdateProfileTabs() throws Exception {
+        User student = saveAccount(Role.STUDENT, AuthProvider.LOCAL, "Current@123");
+        User teacher = saveAccount(Role.TEACHER, AuthProvider.LOCAL, "Current@123");
+        User admin = saveAccount(Role.ADMIN, AuthProvider.LOCAL, "Current@123");
+
+        for (var request : new org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder[]{
+                get("/student/profile").with(user(new CustomUserDetails(student))),
+                get("/teacher/profile").with(user(new CustomUserDetails(teacher))),
+                get("/admin/profile").with(user(new CustomUserDetails(admin)))
+        }) {
+            mockMvc.perform(request)
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(containsString("data-profile-tab=\"overview\"")))
+                    .andExpect(content().string(containsString("Update Profile")))
+                    .andExpect(content().string(not(containsString("data-profile-tab=\"security\""))))
+                    .andExpect(content().string(not(containsString("data-profile-tab=\"notifications\""))))
+                    .andExpect(content().string(not(containsString("data-profile-tab=\"privacy\""))))
+                    .andExpect(content().string(not(containsString("data-profile-panel=\"security\""))))
+                    .andExpect(content().string(not(containsString("data-profile-panel=\"notifications\""))))
+                    .andExpect(content().string(not(containsString("data-profile-panel=\"privacy\""))));
+        }
+    }
+
+    @Test
     void oauthManagedStudentRendersProviderNoticeWithoutPasswordInputs() throws Exception {
         User oauthStudent = saveAccount(Role.STUDENT, AuthProvider.GITHUB, "Current@123");
 

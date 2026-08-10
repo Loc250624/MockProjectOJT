@@ -17,7 +17,7 @@ class ProfilePasswordFrontendTemplateTest {
         int profileForm = template.indexOf("id=\"profile-edit-form\"", editPanel);
         int profileFormClose = template.indexOf("</form>", profileForm);
         int passwordForm = template.indexOf("id=\"profile-password-form\"", profileFormClose);
-        int editPanelClose = template.indexOf("data-profile-panel=\"security\"", passwordForm);
+        int editPanelClose = template.indexOf("</main>", passwordForm);
 
         assertTrue(editPanel >= 0);
         assertTrue(profileFormClose < passwordForm);

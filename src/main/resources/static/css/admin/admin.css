@@ -106,10 +106,32 @@
   margin-bottom: 1rem;
   padding: 0.75rem 0.875rem;
   border-radius: 8px;
+  border: 1px solid #fecaca;
   background: var(--lumina-danger-bg);
   color: var(--lumina-danger);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.admin-users-feedback {
+  margin: 0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.admin-users-feedback.is-success {
+  border-color: #bbf7d0;
+  background: var(--lumina-success-bg);
+  color: var(--lumina-success);
+}
+
+.admin-users-feedback.is-error {
+  border-color: #fecaca;
+  background: var(--lumina-danger-bg);
+  color: var(--lumina-danger);
 }
 
 .admin-user-password-grid {
@@ -997,6 +1019,18 @@ html[data-theme="dark"] :is(
 ) {
   background: var(--theme-surface);
   border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .admin-users-feedback.is-success {
+  background: var(--theme-success-surface);
+  border-color: color-mix(in srgb, var(--theme-success-text) 34%, var(--theme-border));
+  color: var(--theme-success-text);
+}
+
+html[data-theme="dark"] :is(.admin-users-feedback.is-error, .admin-user-form-message) {
+  background: var(--theme-danger-surface);
+  border-color: color-mix(in srgb, var(--theme-danger-text) 38%, var(--theme-border));
+  color: var(--theme-danger-text);
 }
 
 html[data-theme="dark"] :is(

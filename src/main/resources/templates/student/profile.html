@@ -78,17 +78,20 @@
                 </div>
 
                 <div class="profile-hero-actions">
-                    <button id="profile-edit-button" type="button" class="btn btn-primary">Edit Profile</button>
+                    <button id="profile-edit-button"
+                            type="button"
+                            class="btn btn-primary"
+                            th:text="'Update Profile'">Update Profile</button>
                     <a class="btn btn-outline" th:href="${normalizedProfileRole == 'admin' ? '/admin/dashboard' : (normalizedProfileRole == 'teacher' ? '/teacher/dashboard' : '/student/dashboard')}">Back to Dashboard</a>
                 </div>
             </section>
 
             <nav class="profile-tabs" aria-label="Profile sections">
                 <button type="button" class="profile-tab active" data-profile-tab="overview">Overview</button>
-                <button type="button" class="profile-tab" data-profile-tab="edit">Edit Profile</button>
-                <button type="button" class="profile-tab" data-profile-tab="security">Security</button>
-                <button type="button" class="profile-tab" data-profile-tab="notifications">Notifications</button>
-                <button type="button" class="profile-tab" data-profile-tab="privacy">Privacy</button>
+                <button type="button"
+                        class="profile-tab"
+                        data-profile-tab="edit"
+                        th:text="'Update Profile'">Update Profile</button>
             </nav>
             <div id="profile-toast" class="profile-toast" role="status" aria-live="polite" hidden></div>
 
@@ -276,7 +279,7 @@
                 <form id="profile-edit-form" class="profile-card profile-edit-card" th:data-placeholder-src="${placeholderAvatar}">
                     <div class="profile-section-head">
                         <div>
-                            <h2>Edit Profile Information</h2>
+                            <h2 th:text="'Update Profile Information'">Update Profile Information</h2>
                             <p>Profile changes are saved to your current account only.</p>
                         </div>
                     </div>
@@ -422,38 +425,6 @@
                 </section>
             </section>
 
-            <section class="profile-tab-panel" data-profile-panel="security">
-                <div class="profile-card">
-                    <div class="profile-section-head">
-                        <div>
-                            <h2 th:text="${normalizedProfileRole == 'admin' ? 'Security Summary' : 'Security'}">Security</h2>
-                            <p>No passwords, tokens, secret keys, or OAuth credentials are displayed here.</p>
-                        </div>
-                    </div>
-                    <div class="profile-security-grid">
-                        <article th:each="item : ${overview.securityItems}">
-                            <span th:text="${item.label}">Security item</span>
-                            <strong th:text="${item.value}">Value</strong>
-                            <small th:text="${item.caption}">Caption</small>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="profile-tab-panel" data-profile-panel="notifications">
-                <div class="profile-card profile-placeholder-panel">
-                    <h2>Notifications</h2>
-                    <p>Notification preferences are not part of the current profile entity. Existing notification pages remain unchanged.</p>
-                    <a class="btn btn-outline" th:if="${normalizedProfileRole == 'student'}" th:href="@{/student/notifications}">Open Notification Center</a>
-                </div>
-            </section>
-
-            <section class="profile-tab-panel" data-profile-panel="privacy">
-                <div class="profile-card profile-placeholder-panel">
-                    <h2>Privacy</h2>
-                    <p>Your profile update API only accepts safe editable fields and never accepts role, status, permission level, or security tokens.</p>
-                </div>
-            </section>
         </main>
 
     </div>
