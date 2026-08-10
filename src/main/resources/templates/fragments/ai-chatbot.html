@@ -4,7 +4,10 @@
 <div th:fragment="widget"
      class="ai-chatbot"
      data-ai-chatbot-root
-     th:data-chat-scope="${#authentication?.name ?: 'anonymous'}"
+     th:with="currentUser=${#authentication?.principal instanceof T(com.ojtsu26.elearning.security.CustomUserDetails) ? #authentication.principal.user : null},
+              resolvedUser=${portalUser != null ? portalUser : currentUser}"
+     th:data-chat-scope="${resolvedUser != null and resolvedUser.id != null ? 'user-' + resolvedUser.id : (#authentication?.name ?: 'anonymous')}"
+     th:data-ai-account-id="${resolvedUser != null and resolvedUser.id != null ? resolvedUser.id : ''}"
      th:data-chat-authenticated="${#authentication != null and #authentication.authenticated and #authentication.name != 'anonymousUser'}">
     <link rel="stylesheet" th:href="@{/css/ai-chatbot.css}">
 
@@ -35,7 +38,7 @@
                 <strong id="ai-chatbot-title">AI Chatbot</strong>
                 <span class="ai-chatbot-header-status"
                       data-ai-chatbot-header-status
-                      aria-live="polite">Online · Ready to help</span>
+                      aria-live="polite">Checking availability...</span>
             </span>
             <button type="button"
                     class="ai-chatbot-close"

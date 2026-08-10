@@ -20,16 +20,10 @@
         <div th:replace="~{fragments/layout :: topbar-student('Notifications')}"></div>
         
         <main class="lumina-portal-main">
-            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <div class="page-header">
                 <div>
                     <h1 class="page-title">Notifications</h1>
                     <p class="page-subtitle">Stay updated on your academic progress and system announcements.</p>
-                </div>
-                <div class="notification-center-actions">
-                    <button class="btn btn-secondary btn-sm" type="button" data-notification-center-mark-all>
-                        <svg th:replace="~{fragments/icons :: icon('approve')}"></svg>
-                        <span>Mark all as read</span>
-                    </button>
                 </div>
             </div>
 

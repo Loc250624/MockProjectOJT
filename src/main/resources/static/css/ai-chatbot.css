@@ -79,10 +79,14 @@
   height: 0.78rem;
   border: 2px solid #fff;
   border-radius: 50%;
+  background: var(--ai-chatbot-thinking);
+}
+
+.ai-chatbot-launcher-status.is-available {
   background: var(--ai-chatbot-online);
 }
 
-.ai-chatbot-launcher-status.is-thinking {
+.ai-chatbot-launcher-status.is-checking {
   background: var(--ai-chatbot-thinking);
 }
 
@@ -154,15 +158,15 @@
   font-weight: 650;
 }
 
-.ai-chatbot[data-ai-chatbot-state="online"] .ai-chatbot-header-status {
+.ai-chatbot[data-ai-chatbot-state="available"] .ai-chatbot-header-status {
   color: var(--ai-chatbot-online);
 }
 
-.ai-chatbot[data-ai-chatbot-state="thinking"] .ai-chatbot-header-status {
+.ai-chatbot[data-ai-chatbot-state="checking"] .ai-chatbot-header-status {
   color: #b45309;
 }
 
-.ai-chatbot[data-ai-chatbot-state="unavailable"] .ai-chatbot-header-status {
+.ai-chatbot[data-ai-chatbot-state="temporary_unavailable"] .ai-chatbot-header-status {
   color: var(--ai-chatbot-unavailable);
 }
 

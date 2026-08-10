@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -34,6 +36,11 @@ public class AiTutorController {
 
     private final AiTutorService aiTutorService;
     private final AiChatHistoryService aiChatHistoryService;
+
+    @GetMapping("/ai-chatbot/status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> status() {
+        return ResponseEntity.ok(ApiResponse.success(aiTutorService.statusPayload()));
+    }
 
     @GetMapping("/ai-chatbot/conversations/latest")
     public ResponseEntity<ApiResponse<AiChatConversationSummaryDTO>> latestConversation(

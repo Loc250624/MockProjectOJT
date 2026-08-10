@@ -41,7 +41,10 @@
 
     var authenticated = root.dataset.chatAuthenticated === 'true';
     var storage = safeSessionStorage();
+    var statusStorage = safeLocalStorage();
     var scope = normalizeScope(root.dataset.chatScope);
+    var accountId = normalizeScope(root.dataset.aiAccountId || (authenticated ? scope : ''));
+    var statusStorageKey = authenticated && accountId ? 'lumina:ai-status:' + accountId : '';
     var conversationStorageKey = 'ai-chatbot:' + scope + ':conversation-id';
     var conversationId = authenticated ? null : (readStored(conversationStorageKey) || createConversationId());
     var history = [];
@@ -54,7 +57,7 @@
     if (!authenticated) {
         writeStored(conversationStorageKey, conversationId);
     }
-    setAvailability('online');
+    bootstrapAvailability();
     renderContextUi(latestPageData.uiContext);
     renderInitialQuestions();
     relatedActionsContainer.hidden = true;
@@ -183,28 +186,102 @@
                 button.disabled = isLoading;
             });
         if (isLoading) {
-            setAvailability('thinking');
             setStatus('', false);
         }
     }
 
-    function setAvailability(nextState) {
-        var state = nextState === 'thinking' || nextState === 'unavailable' ? nextState : 'online';
+    function bootstrapAvailability() {
+        var stored = readStoredAvailability();
+        renderAvailability(stored ? stored.state : 'checking');
+        refreshAvailability();
+        if (statusStorageKey) {
+            window.addEventListener('storage', function (event) {
+                if (event.key !== statusStorageKey) {
+                    return;
+                }
+                var next = parseStoredAvailability(event.newValue);
+                if (next) {
+                    renderAvailability(next.state);
+                }
+            });
+        }
+    }
+
+    function refreshAvailability() {
+        var requestStartedAt = Date.now();
+        var controller = window.AbortController ? new AbortController() : null;
+        var timeoutId = controller ? window.setTimeout(function () {
+            controller.abort();
+        }, 3500) : null;
+        return fetch('/api/ai-chatbot/status', {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            signal: controller ? controller.signal : undefined
+        }).then(function (response) {
+            return response.json().catch(function () {
+                return {};
+            }).then(function (body) {
+                if (!response.ok) {
+                    return { state: 'temporary_unavailable', updatedAt: requestStartedAt };
+                }
+                var payload = body && body.data ? body.data : body;
+                return {
+                    state: payload && payload.status === 'available' ? 'available' : 'temporary_unavailable',
+                    updatedAt: Number.isFinite(payload && payload.updatedAt) ? payload.updatedAt : Date.now()
+                };
+            });
+        }).catch(function () {
+            return { state: 'temporary_unavailable', updatedAt: requestStartedAt };
+        }).then(function (snapshot) {
+            var stored = readStoredAvailability();
+            if (stored && stored.updatedAt > snapshot.updatedAt) {
+                renderAvailability(stored.state);
+                return stored.state;
+            }
+            updateAvailability(snapshot.state, true, snapshot.updatedAt);
+            return snapshot.state;
+        }).finally(function () {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        });
+    }
+
+    function updateAvailability(nextState, persist, observedAt) {
+        var state = isAvailabilityState(nextState) ? nextState : 'temporary_unavailable';
+        renderAvailability(state);
+        if (persist) {
+            writeStoredAvailability(state, observedAt);
+        }
+    }
+
+    function renderAvailability(nextState) {
+        var state = nextState === 'available' || nextState === 'temporary_unavailable' ? nextState : 'checking';
+        var label = availabilityLabel(state);
         root.dataset.aiChatbotState = state;
+        root.dataset.aiStatus = state;
+        root.setAttribute('aria-label', label);
+        root.setAttribute('title', label);
         if (launcherStatus) {
-            launcherStatus.classList.toggle('is-thinking', state === 'thinking');
-            launcherStatus.classList.toggle('is-unavailable', state === 'unavailable');
+            launcherStatus.classList.toggle('is-available', state === 'available');
+            launcherStatus.classList.toggle('is-checking', state === 'checking');
+            launcherStatus.classList.toggle('is-unavailable', state === 'temporary_unavailable');
+            launcherStatus.setAttribute('aria-label', label);
+            launcherStatus.setAttribute('title', label);
         }
         if (!headerStatus) {
             return;
         }
-        if (state === 'thinking') {
-            headerStatus.textContent = 'Thinking...';
-        } else if (state === 'unavailable') {
-            headerStatus.textContent = 'Temporarily unavailable';
+        if (state === 'available') {
+            headerStatus.textContent = 'Available';
+        } else if (state === 'temporary_unavailable') {
+            headerStatus.textContent = 'Temporarily Unavailable';
         } else {
-            headerStatus.textContent = 'Online · Ready to help';
+            headerStatus.textContent = 'Checking availability...';
         }
+        headerStatus.setAttribute('title', label);
     }
 
     function setStatus(text, isError) {
@@ -254,16 +331,7 @@
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify(requestBody)
-        }).then(function (response) {
-            return response.json().catch(function () {
-                return { message: 'AI Chatbot could not respond. Please try again later.' };
-            }).then(function (body) {
-                if (!response.ok) {
-                    throw new Error(body.message || 'AI Chatbot could not respond. Please try again later.');
-                }
-                return body;
-            });
-        }).then(function (apiResponse) {
+        }).then(readChatResponse).then(function (apiResponse) {
             var data = apiResponse.data || {};
             if (isUuid(data.conversationId) && data.conversationId !== conversationId) {
                 conversationId = data.conversationId;
@@ -281,18 +349,17 @@
             } else {
                 setStatus('', false);
             }
-            setAvailability('online');
+            updateAvailability('available', true);
         }).catch(function (error) {
-            setAvailability('unavailable');
+            if (error && (error.providerUnavailable || error.name === 'TypeError')) {
+                updateAvailability('temporary_unavailable', true);
+            }
             setStatus(error.message || 'AI Chatbot could not respond. Please try again later.', true);
             if (relatedButtonsContainer.childElementCount > 0) {
                 relatedActionsContainer.hidden = false;
             }
         }).finally(function () {
             setLoading(false);
-            if (root.dataset.aiChatbotState !== 'unavailable') {
-                setAvailability('online');
-            }
             input.focus();
         });
     }
@@ -1000,12 +1067,23 @@
             history = history.slice(-50);
             renderInitialQuestions();
             setStatus('', false);
-            setAvailability('online');
         }).catch(function () {
-            setAvailability('unavailable');
             setStatus('Chat history could not be restored. You can still ask a question.', true);
         }).finally(function () {
             setLoading(false);
+        });
+    }
+
+    function readChatResponse(response) {
+        return response.json().catch(function () {
+            return { message: 'AI Chatbot could not respond. Please try again later.' };
+        }).then(function (body) {
+            if (!response.ok) {
+                var error = new Error(body.message || 'AI Chatbot could not respond. Please try again later.');
+                error.providerUnavailable = response.status === 503 || response.status >= 500;
+                throw error;
+            }
+            return body;
         });
     }
 
@@ -1062,6 +1140,72 @@
 
     function scrollContent() {
         content.scrollTop = content.scrollHeight;
+    }
+
+    function readStoredAvailability() {
+        if (!statusStorageKey || !statusStorage) {
+            return null;
+        }
+        try {
+            return parseStoredAvailability(statusStorage.getItem(statusStorageKey));
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function writeStoredAvailability(state, observedAt) {
+        if (!statusStorageKey || !statusStorage || !isAvailabilityState(state)) {
+            return;
+        }
+        var updatedAt = Number.isFinite(observedAt) ? observedAt : Date.now();
+        try {
+            statusStorage.setItem(statusStorageKey, JSON.stringify({
+                state: state,
+                updatedAt: updatedAt
+            }));
+        } catch (error) {
+            // Availability still renders correctly when localStorage is unavailable.
+        }
+    }
+
+    function parseStoredAvailability(rawValue) {
+        if (!rawValue) {
+            return null;
+        }
+        try {
+            var parsed = JSON.parse(rawValue);
+            if (!parsed || !isAvailabilityState(parsed.state) || !Number.isFinite(parsed.updatedAt)) {
+                return null;
+            }
+            return parsed;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function isAvailabilityState(state) {
+        return state === 'available' || state === 'temporary_unavailable';
+    }
+
+    function availabilityLabel(state) {
+        if (state === 'available') {
+            return 'AI Chatbot Available';
+        }
+        if (state === 'temporary_unavailable') {
+            return 'AI Chatbot Temporarily Unavailable';
+        }
+        return 'Checking AI Chatbot availability';
+    }
+
+    function safeLocalStorage() {
+        try {
+            var testKey = 'ai-chatbot:local-storage-test';
+            window.localStorage.setItem(testKey, '1');
+            window.localStorage.removeItem(testKey);
+            return window.localStorage;
+        } catch (error) {
+            return null;
+        }
     }
 
     function safeSessionStorage() {

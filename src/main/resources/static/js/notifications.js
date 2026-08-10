@@ -140,34 +140,15 @@
     function initNotificationCenter(center) {
         var list = center.querySelector('[data-notification-center-list]');
         var loadMore = center.querySelector('[data-notification-load-more]');
-        var markAll = center.querySelector('[data-notification-center-mark-all]');
         var page = 0;
         var size = Number(center.dataset.pageSize || 10);
         var loading = false;
-        var markingAll = false;
-        var unreadCount = 0;
-
-        function syncMarkAllState() {
-            if (markAll) {
-                markAll.disabled = loading || markingAll || unreadCount <= 0;
-            }
-        }
-
-        function refreshCenterUnreadCount() {
-            return refreshUnreadCount()
-                .then(function(count) {
-                    unreadCount = count;
-                    syncMarkAllState();
-                    return count;
-                });
-        }
 
         function load(reset) {
             if (loading) {
                 return;
             }
             loading = true;
-            syncMarkAllState();
             if (reset) {
                 page = 0;
                 renderState(list, 'Loading...');
@@ -180,7 +161,7 @@
             api('/api/notifications?page=' + page + '&size=' + size)
                 .then(function(data) {
                     renderNotifications(list, data.items || [], false, function() {
-                        refreshCenterUnreadCount().then(function() {
+                        refreshUnreadCount().then(function() {
                             load(true);
                         });
                     }, !reset);
@@ -199,7 +180,6 @@
                     if (loadMore) {
                         setButtonBusy(loadMore, false);
                     }
-                    syncMarkAllState();
                 });
         }
 
@@ -208,29 +188,7 @@
                 load(false);
             });
         }
-        if (markAll) {
-            markAll.addEventListener('click', function() {
-                markingAll = true;
-                syncMarkAllState();
-                setButtonBusy(markAll, true, 'Marking...');
-                api('/api/notifications/read-all', { method: 'POST' })
-                    .then(function(data) {
-                        unreadCount = Number(data && data.unreadCount || 0);
-                        updateAllCounts(unreadCount);
-                        load(true);
-                    })
-                    .catch(function(error) {
-                        renderState(list, error.message);
-                    })
-                    .finally(function() {
-                        markingAll = false;
-                        setButtonBusy(markAll, false);
-                        syncMarkAllState();
-                    });
-            });
-        }
-        syncMarkAllState();
-        refreshCenterUnreadCount();
+        refreshUnreadCount();
         load(true);
     }
 
