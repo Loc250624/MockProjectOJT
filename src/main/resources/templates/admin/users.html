@@ -68,7 +68,6 @@
                     <table class="lumina-table">
                         <thead>
                             <tr>
-                                <th style="width:40px;"><input type="checkbox" style="accent-color:var(--lumina-blue);" disabled></th>
                                 <th>User Details</th>
                                 <th>Role</th>
                                 <th>Status</th>
@@ -186,14 +185,16 @@
 
         <h4 style="font-size:0.75rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem;border-bottom:1px solid var(--lumina-gray-200);padding-bottom:0.5rem;">Administrative Actions</h4>
         <div style="display:flex;flex-direction:column;gap:0.75rem;">
-            <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Reset Password Link - Not available</button>
-            <button class="btn btn-outline" style="justify-content:flex-start;" disabled>Change Role - Not available</button>
+            <button id="user-panel-reset-action" class="btn btn-outline" style="justify-content:flex-start;" disabled>Reset Password</button>
+            <button id="user-panel-role-action" class="btn btn-outline" style="justify-content:flex-start;" disabled>Change Role</button>
             <button id="user-panel-status-action" class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Block User Account</button>
             <button id="user-panel-delete-action" class="btn btn-outline" style="justify-content:flex-start;color:var(--lumina-danger);border-color:var(--lumina-danger-bg);" disabled>Soft-delete Account</button>
         </div>
     </div>
 </div>
 
+<th:block th:replace="~{fragments/layout :: action-dialog}"></th:block>
+<script th:src="@{/js/csrf-fetch.js}"></script>
 <script th:src="@{/js/admin/admin.js}"></script>
 </body>
 </html>

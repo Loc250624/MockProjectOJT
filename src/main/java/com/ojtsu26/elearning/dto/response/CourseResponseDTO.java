@@ -15,6 +15,12 @@ public class CourseResponseDTO {
 
     private java.math.BigDecimal price;
 
+    private java.math.BigDecimal displayPrice;
+
+    private String displayCurrency;
+
+    private String priceDisplay;
+
     private CourseStatus status;
 
     private String rejectReason;

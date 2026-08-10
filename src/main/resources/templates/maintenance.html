@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Maintenance in Progress | LumiNa</title>
+    <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/public/maintenance.css}">
+</head>
+<body class="maintenance-page">
+<main class="maintenance-shell" aria-labelledby="maintenance-title">
+    <section class="maintenance-panel">
+        <div class="maintenance-brand">
+            <span th:replace="~{fragments/brand :: mark}"></span>
+            <strong>LumiNa</strong>
+        </div>
+
+        <div class="maintenance-icon" aria-hidden="true">
+            <svg th:replace="~{fragments/icons :: icon('settings')}"></svg>
+        </div>
+
+        <p class="maintenance-kicker">Maintenance in progress</p>
+        <h1 id="maintenance-title">We are making LumiNa better.</h1>
+        <p class="maintenance-copy">
+            The platform is temporarily unavailable while scheduled maintenance is in progress.
+            Please check back shortly.
+        </p>
+
+        <div class="maintenance-support" th:if="${supportEmail != null}">
+            <span>Need help?</span>
+            <a th:href="${'mailto:' + supportEmail}" th:text="${supportEmail}">support@lumina.edu.vn</a>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/theme.js}" defer></script>
+</body>
+</html>

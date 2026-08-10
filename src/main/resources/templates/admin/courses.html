@@ -63,7 +63,7 @@
                             <td data-label="Instructor" style="padding:0.875rem 1.25rem;font-size:0.875rem;color:var(--lumina-gray-700);"
                                 th:text="${crs.instructorId != null ? '#' + crs.instructorId : 'Unknown'}"></td>
                             <td data-label="Price" style="padding:0.875rem 1.25rem;font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);"
-                                th:text="${crs.price != null && crs.price.signum() == 0 ? 'Free' : (crs.price != null ? '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT') : 'N/A')}"></td>
+                                th:text="${crs.priceDisplay}"></td>
                             <td data-label="Status" style="padding:0.875rem 1.25rem;">
                                 <span class="badge"
                                       th:classappend="${crs.status.name() == 'PENDING_APPROVAL' ? 'badge-warning' : (crs.status.name() == 'APPROVED' ? 'badge-success' : 'badge-secondary')}"

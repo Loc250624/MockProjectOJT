@@ -19,6 +19,7 @@ import com.ojtsu26.elearning.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,6 +82,22 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<Transaction> searchTransactions(String keyword, LocalDateTime fromDate,
+                                                LocalDateTime toDate, Pageable pageable) {
+        String cleanKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return transactionRepository.searchTransactionsInCreatedAtRange(cleanKeyword, fromDate, toDate, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> findTransactionsForAdminPaymentsExport(String keyword, LocalDateTime fromDate,
+                                                                    LocalDateTime toDate, Sort sort) {
+        String cleanKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return transactionRepository.findTransactionsForAdminPaymentsExport(cleanKeyword, fromDate, toDate, sort);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<AdminTransactionDTO> searchAdminTransactions(String keyword, TransactionStatus status,
                                                              PaymentMethod paymentMethod, LocalDateTime fromDate,
                                                              LocalDateTime toDate, Pageable pageable) {
@@ -110,6 +127,22 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AdminPaymentSummaryDTO getAdminPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
+        if (fromDate == null && toDate == null) {
+            return getAdminPaymentSummary();
+        }
+        return AdminPaymentSummaryDTO.builder()
+                .totalTransactions(transactionRepository.countInCreatedAtRange(fromDate, toDate))
+                .successfulTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.SUCCESS, fromDate, toDate))
+                .pendingTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.PENDING, fromDate, toDate))
+                .failedTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.FAILED, fromDate, toDate))
+                .refundedTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.REFUNDED, fromDate, toDate))
+                .successfulAmount(money(transactionRepository.sumAmountByStatusInCreatedAtRange(TransactionStatus.SUCCESS, fromDate, toDate)))
+                .build();
+    }
+
     private BigDecimal money(BigDecimal value) {
         return (value == null ? BigDecimal.ZERO : value).setScale(2, RoundingMode.HALF_UP);
     }
@@ -122,7 +155,7 @@ public class TransactionServiceImpl implements TransactionService {
         return AdminTransactionDTO.builder()
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
-                .currency(currency(order))
+                .currency("VND")
                 .paymentMethod(transaction.getPaymentMethod())
                 .transactionRef(transaction.getTransactionRef())
                 .status(transaction.getStatus())
@@ -146,7 +179,7 @@ public class TransactionServiceImpl implements TransactionService {
         return AdminTransactionDetailDTO.builder()
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
-                .currency(currency(order))
+                .currency("VND")
                 .paymentMethod(transaction.getPaymentMethod())
                 .transactionRef(transaction.getTransactionRef())
                 .status(transaction.getStatus())
@@ -159,14 +192,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .courseTitle(course == null ? null : course.getTitle())
                 .orderId(order == null ? null : order.getId())
                 .orderCode(order == null ? null : order.getOrderCode())
-                .orderTotalAmount(order == null ? null : order.getTotalAmount())
+                .orderTotalAmount(order == null ? null : order.getPaidAmount())
                 .orderPaidAmount(order == null ? null : order.getPaidAmount())
                 .build();
-    }
-
-    private String currency(Order order) {
-        return order == null || order.getCurrency() == null || order.getCurrency().isBlank()
-                ? "VND"
-                : order.getCurrency();
     }
 }

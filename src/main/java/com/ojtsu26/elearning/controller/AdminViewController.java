@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.controller;
 
 import com.ojtsu26.elearning.service.CategoryService;
+import com.ojtsu26.elearning.service.AdminTeacherPayoutService;
 import com.ojtsu26.elearning.service.BlogCommentService;
 import com.ojtsu26.elearning.service.BlogPostService;
 import com.ojtsu26.elearning.service.CourseService;
@@ -32,11 +33,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 public class AdminViewController {
+
+    private static final String CSV_UTF8_BOM = "\uFEFF";
+    private static final java.time.format.DateTimeFormatter CSV_TIMESTAMP_FORMATTER =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final CategoryService categoryService;
     private final CourseService courseService;
@@ -44,6 +52,7 @@ public class AdminViewController {
     private final BlogPostService blogPostService;
     private final BlogCommentService blogCommentService;
     private final TransactionService transactionService;
+    private final AdminTeacherPayoutService adminTeacherPayoutService;
 
     @GetMapping("/dashboard")
     public String dashboard() { return "admin/dashboard"; }
@@ -245,18 +254,46 @@ public class AdminViewController {
 
     @GetMapping("/payments")
     public String payments(@RequestParam(value = "page", defaultValue = "0") int page,
-                           @RequestParam(value = "size", defaultValue = "10") int size,
+                           @RequestParam(value = "size", defaultValue = "20") int size,
                            @RequestParam(value = "keyword", required = false) String keyword,
+                           @RequestParam(value = "date", required = false) String date,
+                           @RequestParam(value = "tab", defaultValue = "platform") String tab,
                            Model model) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Transaction> txnPage = transactionService.searchTransactions(keyword, pageable);
+        java.time.LocalDate selectedDate = parsePaymentDate(date);
+        java.time.LocalDateTime fromDate = selectedDate == null ? null : selectedDate.atStartOfDay();
+        java.time.LocalDateTime toDate = selectedDate == null ? null : selectedDate.plusDays(1).atStartOfDay();
+        Page<Transaction> txnPage = transactionService.searchTransactions(keyword, fromDate, toDate, pageable);
+        String activeTab = "teacher".equalsIgnoreCase(tab) ? "teacher" : "platform";
 
         model.addAttribute("transactions", txnPage.getContent());
-        model.addAttribute("paymentSummary", transactionService.getAdminPaymentSummary());
+        model.addAttribute("paymentSummary", transactionService.getAdminPaymentSummary(fromDate, toDate));
+        model.addAttribute("teacherPayouts", adminTeacherPayoutService.findPayoutReadiness(fromDate, toDate));
+        model.addAttribute("activeTab", activeTab);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", txnPage.getTotalPages());
         model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedDate", selectedDate);
+        model.addAttribute("invalidDateFilter", date != null && !date.isBlank() && selectedDate == null);
         return "admin/payments";
+    }
+
+    @GetMapping(value = "/payments/export/csv", produces = "text/csv")
+    public ResponseEntity<byte[]> exportPaymentsCsv(@RequestParam(value = "keyword", required = false) String keyword,
+                                                    @RequestParam(value = "date", required = false) String date) {
+        java.time.LocalDate selectedDate = parsePaymentDate(date);
+        java.time.LocalDateTime fromDate = selectedDate == null ? null : selectedDate.atStartOfDay();
+        java.time.LocalDateTime toDate = selectedDate == null ? null : selectedDate.plusDays(1).atStartOfDay();
+        java.util.List<Transaction> transactions = transactionService.findTransactionsForAdminPaymentsExport(
+                keyword, fromDate, toDate, Sort.by(Sort.Direction.DESC, "createdAt"));
+        String filename = selectedDate == null
+                ? "lumina-platform-payments.csv"
+                : "lumina-platform-payments-" + selectedDate + ".csv";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(buildPaymentsCsv(transactions).getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @GetMapping("/transactions")
@@ -299,7 +336,7 @@ public class AdminViewController {
         try {
             categoryService.create(requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category created successfully!");
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/create";
@@ -320,7 +357,7 @@ public class AdminViewController {
         try {
             categoryService.update(id, requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/edit/" + id;
@@ -398,5 +435,76 @@ public class AdminViewController {
 
     private User currentUser(CustomUserDetails userDetails) {
         return userDetails == null ? null : userDetails.getUser();
+    }
+
+    private java.time.LocalDate parsePaymentDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return java.time.LocalDate.parse(value.trim());
+        } catch (java.time.format.DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private String buildPaymentsCsv(java.util.List<Transaction> transactions) {
+        StringBuilder csv = new StringBuilder(CSV_UTF8_BOM);
+        csv.append("Transaction ID,Order ID,Customer Name,Customer Email,Amount,Currency,Payment Method,Status,Transaction Date/Time\r\n");
+        for (Transaction transaction : transactions) {
+            csv.append(csvText(transaction.getTransactionRef())).append(',')
+                    .append(csvText(orderIdentifier(transaction))).append(',')
+                    .append(csvText(transaction.getStudent() == null ? null : transaction.getStudent().getFullName())).append(',')
+                    .append(csvText(transaction.getStudent() == null ? null : transaction.getStudent().getEmail())).append(',')
+                    .append(csvNumber(transaction.getAmount())).append(',')
+                    .append(csvText("VND")).append(',')
+                    .append(csvText(transaction.getPaymentMethod())).append(',')
+                    .append(csvText(transaction.getStatus())).append(',')
+                    .append(csvText(formatCsvTimestamp(csvTransactionTimestamp(transaction))))
+                    .append("\r\n");
+        }
+        return csv.toString();
+    }
+
+    private String orderIdentifier(Transaction transaction) {
+        if (transaction == null || transaction.getOrder() == null) {
+            return null;
+        }
+        if (transaction.getOrder().getOrderCode() != null && !transaction.getOrder().getOrderCode().isBlank()) {
+            return transaction.getOrder().getOrderCode();
+        }
+        return transaction.getOrder().getId() == null ? null : String.valueOf(transaction.getOrder().getId());
+    }
+
+    private String formatCsvTimestamp(java.time.LocalDateTime timestamp) {
+        return timestamp == null ? "" : CSV_TIMESTAMP_FORMATTER.format(timestamp);
+    }
+
+    private java.time.LocalDateTime csvTransactionTimestamp(Transaction transaction) {
+        if (transaction == null) {
+            return null;
+        }
+        if (transaction.getCreatedAt() != null) {
+            return transaction.getCreatedAt();
+        }
+        if (transaction.getUpdatedAt() != null) {
+            return transaction.getUpdatedAt();
+        }
+        return transaction.getOrder() == null ? null : transaction.getOrder().getCreatedAt();
+    }
+
+    private String csvNumber(java.math.BigDecimal value) {
+        return value == null
+                ? ""
+                : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private String csvText(Object value) {
+        String text = value == null ? "" : String.valueOf(value);
+        if (!text.isEmpty() && (text.charAt(0) == '=' || text.charAt(0) == '+'
+                || text.charAt(0) == '-' || text.charAt(0) == '@')) {
+            text = "'" + text;
+        }
+        return "\"" + text.replace("\"", "\"\"") + "\"";
     }
 }

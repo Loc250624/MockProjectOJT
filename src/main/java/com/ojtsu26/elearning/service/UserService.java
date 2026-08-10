@@ -25,6 +25,7 @@ public interface UserService {
     UserResponseDTO getCurrentProfile(Integer currentUserId);
     UserResponseDTO updateCurrentProfile(Integer currentUserId, UpdateProfileRequestDTO request);
     UserResponseDTO updateCurrentAvatar(Integer currentUserId, String avatarUrl);
+    UserResponseDTO updateUserRole(Integer targetUserId, Role role, Integer currentAdminId);
     UserResponseDTO blockUser(Integer targetUserId, Integer currentAdminId);
     UserResponseDTO unblockUser(Integer targetUserId, Integer currentAdminId);
     UserResponseDTO softDeleteUser(Integer targetUserId, Integer currentAdminId);

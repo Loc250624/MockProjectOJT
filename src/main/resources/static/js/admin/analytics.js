@@ -1,7 +1,7 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function() {
-    var currentCurrency = 'USD';
+    var currentCurrency = 'VND';
     var moneyFormatter = createMoneyFormatter(currentCurrency);
     var ACTIVE_STUDENT_SUMMARY = 'Students with learning activity in the selected period.';
     var ACTIVE_STUDENT_UNAVAILABLE = 'Active student definition unavailable.';
@@ -11,11 +11,18 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function normalizeCurrency(currency) {
-        return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
+        return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'VND';
     }
 
     function createMoneyFormatter(currency) {
         var cleanCurrency = normalizeCurrency(currency);
+        if (cleanCurrency === 'VND') {
+            return {
+                format: function(value) {
+                    return number(value) + ' VND';
+                }
+            };
+        }
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: cleanCurrency,
@@ -101,6 +108,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return moneyFormatter.format(safeNumber(value));
     }
 
+    function moneyAmount(value) {
+        return safeNumber(value).toLocaleString('en-US', {
+            minimumFractionDigits: currentCurrency === 'VND' ? 0 : 2,
+            maximumFractionDigits: currentCurrency === 'VND' ? 0 : 2
+        });
+    }
+
     function setActiveStudentMethod(node, technicalMethod, unavailable) {
         if (!node) return;
         node.textContent = unavailable ? ACTIVE_STUDENT_UNAVAILABLE : ACTIVE_STUDENT_SUMMARY;
@@ -142,6 +156,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function compactMoney(value) {
+        if (currentCurrency === 'VND') {
+            return compactNumber(value) + ' VND';
+        }
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currentCurrency,
@@ -827,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 node.textContent = number(data[node.getAttribute('data-overview')]);
             });
             document.querySelectorAll('[data-overview-money]').forEach(function(node) {
-                node.textContent = money(data[node.getAttribute('data-overview-money')]);
+                node.textContent = moneyAmount(data[node.getAttribute('data-overview-money')]);
             });
             document.querySelector('[data-overview-period]').textContent = periodText(data);
             var activePeriod = document.querySelector('[data-overview-active-period]');
@@ -846,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function renderOverviewUnavailable() {
-            setMoneyCurrency('USD', ['[data-dashboard-currency]']);
+            setMoneyCurrency('VND', ['[data-dashboard-currency]']);
             document.querySelectorAll('[data-overview], [data-overview-money]').forEach(function(node) {
                 node.textContent = '--';
             });
@@ -1010,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function clearRevenueView() {
-        setMoneyCurrency('USD', ['[data-revenue-currency]', '[data-revenue-chart-currency]']);
+        setMoneyCurrency('VND', ['[data-revenue-currency]', '[data-revenue-chart-currency]']);
         document.querySelector('[data-revenue-total]').textContent = money(0);
         document.querySelector('[data-revenue-orders]').textContent = '0';
         document.querySelector('[data-revenue-period]').textContent = '';

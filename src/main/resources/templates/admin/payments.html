@@ -25,56 +25,84 @@
                     <div style="font-size:0.6875rem;font-weight:700;color:var(--lumina-gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;">ADMIN CONSOLE</div>
                     <h1 class="page-title">Financial Operations & Settlements</h1>
                 </div>
-                <div style="display:flex;gap:0.75rem;">
-                    <button class="btn btn-secondary btn-sm" disabled>PDF</button>
-                    <button class="btn btn-secondary btn-sm" disabled>CSV</button>
-                    <input type="date" class="form-control" style="height:32px;font-size:0.8125rem;width:auto;" aria-label="Filter date" disabled>
+                <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                    <a class="btn btn-secondary btn-sm"
+                       th:href="@{/admin/payments/export/csv(keyword=${keyword},date=${selectedDate})}"
+                       title="Export platform payments as CSV"
+                       download>CSV</a>
+                    <form th:action="@{/admin/payments}" method="get" style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="hidden" name="tab" th:value="${activeTab}">
+                        <input type="hidden" name="keyword" th:if="${keyword != null and !#strings.isEmpty(keyword)}" th:value="${keyword}">
+                        <label for="payment-date-filter" class="sr-only">Filter platform payments by date</label>
+                        <input id="payment-date-filter"
+                               type="date"
+                               name="date"
+                               class="form-control"
+                               style="height:32px;font-size:0.8125rem;width:auto;"
+                               aria-label="Filter platform payments by date"
+                               title="Filter platform payments by date"
+                               th:value="${selectedDate}">
+                        <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+                        <a th:if="${selectedDate != null}" th:href="@{/admin/payments}" class="btn btn-ghost btn-sm">Clear</a>
+                    </form>
                 </div>
+            </div>
+
+            <div th:if="${invalidDateFilter}" class="alert alert-warning" style="margin-bottom:1rem;">
+                Invalid date filter ignored. Please use the date picker or yyyy-MM-dd.
             </div>
 
             <div class="filter-tabs" style="margin-bottom:2rem;">
-                <button class="filter-tab active">Platform Payments</button>
-                <button class="filter-tab" disabled>Teacher Payouts</button>
+                <a class="filter-tab"
+                   th:classappend="${activeTab == 'platform'} ? ' active' : ''"
+                   th:href="@{/admin/payments(tab='platform',keyword=${keyword},date=${selectedDate})}">Platform Payments</a>
+                <a class="filter-tab"
+                   th:classappend="${activeTab == 'teacher'} ? ' active' : ''"
+                   th:href="@{/admin/payments(tab='teacher',date=${selectedDate})}">Teacher Payouts</a>
             </div>
 
-            <div class="stats-grid-4">
-                <div class="stat-card">
-                    <div class="stat-label">Successful Payments</div>
-                    <div class="stat-value text-blue"
-                         th:text="${paymentSummary != null ? #numbers.formatDecimal(paymentSummary.successfulAmount, 1, 'COMMA', 2, 'POINT') + ' VND' : '0.00 VND'}">0.00 VND</div>
-                    <div class="stat-change stat-change-neutral"
-                         th:text="${paymentSummary != null ? paymentSummary.successfulTransactions + ' successful transactions' : '0 successful transactions'}">0 successful transactions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Pending Payments</div>
-                    <div class="stat-value text-warning"
-                         th:text="${paymentSummary != null ? paymentSummary.pendingTransactions : 0}">0</div>
-                    <div class="stat-change stat-change-neutral">Awaiting gateway confirmation</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Failed Payments</div>
-                    <div class="stat-value text-danger"
-                         th:text="${paymentSummary != null ? paymentSummary.failedTransactions : 0}">0</div>
-                    <div class="stat-change stat-change-neutral">Gateway failures only</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Refunded Payments</div>
-                    <div class="stat-value"
-                         th:text="${paymentSummary != null ? paymentSummary.refundedTransactions : 0}">0</div>
-                    <div class="stat-change stat-change-neutral"
-                         th:text="${paymentSummary != null ? paymentSummary.totalTransactions + ' total transactions' : '0 total transactions'}">0 total transactions</div>
-                </div>
-            </div>
+            <section th:if="${activeTab == 'platform'}">
+                <h2 class="admin-payments-section-title">Platform Payments</h2>
 
-            <div class="finance-layout">
-                <div class="admin-table-container">
+                <div class="stats-grid-4">
+                    <div class="stat-card">
+                        <div class="stat-label">Successful Payments</div>
+                        <div class="stat-value text-blue"
+                             th:text="${paymentSummary != null ? #numbers.formatDecimal(paymentSummary.successfulAmount, 1, 'COMMA', 2, 'POINT') + ' VND' : '0.00 VND'}">0.00 VND</div>
+                        <div class="stat-change stat-change-neutral"
+                             th:text="${paymentSummary != null ? paymentSummary.successfulTransactions + ' successful transactions' : '0 successful transactions'}">0 successful transactions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Pending Payments</div>
+                        <div class="stat-value text-warning"
+                             th:text="${paymentSummary != null ? paymentSummary.pendingTransactions : 0}">0</div>
+                        <div class="stat-change stat-change-neutral">Awaiting gateway confirmation</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Failed Payments</div>
+                        <div class="stat-value text-danger"
+                             th:text="${paymentSummary != null ? paymentSummary.failedTransactions : 0}">0</div>
+                        <div class="stat-change stat-change-neutral">Gateway failures only</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Refunded Payments</div>
+                        <div class="stat-value"
+                             th:text="${paymentSummary != null ? paymentSummary.refundedTransactions : 0}">0</div>
+                        <div class="stat-change stat-change-neutral"
+                             th:text="${paymentSummary != null ? paymentSummary.totalTransactions + ' total transactions' : '0 total transactions'}">0 total transactions</div>
+                    </div>
+                </div>
+
+                <div class="admin-table-container admin-payments-transactions">
                     <div class="card-header" style="padding:1.5rem 1.5rem 0;">
                         <h2 class="card-title">Recent Transactions</h2>
                         <form th:action="@{/admin/payments}" method="get" class="table-search" style="width:250px; position: relative;">
+                            <input type="hidden" name="tab" value="platform">
+                            <input type="hidden" name="date" th:if="${selectedDate != null}" th:value="${selectedDate}">
                             <input type="text" name="keyword" th:value="${keyword}" placeholder="Search transactions..." style="height:32px;padding:0.25rem 1rem 0.25rem 2rem; width: 100%;">
                         </form>
                     </div>
-                    <div style="padding:1.5rem;overflow-x:auto;">
+                    <div class="admin-payments-table-wrap">
                         <table class="lumina-table">
                             <thead>
                             <tr>
@@ -105,18 +133,50 @@
                         </table>
                     </div>
                 </div>
+            </section>
 
-                <div>
-                    <h3 style="font-size:1.125rem;font-weight:800;color:var(--lumina-gray-900);margin-bottom:1rem;">Settlement Queue</h3>
-                    <div class="settlement-card">
-                        <div class="empty-state" style="padding:1rem;text-align:left;">
-                            <div class="empty-state-title">No settlement source configured.</div>
-                            <div class="empty-state-desc">Teacher payout queues require a payout or settlement table before actions can be processed.</div>
-                        </div>
+            <section th:if="${activeTab == 'teacher'}">
+                <h2 class="admin-payments-section-title">Teacher Payouts</h2>
+
+                <div class="admin-table-container admin-teacher-payouts">
+                    <div class="card-header" style="padding:1.5rem 1.5rem 0;">
+                        <h2 class="card-title">Teacher Earnings Readiness</h2>
                     </div>
-                    <button class="btn btn-primary" style="width:100%;" disabled>Process All Payouts</button>
+                    <div class="admin-payments-table-wrap">
+                        <table class="lumina-table">
+                            <thead>
+                            <tr>
+                                <th>Teacher</th>
+                                <th>Eligible Revenue</th>
+                                <th>Teacher Share</th>
+                                <th>Status</th>
+                                <th>Latest Eligible Payment</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="payout : ${teacherPayouts}">
+                                <td>
+                                    <div style="font-weight:600;color:var(--lumina-gray-900);" th:text="${payout.teacherName}">Teacher</div>
+                                    <div style="font-size:0.75rem;color:var(--lumina-gray-500);" th:text="${payout.teacherEmail}">teacher@example.com</div>
+                                    <div style="font-size:0.75rem;color:var(--lumina-gray-500);"
+                                         th:text="${payout.paidOrderCount + ' eligible paid orders'}">0 eligible paid orders</div>
+                                </td>
+                                <td style="font-weight:700;color:var(--lumina-gray-900);"
+                                    th:text="${#numbers.formatDecimal(payout.eligibleRevenue, 1, 'COMMA', 2, 'POINT') + ' ' + payout.currency}">0.00 VND</td>
+                                <td style="font-weight:700;color:var(--lumina-gray-900);"
+                                    th:text="${#numbers.formatDecimal(payout.teacherShare, 1, 'COMMA', 2, 'POINT') + ' ' + payout.currency}">0.00 VND</td>
+                                <td><span class="badge badge-dot status-pending" th:text="${payout.status}">Unpaid</span></td>
+                                <td style="font-size:0.8125rem;color:var(--lumina-gray-600);"
+                                    th:text="${payout.latestEligiblePaymentAt != null ? #temporals.format(payout.latestEligiblePaymentAt, 'yyyy-MM-dd HH:mm') : 'N/A'}">N/A</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(teacherPayouts)}">
+                                <td colspan="5" style="text-align: center; color: var(--lumina-gray-500);">No eligible paid teacher revenue found.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            </section>
         </main>
 
     </div>

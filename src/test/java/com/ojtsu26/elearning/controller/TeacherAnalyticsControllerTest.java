@@ -45,9 +45,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "payment.gateway.exchange-rate=25000"
 })
 class TeacherAnalyticsControllerTest {
+
+    private static final BigDecimal TEST_EXCHANGE_RATE = new BigDecimal("25000");
 
     @Autowired
     private MockMvc mockMvc;
@@ -122,8 +125,8 @@ class TeacherAnalyticsControllerTest {
                         .param("groupBy", "day")
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(100.00))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("100.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.paidStudentCount").value(1))
                 .andExpect(jsonPath("$.data.enrollmentCount").value(2))
@@ -162,8 +165,8 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.currency").value("USD"))
-                .andExpect(jsonPath("$.data.totalRevenue").value(100.00))
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("100.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(1))
                 .andExpect(jsonPath("$.data.paidStudentCount").value(1));
     }
@@ -175,14 +178,14 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(100.00));
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("100.00")));
 
         mockMvc.perform(get("/api/teacher/analytics/revenue")
                         .param("from", LocalDate.now().minusDays(1).toString())
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(otherTeacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(500.00));
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("500.00")));
     }
 
     @Test
@@ -197,7 +200,7 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(200.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("200.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
                 .andExpect(jsonPath("$.data.paidStudentCount").value(2));
     }
@@ -214,7 +217,7 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(175.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("175.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2));
 
         mockMvc.perform(get("/api/teacher/analytics/revenue")
@@ -222,7 +225,7 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(otherTeacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(625.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("625.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2));
     }
 
@@ -254,11 +257,11 @@ class TeacherAnalyticsControllerTest {
                         .param("groupBy", "month")
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(30.00))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("30.00")))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2))
                 .andExpect(jsonPath("$.data.paidStudentCount").value(2))
                 .andExpect(jsonPath("$.data.trend[0].period").value("2026-06"))
-                .andExpect(jsonPath("$.data.trend[0].revenue").value(30.00))
+                .andExpect(jsonPath("$.data.trend[0].revenue").value(vnd("30.00")))
                 .andExpect(jsonPath("$.data.trend[0].paidOrderCount").value(2));
     }
 
@@ -283,8 +286,8 @@ class TeacherAnalyticsControllerTest {
                         .param("groupBy", "day")
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(sourceRevenue.doubleValue()))
-                .andExpect(jsonPath("$.data.trend[1].revenue").value(sourceRevenue.doubleValue()))
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd(sourceRevenue)))
+                .andExpect(jsonPath("$.data.trend[1].revenue").value(vnd(sourceRevenue)))
                 .andExpect(jsonPath("$.data.paidOrderCount").value(2));
 
         mockMvc.perform(get("/api/teacher/analytics/revenue/by-course")
@@ -292,8 +295,8 @@ class TeacherAnalyticsControllerTest {
                         .param("to", LocalDate.now().plusDays(1).toString())
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.courses[0].revenue").value(160.00))
-                .andExpect(jsonPath("$.data.courses[1].revenue").value(40.00));
+                .andExpect(jsonPath("$.data.courses[0].revenue").value(vnd("160.00")))
+                .andExpect(jsonPath("$.data.courses[1].revenue").value(vnd("40.00")));
     }
 
     @Test
@@ -350,7 +353,7 @@ class TeacherAnalyticsControllerTest {
                         .param("groupBy", "day")
                         .with(user(new CustomUserDetails(teacher))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalRevenue").value(100.00));
+                .andExpect(jsonPath("$.data.totalRevenue").value(vnd("100.00")));
     }
 
     private User testUser(String fullName, String email, Role role) {
@@ -415,5 +418,13 @@ class TeacherAnalyticsControllerTest {
     }
 
     private record OrderLine(Course course, BigDecimal amount) {
+    }
+
+    private static int vnd(String usdAmount) {
+        return vnd(new BigDecimal(usdAmount));
+    }
+
+    private static int vnd(BigDecimal usdAmount) {
+        return usdAmount.multiply(TEST_EXCHANGE_RATE).intValueExact();
     }
 }

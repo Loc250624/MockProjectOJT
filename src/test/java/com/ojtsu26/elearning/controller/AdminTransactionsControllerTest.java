@@ -241,6 +241,34 @@ class AdminTransactionsControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void adminTransactionsPresentGatewayAmountsAsVndWithoutUsdCurrencyLabel() throws Exception {
+        order = orderRepository.save(Order.builder()
+                .orderCode("ORD-TXN-VND")
+                .user(student)
+                .totalAmount(new BigDecimal("129.99"))
+                .paidAmount(new BigDecimal("3249750"))
+                .currency("USD")
+                .exchangeRate(new BigDecimal("25000"))
+                .paymentMethod(PaymentMethod.VNPAY)
+                .status(OrderStatus.PAID)
+                .items(new java.util.ArrayList<>())
+                .build());
+        Transaction transaction = saveTransaction("TXN-VND", new BigDecimal("3249750"), TransactionStatus.SUCCESS, PaymentMethod.VNPAY);
+
+        mockMvc.perform(get("/api/admin/transactions").param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].currency").value("VND"))
+                .andExpect(jsonPath("$.data.content[0].amount").value(3249750));
+
+        mockMvc.perform(get("/api/admin/transactions/{id}", transaction.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.currency").value("VND"))
+                .andExpect(jsonPath("$.data.orderTotalAmount").value(3249750))
+                .andExpect(jsonPath("$.data.orderPaidAmount").value(3249750));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void listDoesNotReturnDuplicates() throws Exception {
         Transaction one = saveTransaction("TXN-DUP-1", new BigDecimal("10.00"), TransactionStatus.SUCCESS, PaymentMethod.MOMO);
         Transaction two = saveTransaction("TXN-DUP-2", new BigDecimal("20.00"), TransactionStatus.SUCCESS, PaymentMethod.MOMO);
@@ -296,7 +324,10 @@ class AdminTransactionsControllerTest {
         assertThat(script)
                 .contains("initAdminTransactions")
                 .contains("/api/admin/transactions")
+                .contains("+ ' VND'")
+                .contains("maximumFractionDigits: 0")
                 .doesNotContain("webhookResponse")
+                .doesNotContain(".00 USD")
                 .doesNotContain("rawPayload");
     }
 

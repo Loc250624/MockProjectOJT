@@ -6,11 +6,13 @@ import com.ojtsu26.elearning.security.OAuth2AccountService;
 import com.ojtsu26.elearning.security.OAuth2ProviderConfigService;
 import com.ojtsu26.elearning.security.OAuth2ProviderConfigurationFilter;
 import com.ojtsu26.elearning.security.OAuth2LoginSuccessHandler;
+import com.ojtsu26.elearning.service.PasswordResetService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -21,6 +23,7 @@ public class AuthController {
 
     private final OAuth2ProviderConfigService oAuth2ProviderConfigService;
     private final OAuth2AccountService oAuth2AccountService;
+    private final PasswordResetService passwordResetService;
 
     @GetMapping("/login")
     public String loginPage(@RequestParam(value = "error", required = false) String errorCode, Model model) {
@@ -40,6 +43,38 @@ public class AuthController {
     @GetMapping("/register")
     public String registerPage() {
         return "auth/register";
+    }
+
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage() {
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPasswordSubmit(Model model) {
+        model.addAttribute("message", "If this is a local LumiNa account, an administrator can generate a secure reset link.");
+        return "auth/forgot-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String resetPasswordPage(@RequestParam("token") String token, Model model) {
+        model.addAttribute("token", token);
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPasswordSubmit(@RequestParam("token") String token,
+                                      @RequestParam("password") String password,
+                                      @RequestParam("confirmPassword") String confirmPassword,
+                                      Model model) {
+        try {
+            passwordResetService.resetPassword(token, password, confirmPassword);
+            return "redirect:/auth/login?reset=success";
+        } catch (BusinessException ex) {
+            model.addAttribute("token", token);
+            model.addAttribute("error", ex.getMessage());
+            return "auth/reset-password";
+        }
     }
 
     @GetMapping("/oauth2/complete")

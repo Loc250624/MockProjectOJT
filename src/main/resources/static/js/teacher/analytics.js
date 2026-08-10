@@ -6,12 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    var currentCurrency = 'USD';
+    var currentCurrency = 'VND';
     var formatter = createMoneyFormatter(currentCurrency);
     var state = { loading: false };
 
     function createMoneyFormatter(currency) {
         var cleanCurrency = normalizeCurrency(currency);
+        if (cleanCurrency === 'VND') {
+            return {
+                format: function(value) {
+                    return asNumber(value) + ' VND';
+                }
+            };
+        }
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: cleanCurrency,
@@ -21,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function normalizeCurrency(currency) {
-        return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
+        return currency && /^[A-Z]{3}$/.test(currency) ? currency : 'VND';
     }
 
     function setCurrency(currency) {
@@ -256,6 +263,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function compactMoney(value) {
+        if (currentCurrency === 'VND') {
+            return new Intl.NumberFormat('en-US', {
+                notation: 'compact',
+                maximumFractionDigits: 1
+            }).format(safeNumber(value)) + ' VND';
+        }
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currentCurrency,

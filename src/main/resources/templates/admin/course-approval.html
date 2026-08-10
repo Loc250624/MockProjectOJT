@@ -97,7 +97,7 @@
 
                                 <!-- Price -->
                                 <td style="padding:1rem 1.25rem;font-size:0.875rem;font-weight:600;color:var(--lumina-gray-800);"
-                                    th:text="${crs.price != null && crs.price.signum() == 0 ? 'Free' : (crs.price != null ? '$' + #numbers.formatDecimal(crs.price, 1, 'COMMA', 2, 'POINT') : 'N/A')}">Free</td>
+                                    th:text="${crs.priceDisplay}">Free</td>
 
                                 <!-- Actions (state-aware) -->
                                 <td style="padding:1rem 1.25rem;text-align:right;">

@@ -44,6 +44,9 @@ class TeacherRevenueAnalyticsServiceTest {
     @Mock
     private CourseEnrollmentRepository enrollmentRepository;
 
+    @Mock
+    private CurrencyDisplayService currencyDisplayService;
+
     private TeacherRevenueAnalyticsServiceImpl service;
     private User teacher;
     private User otherTeacher;
@@ -57,8 +60,15 @@ class TeacherRevenueAnalyticsServiceTest {
                 currentUserService,
                 courseRepository,
                 orderItemRepository,
-                enrollmentRepository
+                enrollmentRepository,
+                currencyDisplayService
         );
+        lenient().when(currencyDisplayService.getDisplayCurrency()).thenReturn("USD");
+        lenient().when(currencyDisplayService.convertUsdToDisplay(any()))
+                .thenAnswer(invocation -> {
+                    BigDecimal value = invocation.getArgument(0);
+                    return (value == null ? BigDecimal.ZERO : value).setScale(2, java.math.RoundingMode.HALF_UP);
+                });
         teacher = User.builder().id(7).role(Role.TEACHER).fullName("Teacher").build();
         otherTeacher = User.builder().id(8).role(Role.TEACHER).fullName("Other Teacher").build();
         student = User.builder().id(9).role(Role.STUDENT).fullName("Student").build();

@@ -15,6 +15,7 @@ import com.ojtsu26.elearning.model.enums.UserStatus;
 import com.ojtsu26.elearning.repository.BlogPostRepository;
 import com.ojtsu26.elearning.repository.CourseEnrollmentRepository;
 import com.ojtsu26.elearning.repository.CourseRepository;
+import com.ojtsu26.elearning.repository.PasswordResetTokenRepository;
 import com.ojtsu26.elearning.repository.TransactionRepository;
 import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.security.CustomUserDetails;
@@ -89,6 +90,9 @@ class AdminActionControllerTest {
     private BlogPostRepository blogPostRepository;
 
     @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
     private JwtUtils jwtUtils;
 
     @Autowired
@@ -97,6 +101,7 @@ class AdminActionControllerTest {
     @BeforeEach
     void setUp() {
         blogPostRepository.deleteAll();
+        passwordResetTokenRepository.deleteAll();
         userRepository.deleteAll();
         userRepository.save(user("Alice Student", "alice.student@example.com", Role.STUDENT, UserStatus.ACTIVE, AuthProvider.LOCAL));
         userRepository.save(user("Bob Teacher", "bob.teacher@example.com", Role.TEACHER, UserStatus.ACTIVE, AuthProvider.GOOGLE));
@@ -265,6 +270,96 @@ class AdminActionControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Passwords do not match"));
+    }
+
+    @Test
+    void adminCreatesPasswordResetLinkForLocalUserOnly() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        String response = mockMvc.perform(post("/api/admin/users/{id}/password-reset-link", target.getId())
+                        .with(adminPrincipal())
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId").value(target.getId()))
+                .andExpect(jsonPath("$.data.authProvider").value("LOCAL"))
+                .andExpect(jsonPath("$.data.resetLink", containsString("/auth/reset-password?token=")))
+                .andExpect(jsonPath("$.data.expiresAt", notNullValue()))
+                .andExpect(content().string(not(containsString("passwordHash"))))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertEquals(1, passwordResetTokenRepository.count());
+
+        String token = response.substring(response.indexOf("token=") + 6, response.indexOf("\",\"expiresAt"));
+        mockMvc.perform(post("/auth/reset-password")
+                        .with(csrf())
+                        .param("token", token)
+                        .param("password", "NewSecret123!")
+                        .param("confirmPassword", "NewSecret123!"))
+                .andExpect(status().is3xxRedirection());
+
+        assertEquals(1, passwordResetTokenRepository.findAll().stream()
+                .filter(resetToken -> resetToken.getUsedAt() != null)
+                .count());
+    }
+
+    @Test
+    void adminPasswordResetLinkExplainsOauthProviderManagedPassword() throws Exception {
+        User target = findByEmail("bob.teacher@example.com");
+
+        mockMvc.perform(post("/api/admin/users/{id}/password-reset-link", target.getId())
+                        .with(adminPrincipal())
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password is managed by Google"));
+    }
+
+    @Test
+    void adminChangesUserRoleAndRejectsInvalidRole() throws Exception {
+        User target = findByEmail("alice.student@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/role", target.getId())
+                        .with(adminPrincipal())
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"role\":\"TEACHER\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("TEACHER"));
+
+        assertEquals(Role.TEACHER, findByEmail("alice.student@example.com").getRole());
+
+        mockMvc.perform(patch("/api/admin/users/{id}/role", target.getId())
+                        .with(adminPrincipal())
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"role\":\"OWNER\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void roleChangeBlockAndSoftDeleteProtectLastActiveAdmin() throws Exception {
+        User admin = findByEmail("carla.admin@example.com");
+
+        mockMvc.perform(patch("/api/admin/users/{id}/role", admin.getId())
+                        .with(otherAdminPrincipal())
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"role\":\"TEACHER\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("At least one active admin account must remain"));
+
+        mockMvc.perform(patch("/api/admin/users/{id}/block", admin.getId())
+                        .with(otherAdminPrincipal())
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("At least one active admin account must remain"));
+
+        mockMvc.perform(delete("/api/admin/users/{id}", admin.getId())
+                        .with(otherAdminPrincipal())
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("At least one active admin account must remain"));
     }
 
     @Test
@@ -662,6 +757,13 @@ class AdminActionControllerTest {
 
     private RequestPostProcessor adminPrincipal() {
         User admin = findByEmail("carla.admin@example.com");
+        return org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+                .user(new CustomUserDetails(admin));
+    }
+
+    private RequestPostProcessor otherAdminPrincipal() {
+        User admin = user("External Admin", "external.admin@example.com", Role.ADMIN, UserStatus.ACTIVE, AuthProvider.LOCAL);
+        admin.setId(999_999);
         return org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
                 .user(new CustomUserDetails(admin));
     }

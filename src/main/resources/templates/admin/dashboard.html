@@ -132,8 +132,8 @@
                             <div class="metric-card-label">Total Revenue</div>
                             <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
                         </div>
-                        <div class="metric-card-value" data-overview-money="totalRevenue">$0.00</div>
-                        <div class="stat-unit" data-dashboard-currency>USD</div>
+                        <div class="metric-card-value" data-overview-money="totalRevenue">0</div>
+                        <div class="stat-unit" data-dashboard-currency>VND</div>
                         <div class="metric-card-helper stat-change stat-change-neutral">All-time paid order items</div>
                     </a>
                     <a class="metric-card admin-stat-link admin-metric-card" th:href="@{/admin/analytics}">
@@ -205,7 +205,7 @@
                             </a>
                         </div>
                         <div class="admin-chart-meta" aria-hidden="true">
-                            <span>Revenue contribution, <span data-dashboard-revenue-currency>USD</span></span>
+                            <span>Revenue contribution, <span data-dashboard-revenue-currency>VND</span></span>
                             <span class="admin-chart-axis">Top five periods + Other</span>
                         </div>
                         <div id="dashboardRevenueChart" class="admin-analytics-chart admin-dashboard-pie-chart" aria-live="polite"></div>

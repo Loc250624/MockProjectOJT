@@ -14,6 +14,7 @@ import com.ojtsu26.elearning.mapper.CourseMapper;
 import com.ojtsu26.elearning.repository.CourseRepository;
 import com.ojtsu26.elearning.repository.VideoRepository;
 import com.ojtsu26.elearning.service.CourseService;
+import com.ojtsu26.elearning.service.CurrencyDisplayService;
 import com.ojtsu26.elearning.service.NotificationService;
 import com.ojtsu26.elearning.service.VideoDurationPrecomputeService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class CourseServiceImpl implements CourseService {
     private final VideoDurationPrecomputeService videoDurationPrecomputeService;
     private final CourseMapper courseMapper;
     private final NotificationService notificationService;
+    private final CurrencyDisplayService currencyDisplayService;
 
     // ----------------------------------------------------------------
     // Basic CRUD
@@ -172,7 +174,20 @@ public class CourseServiceImpl implements CourseService {
         long seconds = durationByCourseId.getOrDefault(course.getId(), 0L);
         dto.setEstimatedDurationSeconds(seconds);
         dto.setEstimatedDurationDisplay(CourseDurationFormatter.formatSeconds(seconds));
+        dto.setDisplayCurrency(currencyDisplayService.getDisplayCurrency());
+        dto.setDisplayPrice(currencyDisplayService.convertUsdToDisplay(dto.getPrice()));
+        dto.setPriceDisplay(formatCoursePrice(dto.getPrice()));
         return dto;
+    }
+
+    private String formatCoursePrice(java.math.BigDecimal usdPrice) {
+        if (usdPrice == null) {
+            return "N/A";
+        }
+        if (usdPrice.compareTo(java.math.BigDecimal.ZERO) == 0) {
+            return "Free";
+        }
+        return currencyDisplayService.formatUsdForDisplay(usdPrice);
     }
 
     private Map<Integer, Long> durationByCourseId(List<Course> courses) {

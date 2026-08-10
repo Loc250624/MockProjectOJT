@@ -1,7 +1,9 @@
 package com.ojtsu26.elearning.config;
 
+import com.ojtsu26.elearning.web.MaintenanceModeInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,9 +14,18 @@ import java.nio.file.Paths;
 public class WebConfig implements WebMvcConfigurer {
 
     private final String avatarDirectory;
+    private final MaintenanceModeInterceptor maintenanceModeInterceptor;
 
-    public WebConfig(@Value("${app.upload.avatar-directory:uploads/avatars}") String avatarDirectory) {
+    public WebConfig(@Value("${app.upload.avatar-directory:uploads/avatars}") String avatarDirectory,
+                     MaintenanceModeInterceptor maintenanceModeInterceptor) {
         this.avatarDirectory = avatarDirectory;
+        this.maintenanceModeInterceptor = maintenanceModeInterceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(maintenanceModeInterceptor)
+                .addPathPatterns("/**");
     }
 
     @Override

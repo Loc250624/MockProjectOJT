@@ -1774,9 +1774,14 @@ pre {
   min-height: 100%;
 }
 
+.teacher-dashboard-actions {
+  display: grid;
+  gap: var(--space-lg);
+}
+
 .teacher-quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.875rem;
 }
 
@@ -2043,6 +2048,18 @@ pre {
 
   .assessment-pagination.pagination-nav .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 1180px) {
+  .teacher-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .teacher-quick-actions {
+    grid-template-columns: 1fr;
   }
 }
 

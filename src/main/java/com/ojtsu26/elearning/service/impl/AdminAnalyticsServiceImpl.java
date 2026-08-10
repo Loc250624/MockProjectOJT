@@ -18,6 +18,7 @@ import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.repository.projection.AdminRevenueBucketProjection;
 import com.ojtsu26.elearning.repository.projection.AdminStudentEventProjection;
 import com.ojtsu26.elearning.service.AdminAnalyticsService;
+import com.ojtsu26.elearning.service.CurrencyDisplayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +47,6 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     private static final ZoneId ANALYTICS_ZONE = ZoneId.systemDefault();
     private static final String ACTIVE_STUDENT_METHOD = "Users with role STUDENT who have lesson progress activity in the selected date range, using LessonProgress.lastAccessedAt with lastUpdatedAt fallback. Dates are interpreted in the application time zone.";
     private static final String REVENUE_RECOGNITION_METHOD = "Gross order-item revenue from orders with status PAID, recognized by Order.createdAt in the application time zone. Refunded orders are excluded by status.";
-    private static final String REVENUE_CURRENCY = "USD";
 
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
@@ -54,6 +54,7 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final LessonProgressRepository lessonProgressRepository;
+    private final CurrencyDisplayService currencyDisplayService;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,8 +72,8 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                 .totalCourses(courseRepository.count())
                 .totalEnrollments(enrollmentRepository.count())
                 .paidOrderCount(orderRepository.countByStatus(OrderStatus.PAID))
-                .currency(REVENUE_CURRENCY)
-                .totalRevenue(money(orderItemRepository.sumPaidRevenue(OrderStatus.PAID)))
+                .currency(currencyDisplayService.getDisplayCurrency())
+                .totalRevenue(displayMoney(orderItemRepository.sumPaidRevenue(OrderStatus.PAID)))
                 .newStudents(userRepository.countByRoleAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Role.STUDENT, fromDateTime, toDateTime))
                 .activeStudents(lessonProgressRepository.countActiveStudentsForAnalytics(fromDateTime, toDateTime, Role.STUDENT))
                 .activeStudentMethod(ACTIVE_STUDENT_METHOD)
@@ -119,7 +120,7 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                 .timeZone(ANALYTICS_ZONE.getId())
                 .groupBy(cleanGroupBy)
                 .revenueRecognitionMethod(REVENUE_RECOGNITION_METHOD)
-                .currency(REVENUE_CURRENCY)
+                .currency(currencyDisplayService.getDisplayCurrency())
                 .totalRevenue(sumTrendRevenue(trend))
                 .paidOrderCount(sumTrendPaidOrders(trend))
                 .trend(trend)
@@ -142,14 +143,14 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
         Map<String, AdminRevenueTrendPointDTO> buckets = new LinkedHashMap<>();
         initializeBucketKeys(filter, groupBy).forEach(key -> buckets.put(key, AdminRevenueTrendPointDTO.builder()
                 .period(key)
-                .revenue(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP))
+                .revenue(currencyDisplayService.money(BigDecimal.ZERO, currencyDisplayService.getDisplayCurrency()))
                 .paidOrderCount(0)
                 .build()));
         aggregates.forEach(bucket -> {
             String key = revenueBucketKey(bucket, groupBy);
             buckets.put(key, AdminRevenueTrendPointDTO.builder()
                     .period(key)
-                    .revenue(money(bucket.getRevenue()))
+                    .revenue(displayMoney(bucket.getRevenue()))
                     .paidOrderCount(bucket.getPaidOrderCount() == null ? 0L : bucket.getPaidOrderCount())
                     .build());
         });
@@ -171,9 +172,9 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
     }
 
     private BigDecimal sumTrendRevenue(List<AdminRevenueTrendPointDTO> trend) {
-        return money(trend.stream()
+        return currencyDisplayService.money(trend.stream()
                 .map(AdminRevenueTrendPointDTO::getRevenue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+                .reduce(BigDecimal.ZERO, BigDecimal::add), currencyDisplayService.getDisplayCurrency());
     }
 
     private long sumTrendPaidOrders(List<AdminRevenueTrendPointDTO> trend) {
@@ -271,8 +272,8 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
         return clean;
     }
 
-    private BigDecimal money(BigDecimal value) {
-        return (value == null ? BigDecimal.ZERO : value).setScale(2, RoundingMode.HALF_UP);
+    private BigDecimal displayMoney(BigDecimal usdValue) {
+        return currencyDisplayService.convertUsdToDisplay(usdValue);
     }
 
     private record DateFilter(LocalDate from, LocalDate to) {

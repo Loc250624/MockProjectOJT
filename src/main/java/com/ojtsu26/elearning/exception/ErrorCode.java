@@ -40,6 +40,7 @@ public enum ErrorCode {
     NEW_PASSWORD_REUSED(409, HttpStatus.CONFLICT, "New password must be different from the current password"),
     PASSWORD_CHANGE_NOT_AVAILABLE(400, HttpStatus.BAD_REQUEST, "Password is managed by your sign-in provider"),
     PASSWORD_CHANGE_FORBIDDEN(403, HttpStatus.FORBIDDEN, "This account cannot change password here"),
+    PASSWORD_RESET_TOKEN_INVALID(400, HttpStatus.BAD_REQUEST, "Password reset link is invalid or expired"),
     OAUTH2_EMAIL_CANNOT_BE_CHANGED(400, HttpStatus.BAD_REQUEST, "OAuth2 account email is managed by the login provider"),
     INVALID_AVATAR(400, HttpStatus.BAD_REQUEST, "Invalid avatar image"),
     UNSUPPORTED_AVATAR_TYPE(415, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported avatar image type"),
@@ -47,9 +48,13 @@ public enum ErrorCode {
     AVATAR_STORAGE_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store avatar image"),
     CANNOT_MODIFY_OWN_ACCOUNT(400, HttpStatus.BAD_REQUEST, "Admin cannot modify their own account"),
     CANNOT_DELETE_OWN_ACCOUNT(400, HttpStatus.BAD_REQUEST, "Admin cannot soft-delete their own account"),
+    CANNOT_REMOVE_LAST_ADMIN(409, HttpStatus.CONFLICT, "At least one active admin account must remain"),
     USER_ALREADY_BLOCKED(409, HttpStatus.CONFLICT, "User is already blocked"),
     USER_NOT_BLOCKED(409, HttpStatus.CONFLICT, "User is not blocked"),
-    USER_ALREADY_DELETED(409, HttpStatus.CONFLICT, "User account is already soft-deleted");
+    USER_ALREADY_DELETED(409, HttpStatus.CONFLICT, "User account is already soft-deleted"),
+    CATEGORY_NOT_FOUND(404, HttpStatus.NOT_FOUND, "Category not found"),
+    CATEGORY_NAME_EXISTS(409, HttpStatus.CONFLICT, "Category name already exists"),
+    CATEGORY_IN_USE(409, HttpStatus.CONFLICT, "Category is assigned to existing courses");
 
     private final int code;
     private final HttpStatus status;

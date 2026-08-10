@@ -64,7 +64,7 @@
                         <div class="metric-card-icon finance"><svg th:replace="~{fragments/icons :: icon('payments')}"></svg></div>
                     </div>
                     <div class="metric-card-value"
-                         th:text="${#strings.isEmpty(dashboardStats.revenueCurrencyCode) ? #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT') : dashboardStats.revenueCurrencyCode + ' ' + #numbers.formatDecimal(dashboardStats.totalRevenueMtd, 1, 'COMMA', 2, 'POINT')}">0.00</div>
+                         th:text="${dashboardStats.totalRevenueMtdDisplay}">0 VND</div>
                     <div class="metric-card-helper stat-change"
                          th:classappend="${dashboardStats.revenueChangeClass}"
                          th:text="${dashboardStats.revenueChangeText}">No paid revenue last month</div>
@@ -106,7 +106,7 @@
                                     </div>
                                     <div style="font-size:0.6875rem;color:var(--lumina-gray-500);text-align:right;margin-top:4px;" th:text="${course.averageCompletionPercent} + '%'">0%</div>
                                 </td>
-                                <td data-label="Revenue (MTD)" th:text="${course.revenueMonthToDateDisplay}">$0.00</td>
+                                <td data-label="Revenue (MTD)" th:text="${course.revenueMonthToDateDisplay}">0 VND</td>
                                 <td data-label="Status"><span class="badge badge-dot" th:classappend="${course.statusClass}" th:text="${course.status}">Status</span></td>
                                 <td data-label="Actions"><a class="btn btn-outline btn-sm" th:href="${course.actionUrl}" th:text="${course.actionLabel}">Edit</a></td>
                             </tr>
@@ -115,7 +115,7 @@
                 </div>
             </div>
 
-            <div class="grid-2-col">
+            <div class="teacher-dashboard-actions">
                 <div class="card card-padded teacher-quick-card">
                     <div class="card-header">
                         <h2 class="card-title">Quick Actions</h2>

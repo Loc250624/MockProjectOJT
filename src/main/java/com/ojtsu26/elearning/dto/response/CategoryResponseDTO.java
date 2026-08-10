@@ -10,4 +10,6 @@ public class CategoryResponseDTO {
     private String name;
 
     private String description;
+
+    private long courseCount;
 }
