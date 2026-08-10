@@ -151,18 +151,30 @@ body.admin-user-modal-open {
 
 .asp-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
 
-/* Settlement Sidebar Layout */
-.finance-layout {
-  display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start;
+/* Admin payments */
+.admin-payments-section-title {
+  color: var(--lumina-gray-900);
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
 }
-@media (max-width: 1024px) { .finance-layout { grid-template-columns: 1fr; } }
 
-.settlement-card {
-  background: white; border-radius: 12px; border: 1px solid var(--lumina-gray-200); padding: 1.25rem; margin-bottom: 1rem;
+.admin-payments-transactions,
+.admin-teacher-payouts {
+  margin-top: 1.5rem;
 }
-.settlement-card .sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
-.sc-teacher { font-weight: 700; color: var(--lumina-gray-900); font-size: 0.9375rem; }
-.sc-amount { font-size: 1.25rem; font-weight: 800; color: var(--lumina-gray-900); }
+
+.admin-payments-table-wrap {
+  max-height: 640px;
+  overflow: auto;
+  padding: 1.5rem;
+}
+
+.admin-teacher-payouts .lumina-table {
+  min-width: 780px;
+}
 
 /* Moderation Queue */
 .risk-score { font-family: var(--font-mono); font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
@@ -974,11 +986,13 @@ html[data-theme="dark"] :is(
   .admin-table-toolbar,
   .admin-user-modal-panel,
   .admin-side-panel,
-  .settlement-card,
   .admin-inline-loader,
   .admin-pie-hole,
   .admin-pie-legend-item,
-  .admin-settings-category,
+  .admin-settings-tabs,
+  .admin-settings-panel,
+  .admin-settings-save-bar,
+  .admin-settings-advanced-item,
   .admin-table-footer
 ) {
   background: var(--theme-surface);
@@ -1025,6 +1039,38 @@ html[data-theme="dark"] :is(.admin-analytics-filter-row select, .admin-setting-i
   border-color: var(--theme-border);
 }
 
+html[data-theme="dark"] :is(
+  .admin-settings-tab,
+  .admin-settings-advanced-intro,
+  .admin-setting-meta p,
+  .admin-setting-example,
+  .admin-settings-revenue-example span,
+  .admin-settings-advanced-item dt,
+  .admin-setting-input-suffix
+) {
+  color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] :is(
+  .admin-settings-tab.is-active,
+  .admin-setting-meta label,
+  .admin-setting-switch-state,
+  .admin-settings-revenue-example strong,
+  .admin-settings-advanced-item summary,
+  .admin-settings-advanced-item dd
+) {
+  color: var(--theme-text);
+}
+
+html[data-theme="dark"] :is(.admin-settings-revenue-example, .admin-settings-advanced-item) {
+  background: var(--theme-surface-elevated);
+}
+
+html[data-theme="dark"] .admin-setting-switch-track {
+  background: var(--theme-border-strong);
+  border-color: var(--theme-border-strong);
+}
+
 /* Admin system settings */
 .admin-settings-header {
   display: flex;
@@ -1065,8 +1111,54 @@ html[data-theme="dark"] :is(.admin-analytics-filter-row select, .admin-setting-i
   color: var(--lumina-danger);
 }
 
+.maintenance-active-badge {
+  background: var(--lumina-warning-bg);
+  color: var(--lumina-warning);
+}
+
 .admin-settings-form {
   margin-top: 1rem;
+}
+
+.admin-settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 10px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-settings-tab {
+  min-height: 38px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lumina-gray-600);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-settings-tab:hover,
+.admin-settings-tab:focus-visible {
+  color: var(--lumina-blue);
+  outline: none;
+}
+
+.admin-settings-tab:focus-visible {
+  box-shadow: 0 0 0 3px var(--lumina-blue-pale);
+}
+
+.admin-settings-tab.is-active {
+  border-color: var(--lumina-blue-pale);
+  background: var(--lumina-blue-pale);
+  color: var(--lumina-blue-dark);
 }
 
 .admin-settings-groups {
@@ -1074,35 +1166,12 @@ html[data-theme="dark"] :is(.admin-analytics-filter-row select, .admin-setting-i
   gap: 1rem;
 }
 
-.admin-settings-category {
+.admin-settings-panel {
   background: white;
   border: 1px solid var(--lumina-gray-200);
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-}
-
-.admin-settings-category-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--lumina-gray-200);
-  background: var(--lumina-gray-50);
-}
-
-.admin-settings-category-head h2 {
-  margin: 0;
-  color: var(--lumina-gray-900);
-  font-size: 1rem;
-}
-
-.admin-settings-category-head span {
-  color: var(--lumina-gray-500);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
 }
 
 .admin-setting-row {
@@ -1189,18 +1258,235 @@ html[data-theme="dark"] :is(.admin-analytics-filter-row select, .admin-setting-i
   cursor: not-allowed;
 }
 
+.admin-setting-input:focus-visible,
+.admin-setting-switch input:focus-visible + .admin-setting-switch-track {
+  border-color: var(--lumina-blue);
+  outline: 3px solid var(--lumina-blue-pale);
+  outline-offset: 2px;
+}
+
+.admin-setting-input-shell {
+  position: relative;
+}
+
+.admin-setting-input-shell .admin-setting-input {
+  padding-right: 2.25rem;
+}
+
+.admin-setting-input-suffix {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  color: var(--lumina-gray-500);
+  font-weight: 800;
+  transform: translateY(-50%);
+}
+
+.admin-setting-example {
+  margin: 0;
+  color: var(--lumina-gray-500);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-settings-revenue-example {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: var(--lumina-gray-50);
+}
+
+.admin-settings-revenue-example div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-settings-revenue-example span {
+  color: var(--lumina-gray-500);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-settings-revenue-example strong {
+  color: var(--lumina-gray-900);
+  font-size: 0.85rem;
+}
+
+.admin-setting-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.admin-setting-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.admin-setting-switch-track {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border: 1px solid var(--lumina-gray-300);
+  border-radius: 999px;
+  background: var(--lumina-gray-200);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.admin-setting-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition);
+}
+
+.admin-setting-switch input:checked + .admin-setting-switch-track {
+  border-color: var(--lumina-blue);
+  background: var(--lumina-blue);
+}
+
+.admin-setting-switch input:checked + .admin-setting-switch-track::after {
+  transform: translateX(22px);
+}
+
+.admin-setting-switch-state {
+  color: var(--lumina-gray-700);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.admin-settings-save-bar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 10px;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  color: var(--lumina-gray-800);
+  font-weight: 800;
+}
+
+.admin-settings-save-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-settings-advanced {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.admin-settings-advanced-intro {
+  margin: 0;
+  color: var(--lumina-gray-500);
+  font-size: 0.875rem;
+}
+
+.admin-settings-advanced-item {
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: var(--lumina-gray-50);
+}
+
+.admin-settings-advanced-item summary {
+  padding: 0.85rem 1rem;
+  color: var(--lumina-gray-900);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-settings-advanced-item summary:focus-visible {
+  outline: 3px solid var(--lumina-blue-pale);
+  outline-offset: 2px;
+}
+
+.admin-settings-advanced-item dl {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0 1rem 1rem;
+}
+
+.admin-settings-advanced-item dl div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.4fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.admin-settings-advanced-item dt {
+  color: var(--lumina-gray-500);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.admin-settings-advanced-item dd {
+  margin: 0;
+  color: var(--lumina-gray-800);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 760px) {
   .admin-settings-header {
     flex-direction: column;
   }
 
-  .admin-settings-header .btn {
+  .admin-settings-save-actions,
+  .admin-settings-save-actions .btn,
+  .admin-settings-save-bar {
     width: 100%;
+  }
+
+  .admin-settings-save-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-settings-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .admin-settings-tab {
+    flex: 0 0 auto;
   }
 
   .admin-setting-row {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+
+  .admin-settings-advanced-item dl div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 }
 

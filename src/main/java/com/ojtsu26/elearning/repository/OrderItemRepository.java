@@ -3,6 +3,7 @@ package com.ojtsu26.elearning.repository;
 import com.ojtsu26.elearning.model.entity.OrderItem;
 import com.ojtsu26.elearning.model.enums.OrderStatus;
 import com.ojtsu26.elearning.repository.projection.AdminRevenueBucketProjection;
+import com.ojtsu26.elearning.repository.projection.AdminTeacherPayoutProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueCourseProjection;
 import com.ojtsu26.elearning.repository.projection.TeacherRevenueEventProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -90,6 +91,28 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     List<AdminRevenueBucketProjection> findPaidRevenueBucketsByYear(@Param("paidStatus") OrderStatus paidStatus,
                                                                      @Param("from") LocalDateTime from,
                                                                      @Param("to") LocalDateTime to);
+
+    @Query("""
+            select teacher.id as teacherId,
+                   teacher.fullName as teacherName,
+                   teacher.email as teacherEmail,
+                   coalesce(sum(oi.unitPrice), 0) as eligibleRevenue,
+                   count(distinct o.id) as paidOrderCount,
+                   max(o.createdAt) as latestEligiblePaymentAt
+            from OrderItem oi
+            join oi.order o
+            join oi.course c
+            join c.instructor teacher
+            where o.status = :paidStatus
+              and (:fromDate is null or o.createdAt >= :fromDate)
+              and (:toDate is null or o.createdAt < :toDate)
+            group by teacher.id, teacher.fullName, teacher.email
+            having coalesce(sum(oi.unitPrice), 0) > 0
+            order by coalesce(sum(oi.unitPrice), 0) desc, teacher.fullName asc
+            """)
+    List<AdminTeacherPayoutProjection> findAdminTeacherPayoutReadiness(@Param("paidStatus") OrderStatus paidStatus,
+                                                                       @Param("fromDate") LocalDateTime fromDate,
+                                                                       @Param("toDate") LocalDateTime toDate);
 
     @Query("""
             select coalesce(sum(oi.unitPrice), 0)

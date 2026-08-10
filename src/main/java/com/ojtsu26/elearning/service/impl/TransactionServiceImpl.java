@@ -19,6 +19,7 @@ import com.ojtsu26.elearning.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,6 +82,22 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<Transaction> searchTransactions(String keyword, LocalDateTime fromDate,
+                                                LocalDateTime toDate, Pageable pageable) {
+        String cleanKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return transactionRepository.searchTransactionsInCreatedAtRange(cleanKeyword, fromDate, toDate, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> findTransactionsForAdminPaymentsExport(String keyword, LocalDateTime fromDate,
+                                                                    LocalDateTime toDate, Sort sort) {
+        String cleanKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return transactionRepository.findTransactionsForAdminPaymentsExport(cleanKeyword, fromDate, toDate, sort);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<AdminTransactionDTO> searchAdminTransactions(String keyword, TransactionStatus status,
                                                              PaymentMethod paymentMethod, LocalDateTime fromDate,
                                                              LocalDateTime toDate, Pageable pageable) {
@@ -107,6 +124,22 @@ public class TransactionServiceImpl implements TransactionService {
                 .failedTransactions(transactionRepository.countByStatus(TransactionStatus.FAILED))
                 .refundedTransactions(transactionRepository.countByStatus(TransactionStatus.REFUNDED))
                 .successfulAmount(money(transactionRepository.sumAmountByStatus(TransactionStatus.SUCCESS)))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminPaymentSummaryDTO getAdminPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
+        if (fromDate == null && toDate == null) {
+            return getAdminPaymentSummary();
+        }
+        return AdminPaymentSummaryDTO.builder()
+                .totalTransactions(transactionRepository.countInCreatedAtRange(fromDate, toDate))
+                .successfulTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.SUCCESS, fromDate, toDate))
+                .pendingTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.PENDING, fromDate, toDate))
+                .failedTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.FAILED, fromDate, toDate))
+                .refundedTransactions(transactionRepository.countByStatusInCreatedAtRange(TransactionStatus.REFUNDED, fromDate, toDate))
+                .successfulAmount(money(transactionRepository.sumAmountByStatusInCreatedAtRange(TransactionStatus.SUCCESS, fromDate, toDate)))
                 .build();
     }
 

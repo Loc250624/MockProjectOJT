@@ -160,6 +160,7 @@ public class SecurityConfig {
                         "/auth/forgot-password",
                         "/auth/reset-password",
                         "/auth/oauth2/complete",
+                        "/maintenance",
                         "/oauth2/**",
                         "/login/oauth2/**",
                         "/error",
@@ -252,7 +253,14 @@ public class SecurityConfig {
             return false;
         }
         String path = request.getServletPath();
-        if (path == null) {
+        if (path == null || path.isBlank()) {
+            path = request.getRequestURI();
+            String contextPath = request.getContextPath();
+            if (contextPath != null && !contextPath.isBlank() && path.startsWith(contextPath)) {
+                path = path.substring(contextPath.length());
+            }
+        }
+        if (path == null || path.isBlank()) {
             return false;
         }
         // Exclude payment webhooks/IPN from CSRF check

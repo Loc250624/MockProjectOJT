@@ -10,6 +10,7 @@
     <th:block th:replace="~{fragments/theme-bootstrap :: bootstrap}"></th:block>
     <link rel="stylesheet" th:href="@{/css/lumina-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/components/lumina-action-dialog.css}">
 </head>
 <body>
 <div class="lumina-portal admin-settings-page">
@@ -23,9 +24,8 @@
                 <div class="page-header admin-settings-header">
                     <div>
                         <h1 class="page-title">System Settings</h1>
-                        <p class="page-subtitle">Manage safe platform defaults and operational flags.</p>
+                        <p class="page-subtitle">Manage platform-wide preferences and operational controls.</p>
                     </div>
-                    <button type="button" class="btn btn-primary" id="settings-save-all" disabled>Save Changes</button>
                 </div>
 
                 <div class="admin-settings-message" id="settings-message" role="status" hidden></div>
@@ -34,14 +34,32 @@
                 <div class="error-state" id="settings-error" hidden></div>
 
                 <form class="admin-settings-form" id="admin-settings-form" hidden>
+                    <nav class="admin-settings-tabs" id="settings-tabs" aria-label="Settings sections">
+                        <button type="button" class="admin-settings-tab is-active" data-settings-tab="general">General</button>
+                        <button type="button" class="admin-settings-tab" data-settings-tab="learning">Learning</button>
+                        <button type="button" class="admin-settings-tab" data-settings-tab="payments">Payments</button>
+                        <button type="button" class="admin-settings-tab" data-settings-tab="maintenance">Maintenance</button>
+                        <button type="button" class="admin-settings-tab" data-settings-tab="advanced">Advanced</button>
+                    </nav>
+
                     <div id="settings-groups" class="admin-settings-groups"></div>
+
+                    <div class="admin-settings-save-bar" id="settings-save-bar" hidden>
+                        <span id="settings-dirty-count">Unsaved changes</span>
+                        <div class="admin-settings-save-actions">
+                            <button type="button" class="btn btn-secondary" id="settings-discard">Discard</button>
+                            <button type="button" class="btn btn-primary" id="settings-save-all">Save changes</button>
+                        </div>
+                    </div>
                 </form>
             </section>
         </main>
 
     </div>
 </div>
+<div th:replace="~{fragments/lumina-action-dialog :: luminaActionDialog}"></div>
 <script th:src="@{/js/admin/admin.js}"></script>
+<script th:src="@{/js/components/lumina-action-dialog.js}"></script>
 <script th:src="@{/js/admin/settings.js}"></script>
 </body>
 </html>

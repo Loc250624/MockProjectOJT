@@ -31,6 +31,28 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.status = :status")
     java.math.BigDecimal sumAmountByStatus(@Param("status") TransactionStatus status);
 
+    @Query("SELECT COUNT(t) FROM Transaction t " +
+           "WHERE (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)")
+    long countInCreatedAtRange(@Param("fromDate") LocalDateTime fromDate,
+                               @Param("toDate") LocalDateTime toDate);
+
+    @Query("SELECT COUNT(t) FROM Transaction t " +
+           "WHERE t.status = :status " +
+           "AND (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)")
+    long countByStatusInCreatedAtRange(@Param("status") TransactionStatus status,
+                                       @Param("fromDate") LocalDateTime fromDate,
+                                       @Param("toDate") LocalDateTime toDate);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "WHERE t.status = :status " +
+           "AND (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)")
+    java.math.BigDecimal sumAmountByStatusInCreatedAtRange(@Param("status") TransactionStatus status,
+                                                           @Param("fromDate") LocalDateTime fromDate,
+                                                           @Param("toDate") LocalDateTime toDate);
+
     @EntityGraph(attributePaths = {"student", "course", "order"})
     @Query("SELECT t FROM Transaction t WHERE t.id = :id")
     Optional<Transaction> findAdminDetailById(@Param("id") Integer id);
@@ -53,6 +75,48 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
            "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     @EntityGraph(attributePaths = {"student", "course", "order"})
     Page<Transaction> searchTransactions(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query(value = "SELECT t FROM Transaction t " +
+           "LEFT JOIN t.order o " +
+           "LEFT JOIN t.student s " +
+           "WHERE (:keyword IS NULL OR " +
+           "LOWER(t.transactionRef) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)",
+           countQuery = "SELECT COUNT(t) FROM Transaction t " +
+           "LEFT JOIN t.order o " +
+           "LEFT JOIN t.student s " +
+           "WHERE (:keyword IS NULL OR " +
+           "LOWER(t.transactionRef) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)")
+    @EntityGraph(attributePaths = {"student", "course", "order"})
+    Page<Transaction> searchTransactionsInCreatedAtRange(@Param("keyword") String keyword,
+                                                         @Param("fromDate") LocalDateTime fromDate,
+                                                         @Param("toDate") LocalDateTime toDate,
+                                                         Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN t.order o " +
+           "LEFT JOIN t.student s " +
+           "WHERE (:keyword IS NULL OR " +
+           "LOWER(t.transactionRef) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:fromDate IS NULL OR t.createdAt >= :fromDate) " +
+           "AND (:toDate IS NULL OR t.createdAt < :toDate)")
+    @EntityGraph(attributePaths = {"student", "course", "order"})
+    List<Transaction> findTransactionsForAdminPaymentsExport(@Param("keyword") String keyword,
+                                                             @Param("fromDate") LocalDateTime fromDate,
+                                                             @Param("toDate") LocalDateTime toDate,
+                                                             org.springframework.data.domain.Sort sort);
 
     @Query(value = "SELECT t FROM Transaction t " +
            "LEFT JOIN t.order o " +

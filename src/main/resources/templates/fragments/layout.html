@@ -358,7 +358,12 @@
     </div>
     <div class="topbar-right">
         <th:block th:replace="~{fragments/theme-switch :: themeSwitch}"></th:block>
-        <span class="badge badge-success badge-dot system-health-badge"
+        <span th:if="${maintenanceModeActive}"
+              class="badge badge-warning badge-dot system-health-badge maintenance-active-badge"
+              aria-label="Maintenance mode active"
+              style="font-size:0.75rem;"> Maintenance Mode Active</span>
+        <span th:unless="${maintenanceModeActive}"
+              class="badge badge-success badge-dot system-health-badge"
               aria-label="System healthy"
               style="font-size:0.75rem;"> System Healthy</span>
         <button class="icon-btn notification-bell tooltip-trigger" id="btn-topbar-notif" type="button" data-notification-bell="true"

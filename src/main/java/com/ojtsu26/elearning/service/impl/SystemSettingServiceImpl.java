@@ -11,6 +11,7 @@ import com.ojtsu26.elearning.repository.UserRepository;
 import com.ojtsu26.elearning.service.SystemSettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
 public class SystemSettingServiceImpl implements SystemSettingService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    private static final String MAINTENANCE_MODE_KEY = "site.maintenanceMode";
+    private static final String TEACHER_COMMISSION_RATE_KEY = "commerce.teacherCommissionRate";
     private static final String STORAGE = "DB:SystemSettings.setting_value";
     private static final String EFFECTIVE_IMMEDIATE = "Effective immediately for code paths that read SystemSettingService; no cache layer is used.";
     private static final Map<String, SettingDefinition> DEFINITIONS = createDefinitions();
@@ -106,6 +109,42 @@ public class SystemSettingServiceImpl implements SystemSettingService {
         }
 
         return findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isMaintenanceModeEnabled() {
+        try {
+            return systemSettingRepository.findByKey(MAINTENANCE_MODE_KEY)
+                    .map(SystemSetting::getValue)
+                    .map(value -> "true".equalsIgnoreCase(value.trim()))
+                    .orElse(false);
+        } catch (DataAccessException ex) {
+            log.warn("Unable to read maintenance mode setting; defaulting to OFF");
+            return false;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getTeacherCommissionRate() {
+        SettingDefinition definition = requireDefinition(TEACHER_COMMISSION_RATE_KEY);
+        return systemSettingRepository.findByKey(TEACHER_COMMISSION_RATE_KEY)
+                .map(SystemSetting::getValue)
+                .map(this::parseTeacherCommissionRate)
+                .orElseGet(() -> new BigDecimal(definition.defaultValue()));
+    }
+
+    private BigDecimal parseTeacherCommissionRate(String value) {
+        try {
+            BigDecimal parsed = new BigDecimal(value == null ? "" : value.trim());
+            SettingDefinition definition = requireDefinition(TEACHER_COMMISSION_RATE_KEY);
+            validateNumberRange(definition, parsed);
+            return parsed;
+        } catch (RuntimeException ex) {
+            log.warn("Invalid teacher commission rate setting; using configured default.");
+            return new BigDecimal(requireDefinition(TEACHER_COMMISSION_RATE_KEY).defaultValue());
+        }
     }
 
     private void updateSettingValue(SettingDefinition definition, SystemSetting setting, String rawValue, Integer adminUserId) {
