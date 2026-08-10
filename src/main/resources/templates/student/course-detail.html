@@ -12,17 +12,23 @@
     <link rel="stylesheet" th:href="@{/css/student/student.css}">
     <style>
         /* Course detail layout */
-        .cd-hero { background: linear-gradient(135deg, #0d1b4b 0%, #1a3bb5 60%, #3a1578 100%); padding: 2.5rem; color: white; }
+        .cd-hero { background: linear-gradient(135deg, #0d1b4b 0%, #1a3bb5 60%, #3a1578 100%); padding: clamp(2rem, 4vw, 3rem); color: white; }
+        .cd-hero-content { max-width: 980px; }
         .cd-hero .breadcrumb a { color: rgba(255,255,255,0.6); }
         .cd-hero .breadcrumb .cur { color: rgba(255,255,255,0.9); }
-        .cd-hero h1 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.875rem; margin: 1rem 0 0.5rem; }
-        .cd-hero .meta-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
-        .cd-hero .meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
-        .cd-body { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; padding: 2rem; max-width: 100%; }
+        .cd-hero h1 { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.15; margin: 1rem 0 0.65rem; letter-spacing: 0; }
+        .cd-hero-kicker { display: inline-flex; align-items: center; min-height: 1.9rem; padding: 0.35rem 0.8rem; border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; background: rgba(255,255,255,0.12); color: #c7d2fe; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        .cd-hero-description { max-width: 840px; color: rgba(255,255,255,0.78); font-size: 1rem; margin-bottom: 1rem; line-height: 1.65; }
+        .cd-hero .meta-row { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; margin: 1rem 0 0; }
+        .cd-hero .meta-item { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.25rem; padding: 0.35rem 0.7rem; border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.78); font-size: 0.84rem; white-space: nowrap; }
+        .cd-hero .meta-item strong { color: #ffffff; }
+        .cd-body { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 2rem; padding: 2rem; max-width: 100%; align-items: start; }
         @media (max-width: 1024px) { .cd-body { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { .cd-hero { padding: 1.5rem 1rem; } .cd-hero .meta-item { width: 100%; justify-content: flex-start; white-space: normal; } .cd-body { padding: 1rem; } }
 
         /* Enrollment card */
         .enroll-card { background:var(--theme-surface); border-radius: 14px; border: 1px solid var(--lumina-gray-200); padding: 1.5rem; box-shadow: var(--shadow-md); position: sticky; top: 80px; }
+        .enroll-card .enrollment-note { font-size:0.8125rem;color:var(--lumina-gray-500);margin-top:0.75rem;line-height:1.55; }
         .enroll-card .price-display { font-size: 2rem; font-weight: 800; color: var(--lumina-gray-900); }
         .enroll-card .btn-enroll { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 3rem; padding: 0.875rem; background: var(--lumina-blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 1rem; margin-bottom: 0.75rem; transition: background 0.2s; }
         .enroll-card .btn-enroll:hover { background: var(--lumina-blue-light); }
@@ -33,6 +39,7 @@
         .enroll-card .includes-list { list-style: none; margin-top: 1rem; }
         .enroll-card .includes-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--lumina-gray-600); padding: 0.35rem 0; }
         .enroll-card .includes-list li .check { color: var(--lumina-success); }
+        @media (max-width: 1024px) { .enroll-card { position: static; } }
 
         /* Curriculum accordion */
         .curriculum-module { border: 1px solid var(--lumina-gray-200); border-radius: 10px; margin-bottom: 0.625rem; overflow: hidden; }
@@ -78,23 +85,23 @@
         <span style="color:rgba(255,255,255,0.3);">›</span>
         <span th:text="${course.title}" class="cur">Course Title</span>
     </div>
-    <div style="max-width:720px;">
-        <div class="badge" style="background:rgba(255,255,255,0.15);color:#a5b4fc;margin-bottom:0.75rem;">Specialization Track</div>
+    <div class="cd-hero-content">
+        <div class="cd-hero-kicker">Specialization Track</div>
         <h1 th:text="${course.title}">Quantum Cryptography: Advanced Course</h1>
-        <p style="color:rgba(255,255,255,0.7);font-size:0.9375rem;margin-bottom:0.875rem;line-height:1.6;" th:text="${course.description}">Master the cutting-edge science of quantum encryption and post-quantum cryptographic algorithms.</p>
+        <p class="cd-hero-description" th:text="${course.description}">Master the cutting-edge science of quantum encryption and post-quantum cryptographic algorithms.</p>
         <div class="meta-row">
-            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> <strong style="color:white;">4.9</strong> (2.1k reviews)</span>
+            <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('approve')}"></svg> <strong>4.9</strong> (2.1k reviews)</span>
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('students')}"></svg> 12,450 students</span>
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('clock')}"></svg> Estimated duration:
-                <strong style="color:white;" data-course-duration-display
+                <strong data-course-duration-display
                         th:data-course-id="${course.id}"
                         th:data-duration-seconds="${course.estimatedDurationSeconds}"
                         th:text="${course.estimatedDurationDisplay}">45 mins</strong>
             </span>
             <span class="meta-item"><svg th:replace="~{fragments/icons :: icon('calendar')}"></svg> Last updated Oct 2023</span>
-        </div>
-        <div class="meta-item" style="margin-top:0.5rem;">
-            <svg th:replace="~{fragments/icons :: icon('profile')}"></svg> Instructor: <strong style="color:white;margin-left:4px;" th:text="${course.instructorName}">Dr. Elena Vance</strong>
+            <span class="meta-item">
+                <svg th:replace="~{fragments/icons :: icon('profile')}"></svg> Instructor: <strong th:text="${course.instructorName}">Dr. Elena Vance</strong>
+            </span>
         </div>
     </div>
 </div>
@@ -197,7 +204,7 @@
 
             <div id="course-enrollment-message"
                  th:text="${enrollmentState.message}"
-                 style="font-size:0.8125rem;color:var(--lumina-gray-500);margin-top:0.75rem;"></div>
+                 class="enrollment-note"></div>
 
             <a th:if="${enrollmentState.action == 'CONTINUE_LEARNING'}"
                th:href="@{/student/learning(courseId=${course.id})}"
@@ -237,7 +244,7 @@
                 <span>Course unavailable</span>
             </button>
 
-            <a th:if="${firstPreviewLessonId != null}"
+            <a th:if="${firstPreviewLessonId != null and enrollmentState.action != 'CONTINUE_LEARNING'}"
                th:href="@{/student/courses/{courseId}/preview(courseId=${course.id})}"
                class="btn-try"
                id="btn-try-free"
@@ -245,7 +252,7 @@
                 <svg th:replace="~{fragments/icons :: icon('videos')}"></svg>
                 <span>Try First Lesson Free</span>
             </a>
-            <button th:if="${firstPreviewLessonId == null}"
+            <button th:if="${firstPreviewLessonId == null and enrollmentState.action != 'CONTINUE_LEARNING'}"
                     class="btn-try"
                     id="btn-try-free"
                     disabled
