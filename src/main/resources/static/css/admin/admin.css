@@ -588,6 +588,7 @@ body.admin-user-modal-open {
   border-color: #e8eaff;
   border-radius: 20px;
   box-shadow: 0 18px 42px rgba(71, 85, 105, 0.08);
+  container-type: inline-size;
 }
 
 .admin-analytics-chart.admin-dashboard-pie-chart {
@@ -816,6 +817,7 @@ body.admin-user-modal-open {
 .admin-pie-summary strong {
   color: #172033;
   font-size: 0.82rem;
+  overflow-wrap: anywhere;
 }
 
 .admin-pie-note {
@@ -832,6 +834,21 @@ body.admin-user-modal-open {
 
   .admin-pie-visual {
     width: min(230px, 70vw);
+  }
+}
+
+@container (max-width: 640px) {
+  .admin-pie-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .admin-pie-visual {
+    width: min(230px, 70%);
+  }
+
+  .admin-pie-details {
+    width: 100%;
   }
 }
 
@@ -965,6 +982,40 @@ html[data-theme="dark"] :is(
   .admin-table-footer
 ) {
   background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] :is(
+  .admin-pie-legend-label,
+  .admin-pie-legend-percent,
+  .admin-pie-summary strong
+) {
+  color: var(--theme-text);
+}
+
+html[data-theme="dark"] .admin-pie-layout:not(.is-pie-interacting) .admin-pie-legend-item.is-top,
+html[data-theme="dark"] .admin-pie-legend-item.is-active {
+  border-color: var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-chart-1, #8ea2ff) 16%, var(--theme-surface-elevated));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] .admin-pie-layout:not(.is-pie-interacting) .admin-pie-legend-item.is-top .admin-pie-legend-label,
+html[data-theme="dark"] .admin-pie-layout:not(.is-pie-interacting) .admin-pie-legend-item.is-top .admin-pie-legend-percent,
+html[data-theme="dark"] .admin-pie-legend-item.is-active .admin-pie-legend-label,
+html[data-theme="dark"] .admin-pie-legend-item.is-active .admin-pie-legend-percent {
+  color: var(--theme-text-strong);
+}
+
+html[data-theme="dark"] .admin-pie-legend-meter {
+  background: var(--theme-border-strong);
+}
+
+html[data-theme="dark"] :is(.admin-pie-details-title, .admin-pie-summary span, .admin-pie-note) {
+  color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .admin-pie-summary {
   border-color: var(--theme-border);
 }
 

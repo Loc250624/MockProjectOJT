@@ -507,7 +507,6 @@ function initUserAdministration() {
             var roleBadgeClass = user.role === 'TEACHER' ? 'badge badge-primary' : 'badge';
             var roleStyle = user.role === 'TEACHER' ? '' : ' style="background:var(--lumina-gray-100);color:var(--lumina-gray-700);"';
             return '<tr data-user-id="' + escapeHtml(user.id) + '" style="cursor:pointer;">' +
-                '<td><input type="checkbox" style="accent-color:var(--lumina-blue);" disabled></td>' +
                 '<td>' +
                     '<div style="display:flex;align-items:center;gap:0.75rem;">' +
                         '<div style="width:36px;height:36px;border-radius:50%;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">' + escapeHtml(initials) + '</div>' +
