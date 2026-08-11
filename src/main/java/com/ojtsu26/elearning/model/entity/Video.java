@@ -22,11 +22,25 @@ public class Video {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private VideoSourceType sourceType;
+
+    @Column(length = 2048)
     private String videoUrl;
 
-    
     private Integer durationSeconds;
+
+    @Column(length = 255)
+    private String originalFilename;
+
+    @Column(length = 255)
+    private String storedFilename;
+
+    @Column(length = 100)
+    private String contentType;
+
+    private Long fileSizeBytes;
 
     @OneToOne
     @JoinColumn(name = "lesson_id")

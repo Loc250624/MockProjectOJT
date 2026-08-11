@@ -39,7 +39,11 @@ class AiTutorFrontendSafetyTest {
         assertTrue(script.contains("visibleText: collectVisiblePageText(pageKey)"));
         assertTrue(script.contains("'main [data-ai-page-context]'"));
         assertTrue(script.contains("selectUniqueActions(candidateActions, excluded, 3)"));
-        assertTrue(script.contains("setAvailability('unavailable')"));
+        assertTrue(script.contains("lumina:ai-status:"));
+        assertTrue(script.contains("readStoredAvailability()"));
+        assertTrue(script.contains("renderAvailability(stored ? stored.state : 'checking')"));
+        assertTrue(script.contains("updateAvailability('temporary_unavailable', true)"));
+        assertFalse(script.contains("setAvailability('online')"));
         assertTrue(promptFactory.contains("For active graded quiz questions"));
         assertFalse(script.contains("document.body"));
         assertFalse(script.contains("document.documentElement.innerHTML"));

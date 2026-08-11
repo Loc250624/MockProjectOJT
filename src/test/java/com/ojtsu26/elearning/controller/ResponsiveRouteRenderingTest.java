@@ -70,7 +70,7 @@ class ResponsiveRouteRenderingTest {
     }
 
     @Test
-    void authenticationAndStudentShellsRenderOneGlobalChatbot() throws Exception {
+    void authenticationShellsRenderOneChatbotButStudentDashboardStaysFocused() throws Exception {
         mockMvc.perform(get("/auth/login"))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
@@ -82,7 +82,7 @@ class ResponsiveRouteRenderingTest {
         mockMvc.perform(get("/student/dashboard").with(user(new CustomUserDetails(student))))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), student))
-                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+                .andExpect(result -> assertNoChatbot(result.getResponse().getContentAsString()));
     }
 
     @Test
@@ -94,7 +94,7 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(content().string(containsString("teacher-header-actions")))
                 .andExpect(content().string(containsString("help-drawer-panel")))
                 .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), teacher))
-                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+                .andExpect(result -> assertNoChatbot(result.getResponse().getContentAsString()));
 
         mockMvc.perform(get("/teacher/courses").with(user(principal)))
                 .andExpect(status().isOk())
@@ -115,7 +115,7 @@ class ResponsiveRouteRenderingTest {
                 .andExpect(content().string(containsString("No courses found in the system")))
                 .andExpect(content().string(containsString("system-health-badge")))
                 .andExpect(result -> assertAccountChip(result.getResponse().getContentAsString(), admin))
-                .andExpect(result -> assertSingleChatbot(result.getResponse().getContentAsString()));
+                .andExpect(result -> assertNoChatbot(result.getResponse().getContentAsString()));
     }
 
     private void assertAccountChip(String html, User expectedUser) {
@@ -146,6 +146,11 @@ class ResponsiveRouteRenderingTest {
         org.junit.jupiter.api.Assertions.assertTrue(first >= 0, "AI Chatbot root should render");
         org.junit.jupiter.api.Assertions.assertEquals(-1, html.indexOf(marker, first + marker.length()),
                 "AI Chatbot should render exactly once");
+    }
+
+    private void assertNoChatbot(String html) {
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("data-ai-chatbot-root"),
+                "AI Chatbot should not be mounted globally on focused portal dashboards");
     }
 
     private User testUser(String fullName, String email, Role role) {

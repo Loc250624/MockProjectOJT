@@ -56,5 +56,17 @@ class AuthFrontendTemplateTest {
         assertTrue(script.contains("validatePasswordPair"));
         assertTrue(script.contains("Your security token expired"));
         assertTrue(script.contains("This registration session expired"));
+        assertTrue(script.contains("Email or password is incorrect. Please check your information and try again."));
+        assertFalse(script.contains("The account could not be authenticated."));
+    }
+
+    @Test
+    void authAlertsUseDarkModeFriendlySurfaces() throws Exception {
+        String stylesheet = Files.readString(Path.of("src/main/resources/static/css/auth/auth.css"));
+
+        assertTrue(stylesheet.contains("html[data-theme=\"dark\"] .auth-alert-error"));
+        assertTrue(stylesheet.contains("var(--theme-danger-surface)"));
+        assertTrue(stylesheet.contains("html[data-theme=\"dark\"] .auth-alert-success"));
+        assertTrue(stylesheet.contains("var(--theme-success-surface)"));
     }
 }

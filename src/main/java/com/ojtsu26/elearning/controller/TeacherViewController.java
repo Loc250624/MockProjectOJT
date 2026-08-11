@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
 import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
 import com.ojtsu26.elearning.dto.request.LessonRequestDTO;
@@ -13,6 +14,7 @@ import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
+import com.ojtsu26.elearning.model.enums.VideoSourceType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.BlogPostService;
@@ -127,7 +129,7 @@ public class TeacherViewController {
             model.addAttribute("roadmaps", roadmapService.findAll());
             return "teacher/course-form";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Course not found: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/courses";
         }
     }
@@ -163,7 +165,7 @@ public class TeacherViewController {
             model.addAttribute("roadmapId", id);
             return "teacher/roadmap-form";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Roadmap not found: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/roadmap";
         }
     }
@@ -181,7 +183,7 @@ public class TeacherViewController {
                     model.addAttribute("selectedCourseId", courseId);
                     model.addAttribute("selectedCourse", courseService.findById(courseId));
                 } catch (Exception e) {
-                    model.addAttribute("errorMessage", e.getMessage());
+                    model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
                 }
             }
         }
@@ -203,7 +205,7 @@ public class TeacherViewController {
             model.addAttribute("lessonTypes", List.of(LessonType.VIDEO, LessonType.QUIZ));
             return "teacher/lesson-editor";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Course not found or access denied: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/lessons";
         }
     }
@@ -234,7 +236,7 @@ public class TeacherViewController {
             model.addAttribute("lessonTypes", List.of(LessonType.VIDEO, LessonType.QUIZ));
             return "teacher/lesson-editor";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Lesson not found or access denied: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/lessons?courseId=" + courseId;
         }
     }
@@ -276,7 +278,7 @@ public class TeacherViewController {
                 videoOpt.ifPresent(v -> model.addAttribute("video", v));
                 model.addAttribute("hasVideo", videoOpt.isPresent());
             } catch (Exception e) {
-                model.addAttribute("errorMessage", e.getMessage());
+                model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
             }
         }
 
@@ -307,13 +309,14 @@ public class TeacherViewController {
                         + "?lessonId=" + lessonId + "&courseId=" + courseId;
             }
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/videos?lessonId=" + lessonId + "&courseId=" + courseId;
         }
 
         if (!model.containsAttribute("video")) {
             VideoRequestDTO req = new VideoRequestDTO();
             req.setLessonId(lessonId);
+            req.setSourceType(VideoSourceType.YOUTUBE);
             model.addAttribute("video", req);
         }
         model.addAttribute("lessonId", lessonId);
@@ -341,14 +344,19 @@ public class TeacherViewController {
 
         if (!model.containsAttribute("video")) {
             try {
-                VideoResponseDTO res = videoService.findById(id);
+                VideoResponseDTO res = videoService.findByLessonId(lessonId, instructorId)
+                        .filter(video -> video.getId().equals(id))
+                        .orElseThrow(() -> new RuntimeException("Video not found with id: " + id));
                 VideoRequestDTO req = new VideoRequestDTO();
+                req.setSourceType(res.getSourceType() == null
+                        ? inferLegacySourceType(res.getVideoUrl())
+                        : res.getSourceType());
                 req.setVideoUrl(res.getVideoUrl());
                 req.setDurationSeconds(res.getDurationSeconds());
                 req.setLessonId(lessonId);
                 model.addAttribute("video", req);
             } catch (Exception e) {
-                model.addAttribute("errorMessage", e.getMessage());
+                model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
             }
         }
         model.addAttribute("editMode", true);
@@ -361,6 +369,16 @@ public class TeacherViewController {
         } catch (Exception ignored) {}
 
         return "teacher/video-form";
+    }
+
+    private VideoSourceType inferLegacySourceType(String videoUrl) {
+        if (videoUrl != null && videoUrl.startsWith("/uploads/videos/")) {
+            return VideoSourceType.UPLOAD;
+        }
+        if (com.ojtsu26.elearning.common.VideoUtils.extractYouTubeVideoId(videoUrl) != null) {
+            return VideoSourceType.YOUTUBE;
+        }
+        return VideoSourceType.DIRECT_URL;
     }
 
     @GetMapping("/students")
@@ -393,7 +411,7 @@ public class TeacherViewController {
                             size
                     ));
                 } catch (RuntimeException e) {
-                    model.addAttribute("errorMessage", e.getMessage());
+                    model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
                 }
             }
         }
@@ -423,7 +441,7 @@ public class TeacherViewController {
                 model.addAttribute("selectedLessonId", lessonId);
                 model.addAttribute("quizzes", assessmentService.getTeacherCourseQuizzes(courseId));
             } catch (RuntimeException e) {
-                model.addAttribute("errorMessage", e.getMessage());
+                model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
             }
         }
         model.addAttribute("quizStatuses", List.of(QuizStatus.DRAFT, QuizStatus.PUBLISHED));
@@ -487,7 +505,7 @@ public class TeacherViewController {
             model.addAttribute("rejectionReason", blog.getRejectionReason());
             return "teacher/blog-editor";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/teacher/blogs";
         }
     }
@@ -541,7 +559,7 @@ public class TeacherViewController {
                         model.addAttribute("studentDetail", teacherCourseStudentService.getStudentProgressDetailForCurrentTeacherCourse(courseId, studentId));
                     }
                 } catch (RuntimeException e) {
-                    model.addAttribute("errorMessage", e.getMessage());
+                    model.addAttribute("errorMessage", UserFacingErrorMessage.from(e));
                 }
             }
         }

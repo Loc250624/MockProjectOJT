@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${editMode != null && editMode ? 'Edit Video' : 'Add Video'} + ' — Teacher Portal | LumiNa'">Video Form | LumiNa</title>
+    <title th:text="${editMode != null && editMode ? 'Edit Video' : 'Add Video'} + ' - Teacher Portal | LumiNa'">Video Form | LumiNa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,49 +21,75 @@
 
         <main class="lumina-portal-main" style="flex:1;">
 
-            <!-- Breadcrumb -->
             <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;color:var(--lumina-gray-500);margin-bottom:1.5rem;">
                 <a th:href="@{/teacher/lessons(courseId=${courseId})}" style="color:var(--lumina-blue);text-decoration:none;">Curriculum</a>
-                <span>›</span>
+                <span>/</span>
                 <a th:href="@{'/teacher/videos?lessonId=' + ${lessonId} + '&courseId=' + ${courseId}}" style="color:var(--lumina-blue);text-decoration:none;">Video Management</a>
-                <span>›</span>
+                <span>/</span>
                 <span th:text="${editMode != null && editMode ? 'Edit Video' : 'Add Video'}">Add Video</span>
             </div>
 
-            <!-- Page header -->
-            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;">
+            <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap;">
                 <div>
-                    <h1 class="page-title" th:text="${editMode != null && editMode ? 'Edit Video' : 'Add Video URL'}">Add Video</h1>
+                    <h1 class="page-title" th:text="${editMode != null && editMode ? 'Edit Video' : 'Add Video'}">Add Video</h1>
                     <p class="page-subtitle" th:if="${selectedLesson != null}">
                         Lesson: <strong th:text="${selectedLesson.title}"></strong>
-                        <span th:if="${selectedCourse != null}"> &mdash; Course: <span th:text="${selectedCourse.title}"></span></span>
+                        <span th:if="${selectedCourse != null}"> - Course: <span th:text="${selectedCourse.title}"></span></span>
                     </p>
                 </div>
                 <a th:href="@{'/teacher/videos?lessonId=' + ${lessonId} + '&courseId=' + ${courseId}}"
-                   class="btn btn-outline">← Back to Video Management</a>
+                   class="btn btn-outline">Back to Video Management</a>
             </div>
 
-            <!-- Flash messages -->
             <div th:if="${errorMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.875rem;font-weight:500;" th:text="${errorMessage}"></div>
             <div th:if="${infoMessage}" style="margin-bottom:1rem;padding:0.75rem 1rem;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;color:#1d4ed8;font-size:0.875rem;font-weight:500;" th:text="${infoMessage}"></div>
 
-            <!-- Form Card -->
-            <div class="admin-table-container" style="padding:2rem;max-width:680px;">
+            <div class="admin-table-container" style="padding:2rem;max-width:720px;">
 
                 <form th:action="${editMode != null && editMode
                                    ? '/teacher/videos/edit/' + videoId
                                    : '/teacher/videos/create'}"
                       th:object="${video}"
                       data-video-metadata-form
-                      method="post">
+                      method="post"
+                      enctype="multipart/form-data">
 
-                    <!-- Hidden fields -->
-                    <input type="hidden" th:field="*{lessonId}" />
-                    <input type="hidden" name="courseId" th:value="${courseId}" />
-                    <input type="hidden" th:field="*{durationSeconds}" data-video-duration-input />
+                    <input type="hidden" th:field="*{lessonId}">
+                    <input type="hidden" name="courseId" th:value="${courseId}">
+                    <input type="hidden" th:field="*{durationSeconds}" data-video-duration-input>
+                    <input type="hidden" th:field="*{sourceType}" data-video-source-type-input>
 
-                    <!-- Video URL -->
-                    <div class="form-group" style="margin-bottom:1.5rem;">
+                    <div class="video-source-toggle" role="radiogroup" aria-label="Video source">
+                        <label class="video-source-option">
+                            <input type="radio" name="videoSourceMode" value="UPLOAD" data-video-source-option
+                                   th:checked="*{sourceType != null && sourceType.name() == 'UPLOAD'}">
+                            <span>Upload from computer</span>
+                        </label>
+                        <label class="video-source-option">
+                            <input type="radio" name="videoSourceMode" value="URL" data-video-source-option
+                                   th:checked="*{sourceType == null || sourceType.name() != 'UPLOAD'}">
+                            <span>Video URL</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" data-video-upload-panel style="margin-bottom:1.5rem;">
+                        <label class="form-label" for="videoFile">
+                            VIDEO FILE <span style="color:var(--lumina-danger);">*</span>
+                        </label>
+                        <input
+                            id="videoFile"
+                            name="videoFile"
+                            type="file"
+                            class="form-control"
+                            accept="video/mp4,video/webm,video/ogg,video/quicktime,application/vnd.apple.mpegurl,application/x-mpegurl"
+                            data-video-file-input
+                            style="width:100%;">
+                        <p style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-gray-500);">
+                            Upload MP4, WebM, OGG, MOV, M4V, or HLS playlist files. Maximum size follows server configuration.
+                        </p>
+                    </div>
+
+                    <div class="form-group" data-video-url-panel style="margin-bottom:1.5rem;">
                         <label class="form-label" for="videoUrl">
                             VIDEO URL <span style="color:var(--lumina-danger);">*</span>
                         </label>
@@ -74,29 +100,26 @@
                             th:field="*{videoUrl}"
                             data-video-url-input
                             placeholder="https://www.youtube.com/watch?v=..."
-                            required
-                            style="width:100%;"
-                        >
+                            style="width:100%;">
                         <div th:if="${#fields.hasErrors('videoUrl')}"
                              th:errors="*{videoUrl}"
                              style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-danger);"></div>
                         <p style="margin-top:0.35rem;font-size:0.8125rem;color:var(--lumina-gray-500);">
-                            Must start with <code>http://</code> or <code>https://</code>. Supports YouTube or a direct public video URL.
+                            Supports YouTube watch, youtu.be, shorts, embed links, and direct HTTPS public video files.
                         </p>
                     </div>
 
                     <div class="video-metadata-status" data-video-metadata-status aria-live="polite">
-                        Enter a video URL. Its length will be detected automatically before saving.
+                        Choose a source. Video length will be detected before saving.
                     </div>
                     <div class="video-duration-probe" data-video-duration-probe aria-hidden="true"></div>
 
-                    <!-- Actions -->
-                    <div style="display:flex;gap:0.75rem;">
-                        <button type="submit" class="btn btn-primary" data-video-submit disabled style="flex:1;">
-                            <span th:text="${editMode != null && editMode ? '💾 Save Changes' : '+ Add Video'}">Save</span>
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-primary" data-video-submit style="flex:1;min-width:160px;">
+                            <span th:text="${editMode != null && editMode ? 'Save Changes' : '+ Add Video'}">Save</span>
                         </button>
                         <a th:href="@{'/teacher/videos?lessonId=' + ${lessonId} + '&courseId=' + ${courseId}}"
-                           class="btn btn-outline" style="flex:1;text-align:center;">Cancel</a>
+                           class="btn btn-outline" style="flex:1;min-width:160px;text-align:center;">Cancel</a>
                     </div>
 
                 </form>

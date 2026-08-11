@@ -4,8 +4,421 @@ document.addEventListener('DOMContentLoaded', function() {
     initPortalSidebarNav();
     initPortalSidebarDrawer();
     initProgressDistributionLineChart();
+    initTeacherVideoForms();
     initTeacherAssessments();
 });
+
+function initTeacherVideoForms() {
+    document.querySelectorAll('[data-video-metadata-form]').forEach(function(form) {
+        var sourceTypeInput = form.querySelector('[data-video-source-type-input]');
+        var sourceOptions = Array.prototype.slice.call(form.querySelectorAll('[data-video-source-option]'));
+        var uploadPanel = form.querySelector('[data-video-upload-panel]');
+        var urlPanel = form.querySelector('[data-video-url-panel]');
+        var fileInput = form.querySelector('[data-video-file-input]');
+        var urlInput = form.querySelector('[data-video-url-input]');
+        var durationInput = form.querySelector('[data-video-duration-input]');
+        var status = form.querySelector('[data-video-metadata-status]');
+        var submit = form.querySelector('[data-video-submit]');
+        var probe = form.querySelector('[data-video-duration-probe]');
+        var state = {
+            mode: sourceTypeInput && sourceTypeInput.value === 'UPLOAD' ? 'UPLOAD' : 'URL',
+            checking: false,
+            ready: Number(durationInput && durationInput.value || 0) > 0,
+            error: '',
+            validatedUrl: ''
+        };
+        var requestId = 0;
+
+        if (state.mode !== 'UPLOAD' && state.ready && urlInput && urlInput.value.trim()) {
+            state.validatedUrl = urlInput.value.trim();
+        }
+
+        function selectedMode() {
+            var selected = sourceOptions.filter(function(option) { return option.checked; })[0];
+            return selected && selected.value === 'UPLOAD' ? 'UPLOAD' : 'URL';
+        }
+
+        function setStatus(text, type) {
+            if (!status) return;
+            status.textContent = text;
+            status.classList.remove('is-loading', 'is-ready', 'is-error');
+            if (type) status.classList.add(type);
+        }
+
+        function formatDuration(seconds) {
+            seconds = Math.max(0, Number(seconds) || 0);
+            var minutes = Math.floor(seconds / 60);
+            var remainder = seconds % 60;
+            return String(minutes) + ':' + String(remainder).padStart(2, '0');
+        }
+
+        function setDuration(seconds, messagePrefix) {
+            var rounded = Math.ceil(Number(seconds));
+            if (!Number.isFinite(rounded) || rounded <= 0) {
+                throw new Error('We could not read the video duration. Choose another video or URL.');
+            }
+            durationInput.value = String(rounded);
+            state.ready = true;
+            state.error = '';
+            setStatus((messagePrefix || 'Video ready') + ' · ' + formatDuration(rounded), 'is-ready');
+            updateSubmit();
+        }
+
+        function clearDuration() {
+            if (durationInput) durationInput.value = '';
+            state.ready = false;
+            state.validatedUrl = '';
+        }
+
+        function currentUrl() {
+            return urlInput ? urlInput.value.trim() : '';
+        }
+
+        function isCurrentUrlReady() {
+            return state.mode === 'URL'
+                && state.ready
+                && !state.error
+                && currentUrl()
+                && state.validatedUrl === currentUrl();
+        }
+
+        function updateSubmit() {
+            if (!submit) return;
+            var invalid = state.checking || !state.ready || Boolean(state.error);
+            if (state.mode === 'UPLOAD') {
+                var hasExistingUpload = sourceTypeInput && sourceTypeInput.value === 'UPLOAD'
+                    && Number(durationInput && durationInput.value || 0) > 0;
+                invalid = invalid || !(fileInput && fileInput.files && fileInput.files.length > 0) && !hasExistingUpload;
+            } else {
+                invalid = invalid || !currentUrl() || !isCurrentUrlReady();
+            }
+            submit.disabled = invalid;
+        }
+
+        function syncMode() {
+            state.mode = selectedMode();
+            if (uploadPanel) uploadPanel.hidden = state.mode !== 'UPLOAD';
+            if (urlPanel) urlPanel.hidden = state.mode !== 'URL';
+            if (fileInput) fileInput.disabled = state.mode !== 'UPLOAD';
+            if (urlInput) urlInput.disabled = state.mode !== 'URL';
+            if (state.mode === 'UPLOAD') {
+                if (sourceTypeInput) sourceTypeInput.value = 'UPLOAD';
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    checkUploadFile();
+                } else if (Number(durationInput && durationInput.value || 0) > 0) {
+                    state.ready = true;
+                    setStatus('Existing upload ready · ' + formatDuration(Number(durationInput.value)), 'is-ready');
+                } else {
+                    clearDuration();
+                    setStatus('Choose a video file. Its length will be detected before saving.', null);
+                }
+            } else {
+                classifyUrlAndUpdateSource();
+                if (urlInput && urlInput.value.trim()) {
+                    if (isCurrentUrlReady()) {
+                        setStatus((isYouTubeUrl(currentUrl()) ? 'YouTube video ready' : 'Remote video ready') + ' - ' + formatDuration(Number(durationInput.value)), 'is-ready');
+                    } else {
+                        checkUrl();
+                    }
+                } else {
+                    clearDuration();
+                    setStatus('Enter a YouTube URL or direct HTTPS video URL.', null);
+                }
+            }
+            updateSubmit();
+        }
+
+        function classifyUrlAndUpdateSource() {
+            var url = urlInput ? urlInput.value.trim() : '';
+            if (!sourceTypeInput) return;
+            sourceTypeInput.value = isYouTubeUrl(url) ? 'YOUTUBE' : 'DIRECT_URL';
+        }
+
+        function markUrlDirty() {
+            var url = currentUrl();
+            requestId++;
+            state.error = '';
+            if (url !== state.validatedUrl) {
+                clearDuration();
+                setStatus(url ? 'Checking video...' : 'Enter a YouTube URL or direct HTTPS video URL.', url ? 'is-loading' : null);
+            }
+            classifyUrlAndUpdateSource();
+            updateSubmit();
+        }
+
+        function fail(message, id) {
+            if (id && id !== requestId) return;
+            state.checking = false;
+            state.error = message;
+            clearDuration();
+            setStatus(message, 'is-error');
+            updateSubmit();
+        }
+
+        function checkUploadFile() {
+            var id = ++requestId;
+            state.checking = true;
+            state.error = '';
+            clearDuration();
+            updateSubmit();
+            var file = fileInput && fileInput.files ? fileInput.files[0] : null;
+            if (!file) {
+                fail('Select a video file to upload.', id);
+                return;
+            }
+            if (file.type && !isSupportedVideoMime(file.type)) {
+                fail('Unsupported video file type.', id);
+                return;
+            }
+            setStatus('Checking video...', 'is-loading');
+            detectDirectVideoDuration(URL.createObjectURL(file), true)
+                .then(function(seconds) {
+                    if (id !== requestId) return;
+                    state.checking = false;
+                    setDuration(seconds, file.name || 'Video ready');
+                })
+                .catch(function(error) {
+                    fail(error.message, id);
+                });
+        }
+
+        function checkUrl() {
+            var id = ++requestId;
+            var url = currentUrl();
+            if (state.validatedUrl === url && state.ready && !state.error) {
+                updateSubmit();
+                return;
+            }
+            state.checking = true;
+            state.error = '';
+            clearDuration();
+            classifyUrlAndUpdateSource();
+            updateSubmit();
+            if (!url) {
+                fail('Enter a video URL.', id);
+                return;
+            }
+            if (isYouTubeUrl(url)) {
+                setStatus('Checking YouTube video...', 'is-loading');
+                detectYouTubeDuration(url)
+                    .then(function(seconds) {
+                        if (id !== requestId) return;
+                        state.checking = false;
+                        state.validatedUrl = url;
+                        setDuration(seconds, 'YouTube video ready');
+                    })
+                    .catch(function(error) {
+                        fail(error.message || 'This YouTube URL is not valid.', id);
+                    });
+                return;
+            }
+            if (!isDirectVideoUrl(url)) {
+                fail('The remote URL is not a supported public video.', id);
+                return;
+            }
+            setStatus('Checking video...', 'is-loading');
+            detectDirectVideoDuration(url, false)
+                .then(function(seconds) {
+                    if (id !== requestId) return;
+                    state.checking = false;
+                    state.validatedUrl = url;
+                    setDuration(seconds, 'Remote video ready');
+                })
+                .catch(function(error) {
+                    fail(error.message, id);
+                });
+        }
+
+        sourceOptions.forEach(function(option) {
+            option.addEventListener('change', syncMode);
+        });
+        if (fileInput) {
+            fileInput.addEventListener('change', checkUploadFile);
+        }
+        if (urlInput) {
+            var debouncedCheckUrl = debounce(checkUrl, 450);
+            urlInput.addEventListener('input', function() {
+                markUrlDirty();
+                debouncedCheckUrl();
+            });
+            urlInput.addEventListener('blur', function() {
+                if (debouncedCheckUrl.cancel) debouncedCheckUrl.cancel();
+                if (currentUrl() && !isCurrentUrlReady()) checkUrl();
+            });
+        }
+        form.addEventListener('submit', function(event) {
+            state.mode = selectedMode();
+            if (state.mode === 'URL') {
+                classifyUrlAndUpdateSource();
+            } else if (sourceTypeInput) {
+                sourceTypeInput.value = 'UPLOAD';
+            }
+            updateSubmit();
+            if (submit && submit.disabled) {
+                event.preventDefault();
+                if (!state.error) {
+                    setStatus('Complete the video source before saving.', 'is-error');
+                }
+                return;
+            }
+            if (submit) submit.disabled = true;
+            setStatus('Saving video...', 'is-loading');
+        });
+
+        syncMode();
+    });
+}
+
+function debounce(callback, delay) {
+    var handle = null;
+    var debounced = function() {
+        var args = arguments;
+        window.clearTimeout(handle);
+        handle = window.setTimeout(function() {
+            callback.apply(null, args);
+        }, delay);
+    };
+    debounced.cancel = function() {
+        window.clearTimeout(handle);
+        handle = null;
+    };
+    return debounced;
+}
+
+function isSupportedVideoMime(type) {
+    return [
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'video/quicktime',
+        'application/vnd.apple.mpegurl',
+        'application/x-mpegurl'
+    ].indexOf(String(type || '').toLowerCase()) >= 0;
+}
+
+function isYouTubeUrl(url) {
+    return /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:\S*)?$/i.test(url || '');
+}
+
+function extractYouTubeId(url) {
+    var match = /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:\S*)?$/i.exec(url || '');
+    return match ? match[1] : null;
+}
+
+function isDirectVideoUrl(url) {
+    return /^https:\/\/.+\.(mp4|webm|ogg|ogv|mov|m4v|m3u8)(?:[?#].*)?$/i.test(url || '');
+}
+
+function detectDirectVideoDuration(src, revokeWhenDone) {
+    return new Promise(function(resolve, reject) {
+        var video = document.createElement('video');
+        var timeout = window.setTimeout(function() {
+            cleanup();
+            reject(new Error('We could not read the video duration. Choose another video or URL.'));
+        }, 12000);
+        function cleanup() {
+            window.clearTimeout(timeout);
+            video.removeAttribute('src');
+            video.load();
+            if (revokeWhenDone) {
+                URL.revokeObjectURL(src);
+            }
+        }
+        video.preload = 'metadata';
+        video.addEventListener('loadedmetadata', function() {
+            var seconds = Math.ceil(Number(video.duration));
+            cleanup();
+            if (Number.isFinite(seconds) && seconds > 0) {
+                resolve(seconds);
+            } else {
+                reject(new Error('We could not read the video duration. Choose another video or URL.'));
+            }
+        }, { once: true });
+        video.addEventListener('error', function() {
+            cleanup();
+            reject(new Error('The remote URL is not a supported public video.'));
+        }, { once: true });
+        video.src = src;
+    });
+}
+
+var teacherYouTubeApiPromise = null;
+
+function loadTeacherYouTubeApi() {
+    if (window.YT && window.YT.Player) {
+        return Promise.resolve(window.YT);
+    }
+    if (teacherYouTubeApiPromise) {
+        return teacherYouTubeApiPromise;
+    }
+    teacherYouTubeApiPromise = new Promise(function(resolve, reject) {
+        var previousReady = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = function() {
+            if (typeof previousReady === 'function') previousReady();
+            resolve(window.YT);
+        };
+        if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+            var script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.onerror = function() {
+                reject(new Error('Unable to load the YouTube player API.'));
+            };
+            document.head.appendChild(script);
+        }
+        window.setTimeout(function() {
+            if (!(window.YT && window.YT.Player)) {
+                reject(new Error('Unable to load the YouTube player API.'));
+            }
+        }, 12000);
+    });
+    return teacherYouTubeApiPromise;
+}
+
+function detectYouTubeDuration(url) {
+    var videoId = extractYouTubeId(url);
+    if (!videoId) {
+        return Promise.reject(new Error('This YouTube URL is not valid.'));
+    }
+    return loadTeacherYouTubeApi().then(function(YT) {
+        return new Promise(function(resolve, reject) {
+            var holder = document.createElement('div');
+            holder.style.width = '1px';
+            holder.style.height = '1px';
+            holder.style.overflow = 'hidden';
+            holder.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(holder);
+            var timeout = window.setTimeout(function() {
+                cleanup();
+                reject(new Error('We could not read the video duration. Choose another video or URL.'));
+            }, 12000);
+            var player = new YT.Player(holder, {
+                videoId: videoId,
+                events: {
+                    onReady: function() {
+                        var seconds = player.getDuration();
+                        cleanup();
+                        if (Number(seconds) > 0) {
+                            resolve(Math.ceil(Number(seconds)));
+                        } else {
+                            reject(new Error('We could not read the video duration. Choose another video or URL.'));
+                        }
+                    },
+                    onError: function() {
+                        cleanup();
+                        reject(new Error('This YouTube URL is not valid.'));
+                    }
+                }
+            });
+            function cleanup() {
+                window.clearTimeout(timeout);
+                try {
+                    if (player && player.destroy) player.destroy();
+                } catch (ignored) {}
+                holder.remove();
+            }
+        });
+    });
+}
 
 function initProgressDistributionLineChart() {
     var plot = document.querySelector('[data-progress-line-chart]');
@@ -300,6 +713,39 @@ function teacherAssessmentMessage(element, text, type) {
     }
 }
 
+function teacherOpenActionDialog(options, fallbackMessageElement) {
+    if (window.LuminaActionDialog && typeof window.LuminaActionDialog.open === 'function') {
+        return window.LuminaActionDialog.open(options);
+    }
+    teacherAssessmentMessage(
+        fallbackMessageElement,
+        (options && (options.subtitle || options.title)) || 'This action needs confirmation before it can continue.',
+        'error'
+    );
+    return Promise.resolve({ confirmed: false });
+}
+
+function teacherDangerDialog(options, fallbackMessageElement) {
+    return teacherOpenActionDialog(Object.assign({ variant: 'danger', icon: 'danger' }, options), fallbackMessageElement);
+}
+
+function teacherSingleConfirmTask(task) {
+    var submitted = false;
+    var lastError = null;
+    return function() {
+        if (submitted) {
+            throw lastError || new Error('This action is already being processed.');
+        }
+        submitted = true;
+        return Promise.resolve()
+            .then(task)
+            .catch(function(error) {
+                lastError = error;
+                throw error;
+            });
+    };
+}
+
 function initTeacherAssessments() {
     initTeacherQuizSettings();
     initTeacherQuizActions();
@@ -375,22 +821,46 @@ function initTeacherQuizSettings() {
 
 function initTeacherQuizActions() {
     document.querySelectorAll('.delete-quiz-btn').forEach(function(button) {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', async function() {
             var card = button.closest('[data-quiz-id]');
-            if (!card || !window.confirm(
-                'Delete this quiz? Quizzes with student history cannot be deleted.'
-            )) {
+            var message = card ? card.querySelector('.teacher-quiz-update-form .assessment-message') : null;
+            if (!card || button.dataset.dialogPending === 'true') {
                 return;
             }
-            teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId), {
-                method: 'DELETE'
-            }).then(function(response) {
-                return teacherAssessmentJson(response, 'Unable to delete quiz');
-            }).then(function() {
-                window.location.reload();
-            }).catch(function(error) {
-                window.alert(error.message);
-            });
+            button.dataset.dialogPending = 'true';
+            try {
+                var result = await teacherDangerDialog({
+                    title: 'Delete this quiz?',
+                    subtitle: 'Quizzes with student history cannot be deleted.',
+                    objectLabel: 'Quiz',
+                    objectName: (card.querySelector('h3') || {}).textContent || 'Selected quiz',
+                    notice: {
+                        title: 'This removes the quiz setup',
+                        text: 'Existing student history is protected by the server and will block deletion.'
+                    },
+                    acknowledgement: {
+                        label: 'I understand this quiz will be removed when deletion is allowed.',
+                        required: true
+                    },
+                    confirmText: 'Yes',
+                    cancelText: 'No',
+                    loadingText: 'Deleting quiz...',
+                    onConfirm: teacherSingleConfirmTask(function() {
+                        return teacherFetch('/api/teacher/quizzes/' + encodeURIComponent(card.dataset.quizId), {
+                            method: 'DELETE'
+                        }).then(function(response) {
+                            return teacherAssessmentJson(response, 'Unable to delete quiz');
+                        });
+                    })
+                }, message);
+                if (result.confirmed) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                teacherAssessmentMessage(message, error.message, 'error');
+            } finally {
+                delete button.dataset.dialogPending;
+            }
         });
     });
 }
@@ -433,7 +903,30 @@ function initTeacherQuestionManager(panel) {
     }
 
     function canLeaveEditor() {
-        return !state.dirty || window.confirm('Discard unsaved question changes?');
+        if (!state.dirty) {
+            return Promise.resolve(true);
+        }
+        if (panel.dataset.leaveDialogPending === 'true') {
+            return Promise.resolve(false);
+        }
+        panel.dataset.leaveDialogPending = 'true';
+        return teacherOpenActionDialog({
+            variant: 'warning',
+            icon: 'quiz',
+            eyebrow: 'Unsaved question',
+            title: 'Discard unsaved question changes?',
+            subtitle: 'Your current edits will be lost if you continue.',
+            confirmText: 'Yes',
+            cancelText: 'No',
+            loadingText: 'Discarding changes...'
+        }, message).then(function(result) {
+            return Boolean(result.confirmed);
+        }).catch(function(error) {
+            teacherAssessmentMessage(message, error.message, 'error');
+            return false;
+        }).finally(function() {
+            delete panel.dataset.leaveDialogPending;
+        });
     }
 
     function questionLabel(question, index) {
@@ -668,13 +1161,13 @@ function initTeacherQuestionManager(panel) {
         }
     });
 
-    questionList.addEventListener('click', function(event) {
+    questionList.addEventListener('click', async function(event) {
         var button = event.target.closest('[data-question-id]');
         if (!button) {
             return;
         }
         var nextId = Number(button.dataset.questionId);
-        if (!canLeaveEditor()) {
+        if (!(await canLeaveEditor())) {
             return;
         }
         var selected = state.items.find(function(item) {
@@ -685,23 +1178,23 @@ function initTeacherQuestionManager(panel) {
         }
     });
 
-    previousButton.addEventListener('click', function() {
-        if (state.page > 0 && canLeaveEditor()) {
+    previousButton.addEventListener('click', async function() {
+        if (state.page > 0 && await canLeaveEditor()) {
             loadPage(state.page - 1);
         }
     });
-    nextButton.addEventListener('click', function() {
-        if (state.page < state.totalPages - 1 && canLeaveEditor()) {
+    nextButton.addEventListener('click', async function() {
+        if (state.page < state.totalPages - 1 && await canLeaveEditor()) {
             loadPage(state.page + 1);
         }
     });
-    pageButtons.addEventListener('click', function(event) {
+    pageButtons.addEventListener('click', async function(event) {
         var button = event.target.closest('[data-question-page]');
         if (!button) {
             return;
         }
         var requestedPage = Number(button.dataset.questionPage);
-        if (!canLeaveEditor()) {
+        if (!(await canLeaveEditor())) {
             return;
         }
         if (requestedPage >= 0
@@ -710,8 +1203,8 @@ function initTeacherQuestionManager(panel) {
             loadPage(requestedPage);
         }
     });
-    addButton.addEventListener('click', function() {
-        if (state.totalItems < 100 && canLeaveEditor()) {
+    addButton.addEventListener('click', async function() {
+        if (state.totalItems < 100 && await canLeaveEditor()) {
             showNewQuestion();
         }
     });
@@ -746,24 +1239,50 @@ function initTeacherQuestionManager(panel) {
         });
     });
 
-    deleteButton.addEventListener('click', function() {
+    deleteButton.addEventListener('click', async function() {
         var questionId = Number(form.elements.questionId.value);
-        if (!questionId || !window.confirm('Delete this question?')) {
+        if (!questionId || deleteButton.dataset.dialogPending === 'true') {
             return;
         }
-        teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
-            method: 'DELETE'
-        }).then(function(response) {
-            return teacherAssessmentJson(response, 'Unable to delete question');
-        }).then(function() {
+        deleteButton.dataset.dialogPending = 'true';
+        try {
+            var result = await teacherDangerDialog({
+                title: 'Delete this question?',
+                subtitle: 'This removes the question from this quiz bank.',
+                objectLabel: 'Question',
+                objectName: title.textContent || 'Selected question',
+                notice: {
+                    title: 'Question bank update',
+                    text: 'Student attempts already created are handled by the server.'
+                },
+                acknowledgement: {
+                    label: 'I understand this question will be deleted when allowed.',
+                    required: true
+                },
+                confirmText: 'Yes',
+                cancelText: 'No',
+                loadingText: 'Deleting question...',
+                onConfirm: teacherSingleConfirmTask(function() {
+                    return teacherFetch('/api/teacher/questions/' + encodeURIComponent(questionId), {
+                        method: 'DELETE'
+                    }).then(function(response) {
+                        return teacherAssessmentJson(response, 'Unable to delete question');
+                    });
+                })
+            }, message);
+            if (!result.confirmed) {
+                return;
+            }
             markDirty(false);
             var targetPage = state.items.length === 1 && state.page > 0
                 ? state.page - 1
                 : state.page;
-            return loadPage(targetPage);
-        }).catch(function(error) {
+            await loadPage(targetPage);
+        } catch (error) {
             teacherAssessmentMessage(message, error.message, 'error');
-        });
+        } finally {
+            delete deleteButton.dataset.dialogPending;
+        }
     });
 
     loadPage(0);

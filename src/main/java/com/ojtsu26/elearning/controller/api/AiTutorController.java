@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller.api;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.AiTutorChatRequestDTO;
 import com.ojtsu26.elearning.dto.response.AiChatConversationSummaryDTO;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -34,6 +37,11 @@ public class AiTutorController {
 
     private final AiTutorService aiTutorService;
     private final AiChatHistoryService aiChatHistoryService;
+
+    @GetMapping("/ai-chatbot/status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> status() {
+        return ResponseEntity.ok(ApiResponse.success(aiTutorService.statusPayload()));
+    }
 
     @GetMapping("/ai-chatbot/conversations/latest")
     public ResponseEntity<ApiResponse<AiChatConversationSummaryDTO>> latestConversation(
@@ -68,10 +76,10 @@ public class AiTutorController {
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (AiTutorRateLimitException ex) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage()));
+                    .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(), UserFacingErrorMessage.from(ex)));
         } catch (AiTutorUnavailableException ex) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage()));
+                    .body(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE.value(), UserFacingErrorMessage.from(ex)));
         }
     }
 

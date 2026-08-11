@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -30,6 +31,9 @@ import java.util.regex.Pattern;
 public class AiTutorService {
 
     private static final String FIXED_REFUSAL = "I can only help with the LumiNa website, its learning features, and authorized lesson content. I cannot perform account actions, reveal protected data, or answer unrelated requests.";
+    private static final String STATUS_AVAILABLE = "available";
+    private static final String STATUS_TEMPORARY_UNAVAILABLE = "temporary_unavailable";
+    private static final long STATUS_CACHE_MILLIS = 30_000L;
     private static final Set<String> ALLOWED_ROLES = Set.of("user", "assistant");
     private static final Set<String> ALLOWED_ACTIONS = Set.of(
             "",
@@ -92,6 +96,36 @@ public class AiTutorService {
     private final AiTutorProperties properties;
     private final AiChatHistoryService historyService;
     private final AiChatSuggestionService suggestionService;
+    private volatile CachedStatus cachedStatus = new CachedStatus(STATUS_TEMPORARY_UNAVAILABLE, 0L, 0L);
+
+    public String status() {
+        return statusSnapshot().status();
+    }
+
+    public Map<String, Object> statusPayload() {
+        CachedStatus snapshot = statusSnapshot();
+        return Map.of(
+                "status", snapshot.status(),
+                "updatedAt", snapshot.updatedAt());
+    }
+
+    private CachedStatus statusSnapshot() {
+        long now = System.currentTimeMillis();
+        CachedStatus cached = cachedStatus;
+        if (cached.expiresAt() > now) {
+            return cached;
+        }
+        String nextStatus;
+        try {
+            nextStatus = provider.isAvailable() ? STATUS_AVAILABLE : STATUS_TEMPORARY_UNAVAILABLE;
+        } catch (RuntimeException ex) {
+            log.warn("AI Chatbot status check failed: {}", ex.getMessage());
+            nextStatus = STATUS_TEMPORARY_UNAVAILABLE;
+        }
+        CachedStatus next = new CachedStatus(nextStatus, now, now + STATUS_CACHE_MILLIS);
+        cachedStatus = next;
+        return next;
+    }
 
     public AiTutorChatResponseDTO chat(CustomUserDetails principal, AiTutorChatRequestDTO request) {
         User user = principal == null ? null : principal.getUser();
@@ -196,11 +230,19 @@ public class AiTutorService {
                 message,
                 action,
                 history);
-        AiTutorProviderResponse providerResponse = provider.generate(prompt);
+        AiTutorProviderResponse providerResponse;
+        try {
+            providerResponse = provider.generate(prompt);
+        } catch (AiTutorUnavailableException ex) {
+            rememberProviderStatus(STATUS_TEMPORARY_UNAVAILABLE);
+            throw ex;
+        }
         if (providerResponse == null) {
+            rememberProviderStatus(STATUS_TEMPORARY_UNAVAILABLE);
             throw new AiTutorUnavailableException("AI Chatbot is temporarily unavailable.");
         }
         String answer = providerResponse.answer() == null ? "" : providerResponse.answer().trim();
+        rememberProviderStatus(answer.isBlank() ? STATUS_TEMPORARY_UNAVAILABLE : STATUS_AVAILABLE);
         if (AiTutorPromptFactory.OUT_OF_SCOPE_SENTINEL.equals(answer)) {
             return refusal(
                     "OUT_OF_SCOPE",
@@ -373,5 +415,13 @@ public class AiTutorService {
     private String safeKey(String value) {
         String normalized = value == null ? "" : value.trim();
         return normalized.matches("[A-Za-z0-9-]{8,128}") ? normalized : UUID.randomUUID().toString();
+    }
+
+    private void rememberProviderStatus(String status) {
+        long now = System.currentTimeMillis();
+        cachedStatus = new CachedStatus(status, now, now + STATUS_CACHE_MILLIS);
+    }
+
+    private record CachedStatus(String status, long updatedAt, long expiresAt) {
     }
 }

@@ -424,7 +424,7 @@ function normalizeApiMessage(body, status, fallback) {
         return message;
     }
     if (status === 401) {
-        return 'The account could not be authenticated. Check your credentials and try again.';
+        return 'Email or password is incorrect. Please check your information and try again.';
     }
     return fallback;
 }

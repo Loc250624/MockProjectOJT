@@ -76,10 +76,14 @@ class CourseEstimatedDurationTemplateTest {
                 Path.of("src/main/resources/static/js/teacher/teacher.js"));
 
         assertTrue(form.contains("type=\"hidden\" th:field=\"*{durationSeconds}\""));
+        assertTrue(form.contains("Upload from computer"));
+        assertTrue(form.contains("data-video-file-input"));
+        assertTrue(form.contains("data-video-source-type-input"));
         assertTrue(form.contains("data-video-metadata-status"));
+        assertFalse(form.contains("data-video-submit disabled"));
         assertFalse(form.contains("type=\"number\""));
         assertFalse(form.contains("DURATION (SECONDS)"));
-        assertFalse(management.contains("video.durationSeconds"));
+        assertTrue(management.contains("video.durationSeconds"));
         assertTrue(script.contains("player.getDuration()"));
         assertTrue(script.contains("Math.ceil(Number(seconds))"));
         assertTrue(script.contains("detectDirectVideoDuration"));

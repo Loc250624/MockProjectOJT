@@ -1,24 +1,20 @@
 package com.ojtsu26.elearning.dto.request;
 
+import com.ojtsu26.elearning.model.enums.VideoSourceType;
 import lombok.Data;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Min;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class VideoRequestDTO {
 
-    @NotBlank(message = "Video URL is required")
-    @Pattern(
-        regexp = "^https?://.*",
-        message = "Video URL must be a valid HTTP or HTTPS URL"
-    )
+    private VideoSourceType sourceType = VideoSourceType.YOUTUBE;
+
     private String videoUrl;
 
-    @NotNull(message = "Video duration could not be detected")
-    @Min(value = 1, message = "Detected video duration must be at least 1 second")
     private Integer durationSeconds;
+
+    private MultipartFile videoFile;
 
     @NotNull(message = "Lesson ID is required")
     private Integer lessonId;

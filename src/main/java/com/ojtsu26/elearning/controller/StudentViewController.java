@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.common.VnpayCallbackUtils;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
@@ -211,7 +212,7 @@ public class StudentViewController {
             model.addAttribute("lessonId", learningCourse.getActiveLessonId());
             return "student/learning";
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(ex));
             return "redirect:/student/courses/detail?id=" + courseId;
         }
     }
@@ -356,10 +357,10 @@ public class StudentViewController {
             redirectAttributes.addFlashAttribute("errorMessage", "Invalid payment method selected.");
             return "redirect:/student/checkout?courseId=" + courseId;
         } catch (IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/student/checkout?courseId=" + courseId;
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/student/checkout?courseId=" + courseId;
         }
     }
@@ -552,7 +553,7 @@ public class StudentViewController {
             model.addAttribute("rejectionReason", blog.getRejectionReason());
             return "student/blog-editor";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/student/blogs";
         }
     }

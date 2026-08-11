@@ -172,6 +172,30 @@ class AiTutorServiceTest {
     }
 
     @Test
+    void latestProviderUseUpdatesCachedAvailabilityStatus() {
+        when(studentLearningService.getAuthorizedAiTutorLessonContext(101)).thenReturn(lessonContext);
+        AiTutorProvider provider = new AiTutorProvider() {
+            @Override
+            public AiTutorProviderResponse generate(AiTutorPrompt prompt) {
+                return new AiTutorProviderResponse("Encapsulation keeps fields private.", "resp_status");
+            }
+
+            @Override
+            public boolean isAvailable() {
+                return false;
+            }
+        };
+        AiTutorService service = service(provider);
+
+        assertEquals("temporary_unavailable", service.status());
+        service.chat(principal, request("Explain encapsulation"));
+
+        assertEquals("available", service.status());
+        assertEquals("available", service.statusPayload().get("status"));
+        assertTrue((Long) service.statusPayload().get("updatedAt") > 0L);
+    }
+
+    @Test
     void rateLimitIsEnforced() {
         properties.setRateLimitMaxRequests(1);
         rateLimiter.clear();

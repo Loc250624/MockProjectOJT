@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
 import com.ojtsu26.elearning.dto.request.CourseRequestDTO;
@@ -74,7 +75,7 @@ public class TeacherActionController {
             courseService.create(requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Course created successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("course", requestDTO);
             return "redirect:/teacher/courses/create";
         }
@@ -127,7 +128,7 @@ public class TeacherActionController {
             courseService.update(id, requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Course updated successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("course", requestDTO);
             return "redirect:/teacher/courses/edit/" + id;
         }
@@ -147,7 +148,7 @@ public class TeacherActionController {
             courseService.delete(id);
             redirectAttributes.addFlashAttribute("successMessage", "Course deleted successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/courses";
     }
@@ -167,7 +168,7 @@ public class TeacherActionController {
             redirectAttributes.addFlashAttribute("successMessage",
                 "Your course has been submitted for review. You will be notified once an admin reviews it.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/courses";
     }
@@ -183,7 +184,7 @@ public class TeacherActionController {
             redirectAttributes.addFlashAttribute("successMessage",
                 "Your course has been withdrawn from review and is now back in Draft.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/courses";
     }
@@ -206,7 +207,7 @@ public class TeacherActionController {
             roadmapService.create(requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Roadmap created successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("roadmap", requestDTO);
             return "redirect:/teacher/roadmap/create";
         }
@@ -232,7 +233,7 @@ public class TeacherActionController {
             roadmapService.update(id, requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Roadmap updated successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("roadmap", requestDTO);
             return "redirect:/teacher/roadmap/edit/" + id;
         }
@@ -245,7 +246,7 @@ public class TeacherActionController {
             roadmapService.delete(id);
             redirectAttributes.addFlashAttribute("successMessage", "Roadmap deleted successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/roadmap";
     }
@@ -305,7 +306,7 @@ public class TeacherActionController {
             redirectAttributes.addFlashAttribute("successMessage", "Blog draft saved successfully.");
             return "redirect:/teacher/blogs";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("blogPost", requestDTO);
             return "redirect:/teacher/blogs/editor";
         }
@@ -332,7 +333,7 @@ public class TeacherActionController {
             redirectAttributes.addFlashAttribute("successMessage", "Rejected blog updated. Submit it again when ready.");
             return "redirect:/teacher/blogs";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("blogPost", requestDTO);
             return "redirect:/teacher/blogs/editor/" + id;
         }
@@ -351,7 +352,7 @@ public class TeacherActionController {
             blogPostService.submitForReview(id, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog submitted for review.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/blogs";
     }
@@ -378,7 +379,7 @@ public class TeacherActionController {
                 return "redirect:/teacher/videos/create?courseId=" + lesson.getCourseId() + "&lessonId=" + lesson.getId();
             }
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("lesson", requestDTO);
             return "redirect:/teacher/lessons/create?courseId=" + requestDTO.getCourseId();
         }
@@ -402,7 +403,7 @@ public class TeacherActionController {
             lessonService.update(id, requestDTO, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Lesson updated successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("lesson", requestDTO);
             return "redirect:/teacher/lessons/edit/" + id + "?courseId=" + requestDTO.getCourseId();
         }
@@ -419,7 +420,7 @@ public class TeacherActionController {
             lessonService.delete(id, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Lesson deleted successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/teacher/lessons?courseId=" + courseId;
     }
@@ -434,7 +435,7 @@ public class TeacherActionController {
             lessonService.reorderLessons(courseId, lessonIdsInOrder, instructorId);
             return ResponseEntity.ok(Map.of("message", "Lessons reordered successfully"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", UserFacingErrorMessage.from(e)));
         }
     }
 
@@ -463,7 +464,7 @@ public class TeacherActionController {
             videoService.create(requestDTO, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Video added successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("video", requestDTO);
             String redirect = "redirect:/teacher/videos/create?lessonId=" + lessonId;
             if (courseId != null) redirect += "&courseId=" + courseId;
@@ -496,7 +497,7 @@ public class TeacherActionController {
             videoService.update(id, requestDTO, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Video updated successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("video", requestDTO);
             String redirect = "redirect:/teacher/videos/edit/" + id + "?lessonId=" + lessonId;
             if (courseId != null) redirect += "&courseId=" + courseId;
@@ -519,7 +520,7 @@ public class TeacherActionController {
             videoService.delete(id, instructorId);
             redirectAttributes.addFlashAttribute("successMessage", "Video deleted successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         String redirect = "redirect:/teacher/videos?lessonId=" + lessonId;
         if (courseId != null) redirect += "&courseId=" + courseId;

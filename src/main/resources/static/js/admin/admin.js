@@ -983,7 +983,8 @@ function initUserAdministration() {
     function setFeedback(message, success) {
         elements.feedback.textContent = message;
         elements.feedback.style.display = message ? 'block' : 'none';
-        elements.feedback.style.color = success ? 'var(--lumina-success)' : 'var(--lumina-danger)';
+        elements.feedback.classList.toggle('is-success', Boolean(message) && success);
+        elements.feedback.classList.toggle('is-error', Boolean(message) && !success);
     }
 }
 

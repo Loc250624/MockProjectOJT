@@ -14,11 +14,14 @@ import java.nio.file.Paths;
 public class WebConfig implements WebMvcConfigurer {
 
     private final String avatarDirectory;
+    private final String videoDirectory;
     private final MaintenanceModeInterceptor maintenanceModeInterceptor;
 
     public WebConfig(@Value("${app.upload.avatar-directory:uploads/avatars}") String avatarDirectory,
+                     @Value("${app.upload.video-directory:uploads/videos}") String videoDirectory,
                      MaintenanceModeInterceptor maintenanceModeInterceptor) {
         this.avatarDirectory = avatarDirectory;
+        this.videoDirectory = videoDirectory;
         this.maintenanceModeInterceptor = maintenanceModeInterceptor;
     }
 
@@ -33,6 +36,10 @@ public class WebConfig implements WebMvcConfigurer {
         String location = Paths.get(avatarDirectory).toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/uploads/avatars/**")
                 .addResourceLocations(location.endsWith("/") ? location : location + "/");
+
+        String videoLocation = Paths.get(videoDirectory).toAbsolutePath().normalize().toUri().toString();
+        registry.addResourceHandler("/uploads/videos/**")
+                .addResourceLocations(videoLocation.endsWith("/") ? videoLocation : videoLocation + "/");
 
         Path uploadsPath = Paths.get("uploads").toAbsolutePath().normalize();
         registry.addResourceHandler("/uploads/**")

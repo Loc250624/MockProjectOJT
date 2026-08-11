@@ -10,9 +10,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,6 +64,28 @@ public class OpenAiResponsesClient implements AiTutorProvider {
         }
     }
 
+    @Override
+    public boolean isAvailable() {
+        if (!properties.isEnabled()
+                || properties.getApiKey() == null
+                || properties.getApiKey().isBlank()) {
+            return false;
+        }
+        try {
+            HttpResponse<String> response = sendModelHealthRequest();
+            if (shouldRetry(response.statusCode())) {
+                response = sendModelHealthRequest();
+            }
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (IOException e) {
+            log.warn("OpenAI health check failed: {}", e.getMessage());
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
     private HttpResponse<String> send(AiTutorPrompt prompt) throws IOException, InterruptedException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", properties.getModel());
@@ -69,11 +93,8 @@ public class OpenAiResponsesClient implements AiTutorProvider {
         payload.put("input", prompt.input());
         payload.put("max_output_tokens", prompt.maxOutputTokens());
 
-        String baseUrl = properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()
-                ? "https://api.openai.com/v1"
-                : properties.getBaseUrl().replaceAll("/+$", "");
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/responses"))
+                .uri(URI.create(apiBaseUrl() + "/responses"))
                 .timeout(Duration.ofMillis(Math.max(1000, properties.getTimeoutMs())))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
                 .header(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -83,6 +104,26 @@ public class OpenAiResponsesClient implements AiTutorProvider {
                 .connectTimeout(Duration.ofMillis(Math.max(1000, properties.getTimeoutMs())))
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendModelHealthRequest() throws IOException, InterruptedException {
+        String model = URLEncoder.encode(properties.getModel(), StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiBaseUrl() + "/models/" + model))
+                .timeout(Duration.ofMillis(Math.max(1000, Math.min(properties.getTimeoutMs(), 2500))))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
+                .GET()
+                .build();
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(Math.max(1000, Math.min(properties.getTimeoutMs(), 2500))))
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private String apiBaseUrl() {
+        return properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()
+                ? "https://api.openai.com/v1"
+                : properties.getBaseUrl().replaceAll("/+$", "");
     }
 
     private boolean shouldRetry(int statusCode) {

@@ -8,23 +8,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class YouTubeVideoMetadataDurationResolverTest {
 
     @Test
-    void readsExactDurationFromYouTubeMetadata() {
+    void readsIsoDurationFromYouTubeDataApiMetadata() {
         assertEquals(8458, YouTubeVideoMetadataDurationResolver
-                .parseDurationSeconds("{\"lengthSeconds\":\"8458\"}")
+                .parseDurationSeconds("{\"items\":[{\"contentDetails\":{\"duration\":\"PT2H20M58S\"}}]}")
                 .getAsInt());
     }
 
     @Test
-    void fallsBackToApproximateMillisecondsAndRoundsUp() {
-        assertEquals(8458, YouTubeVideoMetadataDurationResolver
-                .parseDurationSeconds("{\"approxDurationMs\":\"8457001\"}")
+    void readsMinuteAndSecondOnlyIsoDuration() {
+        assertEquals(615, YouTubeVideoMetadataDurationResolver
+                .parseDurationSeconds("{\"duration\":\"PT10M15S\"}")
                 .getAsInt());
     }
 
     @Test
     void ignoresMissingOrUnreasonableMetadata() {
         assertTrue(YouTubeVideoMetadataDurationResolver
-                .parseDurationSeconds("{\"lengthSeconds\":\"999999\"}")
+                .parseDurationSeconds("{\"duration\":\"PT999H\"}")
                 .isEmpty());
         assertTrue(YouTubeVideoMetadataDurationResolver.parseDurationSeconds("").isEmpty());
     }
