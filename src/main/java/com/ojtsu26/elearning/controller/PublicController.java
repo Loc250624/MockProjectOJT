@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.dto.response.CourseResponseDTO;
 import com.ojtsu26.elearning.dto.response.CourseEnrollmentStateResponseDTO;
 import com.ojtsu26.elearning.dto.response.LessonResponseDTO;
@@ -140,7 +141,7 @@ public class PublicController {
             redirectAttributes.addFlashAttribute("successMessage", "Comment posted successfully.");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("comment", requestDTO);
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/blogs/" + id;
     }

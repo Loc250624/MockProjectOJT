@@ -1002,6 +1002,18 @@ html[data-theme="dark"] .auth-page-refined .oauth-btn-google .oauth-mark {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 2px 6px rgba(0, 0, 0, 0.24);
 }
 
+html[data-theme="dark"] .auth-alert-error {
+  background: var(--theme-danger-surface);
+  border-color: color-mix(in srgb, var(--theme-danger-text) 38%, var(--theme-border));
+  color: var(--theme-danger-text);
+}
+
+html[data-theme="dark"] .auth-alert-success {
+  background: var(--theme-success-surface);
+  border-color: color-mix(in srgb, var(--theme-success-text) 34%, var(--theme-border));
+  color: var(--theme-success-text);
+}
+
 .auth-center-header,
 .auth-simple-header {
   padding-right: 8.5rem;

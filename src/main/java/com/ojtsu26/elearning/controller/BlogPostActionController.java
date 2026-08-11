@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.dto.request.BlogPostRequestDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.security.CustomUserDetails;
@@ -35,7 +36,7 @@ public class BlogPostActionController {
             redirectAttributes.addFlashAttribute("successMessage", "Blog draft saved successfully.");
             return "redirect:/student/blogs";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("blogPost", requestDTO);
             return "redirect:/student/blogs/editor";
         }
@@ -49,7 +50,7 @@ public class BlogPostActionController {
             blogPostService.submitForReview(id, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog submitted for review.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/student/blogs";
     }
@@ -70,7 +71,7 @@ public class BlogPostActionController {
             redirectAttributes.addFlashAttribute("successMessage", "Rejected blog updated. Submit it again when ready.");
             return "redirect:/student/blogs";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("blogPost", requestDTO);
             return "redirect:/student/blogs/editor/" + id;
         }

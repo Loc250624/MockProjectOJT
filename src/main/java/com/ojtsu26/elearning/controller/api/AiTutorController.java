@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller.api;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.common.ApiResponse;
 import com.ojtsu26.elearning.dto.request.AiTutorChatRequestDTO;
 import com.ojtsu26.elearning.dto.response.AiChatConversationSummaryDTO;
@@ -75,10 +76,10 @@ public class AiTutorController {
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (AiTutorRateLimitException ex) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage()));
+                    .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(), UserFacingErrorMessage.from(ex)));
         } catch (AiTutorUnavailableException ex) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage()));
+                    .body(ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE.value(), UserFacingErrorMessage.from(ex)));
         }
     }
 

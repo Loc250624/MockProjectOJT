@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.service.CategoryService;
 import com.ojtsu26.elearning.service.AdminTeacherPayoutService;
 import com.ojtsu26.elearning.service.BlogCommentService;
@@ -143,7 +144,7 @@ public class AdminViewController {
             model.addAttribute("id", id);
             return "admin/category-form";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Category not found: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             return "redirect:/admin/categories";
         }
     }
@@ -171,7 +172,7 @@ public class AdminViewController {
             blogPostService.approve(id, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog approved and published successfully.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/blogs/moderation";
     }
@@ -185,7 +186,7 @@ public class AdminViewController {
             blogPostService.reject(id, rejectionReason, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog rejected with feedback.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/blogs/moderation";
     }
@@ -199,7 +200,7 @@ public class AdminViewController {
             blogPostService.hide(id, reason, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog hidden from public pages.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/blogs";
     }
@@ -213,7 +214,7 @@ public class AdminViewController {
             blogPostService.archive(id, reason, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Blog archived.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/blogs";
     }
@@ -233,7 +234,7 @@ public class AdminViewController {
             blogCommentService.hide(id, reason, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Comment hidden from public pages.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/comments";
     }
@@ -247,7 +248,7 @@ public class AdminViewController {
             blogCommentService.delete(id, reason, currentUser(userDetails));
             redirectAttributes.addFlashAttribute("successMessage", "Comment deleted from public pages.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/comments";
     }
@@ -337,7 +338,7 @@ public class AdminViewController {
             categoryService.create(requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category created successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/create";
         }
@@ -358,7 +359,7 @@ public class AdminViewController {
             categoryService.update(id, requestDTO);
             redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
             redirectAttributes.addFlashAttribute("category", requestDTO);
             return "redirect:/admin/categories/edit/" + id;
         }
@@ -371,7 +372,7 @@ public class AdminViewController {
             categoryService.delete(id);
             redirectAttributes.addFlashAttribute("successMessage", "Category deleted successfully!");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/categories";
     }
@@ -382,7 +383,7 @@ public class AdminViewController {
             courseService.approveCourse(id);
             redirectAttributes.addFlashAttribute("successMessage", "Course approved and published successfully.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
     }
@@ -395,7 +396,7 @@ public class AdminViewController {
             courseService.rejectCourse(id, rejectReason);
             redirectAttributes.addFlashAttribute("successMessage", "Course rejected. The teacher will be notified.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/courses/approval?status=PENDING_APPROVAL";
     }
@@ -406,7 +407,7 @@ public class AdminViewController {
             courseService.hideCourse(id);
             redirectAttributes.addFlashAttribute("successMessage", "Course is now hidden from public catalog.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/courses/approval?status=APPROVED";
     }
@@ -417,7 +418,7 @@ public class AdminViewController {
             courseService.unhideCourse(id);
             redirectAttributes.addFlashAttribute("successMessage", "Course is now visible in the public catalog.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/courses/approval?status=HIDDEN";
     }
@@ -428,7 +429,7 @@ public class AdminViewController {
             courseService.delete(id);
             redirectAttributes.addFlashAttribute("successMessage", "Course deleted permanently.");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(e));
         }
         return "redirect:/admin/courses/approval";
     }
