@@ -3520,9 +3520,24 @@ html[data-theme="dark"] :is(.learning-player-page, .profile-page) {
   background: var(--theme-page);
 }
 
+html[data-theme="dark"] .student-metric-card .student-certificate-icon {
+  color: var(--theme-chart-6);
+  background: color-mix(in srgb, var(--theme-chart-6) 18%, var(--theme-surface-muted));
+}
+
 html[data-theme="dark"] .profile-badge.muted {
   color: var(--theme-text-muted);
   background: var(--theme-surface-muted);
+}
+
+html[data-theme="dark"] .profile-badge.primary {
+  color: var(--theme-info-text);
+  background: var(--theme-info-surface);
+}
+
+html[data-theme="dark"] .profile-badge.success {
+  color: var(--theme-success-text);
+  background: var(--theme-success-surface);
 }
 
 html[data-theme="dark"] .profile-progress-track {
