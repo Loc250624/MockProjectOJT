@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller.api;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.common.VnpayCallbackUtils;
 import com.ojtsu26.elearning.model.enums.PaymentMethod;
 import com.ojtsu26.elearning.service.PaymentService;
@@ -31,7 +32,7 @@ public class PaymentWebhookController {
             log.error("Invalid webhook payload or signature", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "resultCode", 99,
-                    "message", e.getMessage()
+                    "message", UserFacingErrorMessage.from(e)
             ));
         } catch (Exception e) {
             log.error("Internal error processing webhook", e);

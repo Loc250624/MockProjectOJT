@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller.api;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.service.RefundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ public class RefundController {
             log.error("Refund validation failed", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", e.getMessage()
+                    "message", UserFacingErrorMessage.from(e)
             ));
         } catch (Exception e) {
             log.error("Internal error processing refund", e);

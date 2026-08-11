@@ -1,6 +1,7 @@
 package com.ojtsu26.elearning.exception;
 
 import com.ojtsu26.elearning.common.ApiResponse;
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,7 @@ public class GlobalExceptionHandler {
         log.error("BusinessException: {}", ex.getMessage());
         ErrorCode errorCode = ex.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.error(errorCode.getCode(), ex.getMessage()));
+                .body(ApiResponse.error(errorCode.getCode(), UserFacingErrorMessage.from(ex)));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -44,7 +45,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidationException(ValidationException ex) {
         log.error("Validation exception: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR.getCode(), ex.getMessage()));
+                .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR.getCode(), UserFacingErrorMessage.from(ex)));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -58,7 +59,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.error("Illegal argument exception: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), ex.getMessage()));
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), UserFacingErrorMessage.from(ex)));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

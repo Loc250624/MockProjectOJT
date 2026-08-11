@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.dto.request.StudentFeedbackRequestDTO;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.service.StudentFeedbackService;
@@ -63,7 +64,7 @@ public class StudentFeedbackController {
         try {
             feedbackService.createForCurrentStudent(request);
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", UserFacingErrorMessage.from(ex));
             redirectAttributes.addFlashAttribute("feedback", request);
             return "redirect:/student/feedback";
         }

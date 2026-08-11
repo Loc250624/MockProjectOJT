@@ -1,5 +1,6 @@
 package com.ojtsu26.elearning.controller;
 
+import com.ojtsu26.elearning.common.UserFacingErrorMessage;
 import com.ojtsu26.elearning.exception.BusinessException;
 import com.ojtsu26.elearning.model.entity.PendingOAuthRegistration;
 import com.ojtsu26.elearning.security.OAuth2AccountService;
@@ -72,7 +73,7 @@ public class AuthController {
             return "redirect:/auth/login?reset=success";
         } catch (BusinessException ex) {
             model.addAttribute("token", token);
-            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("error", UserFacingErrorMessage.from(ex));
             return "auth/reset-password";
         }
     }
