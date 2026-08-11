@@ -19,6 +19,7 @@ class CourseEnrollmentFrontendTemplateTest {
         assertTrue(template.contains("Continue learning"));
         assertTrue(template.contains("Course unavailable"));
         assertTrue(template.contains("data-enrollment-action=\"free\""));
+        assertTrue(template.contains("enrollmentState.action != 'CONTINUE_LEARNING'"));
     }
 
     @Test
