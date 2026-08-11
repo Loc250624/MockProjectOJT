@@ -1949,6 +1949,42 @@ pre {
   gap: 1.25rem 1.5rem;
 }
 
+.video-source-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.video-source-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--lumina-gray-200);
+  border-radius: 8px;
+  background: var(--theme-card);
+  color: var(--lumina-gray-800);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.video-source-option:focus-within {
+  border-color: var(--lumina-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.video-source-option input {
+  width: 1rem;
+  height: 1rem;
+}
+
+[data-video-upload-panel][hidden],
+[data-video-url-panel][hidden] {
+  display: none !important;
+}
+
 .video-metadata-status {
   margin: -0.5rem 0 2rem;
   padding: 0.75rem 1rem;
@@ -1987,6 +2023,12 @@ pre {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .video-source-toggle {
+    grid-template-columns: 1fr;
+  }
 }
 
 .teacher-form-actions {

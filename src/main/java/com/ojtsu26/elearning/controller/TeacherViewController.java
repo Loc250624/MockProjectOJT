@@ -13,6 +13,7 @@ import com.ojtsu26.elearning.dto.response.VideoResponseDTO;
 import com.ojtsu26.elearning.model.entity.User;
 import com.ojtsu26.elearning.model.enums.LessonType;
 import com.ojtsu26.elearning.model.enums.QuizStatus;
+import com.ojtsu26.elearning.model.enums.VideoSourceType;
 import com.ojtsu26.elearning.security.CustomUserDetails;
 import com.ojtsu26.elearning.service.AssessmentService;
 import com.ojtsu26.elearning.service.BlogPostService;
@@ -314,6 +315,7 @@ public class TeacherViewController {
         if (!model.containsAttribute("video")) {
             VideoRequestDTO req = new VideoRequestDTO();
             req.setLessonId(lessonId);
+            req.setSourceType(VideoSourceType.YOUTUBE);
             model.addAttribute("video", req);
         }
         model.addAttribute("lessonId", lessonId);
@@ -341,8 +343,13 @@ public class TeacherViewController {
 
         if (!model.containsAttribute("video")) {
             try {
-                VideoResponseDTO res = videoService.findById(id);
+                VideoResponseDTO res = videoService.findByLessonId(lessonId, instructorId)
+                        .filter(video -> video.getId().equals(id))
+                        .orElseThrow(() -> new RuntimeException("Video not found with id: " + id));
                 VideoRequestDTO req = new VideoRequestDTO();
+                req.setSourceType(res.getSourceType() == null
+                        ? inferLegacySourceType(res.getVideoUrl())
+                        : res.getSourceType());
                 req.setVideoUrl(res.getVideoUrl());
                 req.setDurationSeconds(res.getDurationSeconds());
                 req.setLessonId(lessonId);
@@ -361,6 +368,16 @@ public class TeacherViewController {
         } catch (Exception ignored) {}
 
         return "teacher/video-form";
+    }
+
+    private VideoSourceType inferLegacySourceType(String videoUrl) {
+        if (videoUrl != null && videoUrl.startsWith("/uploads/videos/")) {
+            return VideoSourceType.UPLOAD;
+        }
+        if (com.ojtsu26.elearning.common.VideoUtils.extractYouTubeVideoId(videoUrl) != null) {
+            return VideoSourceType.YOUTUBE;
+        }
+        return VideoSourceType.DIRECT_URL;
     }
 
     @GetMapping("/students")

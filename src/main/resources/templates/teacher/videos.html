@@ -93,7 +93,14 @@
                     <div style="background:var(--lumina-gray-50);border:1px solid var(--lumina-gray-200);border-radius:12px;padding:1.5rem;display:flex;gap:1.5rem;align-items:flex-start;">
                         <div style="width:52px;height:52px;border-radius:12px;background:var(--lumina-blue-pale);color:var(--lumina-blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">▶</div>
                         <div style="flex:1;">
-                            <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">Video URL</div>
+                            <div style="font-size:0.875rem;font-weight:700;color:var(--lumina-gray-900);margin-bottom:0.5rem;">
+                                <span th:text="${video.sourceType != null ? video.sourceType : 'Video'}">Video</span>
+                                <span th:if="${video.durationSeconds != null && video.durationSeconds > 0}"
+                                      th:text="' · ' + ${video.durationSeconds} + ' seconds'"></span>
+                            </div>
+                            <div th:if="${video.originalFilename != null && !video.originalFilename.isBlank()}"
+                                 style="font-size:0.8125rem;color:var(--lumina-gray-600);margin-bottom:0.35rem;"
+                                 th:text="${video.originalFilename}">filename.mp4</div>
                             <a th:href="${video.videoUrl}" target="_blank" rel="noopener"
                                style="font-size:0.875rem;color:var(--lumina-blue);word-break:break-all;" th:text="${video.videoUrl}"></a>
                         </div>
@@ -108,7 +115,7 @@
                         Lesson: <strong th:text="${selectedLesson != null ? selectedLesson.title : ''}"></strong>
                     </p>
                     <a th:href="@{'/teacher/videos/create?lessonId=' + ${selectedLessonId} + '&courseId=' + ${selectedCourseId}}"
-                       class="btn btn-primary">+ Add Video URL</a>
+                       class="btn btn-primary">+ Add Video</a>
                 </div>
 
             </div>

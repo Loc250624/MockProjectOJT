@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,22 +45,41 @@ class BlogCleanupFrontendTemplateTest {
     }
 
     @Test
-    void seedAndMigrationAreConfiguredForTheVerifiedBlogSchema() throws Exception {
-        String seed = read("data.sql");
-        int sectionStart = seed.indexOf("LOCK TABLES `blog_posts` WRITE;");
-        int sectionEnd = seed.indexOf("UNLOCK TABLES;", sectionStart);
-        assertTrue(sectionStart >= 0 && sectionEnd > sectionStart);
+    void blogSchemaIsVerifiedAgainstRuntimeResourcesWithoutRootDataSql() throws Exception {
+        String applicationProperties = read("src/main/resources/application.properties");
+        String pom = read("pom.xml");
+        String blogPost = read("src/main/java/com/ojtsu26/elearning/model/entity/BlogPost.java");
+        String blogComment = read("src/main/java/com/ojtsu26/elearning/model/entity/BlogComment.java");
+        List<Path> sqlResources;
+        try (var paths = Files.walk(Path.of("src/main/resources"))) {
+            sqlResources = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".sql"))
+                    .toList();
+        }
 
-        String blogSeed = seed.substring(sectionStart, sectionEnd).toLowerCase();
-        assertFalse(blogSeed.matches("(?s).*</?(h[1-6]|p|code)(\\s[^>]*)?>.*"));
+        assertFalse(Files.exists(Path.of("data.sql")),
+                "Runtime SQL resources must not be coupled to a working-directory root data.sql");
+        assertFalse(applicationProperties.contains("spring.sql.init."),
+                "The current app does not enable Spring SQL init for Blog seed cleanup");
+        assertFalse(pom.toLowerCase().contains("flyway"));
+        assertFalse(pom.toLowerCase().contains("liquibase"));
 
-        String safeUpdate = read("lumina_blog_cleanup_live_search_codex/sql/01_safe_update_strip_blog_html.sql");
-        String deleteInsert = read("lumina_blog_cleanup_live_search_codex/sql/02_delete_and_reinsert_without_html_tags.sql");
-        assertTrue(safeUpdate.contains("SET @blog_table = 'blog_posts';"));
-        assertTrue(safeUpdate.contains("SET @blog_content_column = 'content';"));
-        assertTrue(deleteInsert.contains("'DELETE FROM `', @blog_table, '`'"));
-        assertTrue(deleteInsert.contains("'INSERT INTO `', @blog_table"));
-        assertFalse(deleteInsert.matches("(?is).*\\bTRUNCATE\\s+(?:TABLE\\s+)?`?blog_posts`?.*"));
+        assertTrue(blogPost.contains("@Table(name = \"BlogPosts\")"));
+        assertTrue(blogPost.contains("private String content;"));
+        assertTrue(blogPost.contains("@Column(nullable = false)"));
+        assertTrue(blogPost.contains("private boolean deleted = false;"));
+        assertTrue(blogComment.contains("@Table(name = \"BlogComments\")"));
+        assertTrue(blogComment.contains("@JoinColumn(name = \"blog_post_id\", nullable = false)"));
+
+        assertFalse(sqlResources.isEmpty());
+        for (Path sqlResource : sqlResources) {
+            String sql = Files.readString(sqlResource);
+            assertFalse(sql.contains("LOCK TABLES `blog_posts` WRITE;"),
+                    "Obsolete dump-style blog seed should not be verified as runtime data: " + sqlResource);
+            assertFalse(sql.matches("(?is).*\\bTRUNCATE\\s+(?:TABLE\\s+)?`?blog_posts`?.*"),
+                    "Blog cleanup resources must not truncate BlogPosts: " + sqlResource);
+        }
     }
 
     private String read(String path) throws Exception {

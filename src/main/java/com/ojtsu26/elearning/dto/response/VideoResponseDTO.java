@@ -7,9 +7,17 @@ import com.ojtsu26.elearning.model.enums.*;
 public class VideoResponseDTO {
     private Integer id;
 
+    private VideoSourceType sourceType;
+
     private String videoUrl;
 
     private Integer durationSeconds;
+
+    private String originalFilename;
+
+    private String contentType;
+
+    private Long fileSizeBytes;
 
     private Integer lessonId;
 }

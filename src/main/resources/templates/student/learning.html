@@ -165,7 +165,8 @@
                            th:data-preview-mode="${learningCourse.activeLesson.previewMode}"
                            th:data-preview-limit="${learningCourse.activeLesson.previewPercentLimit}"
                            data-learning-video="true">
-                        <source th:src="${learningCourse.activeLesson.videoUrl}" type="video/mp4">
+                        <source th:src="${learningCourse.activeLesson.videoUrl}"
+                                th:type="${learningCourse.activeLesson.videoContentType}">
                         Your browser cannot play this video.
                     </video>
                     <div class="learning-video-progress"

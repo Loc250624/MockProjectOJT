@@ -19,6 +19,7 @@ public class StudentLearningLessonDTO {
     private String videoUrl;
     private String embedUrl;
     private String videoSourceType;
+    private String videoContentType;
     private Boolean videoPlayable;
     private String videoUnavailableReason;
     private Integer videoDurationSeconds;
