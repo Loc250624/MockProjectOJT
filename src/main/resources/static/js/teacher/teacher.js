@@ -24,9 +24,14 @@ function initTeacherVideoForms() {
             mode: sourceTypeInput && sourceTypeInput.value === 'UPLOAD' ? 'UPLOAD' : 'URL',
             checking: false,
             ready: Number(durationInput && durationInput.value || 0) > 0,
-            error: ''
+            error: '',
+            validatedUrl: ''
         };
         var requestId = 0;
+
+        if (state.mode !== 'UPLOAD' && state.ready && urlInput && urlInput.value.trim()) {
+            state.validatedUrl = urlInput.value.trim();
+        }
 
         function selectedMode() {
             var selected = sourceOptions.filter(function(option) { return option.checked; })[0];
@@ -62,6 +67,19 @@ function initTeacherVideoForms() {
         function clearDuration() {
             if (durationInput) durationInput.value = '';
             state.ready = false;
+            state.validatedUrl = '';
+        }
+
+        function currentUrl() {
+            return urlInput ? urlInput.value.trim() : '';
+        }
+
+        function isCurrentUrlReady() {
+            return state.mode === 'URL'
+                && state.ready
+                && !state.error
+                && currentUrl()
+                && state.validatedUrl === currentUrl();
         }
 
         function updateSubmit() {
@@ -72,7 +90,7 @@ function initTeacherVideoForms() {
                     && Number(durationInput && durationInput.value || 0) > 0;
                 invalid = invalid || !(fileInput && fileInput.files && fileInput.files.length > 0) && !hasExistingUpload;
             } else {
-                invalid = invalid || !(urlInput && urlInput.value.trim());
+                invalid = invalid || !currentUrl() || !isCurrentUrlReady();
             }
             submit.disabled = invalid;
         }
@@ -97,7 +115,11 @@ function initTeacherVideoForms() {
             } else {
                 classifyUrlAndUpdateSource();
                 if (urlInput && urlInput.value.trim()) {
-                    checkUrl();
+                    if (isCurrentUrlReady()) {
+                        setStatus((isYouTubeUrl(currentUrl()) ? 'YouTube video ready' : 'Remote video ready') + ' - ' + formatDuration(Number(durationInput.value)), 'is-ready');
+                    } else {
+                        checkUrl();
+                    }
                 } else {
                     clearDuration();
                     setStatus('Enter a YouTube URL or direct HTTPS video URL.', null);
@@ -110,6 +132,18 @@ function initTeacherVideoForms() {
             var url = urlInput ? urlInput.value.trim() : '';
             if (!sourceTypeInput) return;
             sourceTypeInput.value = isYouTubeUrl(url) ? 'YOUTUBE' : 'DIRECT_URL';
+        }
+
+        function markUrlDirty() {
+            var url = currentUrl();
+            requestId++;
+            state.error = '';
+            if (url !== state.validatedUrl) {
+                clearDuration();
+                setStatus(url ? 'Checking video...' : 'Enter a YouTube URL or direct HTTPS video URL.', url ? 'is-loading' : null);
+            }
+            classifyUrlAndUpdateSource();
+            updateSubmit();
         }
 
         function fail(message, id) {
@@ -150,7 +184,11 @@ function initTeacherVideoForms() {
 
         function checkUrl() {
             var id = ++requestId;
-            var url = urlInput.value.trim();
+            var url = currentUrl();
+            if (state.validatedUrl === url && state.ready && !state.error) {
+                updateSubmit();
+                return;
+            }
             state.checking = true;
             state.error = '';
             clearDuration();
@@ -166,6 +204,7 @@ function initTeacherVideoForms() {
                     .then(function(seconds) {
                         if (id !== requestId) return;
                         state.checking = false;
+                        state.validatedUrl = url;
                         setDuration(seconds, 'YouTube video ready');
                     })
                     .catch(function(error) {
@@ -182,6 +221,7 @@ function initTeacherVideoForms() {
                 .then(function(seconds) {
                     if (id !== requestId) return;
                     state.checking = false;
+                    state.validatedUrl = url;
                     setDuration(seconds, 'Remote video ready');
                 })
                 .catch(function(error) {
@@ -196,9 +236,14 @@ function initTeacherVideoForms() {
             fileInput.addEventListener('change', checkUploadFile);
         }
         if (urlInput) {
-            urlInput.addEventListener('input', debounce(checkUrl, 450));
+            var debouncedCheckUrl = debounce(checkUrl, 450);
+            urlInput.addEventListener('input', function() {
+                markUrlDirty();
+                debouncedCheckUrl();
+            });
             urlInput.addEventListener('blur', function() {
-                if (urlInput.value.trim()) checkUrl();
+                if (debouncedCheckUrl.cancel) debouncedCheckUrl.cancel();
+                if (currentUrl() && !isCurrentUrlReady()) checkUrl();
             });
         }
         form.addEventListener('submit', function(event) {
@@ -226,13 +271,18 @@ function initTeacherVideoForms() {
 
 function debounce(callback, delay) {
     var handle = null;
-    return function() {
+    var debounced = function() {
         var args = arguments;
         window.clearTimeout(handle);
         handle = window.setTimeout(function() {
             callback.apply(null, args);
         }, delay);
     };
+    debounced.cancel = function() {
+        window.clearTimeout(handle);
+        handle = null;
+    };
+    return debounced;
 }
 
 function isSupportedVideoMime(type) {
