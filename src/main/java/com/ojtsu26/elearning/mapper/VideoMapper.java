@@ -14,5 +14,9 @@ public interface VideoMapper {
 
     @Mapping(source = "lessonId", target = "lesson.id")
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "originalFilename", ignore = true)
+    @Mapping(target = "storedFilename", ignore = true)
+    @Mapping(target = "contentType", ignore = true)
+    @Mapping(target = "fileSizeBytes", ignore = true)
     Video toEntity(VideoRequestDTO dto);
 }

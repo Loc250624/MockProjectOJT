@@ -2,7 +2,10 @@ package com.ojtsu26.elearning.service.impl;
 
 import com.ojtsu26.elearning.common.VideoUtils;
 import com.ojtsu26.elearning.service.VideoMetadataDurationResolver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,21 +22,26 @@ import java.util.regex.Pattern;
 public class YouTubeVideoMetadataDurationResolver implements VideoMetadataDurationResolver {
 
     private static final int MAX_DURATION_SECONDS = 24 * 60 * 60;
-    private static final Pattern LENGTH_SECONDS = Pattern.compile("\\\"lengthSeconds\\\":\\\"(\\d+)\\\"");
-    private static final Pattern APPROX_DURATION_MILLIS = Pattern.compile("\\\"approxDurationMs\\\":\\\"(\\d+)\\\"");
+    private static final Pattern ISO_DURATION = Pattern.compile(
+            "\"duration\"\\s*:\\s*\"PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?\"");
 
     private final HttpClient httpClient;
     private final ConcurrentMap<String, Integer> durationCache = new ConcurrentHashMap<>();
+    private final String apiKey;
 
-    public YouTubeVideoMetadataDurationResolver() {
+    @Autowired
+    public YouTubeVideoMetadataDurationResolver(
+            @Value("${app.video.youtube-api-key:}") String apiKey) {
         this(HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(8))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build());
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build(),
+                apiKey);
     }
 
-    YouTubeVideoMetadataDurationResolver(HttpClient httpClient) {
+    YouTubeVideoMetadataDurationResolver(HttpClient httpClient, String apiKey) {
         this.httpClient = httpClient;
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
     }
 
     @Override
@@ -46,13 +54,21 @@ public class YouTubeVideoMetadataDurationResolver implements VideoMetadataDurati
         if (cached != null) {
             return OptionalInt.of(cached);
         }
+        if (apiKey.isBlank()) {
+            return OptionalInt.empty();
+        }
 
         try {
+            String apiUrl = UriComponentsBuilder.fromUriString("https://www.googleapis.com/youtube/v3/videos")
+                    .queryParam("part", "contentDetails")
+                    .queryParam("id", videoId)
+                    .queryParam("key", apiKey)
+                    .build()
+                    .toUriString();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://www.youtube.com/watch?v=" + videoId))
+                    .uri(URI.create(apiUrl))
                     .timeout(Duration.ofSeconds(15))
-                    .header("User-Agent", "Mozilla/5.0")
-                    .header("Accept-Language", "en-US,en;q=0.9")
+                    .header("Accept", "application/json")
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -71,26 +87,21 @@ public class YouTubeVideoMetadataDurationResolver implements VideoMetadataDurati
     }
 
     static OptionalInt parseDurationSeconds(String body) {
-        OptionalInt exact = firstValidMatch(LENGTH_SECONDS, body, false);
-        return exact.isPresent() ? exact : firstValidMatch(APPROX_DURATION_MILLIS, body, true);
-    }
-
-    private static OptionalInt firstValidMatch(Pattern pattern, String body, boolean milliseconds) {
         if (body == null || body.isBlank()) {
             return OptionalInt.empty();
         }
-        Matcher matcher = pattern.matcher(body);
-        while (matcher.find()) {
-            try {
-                long raw = Long.parseLong(matcher.group(1));
-                long seconds = milliseconds ? (raw + 999L) / 1000L : raw;
-                if (seconds > 0 && seconds <= MAX_DURATION_SECONDS) {
-                    return OptionalInt.of((int) seconds);
-                }
-            } catch (NumberFormatException ignored) {
-                // Continue to the next metadata candidate.
-            }
+        Matcher matcher = ISO_DURATION.matcher(body);
+        if (!matcher.find()) {
+            return OptionalInt.empty();
         }
-        return OptionalInt.empty();
+        int hours = parsePart(matcher.group(1));
+        int minutes = parsePart(matcher.group(2));
+        int seconds = parsePart(matcher.group(3));
+        int total = hours * 3600 + minutes * 60 + seconds;
+        return total > 0 && total <= MAX_DURATION_SECONDS ? OptionalInt.of(total) : OptionalInt.empty();
+    }
+
+    private static int parsePart(String value) {
+        return value == null || value.isBlank() ? 0 : Integer.parseInt(value);
     }
 }

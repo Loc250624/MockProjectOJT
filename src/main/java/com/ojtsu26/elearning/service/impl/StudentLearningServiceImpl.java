@@ -522,6 +522,7 @@ public class StudentLearningServiceImpl implements StudentLearningService {
                 .videoUrl(rawVideoUrl)
                 .embedUrl(embedUrl)
                 .videoSourceType(videoSource.type().name())
+                .videoContentType(lesson.getVideo() == null ? null : lesson.getVideo().getContentType())
                 .videoPlayable(videoSource.playable())
                 .videoUnavailableReason(videoSource.message())
                 .videoDurationSeconds(lesson.getVideo() == null ? null : lesson.getVideo().getDurationSeconds())

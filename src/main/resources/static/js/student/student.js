@@ -537,7 +537,15 @@ function initVideoProgress(element) {
                 }
             });
         } else {
-            alert('Please purchase the course to continue learning.');
+            var fallback = document.querySelector('[data-paywall-message]');
+            if (!fallback) {
+                fallback = document.createElement('div');
+                fallback.setAttribute('data-paywall-message', '');
+                fallback.setAttribute('role', 'status');
+                fallback.style.cssText = 'position:fixed;right:1rem;bottom:1rem;z-index:60;max-width:320px;padding:1rem;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;box-shadow:0 10px 30px rgba(15,23,42,0.18);font-size:0.875rem;line-height:1.5;';
+                document.body.appendChild(fallback);
+            }
+            fallback.textContent = 'Please purchase the course to continue learning.';
         }
     }
 
